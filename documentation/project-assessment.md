@@ -269,3 +269,73 @@ Aktive Detailplanung fuer Phase 3 steht im Abschnitt **Phase 3 - Roadmap** des A
 *Siehe auch: `documentation/phase-3-sprint-4-planning.md` (finales Planning-Dokument)*
 
 Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-planning.md` abgelegt.
+
+---
+
+## Phase 3 – Sprint 5 Planning Summary (2026-07-01)
+
+*Siehe auch: `documentation/phase-3-sprint-5-planning.md` (finales Planning-Dokument)*
+
+**Sprint-Ziel:** Verbesserung der User Experience durch Theme-System mit Dark-Mode und weiteren Themes, Risikoabdeckungs-Anzeige für bessere Testfall-Priorisierung.
+
+**Status:** ✅ GO – Sprint 5 GESTARTET (2026-07-01)
+
+**Sprint-5-Backlog (150 SP total) – Linearer Workflow eingeführt:**
+
+| Priorität | REQ | Titel | SP | Status |
+|---|---|---|---|---|
+| 1 | REQ-3045 | Theme-System Grundlage | 40 | OFFEN |
+| 2 | REQ-3046 | Theme Dark | 15 | OFFEN |
+| 3 | REQ-3047 | Theme Steampunk | 20 | OFFEN |
+| 4 | REQ-3048 | Theme Rainbow | 15 | OFFEN |
+| 5 | REQ-3049 | Theme Heavy Metal | 15 | OFFEN |
+| 6 | REQ-3050 | Risikoabdeckung pro Testfall | 25 | OFFEN |
+| 7 | REQ-3051 | Risikoabdeckungs-Summe Generierung | 20 | OFFEN |
+
+**Neue Projektregel (ab Sprint 5) – VERBINDLICH:**
+> **Linearer Workflow:** REQs werden ausschließlich sequenziell abgearbeitet. Ein Feature-Branch nach dem anderen. Erst mergen, dann nächsten Branch starten. Kein paralleles Arbeiten auf mehreren Feature-Branches. Eliminiert Merge-Konflikte, verbessert Code-Review-Qualität.
+
+**Sprint-6+ Backlog (300 SP):**
+
+| REQ | Titel | SP | Prio | Sprint | Abhängigkeit |
+|---|---|---|---|---|---|
+| REQ-3052 | Tabellenansicht Testfälle | 35 | MUST | 6 | – |
+| REQ-3062 | Dark-Mode System-Sync | 10 | SHOULD | 6 | REQ-3046 |
+| REQ-3053 | Undo/Redo | 30 | SHOULD | 6 | – |
+| REQ-3054 | Tastaturnavigation | 20 | SHOULD | 6 | – |
+| REQ-3058 | PDF-Export | 25 | SHOULD | 7 | – |
+| REQ-3059 | Kategorie-Kommentare | 20 | SHOULD | 7 | – |
+| REQ-3055 | Projekt-Vorlagen | 25 | COULD | 7 | – |
+| REQ-3056 | CSV-Import | 30 | COULD | 7 | – |
+| REQ-3057 | i18n Deutsch/Englisch | 40 | COULD | 8 | – |
+| REQ-3060 | Testfall-Kommentare | 15 | COULD | 8 | – |
+| REQ-3061 | Versionshistorie Projekt | 50 | COULD | Backlog | – |
+
+**Offene ADR-Entscheidungen vor Sprint-Start:**
+- **ADR-011**: Theme-System-Ansatz (CSS-Variablen + Tailwind EMPFOHLEN vs. Styled-Components vs. Tailwind-Klassen)
+- **ADR-013**: Risikoabdeckungs-Berechnung (On-the-fly EMPFOHLEN vs. gecacht)
+
+**Freigabe (2026-07-01):**
+- ✅ Program Manager (dokumentiert + Commit)
+- ⏳ Chief Architect (ADR-011-Entscheidung vor REQ-3045-Start)
+- ⏳ Senior QA Director (Test-Strategie für Sprint 5)
+
+---
+
+## Phase 3 – Sprint 4 Abschlussbericht (2026-07-01)
+
+**Status:** ✅ ABGESCHLOSSEN – 6 PRs, 223+ Tests grün, alle Kriterien erfüllt
+
+| Metrik | Wert | Quelle |
+|---|---|---|
+| REQs umgesetzt | REQ-3039 bis REQ-3044 (6 REQs) | git log |
+| PRs merged | 6 Feature-Branches | GitHub |
+| Tests gesamt | 223 | test run output |
+| Coverage | >= 90% | --cov report |
+| Projektregel | Linearer Workflow definiert | phase-3-sprint-5-planning.md |
+| Governance | Aktualisiert mit Sprint-5-Planung | project-assessment.md |
+
+**Implikationen für Sprint 5:**
+- Codebasis stabil für Theme-System
+- React/TypeScript/Vite Stack bewährt
+- Generierungs-Logik solid für Risikoabdeckungs-Integration
