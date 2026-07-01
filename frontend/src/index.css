@@ -33,13 +33,20 @@
 
 /* Steampunk Theme */
 .theme-steampunk {
-  --color-bg: #2c1810;
-  --color-surface: #3d2314;
-  --color-border: #8B4513;
+  --color-bg: #1c0f08;
+  --color-surface: #2c1a0e;
+  --color-surface-hover: #3d2415;
+  --color-border: #7a4b2a;
   --color-text-primary: #f5deb3;
-  --color-text-secondary: #d2a679;
-  --color-accent: #b8860b;
+  --color-text-secondary: #d4a76a;
+  --color-text-muted: #a0724a;
+  --color-accent: #cd853f;
   --color-accent-hover: #daa520;
+  --color-accent-text: #1c0f08;
+  --color-danger: #cc4444;
+  --color-success: #6b8f3e;
+  --color-warning: #c8922a;
+  color-scheme: dark;
 }
 
 /* Rainbow Theme */
