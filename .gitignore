@@ -57,8 +57,6 @@ frontend/build/
 frontend/.vite/
 
 # Lokale Agent-/Copilot-Customizations (bewusst NICHT im oeffentlichen Repo)
-.github/
-.vscode/
 Agenten und basisinfos/SYSTEM_v1.0.md
 Agenten und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md
 apply_bug_fixes.py
