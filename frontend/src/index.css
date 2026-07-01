@@ -70,10 +70,17 @@
 /* Heavy Metal Theme */
 .theme-heavy-metal {
   --color-bg: #0a0a0a;
-  --color-surface: #1a1a1a;
-  --color-border: #404040;
-  --color-text-primary: #c0c0c0;
-  --color-text-secondary: #808080;
-  --color-accent: #708090;
-  --color-accent-hover: #a0a0b0;
+  --color-surface: #141414;
+  --color-surface-hover: #1f1f1f;
+  --color-border: #3a3a3a;
+  --color-text-primary: #c8c8c8;
+  --color-text-secondary: #909090;
+  --color-text-muted: #606060;
+  --color-accent: #8a8a9a;
+  --color-accent-hover: #aaaabc;
+  --color-accent-text: #0a0a0a;
+  --color-danger: #cc3333;
+  --color-success: #446644;
+  --color-warning: #887722;
+  color-scheme: dark;
 }
