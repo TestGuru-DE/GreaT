@@ -7,9 +7,9 @@ if ROOT not in sys.path:
 # REQ-2005: System-Datenklassen beim Test-Start sicherstellen
 def pytest_configure(config):
     """DB-Migration + System-Datenklassen-Seed vor dem ersten Test."""
-    from src.app.db import engine, Base, SessionLocal
-    from src.app.main import _migrate_db
-    from src.app.system_dataclasses import seed_system_dataclasses
+    from app.db import engine, Base, SessionLocal
+    from app.main import _migrate_db
+    from app.system_dataclasses import seed_system_dataclasses
 
     Base.metadata.create_all(bind=engine)
     _migrate_db()
