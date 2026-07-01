@@ -39,9 +39,9 @@ pip install -r requirements.txt --quiet
 echo ""
 echo "╔══════════════════════════════════════════╗"
 echo "║  G.R.E.A.T. – Test Case Designer         ║"
-echo "║  http://localhost:8010                   ║"
-echo "║  API-Doku: http://localhost:8010/docs    ║"
+echo "║  http://localhost:8000                   ║"
+echo "║  API-Doku: http://localhost:8000/docs    ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
-uvicorn app.main:app --reload --app-dir src --reload-dir src --port 8010
+uvicorn app.main:app --reload --app-dir src --reload-dir src --port 8000

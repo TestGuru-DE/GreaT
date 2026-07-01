@@ -24,7 +24,10 @@ from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, Co
 # ---------------------------------------------------------------------------
 
 def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]:
-    """Gibt {Kategoriename: [erlaubte Werte]} für ein Projekt zurück."""
+    """Gibt {Kategoriename: [erlaubte Werte + Fehlerwerte]} für ein Projekt zurück.
+    
+    BUG-6 Fix: Fehlerwerte (allowed == False) werden in die Generierung eingeschlossen.
+    """
     cats = (
         db.query(models.Category)
         .filter(models.Category.project_id == project_id)
@@ -37,7 +40,7 @@ def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]
     for c in cats:
         values = (
             db.query(models.Value)
-            .filter(models.Value.category_id == c.id, models.Value.allowed == True)
+            .filter(models.Value.category_id == c.id)
             .order_by(models.Value.id)
             .all()
         )

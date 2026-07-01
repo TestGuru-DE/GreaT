@@ -13,6 +13,18 @@ from itertools import combinations, product
 from typing import Dict, List, Optional, Set, Tuple
 
 
+def _deduplicate(testcases: list[dict]) -> list[dict]:
+    """Entfernt Duplikate aus Testfall-Liste (BUG-4 Fix)."""
+    seen = set()
+    result = []
+    for tc in testcases:
+        key = tuple(sorted(tc.items()))
+        if key not in seen:
+            seen.add(key)
+            result.append(tc)
+    return result
+
+
 def generate(categories: Dict[str, List[str]], t: int = 2, rule_engine=None) -> List[Dict[str, str]]:
     """
     Generiert Testfälle nach T-Wise Coverage.
@@ -39,14 +51,14 @@ def generate(categories: Dict[str, List[str]], t: int = 2, rule_engine=None) -> 
     
     # Sonderfall: t=1 → Each Choice
     if t == 1:
-        return _generate_each_choice(categories, cat_names, rule_engine)
+        return _deduplicate(_generate_each_choice(categories, cat_names, rule_engine))
     
     # Sonderfall: t >= n → Kartesisches Produkt
     if t >= n_cats:
-        return _generate_cartesian(categories, cat_names, rule_engine)
+        return _deduplicate(_generate_cartesian(categories, cat_names, rule_engine))
     
     # Hauptfall: t-wise Coverage mit Greedy
-    return _generate_t_wise_greedy(categories, cat_names, t, rule_engine)
+    return _deduplicate(_generate_t_wise_greedy(categories, cat_names, t, rule_engine))
 
 
 def _generate_each_choice(

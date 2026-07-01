@@ -1,6 +1,17 @@
 from itertools import product
 from typing import Dict, List, Tuple, Set, Optional
 
+def _deduplicate(testcases: list[dict]) -> list[dict]:
+    """Entfernt Duplikate aus Testfall-Liste (BUG-4 Fix)."""
+    seen = set()
+    result = []
+    for tc in testcases:
+        key = tuple(sorted(tc.items()))
+        if key not in seen:
+            seen.add(key)
+            result.append(tc)
+    return result
+
 def _all_pairs(categories: Dict[str, List[str]], rule_engine=None) -> Set[Tuple[str, str, str, str]]:
     """
     REQ-3040: Erzeugt alle Paare, optional gefiltert durch Regeln.
@@ -116,7 +127,7 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
                 suite.append(a)
                 covered |= new_pairs
     
-    return suite
+    return _deduplicate(suite)
 
 
 def _find_valid_seed(categories: Dict[str, List[str]], keys: List[str], rule_engine) -> Optional[Dict[str, str]]:
