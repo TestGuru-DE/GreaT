@@ -8,6 +8,7 @@ import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import DataClassDialog from "./DataClassDialog";
+import { BVADialog } from "./bva/BVADialog";
 
 interface Props { projectId: number; }
 
@@ -36,6 +37,7 @@ export default function CategoryTree({ projectId }: Props) {
   const [selectedValId, setSelectedValId] = useState<{ catId: number; valId: number } | null>(null);
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [dataClassCat, setDataClassCat] = useState<{ id: number; name: string } | null>(null);
+  const [bvaDialogOpen, setBvaDialogOpen] = useState<{ id: number; name: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const newCatRef = useRef<HTMLInputElement>(null);
 
@@ -161,6 +163,7 @@ export default function CategoryTree({ projectId }: Props) {
         }},
         { label: "", separator: true, action: () => {} },
         { label: "Datenklasse anwenden...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataClassCat({ id: c.id, name: c.name }); } },
+        { label: "Grenzwertanalyse...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
         { label: "", separator: true, action: () => {} },
         { label: "Löschen", danger: true, action: () => {
           if (confirm("Kategorie löschen?"))
@@ -384,6 +387,22 @@ export default function CategoryTree({ projectId }: Props) {
           categoryName={dataClassCat.name}
           onClose={() => setDataClassCat(null)}
           onApplied={() => { if (expanded[dataClassCat.id]) fetchValues(dataClassCat.id); }}
+        />
+      )}
+
+      {/* BVA-Dialog (REQ-3041) */}
+      {bvaDialogOpen && (
+        <BVADialog
+          isOpen={true}
+          categoryId={bvaDialogOpen.id}
+          categoryName={bvaDialogOpen.name}
+          projectId={projectId}
+          onClose={() => setBvaDialogOpen(null)}
+          onApply={(newValues) => {
+            toast.add(`${newValues.length} Grenzwerte hinzugefügt`);
+            if (expanded[bvaDialogOpen.id]) fetchValues(bvaDialogOpen.id);
+            setBvaDialogOpen(null);
+          }}
         />
       )}
 
