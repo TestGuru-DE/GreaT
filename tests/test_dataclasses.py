@@ -4,7 +4,7 @@
 import uuid
 import pytest
 from fastapi.testclient import TestClient
-from src.app.main import app
+from app.main import app
 
 client = TestClient(app)
 
@@ -21,84 +21,84 @@ class TestDataclassValidator:
     """REQ-2003: Typvalidierung fuer Datenklassen-Werte."""
 
     def test_text_gueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("Hallo", "text")
         assert ok is True
 
     def test_text_leer_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("", "text")
         assert ok is False
         assert msg != ""
 
     def test_number_gueltig_ganzzahl(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("42", "number")
         assert ok is True
 
     def test_number_gueltig_dezimal(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("-3.14", "number")
         assert ok is True
 
     def test_number_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("abc", "number")
         assert ok is False
 
     def test_date_gueltig_iso(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("2024-01-15", "date")
         assert ok is True
 
     def test_date_gueltig_deutsch(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("15.01.2024", "date")
         assert ok is True
 
     def test_date_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("kein-datum", "date")
         assert ok is False
 
     def test_time_gueltig_hhmm(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("08:30", "time")
         assert ok is True
 
     def test_time_gueltig_hhmmss(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("23:59:59", "time")
         assert ok is True
 
     def test_time_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("25:00", "time")
         assert ok is False
 
     def test_boolean_gueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         for v in ("true", "false", "1", "0", "ja", "nein"):
             ok, _ = validate_value(v, "boolean")
             assert ok is True, f"{v} sollte gueltig sein"
 
     def test_boolean_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("vielleicht", "boolean")
         assert ok is False
 
     def test_email_gueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, _ = validate_value("test@example.com", "email")
         assert ok is True
 
     def test_email_ungueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         ok, msg = validate_value("kein-at-zeichen", "email")
         assert ok is False
 
     def test_freetext_immer_gueltig(self):
-        from src.app.dataclass_validator import validate_value
+        from app.dataclass_validator import validate_value
         for v in ("", "abc", "123", "!@#"):
             ok, _ = validate_value(v, "freetext")
             assert ok is True
