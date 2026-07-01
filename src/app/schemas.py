@@ -57,9 +57,10 @@ class ValuePropertiesUpdate(BaseModel):
         return v
 
 class GenerateRequest(BaseModel):
-    strategy: str  # "all" | "each" | "pairwise"
+    strategy: str  # "all" | "each" | "pairwise" | "t_wise"
     limit: Optional[int] = None
     apply_rules: bool = False  # REQ-3005
+    t_strength: Optional[int] = 2  # REQ-3039: T-Wise Parameter (Default: 2 = Pairwise)
 
 class GenerateResponse(BaseModel):
     generation_id: int
