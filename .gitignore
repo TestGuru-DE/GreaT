@@ -1,0 +1,58 @@
+# Claude lokale Dateien
+.claude/temp-session-contexts/
+.claude/settings.local.json
+
+# Obsidian lokale Einstellungen
+.obsidian/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python extras
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+coverage.xml
+
+# Datenbank (Laufzeit-Daten, nicht ins Repo)
+*.db
+*.sqlite
+*.sqlite3
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+secrets/
+*.pem
+*.key
+*.pfx
+
+# Logs
+*.log
+log.txt
+
+# IDE
+.idea/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.vite/
+

@@ -1,0 +1,16 @@
+[run]
+source = src
+branch = True
+omit =
+    src/app/templates/*
+    src/backend/*
+    src/__pycache__/*
+    */__pycache__/*
+
+[report]
+show_missing = True
+skip_covered = False
+fail_under = 0
+
+[html]
+directory = htmlcov

@@ -1,0 +1,53 @@
+// REQ-1203: TypeScript-Interfaces fuer alle Pydantic-Schemas
+
+export interface Project {
+  id: number;
+  name: string;
+}
+
+export interface ProjectCreate {
+  name: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  order_index: number;
+}
+
+export interface CategoryCreate {
+  name: string;
+  order_index?: number;
+}
+
+export interface Value {
+  id: number;
+  value: string;
+  risk_weight: number;
+  vtype: string;       // REQ-3007
+  allowed: boolean;    // REQ-3007 (Fehlerwert = !allowed)
+  is_default: boolean; // REQ-3008
+}
+
+export interface ValueCreate {
+  value: string;
+  risk_weight?: number;
+}
+
+export interface GenerateRequest {
+  strategy: "each" | "linear" | "all" | "pairwise" | "risk_based";
+  limit?: number;
+  apply_rules?: boolean;  // REQ-3005
+}
+
+export interface GenerateResponse {
+  generation_id: number;
+  count: number;
+}
+
+export interface TestCaseOut {
+  name: string;
+  assignments: Record<string, string>;
+}
+
+export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based";
