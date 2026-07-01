@@ -33,7 +33,7 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     if not catmap or any(len(v) == 0 for v in catmap.values()):
         raise HTTPException(status_code=400, detail="Project must have categories and values.")
 
-    cases = generate_cases(catmap, payload.strategy, db=db, project_id=pid)
+    cases = generate_cases(catmap, payload.strategy, db=db, project_id=pid, t_strength=payload.t_strength)
 
     # REQ-3005: Regeln anwenden wenn gewünscht
     if payload.apply_rules:

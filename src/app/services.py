@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from . import models
-from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion
+from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise
 from combinatorics.risk_based import generate as risk_based_generate
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
@@ -67,7 +67,7 @@ def load_categories_values_weighted(db: Session, project_id: int) -> dict:
     return result
 
 
-def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session = None, project_id: int = None) -> List[Dict[str, str]]:
+def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session = None, project_id: int = None, t_strength: int = 2) -> List[Dict[str, str]]:
     """Ruft die gewünschte Kombinatorik-Strategie auf (ohne Geschäftsregeln!)."""
     if strategy == "all":
         return all_combinations.generate(categories)
@@ -77,6 +77,9 @@ def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session 
         return orthogonal.generate(categories)
     if strategy == "linear":
         return linear_expansion.generate(categories)
+    if strategy == "t_wise":
+        # REQ-3039: T-Wise mit konfigurierbarer Stärke
+        return t_wise.generate(categories, t=t_strength)
     if strategy == "risk_based":
         # Risikogewichtete Generierung benötigt Gewichte aus der DB
         if db is not None and project_id is not None:
