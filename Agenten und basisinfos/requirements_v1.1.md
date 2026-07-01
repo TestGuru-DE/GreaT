@@ -1676,7 +1676,7 @@ damit ich eine bestehende Generation inkrementell verbessern kann statt komplett
 ### REQ-3039 | T-Wise-Algorithmus
 **Titel:** T-Wise Kombinatorik (t=1..4) als Kernstrategie
 **Prioritaet:** Must
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 4
 **User Story:**
 Als Testdesigner
@@ -1701,7 +1701,7 @@ damit ich skalierbar hohe Abdeckungsziele mit kontrollierbarem Testumfang erreic
 ### REQ-3040 | RuleEngine-Refactor fuer Constraint-aware Generierung
 **Titel:** Architektur-Refactor: Regel-Integration in Generierungs-Algorithmen
 **Prioritaet:** Must
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 3–4
 **User Story:**
 Als Entwickler
@@ -1725,7 +1725,7 @@ damit vermieden wird, dass ungueltige Kombinationen erzeugt und danach gefiltert
 ### REQ-3041 | BVA-Dialog UX-Implementation
 **Titel:** React-Komponente fuer Grenzwertanalyse-Konfiguration
 **Prioritaet:** Must
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 4
 **User Story:**
 Als Tester
@@ -1764,7 +1764,7 @@ damit ich auch ohne API-Kenntnisse numerische Grenzen in Testwerte umwandeln kan
 ### REQ-3042 | Tech-Decision: Dezimal.js für numerische Präzision
 **Titel:** Dezimal.js-Bibliothek für exakte numerische Berechnungen
 **Priorität:** Must
-**Status:** Approved
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 4
 **Decision:** Dezimal.js wird eingesetzt (User Decision 2026-07-01)
 **User Story:**
@@ -1782,7 +1782,7 @@ Als Backend-/Frontend-Developer möchte ich Dezimal.js nutzen damit BVA-Grenzwer
 ### REQ-3043 | BVA Min/Max-Input-Strategie: Explizite Eingabe
 **Titel:** BVA-Dialog startet mit leeren Min/Max-Feldern
 **Priorität:** Should
-**Status:** Approved
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 4
 **Decision:** Option A – Leere Felder, User füllt manuell (User Decision 2026-07-01)
 **User Story:**
@@ -1802,7 +1802,7 @@ Als Tester möchte ich beim BVA-Dialog Min/Max manuell eingeben damit ich expliz
 ### REQ-3044 | MCDC-Algorithmus (Modified Condition/Decision Coverage)
 **Titel:** MCDC Testfall-Generierung fuer komplexe Bedingungen
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 4–5
 **User Story:**
 Als Software-Tester fuer kritische Systeme
