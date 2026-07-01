@@ -121,7 +121,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Generierungs-Dialog */}
       {dialogData && (
         <DeleteProjectDialog
@@ -136,25 +136,25 @@ export default function ProjectsPage() {
         />
       )}
 
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">G.R.E.A.T. &ndash; Testfall Designer</h1>
-        <a href="/app/dataclasses" className="text-sm text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-1">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">G.R.E.A.T. &ndash; Testfall Designer</h1>
+        <a href="/app/dataclasses" className="text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1">
           Datenklassen
         </a>
-        <a href="/docs" target="_blank" className="text-sm text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-1">
+        <a href="/docs" target="_blank" className="text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1">
           API-Docs
         </a>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4">Projekte</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-4 dark:text-slate-100">Projekte</h2>
           <form onSubmit={handleCreate} className="flex gap-3 mb-6">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Neues Projekt..."
-              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
             />
             <button type="submit" disabled={creating || !newName.trim()}
               className="px-4 py-2 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50">
@@ -163,10 +163,10 @@ export default function ProjectsPage() {
           </form>
 
           {error && (
-            <div className="mb-4 px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+            <div className="mb-4 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">{error}</div>
           )}
           {msg && (
-            <div className={`mb-4 px-4 py-2 rounded-lg text-sm border ${msg.ok ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"}`}>
+            <div className={`mb-4 px-4 py-2 rounded-lg text-sm border ${msg.ok ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300" : "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"}`}>
               {msg.text}
             </div>
           )}
@@ -201,38 +201,38 @@ export default function ProjectsPage() {
           )}
 
           {loading ? (
-            <p className="text-slate-400 text-sm">Lade Projekte...</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm">Lade Projekte...</p>
           ) : projects.length === 0 ? (
-            <p className="text-slate-400 text-sm">Noch keine Projekte vorhanden.</p>
+            <p className="text-slate-400 dark:text-slate-500 text-sm">Noch keine Projekte vorhanden.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-200">
+                <tr className="border-b-2 border-slate-200 dark:border-slate-700">
                   <th className="px-2 py-2 w-8">
                     <input type="checkbox"
                       checked={selected.size === projects.length && projects.length > 0}
                       onChange={toggleAll}
                       className="rounded" title="Alle auswählen" />
                   </th>
-                  <th className="px-4 py-2 text-left text-slate-500 font-medium w-12">ID</th>
-                  <th className="px-4 py-2 text-left text-slate-500 font-medium">Name</th>
-                  <th className="px-4 py-2 text-left text-slate-500 font-medium w-40">Aktionen</th>
+                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium w-12">ID</th>
+                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium">Name</th>
+                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium w-40">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
                 {projects.map((p) => (
                   <tr key={p.id}
-                    className={"border-b border-slate-200 hover:bg-slate-50 " + (selected.has(p.id) ? "bg-sky-50" : "")}>
+                    className={"border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 " + (selected.has(p.id) ? "bg-sky-50 dark:bg-sky-900/30" : "")}>
                     <td className="px-2 py-2">
                       <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded" />
                     </td>
-                    <td className="px-4 py-2 text-slate-400">{p.id}</td>
-                    <td className="px-4 py-2 font-medium">{p.name}</td>
+                    <td className="px-4 py-2 text-slate-400 dark:text-slate-500">{p.id}</td>
+                    <td className="px-4 py-2 font-medium dark:text-slate-200">{p.name}</td>
                     <td className="px-4 py-2">
                       <button onClick={() => navigate("/projects/" + p.id)}
-                        className="text-sky-600 hover:underline text-sm mr-3">Öffnen</button>
+                        className="text-sky-600 dark:text-sky-400 hover:underline text-sm mr-3">Öffnen</button>
                       <button onClick={() => handleDeleteSingle(p)} disabled={working}
-                        className="text-red-500 hover:text-red-700 text-sm disabled:opacity-50">Löschen</button>
+                        className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm disabled:opacity-50">Löschen</button>
                     </td>
                   </tr>
                 ))}
