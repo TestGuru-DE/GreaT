@@ -1,3 +1,58 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Theme-System – CSS Custom Properties */
+:root {
+  --color-bg: #ffffff;
+  --color-surface: #f9fafb;
+  --color-border: #e5e7eb;
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+}
+
+/* Dark Theme */
+.theme-dark {
+  --color-bg: #1a1a2e;
+  --color-surface: #16213e;
+  --color-border: #0f3460;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+}
+
+/* Steampunk Theme */
+.theme-steampunk {
+  --color-bg: #2c1810;
+  --color-surface: #3d2314;
+  --color-border: #8B4513;
+  --color-text-primary: #f5deb3;
+  --color-text-secondary: #d2a679;
+  --color-accent: #b8860b;
+  --color-accent-hover: #daa520;
+}
+
+/* Rainbow Theme */
+.theme-rainbow {
+  --color-bg: #fef9ff;
+  --color-surface: #fdf0ff;
+  --color-border: #e879f9;
+  --color-text-primary: #1e1b4b;
+  --color-text-secondary: #6d28d9;
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+}
+
+/* Heavy Metal Theme */
+.theme-heavy-metal {
+  --color-bg: #0a0a0a;
+  --color-surface: #1a1a1a;
+  --color-border: #404040;
+  --color-text-primary: #c0c0c0;
+  --color-text-secondary: #808080;
+  --color-accent: #708090;
+  --color-accent-hover: #a0a0b0;
+}

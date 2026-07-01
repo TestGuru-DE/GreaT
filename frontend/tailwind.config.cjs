@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  darkMode: 'class', // REQ-3045: Theme-System (class-basiert für theme-* Klassen)
   theme: {
     extend: {
       colors: {
