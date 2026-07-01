@@ -8,6 +8,18 @@ REQ-3040: Constraint-aware Generierung optional via rule_engine.
 from typing import Dict, List, Optional
 
 
+def _deduplicate(testcases: list[dict]) -> list[dict]:
+    """Entfernt Duplikate aus Testfall-Liste (BUG-4 Fix)."""
+    seen = set()
+    result = []
+    for tc in testcases:
+        key = tuple(sorted(tc.items()))
+        if key not in seen:
+            seen.add(key)
+            result.append(tc)
+    return result
+
+
 def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[str, str]]:
     """
     Erzeugt Testfälle nach dem Prinzip der linearen Expansion.
@@ -62,7 +74,7 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
             
             result.append(tc)
 
-    return result
+    return _deduplicate(result)
 
 
 def _find_valid_base(categories: Dict[str, List[str]], keys: List[str], rule_engine) -> Optional[Dict[str, str]]:

@@ -263,8 +263,18 @@ export default function CategoryTree({ projectId }: Props) {
                     {(values[cat.id] ?? []).length}
                   </span>
                 </span>
-                <span className="text-slate-300 text-xs ml-2 flex-shrink-0 select-none cursor-grab" title="Ziehen zum Sortieren">
-                  :::
+                <span className="flex items-center gap-2 ml-2 flex-shrink-0">
+                  {/* BUG-1 Fix: BVA-Button direkt sichtbar */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setBvaDialogOpen({ id: cat.id, name: cat.name }); }}
+                    title="Grenzwertanalyse (BVA)"
+                    className="text-slate-400 hover:text-sky-600 text-xs px-1.5 py-0.5 rounded hover:bg-sky-50 transition-colors"
+                  >
+                    ≈
+                  </button>
+                  <span className="text-slate-300 text-xs select-none cursor-grab" title="Ziehen zum Sortieren">
+                    :::
+                  </span>
                 </span>
               </div>
 
@@ -308,8 +318,8 @@ export default function CategoryTree({ projectId }: Props) {
                                   <span className="ml-1 text-xs bg-red-100 text-red-500 rounded px-1" title="Fehlerwert">?</span>
                                 )}
                               </span>
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {/* REQ-3007: Inline-Eigenschaften */}
+                              <div className="flex items-center gap-1 transition-opacity">
+                                {/* REQ-3007: Inline-Eigenschaften - BUG-2 Fix: immer sichtbar */}
                                 <input
                                   type="number" min={1} max={10}
                                   value={v.risk_weight}
