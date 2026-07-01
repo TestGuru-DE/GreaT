@@ -51,13 +51,20 @@
 
 /* Rainbow Theme */
 .theme-rainbow {
-  --color-bg: #fef9ff;
-  --color-surface: #fdf0ff;
+  --color-bg: #fff5fe;
+  --color-surface: #fce8ff;
+  --color-surface-hover: #f8d4ff;
   --color-border: #e879f9;
-  --color-text-primary: #1e1b4b;
-  --color-text-secondary: #6d28d9;
-  --color-accent: #7c3aed;
-  --color-accent-hover: #6d28d9;
+  --color-text-primary: #1e003d;
+  --color-text-secondary: #7c3aed;
+  --color-text-muted: #a855f7;
+  --color-accent: #ec4899;
+  --color-accent-hover: #db2777;
+  --color-accent-text: #ffffff;
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  color-scheme: light;
 }
 
 /* Heavy Metal Theme */
