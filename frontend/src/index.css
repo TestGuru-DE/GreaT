@@ -15,13 +15,20 @@
 
 /* Dark Theme */
 .theme-dark {
-  --color-bg: #1a1a2e;
-  --color-surface: #16213e;
-  --color-border: #0f3460;
-  --color-text-primary: #e2e8f0;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #334155;
+  --color-text-primary: #f1f5f9;
   --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
   --color-accent: #60a5fa;
   --color-accent-hover: #93c5fd;
+  --color-accent-text: #1e293b;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  color-scheme: dark;
 }
 
 /* Steampunk Theme */
