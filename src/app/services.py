@@ -14,7 +14,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from . import models
-from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise
+from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
@@ -87,6 +87,8 @@ def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session 
             return risk_based_generate(weighted)
         # Fallback ohne Gewichte: wie each_choice
         return each_choice.generate(categories)
+    if strategy == "mcdc":
+        return mcdc.generate(categories)
     raise HTTPException(status_code=400, detail=f"Unbekannte Strategie: {strategy}")
 
 
