@@ -346,3 +346,10 @@ Leere Input-Felder (Option A): User füllt Min/Max manuell bei jeder BVA-Nutzung
 **Entscheidungsträger:** Tech-Lead (User-Entscheidung Session 5475a8fc, 2026-07-01)
 
 **Abhängigkeiten:** REQ-3043, REQ-3041 (BVA-Dialog)
+
+### ADR-011: Theme-System-Ansatz
+- **Datum:** 2026-07-01
+- **Status:** ENTSCHIEDEN
+- **Entscheidung:** CSS-Variablen + Tailwind Dark Mode
+- **Begründung:** Einfach, performant (~0KB Overhead), kein zusätzliches Tooling nötig. Tailwind-`dark:`-Klassen + CSS-Custom-Properties für Theme-Werte. Theme-Klasse auf `<html>`-Element, LocalStorage-Persistenz.
+- **Alternativen verworfen:** Styled-Components (+50KB, Migration nötig), reine Tailwind-Config (schwer wartbar bei 5 Themes)
