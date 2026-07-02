@@ -1,10 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { THEMES, setTheme, getTheme } from '../theme'
 
 describe('Heavy Metal Theme', () => {
   beforeEach(() => {
     localStorage.clear()
     document.documentElement.className = ''
+    
+    // REQ-3062: Mock matchMedia for system theme
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
   })
 
   it('setTheme heavy-metal applies theme-heavy-metal class', () => {
@@ -29,9 +36,9 @@ describe('Heavy Metal Theme', () => {
       setTheme(theme)
       const activeClasses = Array.from(document.documentElement.classList)
         .filter(c => c.startsWith('theme-'))
-      // Entweder genau 1 theme-Klasse (bei non-normal) oder 0 (bei normal)
+      // Entweder genau 1 theme-Klasse (bei non-normal) oder 0 (bei normal/system-resolving-to-normal)
       expect(activeClasses.length).toBeLessThanOrEqual(1)
-      if (theme !== 'normal') {
+      if (theme !== 'normal' && theme !== 'system') {
         expect(activeClasses[0]).toBe(`theme-${theme}`)
       }
     }

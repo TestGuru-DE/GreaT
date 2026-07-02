@@ -7,6 +7,7 @@ const THEME_LABELS: Record<ThemeName, string> = {
   'steampunk': '⚙️ Steampunk',
   'rainbow': '🌈 Rainbow',
   'heavy-metal': '🤘 Heavy Metal',
+  'system': '🖥️ System (OS)',
 }
 
 export function ThemeSwitcher() {
