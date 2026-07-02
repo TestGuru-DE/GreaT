@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST
 from .db import Base, engine
-from .routers import api_projects, api_generate, api_dataclasses
+from .routers import api_projects, api_generate, api_dataclasses, api_health
 from .system_dataclasses import seed_system_dataclasses
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
@@ -77,6 +77,7 @@ def _migrate_db() -> None:
 app.include_router(api_projects.router, prefix="/api")
 app.include_router(api_generate.router, prefix="/api")
 app.include_router(api_dataclasses.router, prefix="/api")
+app.include_router(api_health.router, prefix="/api")
 # REQ-3011: HTMX-Router archiviert (2026-06-29)
 
 # ---------------------------------------------------------------------------
