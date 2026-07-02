@@ -136,3 +136,90 @@ export function validateBVAConfig(config: BVAConfig): string[] {
 
   return errors;
 }
+
+
+// REQ-3064: Multi-Range BVA Types
+export interface BVARangeEntry {
+  id: string;
+  minVal: string;
+  maxVal: string;
+  allowed: boolean;
+}
+
+export interface MultiRangeBVAPoint extends BVAPoint {
+  sourceRange?: string;
+  isError?: boolean;
+}
+
+/**
+ * Berechnet Multi-Range BVA-Punkte für mehrere Äquivalenzklassen.
+ * REQ-3064: Mehrere angrenzende Bereiche mit erlaubt/nicht-erlaubt.
+ */
+export function calculateMultiRangeBVAPoints(
+  ranges: BVARangeEntry[],
+  pointsPerBoundary: 2 | 3 | 4
+): MultiRangeBVAPoint[] {
+  if (!ranges.length) return [];
+
+  const allCandidates = new Map<string, MultiRangeBVAPoint>();
+
+  ranges.forEach((range) => {
+    const rangePoints = calculateBVAPoints({
+      min: range.minVal,
+      max: range.maxVal,
+      pointsPerBoundary,
+    });
+
+    rangePoints.forEach((point) => {
+      if (allCandidates.has(point.value)) return; // Skip duplicates
+
+      const isError = classifyMultiRangeValue(point.value, ranges);
+      const sourceRange = `${range.minVal}-${range.maxVal} (${
+        range.allowed ? "erlaubt" : "nicht erlaubt"
+      })`;
+
+      allCandidates.set(point.value, {
+        ...point,
+        isError,
+        sourceRange,
+      });
+    });
+  });
+
+  // Sort by numeric value
+  return Array.from(allCandidates.values()).sort((a, b) => {
+    try {
+      return new Decimal(a.value).comparedTo(new Decimal(b.value));
+    } catch {
+      return 0;
+    }
+  });
+}
+
+/**
+ * Klassifiziert einen Wert als Fehler oder gültig.
+ * Fehler wenn:
+ * - In nicht-erlaubtem Bereich
+ * - Außerhalb aller Bereiche
+ */
+function classifyMultiRangeValue(
+  value: string,
+  ranges: BVARangeEntry[]
+): boolean {
+  try {
+    const val = new Decimal(value);
+
+    for (const range of ranges) {
+      const min = new Decimal(range.minVal);
+      const max = new Decimal(range.maxVal);
+
+      if (val.greaterThanOrEqualTo(min) && val.lessThanOrEqualTo(max)) {
+        return !range.allowed; // In nicht-erlaubtem Bereich = Fehler
+      }
+    }
+
+    return true; // Außerhalb aller Bereiche = Fehler
+  } catch {
+    return true; // Parse-Fehler = Fehler
+  }
+}

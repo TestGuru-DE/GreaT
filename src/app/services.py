@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from . import models
 from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
+from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAMultiRangeResult
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
 
@@ -280,6 +281,39 @@ def status_for_assignment(pid: int, a: Dict[str, str], db: Session) -> str:
         if a.get(if_name) == if_val and a.get(target_name) in target_values:
             return f"combined:{target_name}={a.get(target_name)}"
     return "ok"
+
+
+# ---------------------------------------------------------------------------
+# REQ-3064: Multi-Range BVA Service
+# ---------------------------------------------------------------------------
+
+def apply_multi_range_bva_to_parameter(
+    ranges: List[Dict],  # [{"min_val": "1", "max_val": "100", "allowed": True}, ...]
+    points: int = 2,
+) -> List[Dict]:
+    """
+    Erzeugt BVA-Werte für mehrere Bereiche und setzt is_error korrekt.
+    
+    Args:
+        ranges: Liste von Dicts mit min_val, max_val, allowed
+        points: 2, 3 oder 4 Werte pro Grenze
+        
+    Returns:
+        Liste von Dicts: [{"name": "1", "is_error": False}, ...]
+    """
+    bva_ranges = [
+        BVARange(
+            r["min_val"], 
+            r["max_val"], 
+            r.get("allowed", True)
+        ) 
+        for r in ranges
+    ]
+    results = generate_multi_range_bva(bva_ranges, points)
+    return [
+        {"name": r.value, "is_error": r.is_error}
+        for r in results
+    ]
 
 
 # ---------------------------------------------------------------------------
