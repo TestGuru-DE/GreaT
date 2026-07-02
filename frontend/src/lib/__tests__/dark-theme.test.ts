@@ -1,10 +1,17 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setTheme, getTheme } from '../theme'
 
 describe('Dark Theme', () => {
   beforeEach(() => {
     localStorage.clear()
     document.documentElement.className = ''
+    
+    // REQ-3062: Mock matchMedia for system theme
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
   })
 
   it('setTheme dark applies theme-dark class to html', () => {

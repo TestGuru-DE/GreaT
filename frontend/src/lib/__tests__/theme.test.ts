@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { getTheme, setTheme, THEMES } from '../theme'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { getTheme, setTheme, THEMES, getEffectiveTheme, setupSystemThemeSync } from '../theme'
 
 describe('Theme System', () => {
   beforeEach(() => {
@@ -41,6 +41,11 @@ describe('Theme System', () => {
     expect(THEMES).toContain('heavy-metal')
   })
 
+  // REQ-3062: System theme tests
+  it('THEMES contains system theme', () => {
+    expect(THEMES).toContain('system')
+  })
+
   it('getTheme returns "normal" for unknown stored value', () => {
     localStorage.setItem('great-theme', 'unknown-theme')
     expect(getTheme()).toBe('normal')
@@ -51,5 +56,71 @@ describe('Theme System', () => {
     setTheme('normal')
     expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
     expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+  })
+})
+
+// REQ-3062: System theme tests
+describe('System Theme', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    document.documentElement.className = ''
+  })
+
+  it('getEffectiveTheme returns dark when OS prefers dark', () => {
+    // Mock matchMedia to return dark preference
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(prefers-color-scheme: dark)',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    
+    expect(getEffectiveTheme('system')).toBe('dark')
+  })
+
+  it('getEffectiveTheme returns normal when OS prefers light', () => {
+    // Mock matchMedia to return light preference
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    
+    expect(getEffectiveTheme('system')).toBe('normal')
+  })
+
+  it('getEffectiveTheme returns same theme for non-system themes', () => {
+    expect(getEffectiveTheme('dark')).toBe('dark')
+    expect(getEffectiveTheme('steampunk')).toBe('steampunk')
+    expect(getEffectiveTheme('rainbow')).toBe('rainbow')
+  })
+
+  it('setTheme with system applies effective theme class', () => {
+    // Mock matchMedia to return dark preference
+    window.matchMedia = vi.fn().mockImplementation(query => ({
+      matches: query === '(prefers-color-scheme: dark)',
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    
+    setTheme('system')
+    expect(document.documentElement.classList.contains('theme-dark')).toBe(true)
+    expect(localStorage.getItem('great-theme')).toBe('system')
+  })
+
+  it('setupSystemThemeSync registers and cleans up listener', () => {
+    const addListener = vi.fn()
+    const removeListener = vi.fn()
+    
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: false,
+      addEventListener: addListener,
+      removeEventListener: removeListener,
+    }))
+    
+    const cleanup = setupSystemThemeSync(() => {})
+    expect(addListener).toHaveBeenCalledWith('change', expect.any(Function))
+    
+    cleanup()
+    expect(removeListener).toHaveBeenCalledWith('change', expect.any(Function))
   })
 })
