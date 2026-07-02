@@ -60,3 +60,5 @@ frontend/.vite/
 Agenten und basisinfos/SYSTEM_v1.0.md
 Agenten und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md
 apply_bug_fixes.py
+
+test_bugmagnet.py
