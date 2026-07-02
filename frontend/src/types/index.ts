@@ -35,9 +35,10 @@ export interface ValueCreate {
 }
 
 export interface GenerateRequest {
-  strategy: "each" | "linear" | "all" | "pairwise" | "risk_based";
+  strategy: "each" | "linear" | "all" | "pairwise" | "risk_based" | "t_wise" | "mcdc";
   limit?: number;
   apply_rules?: boolean;  // REQ-3005
+  t_strength?: number;     // BUG-3: T-Wise Stärke (default 2)
 }
 
 export interface GenerateResponse {
@@ -48,6 +49,7 @@ export interface GenerateResponse {
 export interface TestCaseOut {
   name: string;
   assignments: Record<string, string>;
+  _has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
 }
 
-export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based";
+export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based" | "t_wise" | "mcdc";
