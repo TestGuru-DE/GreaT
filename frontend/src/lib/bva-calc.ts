@@ -1,4 +1,5 @@
 // REQ-3041, REQ-3042: Grenzwertanalyse-Berechnungen mit Decimal.js
+// ISTQB-konform: 2-Wert = 4 Werte, 3-Wert = 6 Werte, 4-Wert = 8 Werte
 import Decimal from "decimal.js";
 
 export type BVAPointType = "boundary" | "inside" | "outside";
@@ -18,9 +19,27 @@ export interface BVAConfig {
 }
 
 /**
+ * Leitet Epsilon aus der Praezision von min/max ab.
+ * Nutzt die groessere Dezimalstellen-Anzahl.
+ */
+function deriveEpsilon(minDec: Decimal, maxDec: Decimal): Decimal {
+  const minPlaces = Math.abs(minDec.decimalPlaces());
+  const maxPlaces = Math.abs(maxDec.decimalPlaces());
+  const places = Math.max(minPlaces, maxPlaces);
+  
+  if (places === 0) return new Decimal(1); // Ganzzahlen
+  
+  return new Decimal(1).div(new Decimal(10).pow(places));
+}
+
+/**
  * Berechnet BVA-Punkte fuer eine numerische Aequivalenzklasse.
  * 
  * REQ-3042: Nutzt Decimal.js fuer praezise Berechnungen (0.1 + 0.2 = 0.3).
+ * ISTQB-konform:
+ *   2-Wert: [min-1, min, max, max+1] = 4 Werte
+ *   3-Wert: [min-1, min, min+1, max-1, max, max+1] = 6 Werte
+ *   4-Wert: [min-2, min-1, min, min+1, max-1, max, max+1, max+2] = 8 Werte
  * 
  * @param config - Konfiguration mit min, max, Punkte-Anzahl, epsilon
  * @returns Liste von BVA-Punkten mit Wert, Typ und Label
@@ -39,7 +58,10 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
     return []; // Ungueltige Zahlen
   }
 
-  if (minDec.greaterThan(maxDec)) return [];
+  if (minDec.greaterThan(maxDec)) {
+    // Auto-swap wie Backend
+    [minDec, maxDec] = [maxDec, minDec];
+  }
 
   // Spezialfall: min == max
   if (minDec.equals(maxDec)) {
@@ -54,25 +76,34 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
   const points: BVAPoint[] = [];
 
   if (pointsPerBoundary === 2) {
+    // [min-1, min, max, max+1]
     points.push(
-      { value: minDec.toString(), type: "boundary", label: "min" },
-      { value: maxDec.toString(), type: "boundary", label: "max" }
+      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.toString(),                    type: "boundary", label: "min (Grenze)" },
+      { value: maxDec.toString(),                    type: "boundary", label: "max (Grenze)" },
+      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: "max+1 (außerhalb)" }
     );
   } else if (pointsPerBoundary === 3) {
-    const minPlusE = minDec.plus(epsilonDec);
+    // [min-1, min, min+1, max-1, max, max+1]
     points.push(
-      { value: minDec.toString(), type: "boundary", label: "min" },
-      { value: minPlusE.toString(), type: "inside", label: "min+ε" },
-      { value: maxDec.toString(), type: "boundary", label: "max" }
+      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.toString(),                    type: "boundary", label: "min (Grenze)" },
+      { value: minDec.plus(epsilonDec).toString(),  type: "inside",   label: "min+1 (innerhalb)" },
+      { value: maxDec.minus(epsilonDec).toString(), type: "inside",   label: "max−1 (innerhalb)" },
+      { value: maxDec.toString(),                    type: "boundary", label: "max (Grenze)" },
+      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: "max+1 (außerhalb)" }
     );
   } else if (pointsPerBoundary === 4) {
-    const minPlusE = minDec.plus(epsilonDec);
-    const maxMinusE = maxDec.minus(epsilonDec);
+    // [min-2, min-1, min, min+1, max-1, max, max+1, max+2]
     points.push(
-      { value: minDec.toString(), type: "boundary", label: "min" },
-      { value: minPlusE.toString(), type: "inside", label: "min+ε" },
-      { value: maxMinusE.toString(), type: "inside", label: "max-ε" },
-      { value: maxDec.toString(), type: "boundary", label: "max" }
+      { value: minDec.minus(epsilonDec.times(2)).toString(), type: "outside",  label: "min−2 (außerhalb)" },
+      { value: minDec.minus(epsilonDec).toString(),          type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.toString(),                            type: "boundary", label: "min (Grenze)" },
+      { value: minDec.plus(epsilonDec).toString(),           type: "inside",   label: "min+1 (innerhalb)" },
+      { value: maxDec.minus(epsilonDec).toString(),          type: "inside",   label: "max−1 (innerhalb)" },
+      { value: maxDec.toString(),                            type: "boundary", label: "max (Grenze)" },
+      { value: maxDec.plus(epsilonDec).toString(),           type: "outside",  label: "max+1 (außerhalb)" },
+      { value: maxDec.plus(epsilonDec.times(2)).toString(),  type: "outside",  label: "max+2 (außerhalb)" }
     );
   }
 
@@ -86,20 +117,6 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
 }
 
 /**
- * Leitet Epsilon aus der Praezision von min/max ab.
- * Nutzt die groessere Dezimalstellen-Anzahl.
- */
-function deriveEpsilon(minDec: Decimal, maxDec: Decimal): Decimal {
-  const minPlaces = Math.abs(minDec.decimalPlaces());
-  const maxPlaces = Math.abs(maxDec.decimalPlaces());
-  const places = Math.max(minPlaces, maxPlaces);
-  
-  if (places === 0) return new Decimal(1); // Ganzzahlen
-  
-  return new Decimal(1).div(new Decimal(10).pow(places));
-}
-
-/**
  * Validiert BVA-Konfiguration.
  * @returns Array von Fehlermeldungen (leer = valide)
  */
@@ -110,11 +127,9 @@ export function validateBVAConfig(config: BVAConfig): string[] {
   if (!config.max) errors.push("Maximum erforderlich");
 
   try {
-    const minDec = new Decimal(config.min);
-    const maxDec = new Decimal(config.max);
-    if (minDec.greaterThan(maxDec)) {
-      errors.push("Minimum darf nicht größer als Maximum sein");
-    }
+    new Decimal(config.min);
+    new Decimal(config.max);
+    // Auto-swap erlaubt, keine weitere Validierung
   } catch {
     errors.push("Ungültiger numerischer Wert");
   }
