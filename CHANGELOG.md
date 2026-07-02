@@ -2,6 +2,28 @@
 
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.1.0] - 2026-07-02 – Sprint 5: UX, Risikoabdeckung, BVA-ISTQB
+
+### Neue Features
+- **REQ-3045–3049**: Theme-System (Normal, Dark, Steampunk, Rainbow, Heavy Metal)
+- **REQ-3050**: Risikoabdeckung pro Testfall (Summe `risk_weight`)
+- **REQ-3051**: Risikoabdeckung-Prozentsatz pro Generierung (farbiges Badge)
+- **REQ-3052**: Tabellenansicht Testfälle – sortierbare Spalten, Sticky Header, CSV-Export
+- **REQ-3053**: Undo/Redo (Strg+Z / Strg+Y, max. 50 Schritte)
+- **REQ-3054**: Tastaturnavigation (Pfeiltasten, Enter, Delete, F2, Escape, ARIA)
+- **REQ-3062**: Dark-Mode System-Sync (OS `prefers-color-scheme`)
+- **REQ-3063**: Fehlerwert-Testfälle rot markiert in Tabelle
+- **REQ-3064**: Multi-Range BVA (mehrere Äquivalenzklassen, erlaubt/nicht erlaubt)
+
+### Bugfixes
+- **BUG-2**: Start.bat Timeout erhöht – Backend startet vor Frontend-Proxy
+- **BUG-4**: BVA ISTQB-konform korrigiert (2/3/4-Wert-Methode nach ISTQB-Standard)
+
+### Chores
+- `.gitignore` aktualisiert – `test_bugmagnet.py` lokal erhalten
+
+---
+
 ## [1.0.0] – 2026-07-01 – Initial Public Release
 
 **Erstes öffentliches Release nach kompletter Neuentwicklung.**

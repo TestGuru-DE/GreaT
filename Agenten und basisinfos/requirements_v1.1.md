@@ -1311,7 +1311,7 @@ damit ich positiv-Testfälle zuerst und gezielt negative Testfälle am Ende durc
 ### REQ-3019 | Projekt-Vorlagen
 **Titel:** Projekt als Vorlage speichern und daraus neue Projekte erzeugen
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1329,7 +1329,7 @@ damit ich wiederkehrende Testdesign-Strukturen nicht jedes Mal neu anlegen muss.
 ### REQ-3020 | Regelsets exportieren/importieren
 **Titel:** Regelkonfiguration projektuebergreifend als JSON austauschen
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Tester
@@ -1347,7 +1347,7 @@ damit ich fachliche Regelwerke wiederverwenden kann ohne komplette Projekte zu d
 ### REQ-3021 | Projekt-Dashboard
 **Titel:** Uebersichtsseite mit Projektkennzahlen
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1365,7 +1365,7 @@ damit ich den Projektzustand schnell erfassen kann.
 ### REQ-3022 | Fortschritts-Indikator
 **Titel:** Ampel-Status pro Projekt
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1383,7 +1383,7 @@ damit ich problematische Projekte sofort erkenne.
 ### REQ-3023 | Test-Coverage-Analyse
 **Titel:** Prozentuale Abdeckungsanzeige nach Generierung
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Tester
@@ -1401,7 +1401,7 @@ damit ich die Aussagekraft der erzeugten Testfaelle besser einschaetzen kann.
 ### REQ-3024 | Testfall-Kommentar
 **Titel:** Freitext-Kommentar pro Testfall
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Tester
@@ -1419,7 +1419,7 @@ damit ich Hinweise wie Priorisierung, bekannte Bugs oder Testnotizen direkt am T
 ### REQ-3025 | Generierungs-Vergleich
 **Titel:** Zwei Generierungen desselben Projekts vergleichen
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Tester
@@ -1437,7 +1437,7 @@ damit ich erkenne, welche Testfaelle neu hinzugekommen, entfallen oder unveraend
 ### REQ-3026 | Fehlerwert-Report
 **Titel:** Separater Export nur fuer Fehlerwert-Testfaelle
 **Prioritaet:** Could
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Tester
@@ -1455,7 +1455,7 @@ damit ich Negativtests unabhaengig von Positivtests weitergeben oder ausfuehren 
 ### REQ-3027 | Massenimport von Kategorien
 **Titel:** CSV-Import fuer Kategorien und Werte
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1473,7 +1473,7 @@ damit ich grosse Testmodelle schneller anlegen kann.
 ### REQ-3028 | Wert-Sortierung per Drag & Drop
 **Titel:** Reihenfolge von Werten innerhalb einer Kategorie per Drag & Drop aendern
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1491,7 +1491,7 @@ damit fachlich wichtige oder haeufig genutzte Werte oben stehen.
 ### REQ-3029 | Keyboard-Navigation in Generierungstabelle
 **Titel:** Tabellenbedienung per Pfeiltasten, Tab und Enter
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Power-User
@@ -1509,7 +1509,7 @@ damit ich ohne Maus schneller arbeiten kann.
 ### REQ-3030 | Wert-Suche in Kategorien
 **Titel:** Suchfeld fuer grosse Wertelisten
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED
 **Phase:** 3, Sprint 5
 **User Story:**
 Als Nutzer
@@ -1521,6 +1521,171 @@ damit ich auch bei grossen Kategorien schnell den gewuenschten Wert finde.
 - Trefferzahl oder Leerzustand wird angezeigt
 - Der Filter veraendert nicht die gespeicherte Wertemenge
 **Abhaengigkeiten:** REQ-0302, REQ-3007
+
+---
+
+### REQ-3045 | Theme: Normal
+**Titel:** Standard Hell-Theme
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Nutzer moechte ich ein helles Standard-Theme nutzen damit die App benutzerfreundlich und fokussiert ist.
+**Akzeptanzkriterien:**
+- Theme ist vorgespeichert und Nutzer kann es waehlen
+- Kontrastverhaeltnisse nach WCAG 2.1 AA Standard
+- Alle UI-Komponenten mit Theme korrekt gestylt
+
+---
+
+### REQ-3046 | Theme: Dark
+**Titel:** Dunkles Theme mit System-Sync
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+
+---
+
+### REQ-3047 | Theme: Steampunk
+**Titel:** Visuell interessantes Steampunk-Theme
+**Prioritaet:** Could
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+
+---
+
+### REQ-3048 | Theme: Rainbow
+**Titel:** Buntes Rainbow-Theme
+**Prioritaet:** Could
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+
+---
+
+### REQ-3049 | Theme: Heavy Metal
+**Titel:** Extremes Schwarz/Rot Heavy-Metal-Theme
+**Prioritaet:** Could
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+
+---
+
+### REQ-3050 | Risikoabdeckung pro Testfall
+**Titel:** Risikogewicht-Summe in Testfalltabelle anzeigen
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich sehen, wie viel Risiko jeder Testfall abdeckt damit ich Prioritaeten einschaetzen kann.
+**Akzeptanzkriterien:**
+- Jeder Testfall zeigt seine kumulative Risikoabdeckung (Summe der risk_weight aller enthaltenen Werte)
+- Wert ist in Testfalltabelle als separate Spalte sichtbar
+- Sortierung nach Risiko ist moeglich
+
+---
+
+### REQ-3051 | Risikoabdeckung-Prozentsatz
+**Titel:** Prozentuale Risikoabdeckung pro Generierung
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich nach einer Generierung sehen, wie viel Prozent des Gesamt-Risikos abgedeckt sind damit ich die Qualitaet schnell einschaetzen kann.
+**Akzeptanzkriterien:**
+- Nach Generierung wird ein Risikoabdeckungs-Prozentsatz angezeigt
+- Farbiges Badge: Gruen >= 80%, Gelb 50–79%, Rot < 50%
+- Berechnung basiert auf Summe der risk_weight aller erzeugten Testfaelle geteilt durch Summe aller moeglichen Werte
+
+---
+
+### REQ-3052 | Tabellenansicht mit Sortierung und CSV-Export
+**Titel:** Testfallansicht mit sortierbare Spalten, Sticky Header, CSV-Export
+**Prioritaet:** Must
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich Testfaelle in einer sortierbaren Tabelle mit Export sehen damit ich schnell die Daten nutzen kann.
+**Akzeptanzkriterien:**
+- Tabelle hat Sticky Header (bleibt sichtbar beim Scrollen)
+- Spalten sind nach Klick auf Header sortierbar (aufsteigend/absteigend)
+- CSV-Export Button exportiert alle sichtbaren Testfaelle
+
+---
+
+### REQ-3053 | Undo/Redo
+**Titel:** STRG+Z / STRG+Y Funktionalität für Testfall-Änderungen
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Power-User moechte ich mit STRG+Z/STRG+Y Testfall-Aenderungen rueckgaengig machen/wiederherstellen damit ich schneller arbeiten kann.
+**Akzeptanzkriterien:**
+- STRG+Z macht letzte Aenderung rueckgaengig (mindestens 50 Schritte)
+- STRG+Y stellt rueckgaengig gemachte Aenderung wieder her
+- Undo/Redo-Stack wird pro Projekt beibehalten
+- Visuelle Anzeige des Undo/Redo-Status
+
+---
+
+### REQ-3054 | Tastaturnavigation
+**Titel:** Vollständige Tastaturnavigation in Testfalltabelle
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich Testfaelle nur mit Tastatur bearbeiten koennen damit ich effizienter ohne Maus arbeite.
+**Akzeptanzkriterien:**
+- Pfeiltasten bewegen Fokus zwischen Zellen
+- Enter oeffnet Bearbeitung einer Zelle
+- Delete loescht Testfall (mit Bestaetigung)
+- F2 startet Inline-Bearbeitung
+- Escape bricht Bearbeitung ab
+- ARIA-Attribute sind korrekt gesetzt
+- Fokusreihenfolge ist logisch und nachvollziehbar
+
+---
+
+### REQ-3062 | Dark-Mode System-Sync
+**Titel:** System-Einstellung für Hell/Dunkel-Theme nutzen
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Nutzer moechte ich dass die App automatisch mein OS-Theme (Hell/Dunkel) nutzt damit ich nicht manuell umschalten muss.
+**Akzeptanzkriterien:**
+- App erkennt OS `prefers-color-scheme` Einstellung
+- Theme wird automatisch angepasst, wenn OS-Einstellung sich aendert
+- Nutzer kann manuell überschreiben (Einstellungen > Theme > Manuell auswählen)
+- Einstellung wird lokal persistent gespeichert
+
+---
+
+### REQ-3063 | Fehlerwert-Testfälle visuell markieren
+**Titel:** Rote Hervorhebung von Testfällen mit Fehlerwerten
+**Prioritaet:** Must
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich Testfaelle mit Fehlerwerten (Negativ-Tests) sofort visuell erkennen damit ich diese gezielt priorisieren kann.
+**Akzeptanzkriterien:**
+- Testfaelle mit mindestens einem Fehlerwert haben roten Hintergrund in der Tabelle
+- Farbe ist anpassbar ueber Theme-System
+- Export behaelt die Markierung bei
+
+---
+
+### REQ-3064 | Multi-Range BVA
+**Titel:** Grenzwertanalyse mit mehreren Äquivalenzklassen und erlaubt/nicht-erlaubt Markierung
+**Prioritaet:** Should
+**Status:** DONE / TESTED
+**Phase:** 3, Sprint 5
+**User Story:**
+Als Tester moechte ich mehrere Grenzwertbereiche in einer Kategorie definieren koennen damit ich komplexe numerische Domänen abdecke.
+**Akzeptanzkriterien:**
+- BVA-Dialog erlaubt Definition mehrerer Grenzwertbereiche (z.B. [1-10], [11-100])
+- Pro Bereich kann "erlaubt" oder "nicht erlaubt" markiert werden
+- Erzeugte Werte werden mit dem Flag markiert
+- Generierung respektiert die "nicht erlaubt"-Markierung
 
 ---
 

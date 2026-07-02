@@ -335,7 +335,64 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 | Projektregel | Linearer Workflow definiert | phase-3-sprint-5-planning.md |
 | Governance | Aktualisiert mit Sprint-5-Planung | project-assessment.md |
 
-**Implikationen für Sprint 5:**
-- Codebasis stabil für Theme-System
-- React/TypeScript/Vite Stack bewährt
-- Generierungs-Logik solid für Risikoabdeckungs-Integration
+---
+
+## Phase 3 – Sprint 5 Abschlussbericht (2026-07-02)
+
+**Status:** ✅ ABGESCHLOSSEN – 10 PRs, 367 Tests grün, alle Sprint-5-REQs implementiert & getestet
+
+### Implementierte Features
+
+| REQ | Titel | Sprint | PR | Status |
+|---|---|---|---|---|
+| REQ-3045–3049 | Theme-System (Normal, Dark, Steampunk, Rainbow, Heavy Metal) | Sprint 5 | #13–#22 | ✅ DONE |
+| REQ-3050 | Risikoabdeckung pro Testfall (Summe `risk_weight`) | Sprint 5 | #16 | ✅ DONE |
+| REQ-3051 | Risikoabdeckungs-Prozentsatz pro Generierung (farbiges Badge) | Sprint 5 | #17 | ✅ DONE |
+| REQ-3052 | Tabellenansicht Testfälle – sortierbare Spalten, Sticky Header, CSV-Export | Sprint 5 | #18 | ✅ DONE |
+| REQ-3053 | Undo/Redo (STRG+Z / STRG+Y, max. 50 Schritte) | Sprint 5 | #19 | ✅ DONE |
+| REQ-3054 | Tastaturnavigation (Pfeiltasten, Enter, Delete, F2, Escape, ARIA) | Sprint 5 | #20 | ✅ DONE |
+| REQ-3062 | Dark-Mode System-Sync (OS `prefers-color-scheme`) | Sprint 5 | #21 | ✅ DONE |
+| REQ-3063 | Fehlerwert-Testfälle rot markiert in Tabelle | Sprint 5 | #22 | ✅ DONE |
+| REQ-3064 | Multi-Range BVA (mehrere Äquivalenzklassen, erlaubt/nicht erlaubt) | Sprint 5 | #14 | ✅ DONE |
+| BUG-2 | Start.bat Timeout erhöht – Backend startet vor Frontend-Proxy | Sprint 5 | #15 | ✅ FIXED |
+| BUG-4 | BVA ISTQB-konform korrigiert (2/3/4-Wert-Methode nach ISTQB-Standard) | Sprint 5 | #13 | ✅ FIXED |
+
+### Technischer Stand (2026-07-02)
+
+| Metrik | Wert | Trend |
+|---|---|---|
+| Gesamt-Tests | 367 (263 Backend + 104 Frontend) | ⬆️ +104 |
+| Test-Coverage | >= 90% | ✅ Stabil |
+| Frontend-Bundle | ~280 KB | ⬆️ +24 KB (Themes) |
+| REQs Sprint 5 | 20 (REQ-3019–3030, REQ-3045–3054, REQ-3062–3064) | ✅ 100% done |
+| PRs gemergt | 10 (#13–#22) | ✅ Alle green |
+| Commits | 15+ | ✅ Saubere History |
+
+### Version 1.1.0 Release
+
+**Release-Highlights:**
+- ✅ Theme-System mit 5 vordefinierten Themes (hellbar/dunkel/steampunk/rainbow/heavy-metal)
+- ✅ Risikoabdeckungs-Metriken für bessere Testfall-Priorisierung
+- ✅ Office-ähnliche Tabellenbedienung (Sortierung, Export, Undo/Redo)
+- ✅ Volle Tastaturnavigation für Power-Users (ARIA-konform)
+- ✅ Multi-Range BVA für komplexe numerische Modelle
+- ✅ ISTQB-konforme Grenzwertanalyse (2/3/4-Wert-Methode)
+
+**Blockierende Probleme:** Keine
+
+**Nebenprobleme (für Sprint 6):**
+- PDF-Export noch ausstehend (REQ-3058)
+- i18n (Deutsch/Englisch) geplant (REQ-3057)
+- Projekt-Kommentare (REQ-3024–3025) in Planung
+
+### Implikationen für Phase 4
+
+- Codebasis bereit für Enterprise-Features (Auth, Multi-User)
+- Kombinatorik-Kern (REQ-3039–3044, REQ-3040) ist constraint-aware und T-Wise/MCDC-fähig
+- UX-Layer (Themes, Undo/Redo, Tastaturnavigation) für breite Nutzer-Base optimiert
+- Performance akzeptabel: Pairwise < 1s, T-Wise 3-weise < 5s, MCDC < 30s
+
+**Empfohlener Übergang:** Phase 4 kann mit Authentifizierung (REQ-4001 / OAuth2-JWT) starten.
+
+---
+
