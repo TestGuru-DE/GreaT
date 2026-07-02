@@ -1,10 +1,12 @@
 #!/bin/bash
 # Start.sh – G.R.E.A.T. Startskript für Linux / Raspberry Pi
 # REQ-0010: Zielplattform Raspberry Pi
+# REQ-4007: GREAT_PORT Umgebungsvariable
 #
 # Verwendung:
 #   chmod +x Start.sh
 #   ./Start.sh
+#   GREAT_PORT=9000 ./Start.sh  # Custom Port
 
 set -e
 
@@ -35,13 +37,18 @@ source .venv/bin/activate
 echo "Installiere Abhängigkeiten..."
 pip install -r requirements.txt --quiet
 
+# Port konfigurieren (REQ-4007: GREAT_PORT Umgebungsvariable)
+GREAT_PORT=${GREAT_PORT:-8000}
+
 # Server starten
 echo ""
 echo "╔══════════════════════════════════════════╗"
 echo "║  G.R.E.A.T. – Test Case Designer         ║"
-echo "║  http://localhost:8000                   ║"
-echo "║  API-Doku: http://localhost:8000/docs    ║"
+echo "║  Port: $GREAT_PORT                             ║"
+echo "║  http://localhost:$GREAT_PORT                   ║"
+echo "║  API-Doku: http://localhost:$GREAT_PORT/docs    ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
-uvicorn app.main:app --reload --app-dir src --reload-dir src --port 8000
+GREAT_PORT=$GREAT_PORT uvicorn app.main:app --reload --app-dir src --reload-dir src --port $GREAT_PORT
+
