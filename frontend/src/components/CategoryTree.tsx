@@ -1,11 +1,13 @@
 // REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
+// REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
 import { categoriesApi } from "../api/client";
 import { renameApi, reorderApi } from "../api/client";
 import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useKeyboardNav } from "../hooks/useKeyboardNav";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import DataClassDialog from "./DataClassDialog";
 import { BVADialog } from "./bva/BVADialog";
@@ -44,6 +46,27 @@ export default function CategoryTree({ projectId }: Props) {
   const newCatRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchCategories(projectId); }, [projectId, fetchCategories]);
+
+  // REQ-3054: Pfeiltasten-Navigation für Kategorien
+  const { focusedIndex: focusedCatIndex, setFocusedIndex: setFocusedCatIndex } = useKeyboardNav(
+    categories.map((cat) => ({
+      id: cat.id,
+      onSelect: () => {
+        setSelectedCatId(cat.id);
+        setSelectedValId(null);
+        toggleExpand(cat.id);
+      },
+      onDelete: () => {
+        if (confirm("Kategorie löschen?")) {
+          deleteCategory(cat.id)
+            .then(() => { toast.add("Kategorie gelöscht"); setSelectedCatId(null); })
+            .catch(() => toast.add("Fehler beim Löschen", "error"));
+        }
+      },
+      onRename: () => startEditCat(cat.id, cat.name),
+    })),
+    !editingCat && !editingVal // Navigation nur wenn nicht im Edit-Modus
+  );
 
   // Keyboard Shortcuts (REQ-1210/REQ-3012)
   useKeyboardShortcuts({
@@ -227,20 +250,28 @@ export default function CategoryTree({ projectId }: Props) {
           <p className="text-xs mt-1">Gib oben einen Namen ein und klicke +</p>
         </div>
       ) : (
-        <ul className="space-y-1.5">
-          {categories.map((cat) => (
+        <ul 
+          className="space-y-1.5" 
+          role="listbox" 
+          aria-label="Kategorien"
+          tabIndex={0}
+        >
+          {categories.map((cat, idx) => (
             <li key={cat.id}
+              role="option"
+              aria-selected={selectedCatId === cat.id}
               draggable
               onDragStart={() => handleDragStart(cat.id)}
               onDragOver={(e) => handleDragOver(e, cat.id)}
               onDrop={() => handleDrop(cat.id)}
               onDragEnd={() => setDragOverId(null)}
-              onClick={() => setSelectedCatId(cat.id)}
+              onClick={() => { setSelectedCatId(cat.id); setFocusedCatIndex(idx); }}
               onContextMenu={(e) => openCtxCat(e, cat.id)}
               className={
                 "border rounded-xl overflow-hidden transition-all cursor-grab " +
                 (selectedCatId === cat.id ? "border-sky-400 shadow-sm" : "border-slate-200") +
-                (dragOverId === cat.id ? " opacity-60 scale-95" : "")
+                (dragOverId === cat.id ? " opacity-60 scale-95" : "") +
+                (focusedCatIndex === idx ? " ring-2 ring-theme-primary ring-offset-1" : "")
               }
             >
               {/* Kategorie-Header */}
