@@ -61,10 +61,11 @@ describe("BVAInputPanel", () => {
     expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ markAsErrorCase: true }));
   });
 
-  it("zeigt Validierungs-Fehler bei min > max", () => {
+  it("auto-swap bei min > max (kein Fehler mehr)", () => {
     const invalidConfig: BVAConfig = { ...defaultConfig, min: "30", max: "10", pointsPerBoundary: 2 };
     render(<BVAInputPanel config={invalidConfig} onChange={mockOnChange} />);
-    expect(screen.getByText(/Minimum darf nicht größer/i)).toBeInTheDocument();
+    // Kein Fehler mehr, da auto-swap
+    expect(screen.queryByText(/Minimum darf nicht größer/i)).not.toBeInTheDocument();
   });
 
   it("zeigt Fehler bei nicht-numerischem Input", () => {

@@ -1,85 +1,76 @@
-# REQ-0306: Grenzwertanalyse (Boundary Value Analysis)
-# Berechnet 2, 3 oder 4 Grenzwert-Testwerte für numerische Äquivalenzklassen.
-#
-# Formale Korrektheit:
-#   2-Punkt: {min, max}
-#   3-Punkt: {min, min+1, max}
-#   4-Punkt: {min, min+1, max-1, max}
-#
-# Alle Werte werden als Strings zurückgegeben (API-Kontrakt für Äquivalenzklassen).
-from __future__ import annotations
+"""
+Boundary Value Analysis (BVA) - ISTQB-konform.
 
-from decimal import Decimal, ROUND_HALF_UP
+2-Wert: [min-1, min, max, max+1]                              (4 Werte)
+3-Wert: [min-1, min, min+1, max-1, max, max+1]                (6 Werte)
+4-Wert: [min-2, min-1, min, min+1, max-1, max, max+1, max+2]  (8 Werte)
+
+Quelle: ISTQB Foundation Level Syllabus, Boundary Value Analysis.
+"""
+from decimal import Decimal, InvalidOperation
+from typing import Union
 
 
 class BVAError(ValueError):
-    """Wird geworfen bei ungültigen BVA-Parametern."""
+    """Wird geworfen bei ungültigen BVA-Parametern (Rückwärtskompatibilität)."""
+
+
+def _epsilon(lo: Decimal, hi: Decimal) -> Decimal:
+    """Kleinste sinnvolle Einheit basierend auf der Präzision der Eingaben."""
+    lo_str = str(lo)
+    hi_str = str(hi)
+    dec_lo = len(lo_str.split(".")[1]) if "." in lo_str else 0
+    dec_hi = len(hi_str.split(".")[1]) if "." in hi_str else 0
+    decimals = max(dec_lo, dec_hi)
+    return Decimal("0.1") ** decimals if decimals > 0 else Decimal("1")
 
 
 def generate_bva_values(
-    min_val: int | float,
-    max_val: int | float,
+    min_val: Union[str, int, float],
+    max_val: Union[str, int, float],
     points: int = 2,
 ) -> list[str]:
-    """Berechnet Grenzwert-Testwerte nach ISTQB-BVA-Methode.
+    """
+    Generiert ISTQB-konforme Grenzwert-Testdaten für einen Bereich [min_val, max_val].
 
     Args:
-        min_val: Untere Grenze der Äquivalenzklasse.
-        max_val: Obere Grenze der Äquivalenzklasse.
-        points: Anzahl der Grenzwerte (2, 3 oder 4).
+        min_val: Untere Grenze (inklusiv)
+        max_val: Obere Grenze (inklusiv)
+        points:  2, 3 oder 4 Werte pro Grenze
 
     Returns:
-        Aufsteigend sortierte Liste von Grenzwerten als Strings.
-
-    Raises:
-        BVAError: Bei ungültigen Parametern (min > max, ungültige Punktanzahl).
+        Deduplizierte, aufsteigend sortierte Liste von Wert-Strings.
     """
-    if points not in (2, 3, 4):
-        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points}")
-    if min_val > max_val:
-        raise BVAError(
-            f"min_val ({min_val}) darf nicht größer als max_val ({max_val}) sein"
-        )
+    try:
+        lo = Decimal(str(min_val))
+        hi = Decimal(str(max_val))
+    except InvalidOperation as exc:
+        raise BVAError(f"Ungültige Grenzwerte: min={min_val!r}, max={max_val!r}") from exc
 
-    is_integer = isinstance(min_val, int) and isinstance(max_val, int)
-    # Auch Floats die ganzzahlig sind (z.B. 18.0 aus JSON) als Integer behandeln
-    if not is_integer and isinstance(min_val, float) and isinstance(max_val, float):
-        if min_val == int(min_val) and max_val == int(max_val):
-            is_integer = True
-            min_val = int(min_val)
-            max_val = int(max_val)
-    step = 1 if is_integer else _smallest_step(min_val, max_val)
+    if lo > hi:
+        lo, hi = hi, lo
 
-    values: list[float | int]
+    eps = _epsilon(lo, hi)
+
     if points == 2:
-        values = [min_val, max_val]
+        candidates = [lo - eps, lo, hi, hi + eps]
     elif points == 3:
-        values = [min_val, min_val + step, max_val]
-    else:  # points == 4
-        values = [min_val, min_val + step, max_val - step, max_val]
+        candidates = [lo - eps, lo, lo + eps, hi - eps, hi, hi + eps]
+    elif points == 4:
+        candidates = [lo - 2*eps, lo - eps, lo, lo + eps,
+                      hi - eps,   hi,        hi + eps, hi + 2*eps]
+    else:
+        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
 
-    # Deduplizieren, Sortierung beibehalten
-    seen: list[float | int] = []
-    for v in values:
+    # Deduplizieren + sortieren
+    seen: set[Decimal] = set()
+    result: list[str] = []
+    for v in sorted(candidates):
         if v not in seen:
-            seen.append(v)
-
-    return [_format_value(v, is_integer) for v in sorted(seen)]
-
-
-def _smallest_step(min_val: float, max_val: float) -> float:
-    """Bestimmt den kleinsten sinnvollen Schritt basierend auf den Nachkommastellen."""
-    min_dec = Decimal(str(min_val))
-    max_dec = Decimal(str(max_val))
-    # Verwende die Präzision des genaueren Wertes
-    min_places = abs(min_dec.as_tuple().exponent)
-    max_places = abs(max_dec.as_tuple().exponent)
-    places = max(min_places, max_places)
-    return float(Decimal("1") / Decimal("10") ** places)
-
-
-def _format_value(value: float | int, is_integer: bool) -> str:
-    """Formatiert einen Wert als String (Integer ohne Dezimalpunkt)."""
-    if is_integer:
-        return str(int(value))
-    return str(value)
+            seen.add(v)
+            # Ganze Zahlen ohne Dezimalpunkt ausgeben
+            if eps == Decimal("1") and v == v.to_integral_value():
+                result.append(str(int(v)))
+            else:
+                result.append(str(v))
+    return result
