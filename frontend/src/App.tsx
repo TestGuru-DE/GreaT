@@ -10,7 +10,7 @@ import { ToastContainer } from "./components/Toast";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col">
       <TopNav />
       <div className="flex-1">
         <Routes>

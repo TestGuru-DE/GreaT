@@ -14,7 +14,7 @@ interface GenerateStore {
   generations: GenerationSummary[];
   generationsLoading: boolean;
   setStrategy: (s: Strategy) => void;
-  generate: (projectId: number, applyRules?: boolean) => Promise<void>;
+  generate: (projectId: number, applyRules?: boolean, tStrength?: number) => Promise<void>;
   fetchGenerations: (projectId: number) => Promise<void>;
   loadGeneration: (generationId: number) => Promise<void>;
   renameGeneration: (generationId: number, name: string) => Promise<void>;
@@ -32,10 +32,14 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
 
   setStrategy: (strategy) => set({ strategy }),
 
-  generate: async (projectId, applyRules = false) => {
+  generate: async (projectId, applyRules = false, tStrength = 2) => {
     set({ loading: true, error: null, testcases: [] });
     try {
-      const res = await generateApi.run(projectId, { strategy: get().strategy, apply_rules: applyRules });
+      const res = await generateApi.run(projectId, { 
+        strategy: get().strategy, 
+        apply_rules: applyRules,
+        t_strength: tStrength, // BUG-3: T-Wise Stärke
+      });
       const testcases = await generateApi.getTestcases(res.generation_id);
       set({
         testcases,

@@ -18,6 +18,8 @@ from ..services import (
     generate_cases,
     assignment_from_testcase,
     status_for_assignment,
+    load_error_values,
+    sort_testcases_error_last,
 )
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
@@ -51,6 +53,10 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
                 allowed = json.loads(r.then_values_json or "[]")
                 engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
         cases = RuleEngine(engine_rules).apply(cases)
+
+    # BUG-5: Fehlerwert-Testfälle ans Ende sortieren
+    error_values = load_error_values(db, pid)
+    cases = sort_testcases_error_last(cases, error_values)
 
     if payload.limit is not None:
         cases = cases[: payload.limit]
@@ -99,6 +105,9 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
         .all()
     )
 
+    # REQ-3063: Fehlerwerte laden für Markierung
+    error_values = load_error_values(db, gen.project_id)
+
     out: List[dict] = []
     for tc in testcases:
         vals = (
@@ -108,7 +117,8 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             .all()
         )
         assignments = {name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value for v in vals}
-        out.append({"name": tc.name, "assignments": assignments})
+        has_error = any(v in error_values for v in assignments.values())
+        out.append({"name": tc.name, "assignments": assignments, "_has_error_value": has_error})
 
     return out
 

@@ -9,6 +9,8 @@ const STRATEGIES: { value: Strategy; label: string }[] = [
   { value: "linear", label: "Lineare Expansion" },
   { value: "all", label: "All Combinations" },
   { value: "pairwise", label: "Pairwise" },
+  { value: "t_wise", label: "T-Wise (parametrisiert)" }, // BUG-3 BLOCKER
+  { value: "mcdc", label: "MC/DC (Modified Condition/Decision Coverage)" }, // BUG-3 BLOCKER
   { value: "risk_based", label: "Risikobasiert" },
 ];
 
@@ -23,6 +25,7 @@ export default function TestCasePanel({ projectId }: Props) {
   const [editingName, setEditingName] = useState<string | null>(null);
   const [applyRules, setApplyRules] = useState(false); // REQ-3005
   const [savingName, setSavingName] = useState(false);
+  const [tStrength, setTStrength] = useState(2); // BUG-3: T-Wise Stärke
 
   useEffect(() => {
     fetchGenerations(projectId);
@@ -66,7 +69,21 @@ export default function TestCasePanel({ projectId }: Props) {
           />
           Mit Regeln generieren
         </label>
-        <button onClick={() => generate(projectId, applyRules)} disabled={loading}
+        {/* BUG-3: T-Wise Stärke Eingabe */}
+        {strategy === "t_wise" && (
+          <div>
+            <label className="block text-xs text-slate-500 mb-1 font-medium">T-Stärke</label>
+            <input
+              type="number"
+              min="1"
+              max="5"
+              value={tStrength}
+              onChange={(e) => setTStrength(Number(e.target.value))}
+              className="px-3 py-1.5 text-sm w-16 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400"
+            />
+          </div>
+        )}
+        <button onClick={() => generate(projectId, applyRules, strategy === "t_wise" ? tStrength : undefined)} disabled={loading}
           className="px-4 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
           {loading ? "Generiere..." : "Neu generieren"}
         </button>
@@ -195,15 +212,23 @@ export default function TestCasePanel({ projectId }: Props) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((row, i) => (
-                <tr key={i} className={"border-b border-slate-100 hover:bg-sky-50 transition-colors " +
-                  (i % 2 === 0 ? "bg-white" : "bg-slate-50/50")}>
-                  <td className="px-3 py-1.5 text-slate-400 text-xs">{i + 1}</td>
-                  {columns.map((col) => (
-                    <td key={col} className="px-3 py-1.5 text-slate-700">{String(row[col] ?? "-")}</td>
-                  ))}
-                </tr>
-              ))}
+              {sorted.map((row, i) => {
+                const tc = testcases[i]; // Original-Testcase für _has_error_value
+                const hasError = tc?._has_error_value ?? false;
+                return (
+                  <tr key={i} className={
+                    "border-b border-slate-100 hover:bg-sky-50 transition-colors " +
+                    (hasError 
+                      ? "bg-red-50 border-l-4 border-l-red-500" 
+                      : i % 2 === 0 ? "bg-white" : "bg-slate-50/50")
+                  }>
+                    <td className="px-3 py-1.5 text-slate-400 text-xs">{i + 1}</td>
+                    {columns.map((col) => (
+                      <td key={col} className="px-3 py-1.5 text-slate-700">{String(row[col] ?? "-")}</td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

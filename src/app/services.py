@@ -48,6 +48,31 @@ def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]
     return result
 
 
+def load_error_values(db: Session, project_id: int) -> set:
+    """BUG-5 + REQ-3063: Gibt alle Wert-Strings zurück die als Fehlerwert markiert sind (allowed=False)."""
+    cats = db.query(models.Category).filter(models.Category.project_id == project_id).all()
+    error_vals = set()
+    for c in cats:
+        vals = db.query(models.Value).filter(
+            models.Value.category_id == c.id,
+            models.Value.allowed == False
+        ).all()
+        error_vals.update(v.value for v in vals)
+    return error_vals
+
+
+def sort_testcases_error_last(testcases: List[Dict[str, str]], error_values: set) -> List[Dict[str, str]]:
+    """BUG-5: Sortiert Testfälle sodass Testfälle mit mindestens einem Fehlerwert ans Ende kommen."""
+    normal = []
+    error = []
+    for tc in testcases:
+        if any(v in error_values for v in tc.values()):
+            error.append(tc)
+        else:
+            normal.append(tc)
+    return normal + error
+
+
 def load_categories_values_weighted(db: Session, project_id: int) -> dict:
     """Gibt {Kategoriename: [(Wert, risk_weight), ...]} für die risikogewichtete Generierung zurück."""
     cats = (
