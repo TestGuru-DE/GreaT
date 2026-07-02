@@ -1,6 +1,7 @@
 # src/app/main.py - G.R.E.A.T. Application Entry Point
 # DEBT-002 behoben: on_event(startup) -> Lifespan Context Manager
 # REQ-1202: React-Frontend wird als StaticFiles ausgeliefert (Production Build)
+# REQ-4007: GREAT_PORT Umgebungsvariable für portierbare Konfiguration
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,6 +10,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from .config import GREAT_PORT, GREAT_HOST
 from .db import Base, engine
 from .routers import api_projects, api_generate, api_dataclasses
 from .system_dataclasses import seed_system_dataclasses
@@ -115,3 +117,8 @@ def whoami():
         "frontend_available": FRONTEND_DIST.exists(),
         "routes": sorted([r.path for r in app.routes])[:20],
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host=GREAT_HOST, port=GREAT_PORT, reload=True)
