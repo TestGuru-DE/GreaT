@@ -45,7 +45,8 @@ def test_risk_coverage_calculation(clean_db):
     # Testfälle abrufen
     resp = client.get(f"/api/generations/{gen_id}/testcases")
     assert resp.status_code == 200
-    testcases = resp.json()
+    data = resp.json()
+    testcases = data["testcases"]  # REQ-3051: Response hat jetzt testcases und risk_summary
 
     # Erwartete Kombinationen und risk_coverage
     expected = {
@@ -80,7 +81,8 @@ def test_risk_coverage_zero_when_default_weights(clean_db):
     gen_id = resp.json()["generation_id"]
 
     resp = client.get(f"/api/generations/{gen_id}/testcases")
-    testcases = resp.json()
+    data = resp.json()
+    testcases = data["testcases"]  # REQ-3051: Response hat jetzt testcases und risk_summary
 
     # Each-Choice generiert 2 Testfälle (Red, Blue)
     assert len(testcases) == 2
@@ -103,7 +105,8 @@ def test_risk_coverage_in_response(clean_db):
 
     resp = client.get(f"/api/generations/{gen_id}/testcases")
     assert resp.status_code == 200
-    testcases = resp.json()
+    data = resp.json()
+    testcases = data["testcases"]  # REQ-3051: Response hat jetzt testcases und risk_summary
 
     assert len(testcases) == 1
     tc = testcases[0]

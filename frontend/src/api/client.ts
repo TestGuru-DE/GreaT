@@ -5,7 +5,7 @@ import type {
   Project, ProjectCreate,
   Category, CategoryCreate,
   Value, ValueCreate,
-  GenerateRequest, GenerateResponse, TestCaseOut,
+  GenerateRequest, GenerateResponse, TestCaseOut, RiskSummary,
 } from "../types";
 
 const api = axios.create({
@@ -71,11 +71,17 @@ export interface GenerationSummary {
   testcase_count: number;
 }
 
+// REQ-3051: Testcases Response mit risk_summary
+export interface TestcasesResponse {
+  testcases: TestCaseOut[];
+  risk_summary: RiskSummary;
+}
+
 export const generateApi = {
   run: (projectId: number, req: GenerateRequest) =>
     api.post<GenerateResponse>("/projects/" + projectId + "/generate", req).then((r) => r.data),
   getTestcases: (generationId: number) =>
-    api.get<TestCaseOut[]>("/generations/" + generationId + "/testcases").then((r) => r.data),
+    api.get<TestcasesResponse>("/generations/" + generationId + "/testcases").then((r) => r.data),
   listGenerations: (projectId: number) =>
     api.get<GenerationSummary[]>("/projects/" + projectId + "/generations").then((r) => r.data),
   renameGeneration: (generationId: number, name: string) =>

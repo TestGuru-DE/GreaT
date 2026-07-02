@@ -20,6 +20,7 @@ from ..services import (
     status_for_assignment,
     load_error_values,
     sort_testcases_error_last,
+    calculate_generation_risk_summary,
 )
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
@@ -84,8 +85,9 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     return schemas.GenerateResponse(generation_id=gen.id, count=len(cases))
 
 
-@router.get("/generations/{gid}/testcases", response_model=List[schemas.TestCaseOut])
+@router.get("/generations/{gid}/testcases")
 def get_testcases(gid: int, db: Session = Depends(get_db)):
+    """REQ-3050 + REQ-3051: Testfälle mit risk_coverage + risk_summary."""
     gen = db.get(models.Generation, gid)
     if gen is None:
         raise HTTPException(status_code=404, detail="Generation not found.")
@@ -138,7 +140,15 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             "risk_coverage": float(risk_coverage),
         })
 
-    return out
+    # REQ-3051: Generierungsweite Risikoabdeckung berechnen
+    risk_summary = calculate_generation_risk_summary(
+        out, value_risk_map, len(categories)
+    )
+
+    return {
+        "testcases": out,
+        "risk_summary": risk_summary,
+    }
 
 
 @router.get("/generations/{gen_id}/export/csv")

@@ -20,6 +20,7 @@ export default function TestCasePanel({ projectId }: Props) {
   const {
     testcases, count, loading, error, strategy, setStrategy, generate,
     generations, generationsLoading, fetchGenerations, loadGeneration, generationId, renameGeneration,
+    riskSummary, // REQ-3051
   } = useGenerateStore();
 
   const [editingName, setEditingName] = useState<string | null>(null);
@@ -182,6 +183,28 @@ export default function TestCasePanel({ projectId }: Props) {
 
       {error && (
         <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+      )}
+
+      {/* REQ-3051: Risikoabdeckungs-Badge */}
+      {riskSummary && riskSummary.testcase_count > 0 && (
+        <div className="flex items-center gap-2">
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
+              riskSummary.risk_coverage_percent >= 80
+                ? "bg-green-100 text-green-800 border border-green-300"
+                : riskSummary.risk_coverage_percent >= 50
+                ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                : "bg-red-100 text-red-800 border border-red-300"
+            }`}
+            title={`Summe: ${riskSummary.total_risk.toFixed(1)} / Max: ${riskSummary.max_possible_risk.toFixed(1)}`}
+          >
+            <span className="text-base">🛡️</span>
+            <span>Risikoabdeckung: {riskSummary.risk_coverage_percent}%</span>
+          </div>
+          <span className="text-xs text-slate-400">
+            ({riskSummary.total_risk.toFixed(1)} / {riskSummary.max_possible_risk.toFixed(1)})
+          </span>
+        </div>
       )}
 
       {testcases.length === 0 && !loading ? (
