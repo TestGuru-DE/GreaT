@@ -6,8 +6,8 @@ echo.
 echo [1/2] Starte FastAPI Backend auf Port 8000...
 start "GREAT Backend" cmd /k "cd /d %~dp0 && set PYTHONPATH=src && python -m uvicorn src.app.main:app --reload --port 8000"
 
-:: Kurz warten
-timeout /t 3 /nobreak > nul
+:: Kurz warten (Backend-Start abwarten)
+timeout /t 5 /nobreak > nul
 
 :: Frontend starten
 echo [2/2] Starte React Frontend auf Port 5173...
