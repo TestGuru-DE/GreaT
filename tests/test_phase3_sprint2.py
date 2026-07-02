@@ -229,7 +229,8 @@ class TestGenerateWithRules:
         gen_id = r.json()["generation_id"]
         cases_r = client.get(f"/api/generations/{gen_id}/testcases")
         assert cases_r.status_code == 200
-        cases = cases_r.json()
+        data = cases_r.json()
+        cases = data["testcases"]  # REQ-3051
         for tc in cases:
             vals = tc["assignments"]
             assert not (vals.get("Browser") == "Chrome" and vals.get("OS") == "Linux"), \
@@ -252,7 +253,8 @@ class TestGenerateWithRules:
         assert r.status_code == 200
         gen_id = r.json()["generation_id"]
         cases_r = client.get(f"/api/generations/{gen_id}/testcases")
-        cases = cases_r.json()
+        data = cases_r.json()
+        cases = data["testcases"]  # REQ-3051
         found_forbidden = any(
             tc["assignments"].get("Browser") == "Chrome"
             and tc["assignments"].get("OS") == "Linux"

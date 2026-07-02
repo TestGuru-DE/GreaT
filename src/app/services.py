@@ -373,3 +373,51 @@ def normalize_value_by_vtype(vtype: str, raw: str) -> Tuple[Optional[str], Optio
 def bool_from_form(value: str) -> bool:
     """Checkbox-Wert aus HTML-Form ('on', 'true', '1', ...) in bool wandeln."""
     return str(value).strip().lower() in ("1", "true", "on", "yes", "y")
+
+
+# ---------------------------------------------------------------------------
+# REQ-3051: Risikoabdeckungs-Zusammenfassung
+# ---------------------------------------------------------------------------
+
+def calculate_generation_risk_summary(
+    testcases: list[dict],
+    value_risk_map: dict[str, float],
+    num_categories: int,
+) -> dict:
+    """
+    Berechnet Risikoabdeckungs-Kennzahlen für eine gesamte Generierung.
+    
+    Args:
+        testcases: Liste der Testfälle mit risk_coverage-Werten
+        value_risk_map: Mapping von Wert-String zu risk_weight
+        num_categories: Anzahl Kategorien im Projekt
+    
+    Returns:
+        {
+            "total_risk": float,          # Summe aller risk_coverage
+            "max_possible_risk": float,   # Theoretisches Maximum
+            "risk_coverage_percent": float,  # Prozentsatz 0-100
+            "testcase_count": int,
+        }
+    """
+    if not testcases or not value_risk_map:
+        return {
+            "total_risk": 0.0,
+            "max_possible_risk": 0.0,
+            "risk_coverage_percent": 0.0,
+            "testcase_count": len(testcases),
+        }
+    
+    max_weight = max(value_risk_map.values(), default=1.0)
+    max_per_testcase = num_categories * max_weight
+    max_possible = len(testcases) * max_per_testcase
+    
+    total_risk = sum(tc.get("risk_coverage", 0.0) for tc in testcases)
+    percent = round((total_risk / max_possible * 100), 1) if max_possible > 0 else 0.0
+    
+    return {
+        "total_risk": total_risk,
+        "max_possible_risk": max_possible,
+        "risk_coverage_percent": percent,
+        "testcase_count": len(testcases),
+    }

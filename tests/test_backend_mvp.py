@@ -51,7 +51,8 @@ def test_end_to_end_pairwise_generation(tmp_path):
     # 5) Testfälle lesen
     r = client.get(f"/api/generations/{gen_id}/testcases")
     assert r.status_code == 200
-    testcases = r.json()
+    data = r.json()
+    testcases = data["testcases"]  # REQ-3051: Response hat jetzt testcases und risk_summary
     assert len(testcases) == count
     assert "assignments" in testcases[0]
     # Prüfen, dass jede Zuordnung beide Kategorien enthält

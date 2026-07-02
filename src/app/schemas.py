@@ -71,6 +71,14 @@ class TestCaseOut(BaseModel):
     assignments: Dict[str, str]
     risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
 
+# REQ-3051: Risikoabdeckungs-Zusammenfassung
+class RiskSummary(BaseModel):
+    """Risikoabdeckungs-Statistik für eine gesamte Generierung."""
+    total_risk: float
+    max_possible_risk: float
+    risk_coverage_percent: float
+    testcase_count: int
+
 # REQ-2001: Generierungshistorie
 class GenerationSummary(BaseModel):
     id: int

@@ -53,4 +53,12 @@ export interface TestCaseOut {
   risk_coverage?: number;      // REQ-3050: Risikoabdeckung (Summe risk_weight)
 }
 
+// REQ-3051: Risikoabdeckungs-Zusammenfassung
+export interface RiskSummary {
+  total_risk: number;
+  max_possible_risk: number;
+  risk_coverage_percent: number;
+  testcase_count: number;
+}
+
 export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based" | "t_wise" | "mcdc";

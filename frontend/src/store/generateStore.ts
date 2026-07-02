@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
-import type { TestCaseOut, Strategy } from "../types";
+import type { TestCaseOut, Strategy, RiskSummary } from "../types";
 
 interface GenerateStore {
   testcases: TestCaseOut[];
@@ -13,6 +13,7 @@ interface GenerateStore {
   strategy: Strategy;
   generations: GenerationSummary[];
   generationsLoading: boolean;
+  riskSummary: RiskSummary | null; // REQ-3051
   setStrategy: (s: Strategy) => void;
   generate: (projectId: number, applyRules?: boolean, tStrength?: number) => Promise<void>;
   fetchGenerations: (projectId: number) => Promise<void>;
@@ -29,20 +30,22 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
   strategy: "each",
   generations: [],
   generationsLoading: false,
+  riskSummary: null, // REQ-3051
 
   setStrategy: (strategy) => set({ strategy }),
 
   generate: async (projectId, applyRules = false, tStrength = 2) => {
-    set({ loading: true, error: null, testcases: [] });
+    set({ loading: true, error: null, testcases: [], riskSummary: null });
     try {
       const res = await generateApi.run(projectId, { 
         strategy: get().strategy, 
         apply_rules: applyRules,
         t_strength: tStrength, // BUG-3: T-Wise Stärke
       });
-      const testcases = await generateApi.getTestcases(res.generation_id);
+      const data = await generateApi.getTestcases(res.generation_id);
       set({
-        testcases,
+        testcases: data.testcases,
+        riskSummary: data.risk_summary,
         generationId: res.generation_id,
         count: res.count,
         loading: false,
@@ -65,13 +68,14 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
   },
 
   loadGeneration: async (generationId) => {
-    set({ loading: true, error: null, testcases: [] });
+    set({ loading: true, error: null, testcases: [], riskSummary: null });
     try {
-      const testcases = await generateApi.getTestcases(generationId);
+      const data = await generateApi.getTestcases(generationId);
       set({
-        testcases,
+        testcases: data.testcases,
+        riskSummary: data.risk_summary,
         generationId,
-        count: testcases.length,
+        count: data.testcases.length,
         loading: false,
       });
     } catch (e) {
