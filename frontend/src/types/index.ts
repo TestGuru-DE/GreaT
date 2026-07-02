@@ -50,6 +50,7 @@ export interface TestCaseOut {
   name: string;
   assignments: Record<string, string>;
   _has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
+  risk_coverage?: number;      // REQ-3050: Risikoabdeckung (Summe risk_weight)
 }
 
 export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based" | "t_wise" | "mcdc";
