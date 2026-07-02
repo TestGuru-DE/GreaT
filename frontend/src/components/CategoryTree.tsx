@@ -1,5 +1,5 @@
 // REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
-// Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212)
+// Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
 import { categoriesApi } from "../api/client";
@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import DataClassDialog from "./DataClassDialog";
 import { BVADialog } from "./bva/BVADialog";
+import UndoRedoToolbar from "./ui/UndoRedoToolbar";
 
 interface Props { projectId: number; }
 
@@ -23,6 +24,7 @@ export default function CategoryTree({ projectId }: Props) {
     categories, values, loading, error,
     fetchCategories, createCategory, deleteCategory,
     fetchValues, createValue, deleteValue,
+    canUndo, canRedo, undo, redo, // REQ-3053
   } = useCategoryStore();
   const toast = useToastStore();
 
@@ -197,6 +199,14 @@ export default function CategoryTree({ projectId }: Props) {
 
   return (
     <div>
+      {/* REQ-3053: Undo/Redo Toolbar */}
+      <UndoRedoToolbar 
+        canUndo={canUndo} 
+        canRedo={canRedo} 
+        onUndo={undo} 
+        onRedo={redo} 
+      />
+
       {/* Neue Kategorie */}
       <form onSubmit={handleAddCategory} className="flex gap-2 mb-4">
         <input ref={newCatRef} value={newCatName}
@@ -425,6 +435,7 @@ export default function CategoryTree({ projectId }: Props) {
       <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 space-y-0.5">
         <p>Alt+N: Neue Kategorie &nbsp; DEL: Löschen &nbsp; F2/Doppelklick: Umbenennen</p>
         <p>Rechtsklick: Kontextmenü &nbsp; Ziehen: Sortieren</p>
+        <p>Strg+Z: Rückgängig &nbsp; Strg+Y: Wiederholen</p>
       </div>
     </div>
   );
