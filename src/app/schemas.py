@@ -157,3 +157,24 @@ class RuleRead(BaseModel):
     then_values_json: Optional[str] = None
     conflict_with: List[int] = []
     model_config = ConfigDict(from_attributes=True)
+
+
+# REQ-3064: Multi-Range Boundary Value Analysis
+class BVARangeSchema(BaseModel):
+    """Ein Äquivalenzklassen-Bereich für Multi-Range-BVA."""
+    min_val: str
+    max_val: str
+    allowed: bool = True
+
+
+class BVAMultiRangeRequest(BaseModel):
+    """Request für Multi-Range BVA."""
+    ranges: List[BVARangeSchema]
+    points: int = Field(default=2, ge=2, le=4)  # 2, 3 oder 4
+    
+    @field_validator("ranges")
+    @classmethod
+    def validate_ranges(cls, v: List[BVARangeSchema]) -> List[BVARangeSchema]:
+        if not v:
+            raise ValueError("Mindestens ein Bereich erforderlich")
+        return v

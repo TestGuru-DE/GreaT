@@ -7,6 +7,7 @@ Boundary Value Analysis (BVA) - ISTQB-konform.
 
 Quelle: ISTQB Foundation Level Syllabus, Boundary Value Analysis.
 """
+from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from typing import Union
 
@@ -74,3 +75,93 @@ def generate_bva_values(
             else:
                 result.append(str(v))
     return result
+
+
+# ---------------------------------------------------------------------------
+# REQ-3064: Multi-Range Boundary Value Analysis
+# ---------------------------------------------------------------------------
+
+@dataclass
+class BVARange:
+    """Repräsentiert einen Äquivalenzklassen-Bereich."""
+    min_val: str
+    max_val: str
+    allowed: bool  # True = erlaubt, False = nicht erlaubt (=Fehlerwerte)
+
+
+@dataclass  
+class BVAMultiRangeResult:
+    """Ergebnis einer Multi-Range-BVA."""
+    value: str
+    is_error: bool
+    source_range: str  # z.B. "1-100 (erlaubt)"
+
+
+def generate_multi_range_bva(
+    ranges: list[BVARange],
+    points: int = 2,
+) -> list[BVAMultiRangeResult]:
+    """
+    Generiert ISTQB-konforme Grenzwert-Testdaten für mehrere Äquivalenzklassen.
+    
+    REQ-3064: Mehrere angrenzende Bereiche mit erlaubt/nicht-erlaubt-Markierung.
+    
+    Regeln:
+    - Werte in nicht-erlaubten Bereichen → is_error=True
+    - Werte außerhalb aller Bereiche → is_error=True  
+    - Keine Redundanz bei angrenzenden Grenzen
+    - Aufsteigend sortiert
+    
+    Args:
+        ranges: Liste von BVARange-Objekten
+        points: 2, 3 oder 4 Werte pro Grenze
+        
+    Returns:
+        Liste von BVAMultiRangeResult-Objekten (dedupliziert, sortiert)
+    """
+    if not ranges:
+        return []
+    
+    # Alle Kandidaten mit Metadaten sammeln
+    all_candidates: dict[Decimal, BVAMultiRangeResult] = {}
+    
+    for r in ranges:
+        lo = Decimal(str(r.min_val))
+        hi = Decimal(str(r.max_val))
+        
+        raw_values = generate_bva_values(str(lo), str(hi), points)
+        
+        for v_str in raw_values:
+            v = Decimal(v_str)
+            if v in all_candidates:
+                continue  # Duplikat aus anderem Bereich überspringen
+            
+            # Bestimme ob Fehler
+            is_err = _classify_value(v, ranges)
+            
+            source = f"{r.min_val}-{r.max_val} ({'erlaubt' if r.allowed else 'nicht erlaubt'})"
+            all_candidates[v] = BVAMultiRangeResult(
+                value=v_str,
+                is_error=is_err,
+                source_range=source,
+            )
+    
+    # Aufsteigend sortiert
+    return [all_candidates[k] for k in sorted(all_candidates.keys())]
+
+
+def _classify_value(v: Decimal, ranges: list[BVARange]) -> bool:
+    """
+    Gibt True zurück wenn v ein Fehlerwert ist.
+    
+    Regeln:
+    - In nicht-erlaubtem Bereich: True
+    - Außerhalb aller Bereiche: True
+    - In erlaubtem Bereich: False
+    """
+    for r in ranges:
+        lo = Decimal(str(r.min_val))
+        hi = Decimal(str(r.max_val))
+        if lo <= v <= hi:
+            return not r.allowed  # In nicht-erlaubtem Bereich = Fehler
+    return True  # Außerhalb aller Bereiche = Fehler
