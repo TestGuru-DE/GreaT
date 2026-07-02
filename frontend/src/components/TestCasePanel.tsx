@@ -31,7 +31,11 @@ export default function TestCasePanel({ projectId }: Props) {
     fetchGenerations(projectId);
   }, [projectId, fetchGenerations]);
 
-  const rows = testcases.map((tc, i) => ({ "#": i + 1, ...tc.assignments } as Record<string, unknown>));
+  const rows = testcases.map((tc, i) => ({
+    "#": i + 1,
+    "Risiko": tc.risk_coverage ?? 0,
+    ...tc.assignments,
+  } as Record<string, unknown>));
   const { sorted, sortCol, sortDir, toggleSort } = useSortableTable(rows);
   const columns = testcases.length > 0 ? Object.keys(testcases[0].assignments) : [];
 
@@ -202,6 +206,14 @@ export default function TestCasePanel({ projectId }: Props) {
                 <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 w-10 select-none">
                   #
                 </th>
+                {/* REQ-3050: Risiko-Spalte */}
+                <th
+                  onClick={() => toggleSort("Risiko")}
+                  className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 cursor-pointer hover:bg-slate-100 select-none whitespace-nowrap w-16"
+                  title="Risikoabdeckung (Summe der risk_weight-Werte)"
+                >
+                  Risiko{sortIcon("Risiko")}
+                </th>
                 {columns.map((col) => (
                   <th key={col}
                     onClick={() => toggleSort(col)}
@@ -213,8 +225,10 @@ export default function TestCasePanel({ projectId }: Props) {
             </thead>
             <tbody>
               {sorted.map((row, i) => {
-                const tc = testcases[i]; // Original-Testcase für _has_error_value
+                // Finde Original-Testcase für _has_error_value
+                const tc = testcases.find(t => t.name === (row["name"] ?? `TC_${row["#"]}`));
                 const hasError = tc?._has_error_value ?? false;
+                const risk = Number(row["Risiko"] ?? 0);
                 return (
                   <tr key={i} className={
                     "border-b border-slate-100 hover:bg-sky-50 transition-colors " +
@@ -222,7 +236,9 @@ export default function TestCasePanel({ projectId }: Props) {
                       ? "bg-red-50 border-l-4 border-l-red-500" 
                       : i % 2 === 0 ? "bg-white" : "bg-slate-50/50")
                   }>
-                    <td className="px-3 py-1.5 text-slate-400 text-xs">{i + 1}</td>
+                    <td className="px-3 py-1.5 text-slate-400 text-xs">{String(row["#"] ?? "")}</td>
+                    {/* REQ-3050: Risiko-Zelle */}
+                    <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{risk.toFixed(1)}</td>
                     {columns.map((col) => (
                       <td key={col} className="px-3 py-1.5 text-slate-700">{String(row[col] ?? "-")}</td>
                     ))}

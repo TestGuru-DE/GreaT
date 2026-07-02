@@ -98,6 +98,15 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
     )
     name_by_id = {c.id: c.name for c in categories}
 
+    # REQ-3050: risk_weight-Map laden (value_string -> risk_weight)
+    all_values = (
+        db.query(models.Value)
+        .join(models.Category)
+        .filter(models.Category.project_id == gen.project_id)
+        .all()
+    )
+    value_risk_map = {v.value: v.risk_weight for v in all_values}
+
     testcases = (
         db.query(models.TestCase)
         .filter(models.TestCase.generation_id == gid)
@@ -118,7 +127,16 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
         )
         assignments = {name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value for v in vals}
         has_error = any(v in error_values for v in assignments.values())
-        out.append({"name": tc.name, "assignments": assignments, "_has_error_value": has_error})
+        
+        # REQ-3050: Risikoabdeckung berechnen (Summe der risk_weight)
+        risk_coverage = sum(value_risk_map.get(val, 1) for val in assignments.values())
+        
+        out.append({
+            "name": tc.name,
+            "assignments": assignments,
+            "_has_error_value": has_error,
+            "risk_coverage": float(risk_coverage),
+        })
 
     return out
 

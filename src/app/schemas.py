@@ -69,6 +69,7 @@ class GenerateResponse(BaseModel):
 class TestCaseOut(BaseModel):
     name: str
     assignments: Dict[str, str]
+    risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
 
 # REQ-2001: Generierungshistorie
 class GenerationSummary(BaseModel):
