@@ -1,4 +1,4 @@
-// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004: Testfall-Generierung mit sortierbarer Tabelle und History
+// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052: Testfall-Generierung mit Office-ähnlicher Tabelle
 import { useEffect, useState } from "react";
 import { useGenerateStore } from "../store/generateStore";
 import { useSortableTable } from "../hooks/useSortableTable";
@@ -44,6 +44,43 @@ export default function TestCasePanel({ projectId }: Props) {
     const genId = useGenerateStore.getState().generationId;
     if (!genId) return;
     window.open("/api/generations/" + genId + "/export/" + format, "_blank");
+  };
+
+  // REQ-3052: Client-seitiger CSV-Export
+  const exportTableAsCSV = () => {
+    if (testcases.length === 0) return;
+    
+    // Header-Zeile erstellen
+    const headers = ["#", "Risiko", ...columns];
+    const csvHeader = headers.map(h => `"${h}"`).join(";");
+    
+    // Datenzeilen erstellen
+    const csvRows = sorted.map((row) => {
+      const values = [
+        String(row["#"] ?? ""),
+        String(Number(row["Risiko"] ?? 0).toFixed(1)),
+        ...columns.map(col => {
+          const val = String(row[col] ?? "-");
+          return `"${val.replace(/"/g, '""')}"`;
+        })
+      ];
+      return values.join(";");
+    });
+    
+    // CSV zusammenbauen (mit BOM für Excel)
+    const csv = [csvHeader, ...csvRows].join("\r\n");
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+    
+    // Download auslösen
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `testfaelle_${generationId ?? Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const sortIcon = (col: string) => {
@@ -165,6 +202,12 @@ export default function TestCasePanel({ projectId }: Props) {
         {testcases.length > 0 && (
           <div className="flex gap-2 ml-auto items-center">
             <span className="text-xs text-slate-400">{count} Testfälle</span>
+            {/* REQ-3052: Client-seitiger CSV-Export */}
+            <button onClick={exportTableAsCSV}
+              className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              title="Aktuelle Tabellen-Ansicht als CSV exportieren (inkl. Sortierung)">
+              📥 CSV (Tabelle)
+            </button>
             <button onClick={() => handleExport("json")}
               className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50">
               JSON
@@ -175,7 +218,7 @@ export default function TestCasePanel({ projectId }: Props) {
             </button>
             <button onClick={() => handleExport("csv")}
               className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50">
-              CSV
+              CSV (API)
             </button>
           </div>
         )}
@@ -222,11 +265,12 @@ export default function TestCasePanel({ projectId }: Props) {
           Lade Testfälle...
         </div>
       ) : (
-        <div className="flex-1 overflow-auto rounded-xl border border-slate-200">
+        <div className="flex-1 overflow-auto rounded-xl border border-slate-200 shadow-sm">
           <table className="w-full text-sm border-collapse">
-            <thead className="sticky top-0 z-10">
+            {/* REQ-3052: Sticky Header mit Schatten beim Scrollen */}
+            <thead className="sticky top-0 z-10 bg-slate-50 shadow-md">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 w-10 select-none">
+                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 w-12 select-none">
                   #
                 </th>
                 {/* REQ-3050: Risiko-Spalte */}
