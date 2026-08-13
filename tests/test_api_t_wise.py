@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app import models
-from app.db import SessionLocal
+from app.database import SessionLocal
 
 
 client = TestClient(app)
@@ -118,3 +118,4 @@ def test_api_t_wise_default_t_is_2(test_db):
     
     # Sollten gleiche Anzahl erzeugen
     assert count1 == count2
+

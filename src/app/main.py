@@ -11,7 +11,7 @@ from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST
-from .db import Base, engine
+from .database import Base, engine
 from .routers import api_projects, api_generate, api_dataclasses, api_health
 from .system_dataclasses import seed_system_dataclasses
 
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     _migrate_db()
     # REQ-2005: System-Datenklassen beim ersten Start anlegen
-    from .db import SessionLocal
+    from .database import SessionLocal
     db = SessionLocal()
     try:
         seed_system_dataclasses(db)

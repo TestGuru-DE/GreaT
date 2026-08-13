@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import relationship
-from .db import Base
+from .database import Base
 from sqlalchemy import Boolean, String
 
 
@@ -10,6 +10,8 @@ class Project(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(200), unique=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
+                        onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     categories = relationship("Category", back_populates="project", cascade="all, delete-orphan")
     generations = relationship("Generation", back_populates="project", cascade="all, delete-orphan")
@@ -20,6 +22,9 @@ class Category(Base):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(200), nullable=False)
     order_index = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
+                        onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     project = relationship("Project", back_populates="categories")
     values = relationship("Value", back_populates="category", cascade="all, delete-orphan")
@@ -34,6 +39,9 @@ class Value(Base):
     vtype = Column(String(20), nullable=False, default="string") # NEU
     order_index = Column(Integer, nullable=False, default=0)
     is_default = Column(Boolean, nullable=False, default=False)  # REQ-3008
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
+                        onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     category = relationship("Category", back_populates="values")
 
@@ -44,6 +52,8 @@ class Generation(Base):
     strategy = Column(String(50), nullable=False)
     name = Column(String(300), nullable=True)  # REQ-2004: Editierbarer Name
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
+                        onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     coverage_meta = Column(Text, nullable=True)  # JSON-String (optional)ing (optional)
 
     project = relationship("Project", back_populates="generations")

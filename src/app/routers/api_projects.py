@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field as PydanticField
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..database import get_db
 from .. import models, schemas
 from combinatorics.boundary_value import generate_bva_values, BVAError
 
@@ -462,3 +462,4 @@ def generate_bva_for_category(cid: int, payload: BvaRequest, db: Session = Depen
         db.add(v)
     db.commit()
     return BvaResponse(values=bva_values, category_id=cid)
+

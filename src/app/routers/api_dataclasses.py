@@ -9,7 +9,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..database import get_db
 from .. import models, schemas
 from ..dataclass_validator import validate_value, DATACLASS_TYPES
 
