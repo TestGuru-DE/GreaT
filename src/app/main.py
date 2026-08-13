@@ -2,7 +2,9 @@
 # DEBT-002 behoben: on_event(startup) -> Lifespan Context Manager
 # REQ-1202: React-Frontend wird als StaticFiles ausgeliefert (Production Build)
 # REQ-4007: GREAT_PORT Umgebungsvariable für portierbare Konfiguration
+# REQ-4009: Strukturiertes Logging via structlog
 import os
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -14,8 +16,13 @@ from .config import GREAT_PORT, GREAT_HOST
 from .database import Base, engine
 from .routers import api_projects, api_generate, api_dataclasses, api_health
 from .system_dataclasses import seed_system_dataclasses
+from .logging_config import setup_logging, get_logger
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
+
+# REQ-4009: Logging initialisieren
+setup_logging()
+log = get_logger("great.api")
 
 
 @asynccontextmanager
@@ -33,6 +40,34 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="G.R.E.A.T. API", version="1.0.0", lifespan=lifespan)
+
+
+# REQ-4009: Request/Response-Logging Middleware
+@app.middleware("http")
+async def log_requests(request, call_next):
+    """Strukturiertes Logging für HTTP-Requests und Responses."""
+    start = time.time()
+    try:
+        response = await call_next(request)
+        duration = round((time.time() - start) * 1000, 2)
+        log.info(
+            "http_request",
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=duration,
+        )
+        return response
+    except Exception as exc:
+        duration = round((time.time() - start) * 1000, 2)
+        log.error(
+            "http_request_failed",
+            method=request.method,
+            path=request.url.path,
+            duration_ms=duration,
+            error=str(exc),
+        )
+        raise
 
 
 def _migrate_db() -> None:

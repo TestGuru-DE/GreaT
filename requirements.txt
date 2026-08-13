@@ -14,5 +14,8 @@ alembic>=1.13.0
 python-multipart>=0.0.9
 python-dotenv>=1.0.0
 
+# REQ-4009: Strukturiertes Logging via structlog
+structlog>=24.0.0
+
 # REQ-4006: PostgreSQL Support (optional, für Multi-User-Betrieb)
 psycopg2-binary>=2.9.0; python_version >= '3.8'
