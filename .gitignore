@@ -53,6 +53,11 @@ frontend/dist/
 frontend/build/
 frontend/.vite/
 
+# Playwright
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/
+
 # Lokale Agent-/Copilot-Customizations (NUR lokal, NIEMALS ins oeffentliche Repo pushen!)
 # WICHTIG: Dateien bleiben auf der Festplatte erhalten, werden nur nicht getrackt.
 .github/
