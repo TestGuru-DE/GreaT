@@ -24,15 +24,22 @@ cd frontend && npm install && npm run build && cd ..
 
 Vollstaendige Anleitung: [QUICKSTART.md](QUICKSTART.md)
 
-**Einfachste Methode:** Doppelklick auf `Start.bat`
+**Für Anwender (ein Befehl):**
+- **Windows:** Doppelklick auf `Start.bat`
+- **Linux/Raspberry Pi:** `chmod +x Start.sh && ./Start.sh`
 
-**Oder manuell:**
+Öffne dann: **http://localhost:8000**
+
+**Für Entwickler (mit Hot-Reload):**
+- **Windows:** Doppelklick auf `Start-Dev.bat`
+  - Backend: http://localhost:8000
+  - Frontend Dev: http://localhost:5173 (Vite Hot-Reload)
+
+**Manuell (ohne Batch/Shell-Skripte):**
 ```cmd
 set PYTHONPATH=src
 python -m uvicorn src.app.main:app --reload --port 8000
 ```
-
-Browser oeffnen: **http://localhost:8000**
 
 ---
 

@@ -233,7 +233,7 @@ def export_generation_csv(
         if bom_default and enc == "utf-8":
             data_bytes = b"\xef\xbb\xbf" + data_bytes
 
-    filename = f"tanos_generation_{gen.id}.csv"
+    filename = f"great_generation_{gen.id}.csv"
     resp_headers = {
         "Content-Disposition": f'attachment; filename="{filename}"',
         "Content-Type": f"text/csv; charset={content_charset}",
@@ -295,7 +295,7 @@ def export_generation_json(gen_id: int, db: Session = Depends(get_db)):
     return Response(
         content=json.dumps(payload, ensure_ascii=False, indent=2),
         media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="tanos_generation_{gen.id}.json"'},
+        headers={"Content-Disposition": f'attachment; filename="great_generation_{gen.id}.json"'},
     )
 
 
@@ -367,7 +367,7 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
     wb.save(buffer)
     buffer.seek(0)
 
-    filename = f"tanos_generation_{gen.id}.xlsx"
+    filename = f"great_generation_{gen.id}.xlsx"
     mime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     return Response(
         content=buffer.read(),

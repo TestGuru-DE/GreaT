@@ -18,7 +18,7 @@ from app.system_dataclasses import seed_system_dataclasses
 def pytest_configure(config):
     """DB-Migration + System-Datenklassen-Seed vor dem ersten Test."""
     Base.metadata.create_all(bind=engine)
-    _migrate_db(engine)
+    _migrate_db()
     db = SessionLocal()
     try:
         seed_system_dataclasses(db)
