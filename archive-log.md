@@ -103,3 +103,29 @@ Die Werte sind nun als vorinstallierte, löschgeschützte Datenklassen in der DB
 - Connection-Pool: pool_size=5 (SQLite), pool_size=10 (PostgreSQL)
 - PostgreSQL-Support via DATABASE_URL (optional)
 
+## 2026-08-13 – Sprint 8: Single Entry Point (Port 8000)
+
+**Grund**: Single Entry Point Architektur – React-Frontend wird nur noch via Port 8000 ausgeliefert (keine separaten Vite Dev Server Nutzern bekannt).
+
+**Archiviert nach:** `archive/2026-08-13/`
+
+| Datei | Original-Pfad | Grund |
+|---|---|---|
+| ui_projects.py | src/app/routers/ui_projects.py | HTMX-Legacy, nicht mehr in main.py inkludiert |
+| ui_generate.py | src/app/routers/ui_generate.py | HTMX-Legacy, nicht mehr in main.py inkludiert |
+| templates/ | src/app/templates/ | HTMX-Templates für ui_*.py, nicht mehr verwendet |
+
+**Änderungen in main.py:**
+- Keine Änderung: ui_*-Router waren bereits archiviert (2026-06-29), nicht inkludiert
+
+**Änderungen in api_generate.py:**
+- tanos_generation_*.csv → great_generation_*.csv
+- tanos_generation_*.json → great_generation_*.json
+- tanos_generation_*.xlsx → great_generation_*.xlsx
+
+**Neue Startskripte:**
+- `Start.bat` (vereinfacht): Nur Backend auf Port 8000 für Anwender
+- `Start-Dev.bat` (neu): Backend (8000) + Vite Dev Server (5173) für Entwickler
+- `Start.sh` (aktualisiert): Wie Start.bat für Linux/Raspberry Pi
+
+

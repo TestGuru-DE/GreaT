@@ -1,5 +1,5 @@
 #!/bin/bash
-# Start.sh – G.R.E.A.T. Startskript für Linux / Raspberry Pi
+# Start.sh – G.R.E.A.T. Startskript für Linux / Raspberry Pi (Produktiv)
 # REQ-0010: Zielplattform Raspberry Pi
 # REQ-4007: GREAT_PORT Umgebungsvariable
 #
@@ -26,29 +26,32 @@ fi
 
 echo "Python $PYTHON_VERSION gefunden."
 
-# Abhängigkeiten installieren (falls noch nicht geschehen)
-if [ ! -d ".venv" ]; then
-    echo "Erstelle virtuelle Umgebung..."
-    $PYTHON -m venv .venv
+# Virtual Environment aktivieren falls vorhanden
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
 fi
-
-source .venv/bin/activate
 
 echo "Installiere Abhängigkeiten..."
 pip install -r requirements.txt --quiet
+
+# Einmaliger Frontend-Build falls dist/ fehlt
+if [ ! -d "frontend/dist" ]; then
+    echo "Frontend-Build wird erstellt..."
+    cd frontend && npm install --quiet && npm run build --quiet && cd ..
+fi
 
 # Port konfigurieren (REQ-4007: GREAT_PORT Umgebungsvariable)
 GREAT_PORT=${GREAT_PORT:-8000}
 
 # Server starten
 echo ""
-echo "╔══════════════════════════════════════════╗"
-echo "║  G.R.E.A.T. – Test Case Designer         ║"
-echo "║  Port: $GREAT_PORT                             ║"
+echo "╔═══════════════════════════════════════════╗"
+echo "║  G.R.E.A.T. – Test Case Designer          ║"
+echo "║  Port: $GREAT_PORT                              ║"
 echo "║  http://localhost:$GREAT_PORT                   ║"
 echo "║  API-Doku: http://localhost:$GREAT_PORT/docs    ║"
-echo "╚══════════════════════════════════════════╝"
+echo "╚═══════════════════════════════════════════╝"
 echo ""
 
-GREAT_PORT=$GREAT_PORT uvicorn app.main:app --reload --app-dir src --reload-dir src --port $GREAT_PORT
+GREAT_PORT=$GREAT_PORT python -m uvicorn src.app.main:app --host 0.0.0.0 --port "$GREAT_PORT"
 
