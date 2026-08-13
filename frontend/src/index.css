@@ -15,16 +15,16 @@
 
 /* Dark Theme */
 .theme-dark {
-  --color-bg: #0f172a;
-  --color-surface: #1e293b;
-  --color-surface-hover: #334155;
-  --color-border: #334155;
-  --color-text-primary: #f1f5f9;
+  --color-bg: #1a1a2e;
+  --color-surface: #16213e;
+  --color-surface-hover: #0f3460;
+  --color-border: #533483;
+  --color-text-primary: #e2e8f0;
   --color-text-secondary: #94a3b8;
   --color-text-muted: #64748b;
-  --color-accent: #60a5fa;
-  --color-accent-hover: #93c5fd;
-  --color-accent-text: #1e293b;
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-text: #e2e8f0;
   --color-danger: #f87171;
   --color-success: #4ade80;
   --color-warning: #fbbf24;
@@ -33,19 +33,19 @@
 
 /* Steampunk Theme */
 .theme-steampunk {
-  --color-bg: #1c0f08;
-  --color-surface: #2c1a0e;
-  --color-surface-hover: #3d2415;
-  --color-border: #7a4b2a;
+  --color-bg: #1c1410;
+  --color-surface: #2d2016;
+  --color-surface-hover: #3d2c1e;
+  --color-border: #8b6914;
   --color-text-primary: #f5deb3;
-  --color-text-secondary: #d4a76a;
-  --color-text-muted: #a0724a;
-  --color-accent: #cd853f;
-  --color-accent-hover: #daa520;
-  --color-accent-text: #1c0f08;
-  --color-danger: #cc4444;
-  --color-success: #6b8f3e;
-  --color-warning: #c8922a;
+  --color-text-secondary: #c9a96e;
+  --color-text-muted: #9d8659;
+  --color-accent: #d4a017;
+  --color-accent-hover: #b8860b;
+  --color-accent-text: #f5deb3;
+  --color-danger: #ff6b35;
+  --color-success: #90a959;
+  --color-warning: #ffd700;
   color-scheme: dark;
 }
 
@@ -69,18 +69,18 @@
 
 /* Heavy Metal Theme */
 .theme-heavy-metal {
-  --color-bg: #0a0a0a;
-  --color-surface: #141414;
-  --color-surface-hover: #1f1f1f;
-  --color-border: #3a3a3a;
-  --color-text-primary: #c8c8c8;
-  --color-text-secondary: #909090;
-  --color-text-muted: #606060;
-  --color-accent: #8a8a9a;
-  --color-accent-hover: #aaaabc;
-  --color-accent-text: #0a0a0a;
-  --color-danger: #cc3333;
-  --color-success: #446644;
-  --color-warning: #887722;
+  --color-bg: #0d0d0d;
+  --color-surface: #1a1a1a;
+  --color-surface-hover: #2d2d2d;
+  --color-border: #dc143c;
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #a0a0a0;
+  --color-text-muted: #707070;
+  --color-accent: #dc143c;
+  --color-accent-hover: #b01030;
+  --color-accent-text: #f0f0f0;
+  --color-danger: #ff6b6b;
+  --color-success: #39ff14;
+  --color-warning: #ff8c00;
   color-scheme: dark;
 }
