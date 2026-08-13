@@ -5,7 +5,7 @@ Jeder generierte Testfall erhält ein risk_coverage-Feld (Summe der risk_weight-
 import pytest
 from fastapi.testclient import TestClient
 from src.app.main import app
-from src.app.db import SessionLocal, engine, Base
+from app.database import SessionLocal, engine, Base
 
 client = TestClient(app)
 
@@ -112,3 +112,4 @@ def test_risk_coverage_in_response(clean_db):
     tc = testcases[0]
     assert "risk_coverage" in tc
     assert tc["risk_coverage"] == 7.0
+

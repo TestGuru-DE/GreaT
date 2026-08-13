@@ -87,3 +87,19 @@ Die Werte sind nun als vorinstallierte, löschgeschützte Datenklassen in der DB
 **Lokal gesichert unter**: `C:\Users\georgh\GreaT_archive_local\archive-20260701-*`
 
 **Status**: Archive lokal gesichert, aus Repository entfernt (Public-Release-Hygiene).
+
+## 2026-07-02 – REQ-4006: Alte database.py (db.py) archiviert
+
+**Grund**: REQ-4006 Multi-User Support – Neue `src/app/database.py` mit WAL-Mode und Connection-Pool ersetzt alte `src/app/db.py`.
+
+**Archiviert nach:** `archive/2026-07-02/db_old.py`
+
+| Datei | Grund |
+|---|---|
+| src/app/db.py | Alte Datenbankverbindung ohne WAL-Mode und Pooling. Ersetzt durch `src/app/database.py` mit SQLite WAL-Mode + PostgreSQL Connection-Pool. |
+
+**Neue Features in database.py:**
+- SQLite: WAL-Mode für concurrent reads (verhindert "database is locked")
+- Connection-Pool: pool_size=5 (SQLite), pool_size=10 (PostgreSQL)
+- PostgreSQL-Support via DATABASE_URL (optional)
+

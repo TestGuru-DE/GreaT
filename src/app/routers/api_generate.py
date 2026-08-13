@@ -11,7 +11,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..database import get_db
 from .. import models, schemas
 from ..services import (
     load_categories_values,
@@ -374,3 +374,4 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
         media_type=mime,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+

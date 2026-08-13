@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.main import app
-from app.db import Base, get_db
+from app.database import Base, get_db
 from app import models
 
 # --- Isolierte Test-DB ---
@@ -120,3 +120,4 @@ class TestDeleteValue:
         """REQ-1206: Loeschen eines nicht vorhandenen Werts -> 404."""
         r = client.delete("/api/values/99999")
         assert r.status_code == 404
+

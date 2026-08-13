@@ -8,7 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.main import app
-from app.db import Base, get_db
+from app.database import Base, get_db
 from app import models
 from src.app.services import sort_testcases_error_last, load_error_values
 
@@ -123,4 +123,5 @@ def test_load_error_values(session, sample_project):
     assert "fehler2" in errors
     assert "normal" not in errors
     assert len(errors) == 2
+
 
