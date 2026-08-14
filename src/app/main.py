@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST
 from .database import Base, engine
-from .routers import api_projects, api_generate, api_dataclasses, api_health
+from .routers import api_projects, api_generate, api_dataclasses, api_health, api_backup
 from .system_dataclasses import seed_system_dataclasses
 from .logging_config import setup_logging, get_logger
 
@@ -113,6 +113,7 @@ app.include_router(api_projects.router, prefix="/api")
 app.include_router(api_generate.router, prefix="/api")
 app.include_router(api_dataclasses.router, prefix="/api")
 app.include_router(api_health.router, prefix="/api")
+app.include_router(api_backup.router)  # REQ-4011: Datensicherung & Wiederherstellung
 # REQ-3011: HTMX-Router archiviert (2026-06-29)
 
 # ---------------------------------------------------------------------------

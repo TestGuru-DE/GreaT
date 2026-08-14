@@ -19,3 +19,4 @@ structlog>=24.0.0
 
 # REQ-4006: PostgreSQL Support (optional, für Multi-User-Betrieb)
 psycopg2-binary>=2.9.0; python_version >= '3.8'
+cryptography>=42.0.0
