@@ -25,9 +25,35 @@ from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, Co
 # ---------------------------------------------------------------------------
 
 def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]:
-    """Gibt {Kategoriename: [erlaubte Werte + Fehlerwerte]} für ein Projekt zurück.
+    """Gibt {Kategoriename: [erlaubte Werte + Fehlerwerte]} für Kombinatorik zurück.
     
+    REQ-4016: is_result=True Kategorien werden AUSGESCHLOSSEN.
     BUG-6 Fix: Fehlerwerte (allowed == False) werden in die Generierung eingeschlossen.
+    """
+    cats = (
+        db.query(models.Category)
+        .filter(models.Category.project_id == project_id, models.Category.is_result == False)  # REQ-4016
+        .order_by(models.Category.order_index, models.Category.id)
+        .all()
+    )
+    if not cats:
+        return {}
+    result: Dict[str, List[str]] = {}
+    for c in cats:
+        values = (
+            db.query(models.Value)
+            .filter(models.Value.category_id == c.id)
+            .order_by(models.Value.id)
+            .all()
+        )
+        result[c.name] = [v.value for v in values]
+    return result
+
+
+def load_all_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]:
+    """Gibt {Kategoriename: [Werte]} für ALLE Kategorien zurück (auch is_result=True).
+    
+    Für Testfall-Anzeige und Export.
     """
     cats = (
         db.query(models.Category)
@@ -47,6 +73,34 @@ def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]
         )
         result[c.name] = [v.value for v in values]
     return result
+
+
+def load_result_categories(db: Session, project_id: int) -> List[dict]:
+    """Lädt alle Ergebnis-Kategorien (is_result=True) mit ihren Werten für die Testfall-Tabelle.
+    
+    REQ-4016: Rückgabe: [{"id": int, "name": str, "values": [{"id": int, "value": str}, ...]}, ...]
+    """
+    cats = (
+        db.query(models.Category)
+        .filter(models.Category.project_id == project_id, models.Category.is_result == True)
+        .order_by(models.Category.order_index, models.Category.id)
+        .all()
+    )
+    result = []
+    for c in cats:
+        values = (
+            db.query(models.Value)
+            .filter(models.Value.category_id == c.id)
+            .order_by(models.Value.id)
+            .all()
+        )
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "values": [{"id": v.id, "value": v.value} for v in values]
+        })
+    return result
+
 
 
 def load_error_values(db: Session, project_id: int) -> set:

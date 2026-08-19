@@ -13,11 +13,13 @@ export interface Category {
   id: number;
   name: string;
   order_index: number;
+  is_result?: boolean;  // REQ-4016: Ergebnis-Kategorie (Expected Result)
 }
 
 export interface CategoryCreate {
   name: string;
   order_index?: number;
+  is_result?: boolean;  // REQ-4016
 }
 
 export interface Value {

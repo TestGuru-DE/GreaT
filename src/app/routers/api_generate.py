@@ -15,6 +15,8 @@ from ..database import get_db
 from .. import models, schemas
 from ..services import (
     load_categories_values,
+    load_all_categories_values,  # REQ-4016
+    load_result_categories,  # REQ-4016
     generate_cases,
     assignment_from_testcase,
     status_for_assignment,
@@ -73,13 +75,23 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
         .all()
     )
     cat_by_name = {c.name: c.id for c in categories}
+    
+    # REQ-4016: Ergebnis-Kategorien laden
+    result_cat_ids = {c.id for c in categories if c.is_result}
 
     for idx, assignment in enumerate(cases, start=1):
         tc = models.TestCase(generation_id=gen.id, name=f"TC_{idx}")
         db.add(tc)
         db.flush()
+        
+        # Normale Kategorien (aus Generierung)
         for k, v in assignment.items():
             db.add(models.TestCaseValue(testcase_id=tc.id, category_id=cat_by_name[k], value=v))
+        
+        # REQ-4016: Ergebnis-Kategorien mit leeren Werten hinzufügen
+        for cat in categories:
+            if cat.is_result:
+                db.add(models.TestCaseValue(testcase_id=tc.id, category_id=cat.id, value=""))
 
     db.commit()
     return schemas.GenerateResponse(generation_id=gen.id, count=len(cases))
@@ -128,10 +140,10 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             .all()
         )
         assignments = {name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value for v in vals}
-        has_error = any(v in error_values for v in assignments.values())
+        has_error = any(v in error_values for v in assignments.values() if v)  # REQ-4016: Ignoriere leere Werte
         
-        # REQ-3050: Risikoabdeckung berechnen (Summe der risk_weight)
-        risk_coverage = sum(value_risk_map.get(val, 1) for val in assignments.values())
+        # REQ-3050: Risikoabdeckung berechnen (Summe der risk_weight, leere Werte = 0)
+        risk_coverage = sum(value_risk_map.get(val, 0) if val else 0 for val in assignments.values())
         
         out.append({
             "name": tc.name,
