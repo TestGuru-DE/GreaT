@@ -32,6 +32,7 @@ class ValueRead(BaseModel):
     risk_weight: int
     vtype: str = "string"
     allowed: bool = True
+    is_error: bool = False  # REQ-4015: Fehlerwert-Flag für BVA
     is_default: bool = False
     model_config = ConfigDict(from_attributes=True)
 

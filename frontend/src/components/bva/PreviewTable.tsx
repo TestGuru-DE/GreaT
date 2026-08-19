@@ -1,9 +1,9 @@
-// REQ-3041: PreviewTable – Live-Vorschau der zu erzeugenden Werte
+// REQ-3041, REQ-4015: PreviewTable – Live-Vorschau der zu erzeugenden Werte mit is_error
 import type { BVAPoint } from "../../lib/bva-calc";
 
 interface PreviewTableProps {
   points: BVAPoint[];
-  markAsErrorCase: boolean;
+  markAsErrorCase?: boolean;
 }
 
 export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
@@ -26,26 +26,34 @@ export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
           </tr>
         </thead>
         <tbody>
-          {points.map((pt, idx) => (
-            <tr
-              key={idx}
-              className="border-b border-slate-100 hover:bg-slate-50"
-            >
-              <td className="px-3 py-2 font-mono text-slate-800">{pt.value}</td>
-              <td className="px-3 py-2 text-slate-600">{pt.label}</td>
-              <td className="px-3 py-2">
-                {markAsErrorCase ? (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                    Fehlerfall
+          {points.map((pt, idx) => {
+            // REQ-4015: Prüfe ob is_error Feld vorhanden (MultiRangeBVAPoint)
+            const isError = (pt as any).isError;
+            const statusLabel = isError === true ? "Fehlerfall" : 
+                               markAsErrorCase ? "Fehlerfall" :
+                               "Erlaubt";
+            const statusBg = isError === true ? "bg-red-100 text-red-800" :
+                            markAsErrorCase ? "bg-red-100 text-red-800" :
+                            "bg-green-100 text-green-800";
+            
+            return (
+              <tr
+                key={idx}
+                className="border-b border-slate-100 hover:bg-slate-50"
+              >
+                <td className="px-3 py-2 font-mono text-slate-800">
+                  {isError && <span className="mr-1">✗</span>}
+                  {pt.value}
+                </td>
+                <td className="px-3 py-2 text-slate-600">{pt.label}</td>
+                <td className="px-3 py-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusBg}`}>
+                    {statusLabel}
                   </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                    Erlaubt
-                  </span>
-                )}
-              </td>
-            </tr>
-          ))}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
