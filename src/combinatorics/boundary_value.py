@@ -87,6 +87,7 @@ class BVARange:
     min_val: str
     max_val: str
     allowed: bool  # True = erlaubt, False = nicht erlaubt (=Fehlerwerte)
+    is_valid: bool = True  # REQ-4015: Explizites Flag für erlaubte/unerlaubte Äquivalenzklassen
 
 
 @dataclass  
