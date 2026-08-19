@@ -1,6 +1,7 @@
 // REQ-3002 + REQ-3045: Einstellungen + Theme-System
 // REQ-4011: Datensicherung & Wiederherstellung
-import { useState } from 'react'
+// REQ-4012: BugMagnet-Import
+import { useState, useEffect } from 'react'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 
 export default function SettingsPage() {
@@ -9,6 +10,11 @@ export default function SettingsPage() {
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
   const [restoreStatus, setRestoreStatus] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // REQ-4012: BugMagnet State
+  const [bugmagnetImported, setBugmagnetImported] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [importStatus, setImportStatus] = useState<string | null>(null)
 
   async function handleBackup() {
     setIsLoading(true)
@@ -51,6 +57,41 @@ export default function SettingsPage() {
       setRestoreStatus(`❌ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // REQ-4012: BugMagnet-Status beim Mount abfragen
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/dataclasses/bugmagnet-status')
+        if (r.ok) {
+          const d = await r.json()
+          setBugmagnetImported(d.imported)
+        }
+      } catch (err) {
+        console.error('BugMagnet-Status konnte nicht abgerufen werden:', err)
+      }
+    })()
+  }, [])
+
+  // REQ-4012: BugMagnet importieren
+  async function handleBugMagnetImport() {
+    setImporting(true)
+    setImportStatus(null)
+    try {
+      const r = await fetch('/api/dataclasses/bugmagnet-import', { method: 'POST' })
+      const d = await r.json()
+      if (r.ok) {
+        setBugmagnetImported(true)
+        setImportStatus(`✅ ${d.categories_imported} Kategorien importiert`)
+      } else {
+        setImportStatus(`❌ Fehler: ${d.detail}`)
+      }
+    } catch (e) {
+      setImportStatus(`❌ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -122,6 +163,33 @@ export default function SettingsPage() {
               )}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* REQ-4012: Datenklassen / BugMagnet Import */}
+      <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">🗂️ Datenklassen</h2>
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            Beispielklassen Importieren von Bug Magnet Git.<br />
+            <span className="text-xs text-slate-500 dark:text-slate-400">Für die Inhalte ist der Urheber verantwortlich.</span>
+          </p>
+          <a
+            href="https://github.com/gojko/bugmagnet/blob/master/template/config.json"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline block"
+          >
+            github.com/gojko/bugmagnet/blob/master/template/config.json
+          </a>
+          <button
+            onClick={handleBugMagnetImport}
+            disabled={importing}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition"
+          >
+            {importing ? '⏳ Importiere...' : bugmagnetImported ? '🔄 Aktualisieren' : '📥 Importieren'}
+          </button>
+          {importStatus && <p className="text-sm text-slate-700 dark:text-slate-300 p-2 bg-slate-100 dark:bg-slate-700 rounded">{importStatus}</p>}
         </div>
       </section>
     </main>
