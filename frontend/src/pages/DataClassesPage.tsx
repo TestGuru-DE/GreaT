@@ -146,6 +146,7 @@ export default function DataClassesPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bugmagnetImported, setBugmagnetImported] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -206,6 +207,30 @@ export default function DataClassesPage() {
     }
   };
 
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportMessage("");
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const r = await fetch('/api/dataclasses/import-user', { method: 'POST', body: formData });
+      const d = await r.json();
+      if (r.ok) {
+        setImportMessage(`✅ ${d.imported} Datenklasse(n) importiert`);
+        await load();
+        setTimeout(() => setImportMessage(""), 3000);
+      } else {
+        setImportMessage(`❌ Fehler: ${d.detail}`);
+      }
+    } catch (err) {
+      setImportMessage(`❌ Fehler: ${String(err)}`);
+    }
+    e.target.value = '';
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
@@ -264,6 +289,37 @@ export default function DataClassesPage() {
 
         {/* Datenklassen-Liste */}
         <h2 className="text-base font-semibold text-slate-700 mb-3">Vorhandene Datenklassen ({dataclasses.length})</h2>
+        
+        {/* REQ-4013: Import/Export Kasten */}
+        <div className="p-4 rounded-lg bg-white border border-slate-200 mb-4 shadow-sm">
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">📁 Meine Datenklassen – Import / Export</h3>
+          <div className="flex gap-3 flex-wrap items-center">
+            {/* Export */}
+            <a
+              href="/api/dataclasses/export-user"
+              download="my-dataclasses.json"
+              className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm font-medium"
+            >
+              📤 Exportieren
+            </a>
+            {/* Import */}
+            <label className="px-4 py-2 bg-white border border-slate-300 rounded cursor-pointer hover:bg-slate-50 text-sm text-slate-700 font-medium">
+              📥 Importieren
+              <input
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </label>
+          </div>
+          {importMessage && (
+            <p className={`text-sm mt-3 ${importMessage.includes("✅") ? "text-green-600" : "text-red-600"}`}>
+              {importMessage}
+            </p>
+          )}
+        </div>
+
         {loading ? (
           <p className="text-slate-400 text-sm">Lade...</p>
         ) : dataclasses.length === 0 ? (
