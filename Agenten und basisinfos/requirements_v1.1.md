@@ -1746,6 +1746,102 @@ damit ich bei passenden Modellen eine normierte und kompakte Abdeckung nutzen ka
 
 ---
 
+## EPIC-17 - Sprint 9 Backlog
+
+### REQ-4012 | Datenklassen-Überarbeitung + BugMagnet-Import
+**Titel:** System-Datenklassen umbenannt, Live-Import von BugMagnet GitHub
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Nutzer
+moechte ich System-Datenklassen als "Beispiele" nutzen und BugMagnet-Datenklassen live importieren koennen
+damit ich schnell professionelle Testdaten fuer meine Projekte verfuegbar habe.
+**Akzeptanzkriterien:**
+- System-Datenklassen sind in der UI als "Beispiele" benannt
+- Settings-Seite zeigt "Datenklassen"-Bereich mit Import-Button
+- Live-Import von BugMagnet GitHub https://github.com/gojko/bugmagnet funktioniert
+- Nach erfolgreichen Import wechselt Bezeichnung zu "Bug Magnet Import"
+- Endpoints vorhanden: POST /api/dataclasses/bugmagnet-import, GET /api/dataclasses/bugmagnet-status
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4013 | Eigene Datenklassen Import/Export JSON
+**Titel:** JSON-basierter Import/Export fuer benutzerdefinierte Datenklassen
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Nutzer
+moechte ich meine Datenklassen als JSON exportieren und importieren koennen
+damit ich diese zwischen Projekten portieren und mit anderen teilen kann.
+**Akzeptanzkriterien:**
+- Export-Funktion: eigene Datenklassen als JSON herunterladen
+- Import-Funktion: JSON-Datei hochladen mit Merge-Strategie
+- Legacy-Format wird korrekt unterstuetzt
+- UI-Kasten sitzt oben in "Meine Datenklassen"
+- Endpoints vorhanden: GET /api/dataclasses/export-user, POST /api/dataclasses/import-user
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4014 | Kategorien & Werte – Tabellarische Ansicht + Drag & Drop
+**Titel:** Spalten-Header, Drag-Drop-Umsortierung und verbesserte BVA/Default-Markierung
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich Kategoriewerte tabellarisch mit Spalten-Header anzeigen und per Drag-Drop umsortieren koennen
+damit ich die Reihenfolge intuitiv und schnell anpasse.
+**Akzeptanzkriterien:**
+- Werte-Tabelle hat Spalten-Header (Reihenfolge, Wert, Aktionen)
+- Werte sind per Drag-Drop umsortierbar, Reihenfolge wird gespeichert
+- BVA-Symbol ist groesser mit "BVA"-Label gekennzeichnet
+- Default-Markierung zeigt ★ statt ?
+- Endpoint PUT /api/dataclasses/{id}/values/reorder ist implementiert
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4015 | BVA-Visualisierung überarbeitet + Fehlerwert-Bug-Fix
+**Titel:** Symbolischer Zahlenstrahl mit Farbkodierung und is_error-Korrektur
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich BVA-Bereiche mit besserer Visualisierung und farblicher Unterscheidung sehen
+damit ich komplexe Multi-Range-Modelle schnell erfasse.
+**Akzeptanzkriterien:**
+- Symbolischer Zahlenstrahl mit gleichmaessigen Abststaenden (Lesbarkeit > Masseinheiten)
+- Multi-Range: jede Aequivalenzklasse farbig unterschieden, Luecken ausgegraut
+- BVARange.is_valid: erlaubte/unerlaubte Aequivalenzklassen explizit markierbar
+- Fehlerwert-Bug behoben: is_error korrekt in Kategorien & Werte angezeigt
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4016 | Neuer Typ "Ergebnis" für Kategorien (ISTQB Expected Result)
+**Titel:** Ergebnis-Kategorien nicht automatisch in Kombinatorik einbezogen
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich Kategorien als "Ergebnis-Kategorien" markieren koennen, die nicht automatisch in die Kombinatorik einbezogen werden
+damit ich ISTQB-konform nur erwartete Ergebnisse manuell oder regelbasiert befuelle.
+**Akzeptanzkriterien:**
+- Kategorien sind als "Ergebnis-Kategorie" markierbar (is_result Flag)
+- Ergebnis-Kategorien werden NICHT automatisch in Kombinatorik einbezogen
+- Nur durch Regeln oder manuelle Eingabe befuellbar (ISTQB-konform)
+- Testfall-Tabelle zeigt Ergebnis-Spalte immer sichtbar mit farblich markierten leeren Feldern
+- ResultCellEditor: Dropdown + Freitext nach Generierung editierbar
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
 ### REQ-3033 | Transparente Analysegrenzen bei Regelkomplexitaet
 **Titel:** Heuristische Kennzeichnung komplexer Regelanalysen
 **Prioritaet:** Should
