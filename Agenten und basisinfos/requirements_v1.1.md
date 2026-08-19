@@ -645,16 +645,22 @@ Erstellt von: Requirements Engineer Agent
 
 | REQ-ID | Typ | Titel | Status | Sprint |
 |---|---|---|---|---|
-| REQ-4007 | Must | GREAT_PORT Umgebungsvariable + .env Support | Planned | Sprint 6 |
-| REQ-4008 | Should | Health-Check Endpoint /health | Planned | Sprint 6 |
-| REQ-4009 | Should | Strukturiertes Logging (structlog JSON) | Planned | Sprint 7 |
-| REQ-4010 | Should | E2E-Tests (Playwright 5 Workflows) | Planned | Sprint 7 |
-| REQ-4006 | Must | Multi-User / PostgreSQL optional | Planned | Sprint 8 |
-| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 9 |
-| REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10 |
-| REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11 |
-| REQ-4004 | Should | MCDC + T-Wise Optimierung | Planned | Sprint 9 |
-| REQ-4005 | Could | Ollama / LLM-Integration (optional) | Planned | Sprint 12 |
+| REQ-4007 | Must | GREAT_PORT Umgebungsvariable + .env Support | Tested | Sprint 6 |
+| REQ-4008 | Should | Health-Check Endpoint /health | Tested | Sprint 6 |
+| REQ-4009 | Should | Strukturiertes Logging (structlog JSON) | Tested | Sprint 7 |
+| REQ-4010 | Should | E2E-Tests (Playwright 5 Workflows) | Tested | Sprint 7 |
+| REQ-4006 | Must | Multi-User / PostgreSQL optional | Tested | Sprint 8 |
+| REQ-4011 | Should | Datensicherung & Wiederherstellung | Tested | Sprint 8 |
+| REQ-4012 | Must | BugMagnet-Import + Datenklassen-Überarbeitung | Tested | Sprint 9 |
+| REQ-4013 | Should | Eigene Datenklassen Import/Export JSON | Tested | Sprint 9 |
+| REQ-4014 | Should | Kategorien-Tabelle + Drag&Drop Reihenfolge | Tested | Sprint 9 |
+| REQ-4015 | Should | BVA-Visualisierung überarbeitet + Fehlerwert-Fix | Tested | Sprint 9 |
+| REQ-4016 | Must | Ergebnis-Typ für Kategorien (ISTQB Expected Result) | Tested | Sprint 9 |
+| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 10+ |
+| REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10+ |
+| REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11+ |
+| REQ-4004 | Should | MCDC + T-Wise Optimierung | Planned | Sprint 9+ |
+| REQ-4005 | Could | Ollama / LLM-Integration (optional) | Planned | Sprint 12+ |
 
 **Siehe auch:** `documentation/phase-4-planning.md` (detaillierte Sprint-Planung)
 
