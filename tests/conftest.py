@@ -12,16 +12,19 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base, SessionLocal, get_db, engine
 from app.main import app, _migrate_db
 from app.system_dataclasses import seed_system_dataclasses
+from app.seed_example import seed_example_project
 
 
 # REQ-2005: System-Datenklassen beim Test-Start sicherstellen
+# REQ-4017: Beispielprojekt Portoberechnung
 def pytest_configure(config):
-    """DB-Migration + System-Datenklassen-Seed vor dem ersten Test."""
+    """DB-Migration + System-Datenklassen-Seed + Beispielprojekt vor dem ersten Test."""
     Base.metadata.create_all(bind=engine)
     _migrate_db()
     db = SessionLocal()
     try:
         seed_system_dataclasses(db)
+        seed_example_project(db)
     finally:
         db.close()
 

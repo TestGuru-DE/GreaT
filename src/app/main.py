@@ -16,6 +16,7 @@ from .config import GREAT_PORT, GREAT_HOST
 from .database import Base, engine
 from .routers import api_projects, api_generate, api_dataclasses, api_health, api_backup
 from .system_dataclasses import seed_system_dataclasses
+from .seed_example import seed_example_project
 from .logging_config import setup_logging, get_logger
 
 FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     db = SessionLocal()
     try:
         seed_system_dataclasses(db)
+        seed_example_project(db)  # REQ-4017: Beispielprojekt Portoberechnung
     finally:
         db.close()
     yield
@@ -112,7 +114,7 @@ def _migrate_db() -> None:
 app.include_router(api_projects.router, prefix="/api")
 app.include_router(api_generate.router, prefix="/api")
 app.include_router(api_dataclasses.router, prefix="/api")
-app.include_router(api_health.router, prefix="/api")
+app.include_router(api_health.router)  # BUG-FIX: /health ohne /api-Prefix
 app.include_router(api_backup.router)  # REQ-4011: Datensicherung & Wiederherstellung
 # REQ-3011: HTMX-Router archiviert (2026-06-29)
 
