@@ -129,6 +129,7 @@ class DataClassValue(Base):
     id = Column(Integer, primary_key=True)
     dataclass_id = Column(Integer, ForeignKey("dataclasses.id", ondelete="CASCADE"), nullable=False)
     value = Column(String(500), nullable=False)
+    sort_order = Column(Integer, nullable=False, default=0)  # REQ-4014: Drag & Drop Reihenfolge
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     dataclass = relationship("DataClass", back_populates="dc_values")

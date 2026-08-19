@@ -84,11 +84,11 @@ def delete_dataclass(dcid: int, db: Session = Depends(get_db)):
 
 @router.get("/dataclasses/{dcid}/values", response_model=List[schemas.DataClassValueRead])
 def list_dataclass_values(dcid: int, db: Session = Depends(get_db)):
-    """REQ-2003: Alle Werte einer Datenklasse auflisten."""
+    """REQ-2003: Alle Werte einer Datenklasse auflisten (REQ-4014: sortiert nach sort_order)."""
     dc = db.get(models.DataClass, dcid)
     if not dc:
         raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
-    return db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dcid).order_by(models.DataClassValue.id).all()
+    return db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dcid).order_by(models.DataClassValue.sort_order, models.DataClassValue.id).all()
 
 
 @router.post("/dataclasses/{dcid}/values", response_model=schemas.DataClassValueRead)
@@ -116,6 +116,29 @@ def delete_dataclass_value(vid: int, db: Session = Depends(get_db)):
     db.delete(v)
     db.commit()
     return {"ok": True, "id": vid}
+
+
+@router.put("/dataclasses/{dcid}/values/reorder")
+def reorder_dataclass_values(dcid: int, payload: dict, db: Session = Depends(get_db)):
+    """REQ-4014: Speichert neue Reihenfolge der Werte einer Datenklasse."""
+    dc = db.get(models.DataClass, dcid)
+    if not dc:
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+    
+    value_ids = payload.get("value_ids", [])
+    if not isinstance(value_ids, list):
+        raise HTTPException(status_code=400, detail="value_ids must be a list")
+    
+    for idx, vid in enumerate(value_ids):
+        v = db.query(models.DataClassValue).filter(
+            models.DataClassValue.id == vid,
+            models.DataClassValue.dataclass_id == dcid
+        ).first()
+        if v:
+            v.sort_order = idx
+    
+    db.commit()
+    return {"status": "ok"}
 
 
 @router.post("/categories/{cid}/apply-dataclass")

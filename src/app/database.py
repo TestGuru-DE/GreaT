@@ -7,7 +7,7 @@ REQ-4006: Multi-User Support
 """
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from app.config import DATABASE_URL
+from .config import DATABASE_URL
 
 
 def _create_engine():
