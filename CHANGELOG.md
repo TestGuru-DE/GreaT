@@ -2,6 +2,50 @@
 
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.5.0] - 2026-08-19 – Sprint 9: Datenklassen, BVA & Ergebnis-Typ
+
+### ✨ Neue Features
+
+#### REQ-4012: Datenklassen-Überarbeitung + BugMagnet-Import
+- System-Datenklassen umbenannt in "Beispiele"
+- Settings-Seite: Neuer "Datenklassen"-Bereich mit Import-Button
+- Live-Import von BugMagnet GitHub (https://github.com/gojko/bugmagnet)
+- Nach Import: Bezeichnung wechselt zu "Bug Magnet Import"
+- Endpoint: `POST /api/dataclasses/bugmagnet-import`
+
+#### REQ-4013: Eigene Datenklassen Import/Export JSON
+- Export: Button "Exportieren" lädt eigene Datenklassen als JSON herunter
+- Import: JSON-Datei hochladen (Merge-Strategie, Legacy-Format unterstützt)
+- Endpoints: `GET /api/dataclasses/export-user`, `POST /api/dataclasses/import-user`
+
+#### REQ-4014: Kategorien & Werte – Tabellarische Ansicht + Drag & Drop
+- Neue Tabellenansicht mit Spalten-Header
+- Werte per Drag & Drop umsortierbar (Reihenfolge wird gespeichert)
+- BVA-Symbol größer mit "BVA"-Label
+- Default-Markierung als ★ (statt ?)
+- Endpoint: `PUT /api/dataclasses/{id}/values/reorder`
+
+#### REQ-4015: BVA-Visualisierung überarbeitet + Fehlerwert-Bug-Fix
+- Symbolischer Zahlenstrahl: gleichmäßige Abstände (Lesbarkeit > Maßstab)
+- Multi-Range: jede Äquivalenzklasse farbig unterschieden, Lücken ausgegraut
+- `BVARange.is_valid`: erlaubte/unerlaubte Äquivalenzklassen explizit
+- Fehlerwert-Bug behoben: `is_error` korrekt in Kategorien & Werte angezeigt
+
+#### REQ-4016: Neuer Typ "Ergebnis" für Kategorien (ISTQB Expected Result)
+- Kategorien als "Ergebnis-Kategorie" markierbar
+- Ergebnis-Kategorien werden **nicht** automatisch in Kombinatorik einbezogen
+- Nur durch Regeln oder manuelle Eingabe befüllbar
+- Testfall-Tabelle: Ergebnis-Spalte immer sichtbar, leere Felder farblich markiert
+- `ResultCellEditor`: Dropdown + Freitext nach Generierung editierbar
+- ISTQB-konform: Expected Result = Testorakel
+
+### 🔧 Qualität
+- 340 Backend-Tests (↑ von 333)
+- Frontend-Tests und Build erfolgreich
+- 5 PRs (#36–#40) sauber gemergt
+
+---
+
 ## [1.1.0] - 2026-07-02 – Sprint 5: UX, Risikoabdeckung, BVA-ISTQB
 
 ### Neue Features

@@ -1,8 +1,9 @@
 # Project Assessment – G.R.E.A.T.
-Version: 1.0
-Phase: 0 – Abschlussbericht
+Version: 1.1
+Phase: 0 – Abgeschlossen; Phase 1–3 aktiv (Sprint 9)
 Erstellt: 2026-06-10
 Erstellt von: Program Manager Agent
+**Aktualisiert:** 2026-08-19 (v1.5.0 Release, Sprint 9 abgeschlossen)
 
 ---
 
@@ -10,27 +11,28 @@ Erstellt von: Program Manager Agent
 
 G.R.E.A.T. (Georg Radikal Einfacher Automatisierter TestcaseDesigner) ist ein browserbasiertes
 Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Äquivalenzklassen,
-Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
-Python/FastAPI (v5.8.1) mit SQLite-Datenbank und HTMX-UI.
+Grenzwertanalyse, Kombinationsverfahren). Aktuelle Version: **v1.5.0** mit Python/FastAPI Backend
+(v5.8.1), SQLite-Datenbank, React/TypeScript Frontend.
 
-**Phase-0-Bewertung: Phase 0 ABGESCHLOSSEN – Freigabe für Phase 1 empfohlen (mit Auflagen).**
+**Aktueller Stand: Sprint 9 (Phase 3) abgeschlossen – Phase 4 geplant.**
 
 ### Gesamtbewertung
 
 | Dimension | Bewertung | Note |
 |---|---|---|
-| Codebasis | Mittel | Funktionierender Kern, Architektur-Schulden |
-| Testabdeckung | Mittel | Gute Unit-Tests, Integration-Tests lückenhaft |
-| Dokumentation | Schwach | Fehlte vor Phase 0, jetzt erstellt |
-| Requirements | Mittel | Vorhanden, ab jetzt v1.1.md verbindlich |
-| Risikoprofil | Hoch | 5 kritische Risiken (Score 20) |
-| Wiederverwendungspotenzial | Hoch | ~50% direkt wiederverwendbar |
+| Codebasis | Mittel-Gut | Funktionierender Kern, Datenklassen & BVA erweitert |
+| Testabdeckung | Gut | 340 Backend-Tests, Coverage stabil |
+| Dokumentation | Gut | Requirements + CHANGELOG aktuell |
+| Datenklassen | Gut | BugMagnet-Import, JSON Import/Export |
+| Kombinatorik | Gut | Pairwise, Each Choice, Lineare Expansion, BVA |
+| Frontend-UX | Gut | Office-ähnlich, Tabellenansicht, Drag&Drop |
+| Risikoprofil | Mittel | 5 kritische Risiken (Score 20, aber durch Testabdeckung mitigiert) |
 
 ---
 
 ## 1. Requirement-Analyse
 
-### 1.1 Quellanalyse
+### Aktueller Sprint-Status
 
 Folgende Requirement-Quellen wurden ausgewertet:
 - `requirements_v1.0.md` – Strukturierter Backlog (alle Status: Planned)
