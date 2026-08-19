@@ -645,16 +645,22 @@ Erstellt von: Requirements Engineer Agent
 
 | REQ-ID | Typ | Titel | Status | Sprint |
 |---|---|---|---|---|
-| REQ-4007 | Must | GREAT_PORT Umgebungsvariable + .env Support | Planned | Sprint 6 |
-| REQ-4008 | Should | Health-Check Endpoint /health | Planned | Sprint 6 |
-| REQ-4009 | Should | Strukturiertes Logging (structlog JSON) | Planned | Sprint 7 |
-| REQ-4010 | Should | E2E-Tests (Playwright 5 Workflows) | Planned | Sprint 7 |
-| REQ-4006 | Must | Multi-User / PostgreSQL optional | Planned | Sprint 8 |
-| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 9 |
-| REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10 |
-| REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11 |
-| REQ-4004 | Should | MCDC + T-Wise Optimierung | Planned | Sprint 9 |
-| REQ-4005 | Could | Ollama / LLM-Integration (optional) | Planned | Sprint 12 |
+| REQ-4007 | Must | GREAT_PORT Umgebungsvariable + .env Support | Tested | Sprint 6 |
+| REQ-4008 | Should | Health-Check Endpoint /health | Tested | Sprint 6 |
+| REQ-4009 | Should | Strukturiertes Logging (structlog JSON) | Tested | Sprint 7 |
+| REQ-4010 | Should | E2E-Tests (Playwright 5 Workflows) | Tested | Sprint 7 |
+| REQ-4006 | Must | Multi-User / PostgreSQL optional | Tested | Sprint 8 |
+| REQ-4011 | Should | Datensicherung & Wiederherstellung | Tested | Sprint 8 |
+| REQ-4012 | Must | BugMagnet-Import + Datenklassen-Überarbeitung | Tested | Sprint 9 |
+| REQ-4013 | Should | Eigene Datenklassen Import/Export JSON | Tested | Sprint 9 |
+| REQ-4014 | Should | Kategorien-Tabelle + Drag&Drop Reihenfolge | Tested | Sprint 9 |
+| REQ-4015 | Should | BVA-Visualisierung überarbeitet + Fehlerwert-Fix | Tested | Sprint 9 |
+| REQ-4016 | Must | Ergebnis-Typ für Kategorien (ISTQB Expected Result) | Tested | Sprint 9 |
+| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 10+ |
+| REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10+ |
+| REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11+ |
+| REQ-4004 | Should | MCDC + T-Wise Optimierung | Planned | Sprint 9+ |
+| REQ-4005 | Could | Ollama / LLM-Integration (optional) | Planned | Sprint 12+ |
 
 **Siehe auch:** `documentation/phase-4-planning.md` (detaillierte Sprint-Planung)
 
@@ -1743,6 +1749,102 @@ damit ich bei passenden Modellen eine normierte und kompakte Abdeckung nutzen ka
 - Bei fehlender Eignung wird verstaendlich auf eine alternative Strategie verwiesen
 - Erzeugte Generation wird mit strategy="oa" gespeichert
 **Abhaengigkeiten:** REQ-0800, REQ-3009
+
+---
+
+## EPIC-17 - Sprint 9 Backlog
+
+### REQ-4012 | Datenklassen-Überarbeitung + BugMagnet-Import
+**Titel:** System-Datenklassen umbenannt, Live-Import von BugMagnet GitHub
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Nutzer
+moechte ich System-Datenklassen als "Beispiele" nutzen und BugMagnet-Datenklassen live importieren koennen
+damit ich schnell professionelle Testdaten fuer meine Projekte verfuegbar habe.
+**Akzeptanzkriterien:**
+- System-Datenklassen sind in der UI als "Beispiele" benannt
+- Settings-Seite zeigt "Datenklassen"-Bereich mit Import-Button
+- Live-Import von BugMagnet GitHub https://github.com/gojko/bugmagnet funktioniert
+- Nach erfolgreichen Import wechselt Bezeichnung zu "Bug Magnet Import"
+- Endpoints vorhanden: POST /api/dataclasses/bugmagnet-import, GET /api/dataclasses/bugmagnet-status
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4013 | Eigene Datenklassen Import/Export JSON
+**Titel:** JSON-basierter Import/Export fuer benutzerdefinierte Datenklassen
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Nutzer
+moechte ich meine Datenklassen als JSON exportieren und importieren koennen
+damit ich diese zwischen Projekten portieren und mit anderen teilen kann.
+**Akzeptanzkriterien:**
+- Export-Funktion: eigene Datenklassen als JSON herunterladen
+- Import-Funktion: JSON-Datei hochladen mit Merge-Strategie
+- Legacy-Format wird korrekt unterstuetzt
+- UI-Kasten sitzt oben in "Meine Datenklassen"
+- Endpoints vorhanden: GET /api/dataclasses/export-user, POST /api/dataclasses/import-user
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4014 | Kategorien & Werte – Tabellarische Ansicht + Drag & Drop
+**Titel:** Spalten-Header, Drag-Drop-Umsortierung und verbesserte BVA/Default-Markierung
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich Kategoriewerte tabellarisch mit Spalten-Header anzeigen und per Drag-Drop umsortieren koennen
+damit ich die Reihenfolge intuitiv und schnell anpasse.
+**Akzeptanzkriterien:**
+- Werte-Tabelle hat Spalten-Header (Reihenfolge, Wert, Aktionen)
+- Werte sind per Drag-Drop umsortierbar, Reihenfolge wird gespeichert
+- BVA-Symbol ist groesser mit "BVA"-Label gekennzeichnet
+- Default-Markierung zeigt ★ statt ?
+- Endpoint PUT /api/dataclasses/{id}/values/reorder ist implementiert
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4015 | BVA-Visualisierung überarbeitet + Fehlerwert-Bug-Fix
+**Titel:** Symbolischer Zahlenstrahl mit Farbkodierung und is_error-Korrektur
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich BVA-Bereiche mit besserer Visualisierung und farblicher Unterscheidung sehen
+damit ich komplexe Multi-Range-Modelle schnell erfasse.
+**Akzeptanzkriterien:**
+- Symbolischer Zahlenstrahl mit gleichmaessigen Abststaenden (Lesbarkeit > Masseinheiten)
+- Multi-Range: jede Aequivalenzklasse farbig unterschieden, Luecken ausgegraut
+- BVARange.is_valid: erlaubte/unerlaubte Aequivalenzklassen explizit markierbar
+- Fehlerwert-Bug behoben: is_error korrekt in Kategorien & Werte angezeigt
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
+
+---
+
+### REQ-4016 | Neuer Typ "Ergebnis" für Kategorien (ISTQB Expected Result)
+**Titel:** Ergebnis-Kategorien nicht automatisch in Kombinatorik einbezogen
+**Prioritaet:** Must
+**Status:** TESTED
+**Phase:** 3, Sprint 9
+**User Story:**
+Als Tester
+moechte ich Kategorien als "Ergebnis-Kategorien" markieren koennen, die nicht automatisch in die Kombinatorik einbezogen werden
+damit ich ISTQB-konform nur erwartete Ergebnisse manuell oder regelbasiert befuelle.
+**Akzeptanzkriterien:**
+- Kategorien sind als "Ergebnis-Kategorie" markierbar (is_result Flag)
+- Ergebnis-Kategorien werden NICHT automatisch in Kombinatorik einbezogen
+- Nur durch Regeln oder manuelle Eingabe befuellbar (ISTQB-konform)
+- Testfall-Tabelle zeigt Ergebnis-Spalte immer sichtbar mit farblich markierten leeren Feldern
+- ResultCellEditor: Dropdown + Freitext nach Generierung editierbar
+**Traceability:** CHANGELOG v1.5.0, Sprint 9 Release
 
 ---
 

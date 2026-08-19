@@ -1,8 +1,10 @@
 # Project Assessment – G.R.E.A.T.
-Version: 1.0
-Phase: 0 – Abschlussbericht
+Version: 1.1
+Phase: 3 – Sprint 9 Abgeschlossen
 Erstellt: 2026-06-10
+Aktualisiert: 2026-08-19
 Erstellt von: Program Manager Agent
+Aktualisiert von: GitHub Copilot CLI
 
 ---
 
@@ -11,9 +13,20 @@ Erstellt von: Program Manager Agent
 G.R.E.A.T. (Georg Radikal Einfacher Automatisierter TestcaseDesigner) ist ein browserbasiertes
 Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Äquivalenzklassen,
 Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
-Python/FastAPI (v5.8.1) mit SQLite-Datenbank und HTMX-UI.
+Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeScript-Frontend in Entwicklung.
 
-**Phase-0-Bewertung: Phase 0 ABGESCHLOSSEN – Freigabe für Phase 1 empfohlen (mit Auflagen).**
+**Aktueller Status: v1.5.0 (2026-08-19) – Sprint 9 ABGESCHLOSSEN.**
+
+### Letztes Release
+- **Version:** v1.5.0
+- **Datum:** 2026-08-19
+- **Neue Features:** REQ-4012 bis REQ-4016 (Datenklassen, BVA-Visualisierung, Ergebnis-Kategorien)
+- **Backend-Tests:** 340 (+7 seit v1.4.0)
+- **PRs gemergt:** 5 PRs (#36–#40)
+
+### Nächster Termin
+- **Sprint 10:** In Planung
+- **Fokus:** TBD
 
 ### Gesamtbewertung
 
