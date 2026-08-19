@@ -6,8 +6,10 @@ REQ-4012: BugMagnet-Import.
 from __future__ import annotations
 
 from typing import List
+import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import httpx
 
@@ -143,6 +145,80 @@ def apply_dataclass_to_category(cid: int, payload: schemas.ApplyDataClassRequest
             added += 1
     db.commit()
     return {"added": added, "dataclass_id": dc.id, "dataclass_name": dc.name}
+
+
+# REQ-4013: Export/Import User Dataclasses
+
+@router.get("/dataclasses/export-user")
+def export_user_dataclasses(db: Session = Depends(get_db)):
+    """REQ-4013: Exportiert eigene (nicht-System) Datenklassen als JSON."""
+    classes = db.query(models.DataClass).filter(models.DataClass.is_system == False).order_by(models.DataClass.name).all()
+    result = []
+    for dc in classes:
+        values = db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dc.id).all()
+        result.append({
+            "name": dc.name,
+            "value_type": dc.value_type,
+            "description": dc.description,
+            "values": [v.value for v in values]
+        })
+    return JSONResponse(
+        content={"version": "1.0", "dataclasses": result},
+        headers={"Content-Disposition": "attachment; filename=my-dataclasses.json"}
+    )
+
+
+@router.post("/dataclasses/import-user")
+async def import_user_dataclasses(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """REQ-4013: Importiert eigene Datenklassen aus einer JSON-Datei (Merge-Strategie)."""
+    content = await file.read()
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungültige JSON-Datei")
+    
+    classes_data = data.get("dataclasses", [])
+    if not classes_data:
+        # Legacy-Format: direkt dict {name: [values]}
+        if isinstance(data, dict) and all(isinstance(v, list) for v in data.values()):
+            classes_data = [{"name": k, "values": v} for k, v in data.items()]
+    
+    imported = 0
+    for item in classes_data:
+        name = item.get("name", "").strip()
+        values = item.get("values", [])
+        value_type = item.get("value_type", "text")
+        description = item.get("description", "")
+        
+        if not name:
+            continue
+        
+        # Prüfe ob bereits vorhanden
+        existing = db.query(models.DataClass).filter(
+            models.DataClass.name == name,
+            models.DataClass.is_system == False
+        ).first()
+        if existing:
+            dc = existing
+        else:
+            dc = models.DataClass(
+                name=name, 
+                is_system=False, 
+                value_type=value_type,
+                description=description or None
+            )
+            db.add(dc)
+            db.flush()
+        
+        # Werte hinzufügen (nur neue)
+        existing_vals = {v.value for v in db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dc.id).all()}
+        for val in values:
+            if isinstance(val, str) and val.strip() and val not in existing_vals:
+                db.add(models.DataClassValue(dataclass_id=dc.id, value=val))
+        imported += 1
+    
+    db.commit()
+    return {"status": "ok", "imported": imported}
 
 
 # REQ-4012: BugMagnet-Import Endpoints
