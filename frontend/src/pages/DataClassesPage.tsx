@@ -33,6 +33,103 @@ const TYPE_HINTS: Record<string, string> = {
   freetext: "Beliebiger Text, keine Validierung",
 };
 
+// REQ-4014: Werte-Tabelle mit Spalten-Headern und Drag & Drop
+function DataClassValuesTable({
+  dc,
+  values,
+  onValuesChange,
+  onDelete,
+}: {
+  dc: DataClass;
+  values: DataClassValue[];
+  onValuesChange: (newValues: DataClassValue[]) => void;
+  onDelete: (vid: number) => void;
+}) {
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleDragStart = (idx: number) => {
+    setDragIdx(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (idx: number) => {
+    if (dragIdx === null || dragIdx === idx) {
+      setDragIdx(null);
+      return;
+    }
+
+    const newValues = [...values];
+    const [moved] = newValues.splice(dragIdx, 1);
+    newValues.splice(idx, 0, moved);
+
+    onValuesChange(newValues);
+    setDragIdx(null);
+
+    // Speichern via API
+    setIsSaving(true);
+    try {
+      await fetch(`/api/dataclasses/${dc.id}/values/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value_ids: newValues.map((v) => v.id) }),
+      });
+    } catch (err) {
+      console.error("Fehler beim Speichern der Reihenfolge:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (values.length === 0) {
+    return <p className="text-xs text-slate-400 mb-2">Noch keine Werte.</p>;
+  }
+
+  return (
+    <div className="overflow-x-auto mb-3">
+      <table className="w-full text-xs border-collapse">
+        <thead>
+          <tr className="bg-slate-100 border-b border-slate-200">
+            <th className="px-2 py-1 text-left w-10 text-slate-600 font-semibold">Reihenfolge</th>
+            <th className="px-2 py-1 text-left flex-1 text-slate-600 font-semibold">Wert</th>
+            <th className="px-2 py-1 text-center w-8 text-slate-600 font-semibold">Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {values.map((v, idx) => (
+            <tr
+              key={v.id}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={handleDragOver}
+              onDrop={() => handleDrop(idx)}
+              className={`border-b border-slate-200 hover:bg-slate-50 cursor-move transition-colors ${
+                dragIdx === idx ? "opacity-50" : ""
+              }`}
+            >
+              <td className="px-2 py-1 text-center text-slate-400 font-semibold">⋮⋮</td>
+              <td className="px-2 py-1">{v.value}</td>
+              <td className="px-2 py-1 text-center">
+                <button
+                  onClick={() => onDelete(v.id)}
+                  className="text-slate-300 hover:text-red-500 text-xs"
+                  title="Löschen"
+                >
+                  ✕
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {isSaving && <p className="text-xs text-slate-400 mt-1">Speichern...</p>}
+    </div>
+  );
+}
+
 function DataClassCard({ dc, onDeleted }: { dc: DataClass; onDeleted: () => void }) {
   const [values, setValues] = useState<DataClassValue[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -101,20 +198,8 @@ function DataClassCard({ dc, onDeleted }: { dc: DataClass; onDeleted: () => void
 
       {expanded && (
         <div className="mt-3">
-          {values.length > 0 ? (
-            <div className="flex flex-wrap gap-1 mb-3">
-              {values.map((v) => (
-                <span key={v.id}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-                  {v.value}
-                  <button onClick={() => handleDeleteValue(v.id)}
-                    className="text-slate-300 hover:text-red-500 ml-1 text-xs">✕</button>
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 mb-2">Noch keine Werte.</p>
-          )}
+          {/* REQ-4014: Tabelle mit Spalten-Headern und Drag & Drop */}
+          <DataClassValuesTable dc={dc} values={values} onValuesChange={setValues} onDelete={handleDeleteValue} />
           <form onSubmit={handleAddValue} className="flex gap-2">
             <input
               ref={inputRef}
