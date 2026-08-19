@@ -145,11 +145,17 @@ export default function DataClassesPage() {
   const [createError, setCreateError] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bugmagnetImported, setBugmagnetImported] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
       setDataclasses(await dataclassApi.list());
+      const r = await fetch('/api/dataclasses/bugmagnet-status');
+      if (r.ok) {
+        const d = await r.json();
+        setBugmagnetImported(d.imported);
+      }
     } finally {
       setLoading(false);
     }
@@ -309,11 +315,11 @@ export default function DataClassesPage() {
                 </button>
               </div>
             )}
-            {/* REQ-3010: System-Datenklassen Sektion */}
+            {/* REQ-3010 + REQ-4012: System-Datenklassen Sektion */}
             {dataclasses.some((dc) => dc.is_system) && (
               <div className="mb-6">
                 <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                  System-Datenklassen (schreibgeschützt)
+                  {bugmagnetImported ? "Bug Magnet Import (schreibgeschützt)" : "Beispiele (schreibgeschützt)"}
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
                   {dataclasses.filter((dc) => dc.is_system).map((dc) => (

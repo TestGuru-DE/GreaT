@@ -1,6 +1,7 @@
 """
 routers/api_dataclasses.py
 REQ-2003: Datenklassen – Wiederverwendbare Aequivalenzklassen-Bibliothek.
+REQ-4012: BugMagnet-Import.
 """
 from __future__ import annotations
 
@@ -8,12 +9,15 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+import httpx
 
 from ..database import get_db
 from .. import models, schemas
 from ..dataclass_validator import validate_value, DATACLASS_TYPES
 
 router = APIRouter(tags=["Datenklassen"])
+
+BUGMAGNET_URL = "https://raw.githubusercontent.com/gojko/bugmagnet/master/template/config.json"
 
 
 @router.get("/dataclasses", response_model=List[schemas.DataClassRead])
@@ -139,3 +143,58 @@ def apply_dataclass_to_category(cid: int, payload: schemas.ApplyDataClassRequest
             added += 1
     db.commit()
     return {"added": added, "dataclass_id": dc.id, "dataclass_name": dc.name}
+
+
+# REQ-4012: BugMagnet-Import Endpoints
+
+@router.get("/dataclasses/bugmagnet-status")
+def bugmagnet_status(db: Session = Depends(get_db)):
+    """REQ-4012: Prüft ob BugMagnet bereits importiert wurde."""
+    has_bugmagnet = db.query(models.DataClass).filter(
+        models.DataClass.is_system == True
+    ).first() is not None
+    return {"imported": has_bugmagnet}
+
+
+@router.post("/dataclasses/bugmagnet-import")
+async def import_bugmagnet(db: Session = Depends(get_db)):
+    """
+    REQ-4012: Importiert BugMagnet-Datenklassen von GitHub.
+    Löscht bestehende is_system=True Klassen, legt neue an.
+    """
+    # 1. JSON von GitHub laden
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.get(BUGMAGNET_URL)
+            if r.status_code != 200:
+                raise HTTPException(status_code=502, detail="BugMagnet JSON konnte nicht geladen werden")
+            data = r.json()
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail=f"Fehler beim Download von GitHub: {str(e)}")
+
+    # 2. Bestehende System-Datenklassen löschen
+    existing = db.query(models.DataClass).filter(models.DataClass.is_system == True).all()
+    for dc in existing:
+        db.delete(dc)
+    db.flush()
+
+    # 3. Neue anlegen
+    created = 0
+    for category_name, values in data.items():
+        if not isinstance(values, list):
+            continue
+        dc = models.DataClass(
+            name=category_name,
+            is_system=True,
+            value_type="text",
+            description="BugMagnet Import",
+        )
+        db.add(dc)
+        db.flush()
+        for val in values[:50]:  # Max 50 Werte pro Kategorie
+            if isinstance(val, str):
+                db.add(models.DataClassValue(dataclass_id=dc.id, value=val))
+        created += 1
+
+    db.commit()
+    return {"status": "ok", "categories_imported": created, "source": "bugmagnet"}
