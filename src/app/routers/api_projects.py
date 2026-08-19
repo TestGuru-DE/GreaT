@@ -82,7 +82,12 @@ def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Dep
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
-    c = models.Category(project_id=pid, name=payload.name, order_index=payload.order_index)
+    c = models.Category(
+        project_id=pid, 
+        name=payload.name, 
+        order_index=payload.order_index,
+        is_result=payload.is_result  # REQ-4016
+    )
     db.add(c)
     db.commit()
     db.refresh(c)
@@ -104,6 +109,10 @@ class RenameCategory(BaseModel):
     name: str = PydanticField(min_length=1, max_length=200)
 
 
+class UpdateCategoryProperties(BaseModel):  # REQ-4016
+    is_result: bool
+
+
 class ReorderRequest(BaseModel):
     order: List[int]
 
@@ -115,6 +124,18 @@ def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found.")
     cat.name = payload.name
+    db.commit()
+    db.refresh(cat)
+    return cat
+
+
+@router.patch("/categories/{cid}/properties", response_model=schemas.CategoryRead)
+def update_category_properties(cid: int, payload: UpdateCategoryProperties, db: Session = Depends(get_db)):
+    """REQ-4016: Kategorie-Eigenschaften aktualisieren (z.B. is_result)."""
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found.")
+    cat.is_result = payload.is_result
     db.commit()
     db.refresh(cat)
     return cat

@@ -22,6 +22,7 @@ class Category(Base):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(200), nullable=False)
     order_index = Column(Integer, default=0, nullable=False)
+    is_result = Column(Boolean, default=False, nullable=False, server_default='0')  # REQ-4016: Ergebnis-Typ
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)

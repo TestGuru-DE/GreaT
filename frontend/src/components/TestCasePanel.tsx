@@ -1,4 +1,4 @@
-// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052: Testfall-Generierung mit Office-ähnlicher Tabelle
+// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
 import { useEffect, useState } from "react";
 import { useGenerateStore } from "../store/generateStore";
 import { useSortableTable } from "../hooks/useSortableTable";

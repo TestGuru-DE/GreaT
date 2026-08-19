@@ -13,11 +13,13 @@ class ProjectRead(BaseModel):
 class CategoryCreate(BaseModel):
     name: str
     order_index: int = 0
+    is_result: bool = False  # REQ-4016: Ergebnis-Kategorie
 
 class CategoryRead(BaseModel):
     id: int
     name: str
     order_index: int
+    is_result: bool = False  # REQ-4016: Ergebnis-Typ (Expected Result)
     model_config = ConfigDict(from_attributes=True)
 
 class ValueCreate(BaseModel):

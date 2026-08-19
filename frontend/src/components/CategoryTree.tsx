@@ -3,7 +3,7 @@
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
-import { categoriesApi } from "../api/client";
+import { categoriesApi, categoryPropertiesApi } from "../api/client";  // REQ-4016
 import { renameApi, reorderApi } from "../api/client";
 import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -190,6 +190,17 @@ export default function CategoryTree({ projectId }: Props) {
         { label: "Datenklasse anwenden...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataClassCat({ id: c.id, name: c.name }); } },
         { label: "Grenzwertanalyse...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
         { label: "", separator: true, action: () => {} },
+        // REQ-4016: Ergebnis-Kategorie toggle
+        { label: cat?.is_result ? "✓ Ergebnis-Kategorie" : "Als Ergebnis-Kategorie markieren", 
+          action: async () => {
+            try {
+              await categoryPropertiesApi.updateIsResult(ctx.id, !cat?.is_result);
+              await fetchCategories(projectId);
+              toast.add(cat?.is_result ? "Normale Kategorie" : "Ergebnis-Kategorie (Expected Result)");
+            } catch { toast.add("Fehler beim Aktualisieren", "error"); }
+          }
+        },
+        { label: "", separator: true, action: () => {} },
         { label: "Löschen", danger: true, action: () => {
           if (confirm("Kategorie löschen?"))
             deleteCategory(ctx.id)
@@ -297,7 +308,10 @@ export default function CategoryTree({ projectId }: Props) {
                     />
                   ) : (
                     <span onDoubleClick={(e) => { e.stopPropagation(); startEditCat(cat.id, cat.name); }}
-                      className="truncate">{cat.name}</span>
+                      className="truncate flex items-center gap-1">{cat.name}
+                      {/* REQ-4016: Ergebnis-Kategorie-Indikator */}
+                      {cat.is_result && <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">📊 Result</span>}
+                    </span>
                   )}
                   {/* Werte-Zaehler Badge */}
                   <span className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal">

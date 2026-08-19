@@ -98,6 +98,12 @@ export const renameApi = {
     api.patch<Value>("/values/" + valueId + "/rename", { value }).then((r) => r.data),
 };
 
+// --- Category Properties (REQ-4016) ---
+export const categoryPropertiesApi = {
+  updateIsResult: (categoryId: number, is_result: boolean) =>
+    api.patch<Category>("/categories/" + categoryId + "/properties", { is_result }).then((r) => r.data),
+};
+
 export const reorderApi = {
   categories: (projectId: number, order: number[]) =>
     api.patch("/projects/" + projectId + "/categories/reorder", { order }).then((r) => r.data),
