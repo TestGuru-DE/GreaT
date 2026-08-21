@@ -1,6 +1,7 @@
 // REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
+// REQ-4018: DataNodePicker Integration
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
 import { categoriesApi, categoryPropertiesApi } from "../api/client";  // REQ-4016
@@ -12,6 +13,7 @@ import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import DataClassDialog from "./DataClassDialog";
 import { BVADialog } from "./bva/BVADialog";
 import UndoRedoToolbar from "./ui/UndoRedoToolbar";
+import { DataNodePicker } from "./DataNodePicker";
 
 interface Props { projectId: number; }
 
@@ -113,6 +115,14 @@ export default function CategoryTree({ projectId }: Props) {
       toast.add("Wert hinzugefuegt");
       setNewValue((s) => ({ ...s, [catId]: "" }));
     } catch { toast.add("Fehler beim Hinzufuegen", "error"); }
+  };
+
+  // REQ-4018: Wert direkt aus DataNodePicker hinzufügen
+  const handleAddValueDirect = async (catId: number, value: string) => {
+    try {
+      await createValue(catId, value);
+      toast.add("Wert aus Bibliothek hinzugefügt");
+    } catch { toast.add("Fehler beim Hinzufügen", "error"); }
   };
 
   // Inline-Edit Kategorie (REQ-1213)
@@ -426,7 +436,7 @@ export default function CategoryTree({ projectId }: Props) {
                     )}
                   </ul>
                   {/* Neuer Wert */}
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 flex-wrap items-center">
                     <input value={newValue[cat.id] ?? ""}
                       onChange={(e) => setNewValue((s) => ({ ...s, [cat.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddValue(cat.id); } }}
@@ -437,6 +447,11 @@ export default function CategoryTree({ projectId }: Props) {
                       className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs rounded border border-slate-200">
                       +
                     </button>
+                    {/* REQ-4018: DataNodePicker – Wert aus Bibliothek wählen */}
+                    <DataNodePicker
+                      onSelect={(value) => handleAddValueDirect(cat.id, value)}
+                      placeholder="📚 Bibliothek"
+                    />
                   </div>
                 </div>
               )}
