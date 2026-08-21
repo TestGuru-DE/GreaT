@@ -1,10 +1,10 @@
 // REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
-// REQ-4018: DataNodePicker Integration
+// REQ-4018: Kontextmenü mit DataNode-Baum
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
-import { categoriesApi, categoryPropertiesApi } from "../api/client";  // REQ-4016
+import { categoriesApi, categoryPropertiesApi, datanodesApi } from "../api/client";  // REQ-4016
 import { renameApi, reorderApi } from "../api/client";
 import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -13,7 +13,7 @@ import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import DataClassDialog from "./DataClassDialog";
 import { BVADialog } from "./bva/BVADialog";
 import UndoRedoToolbar from "./ui/UndoRedoToolbar";
-import { DataNodePicker } from "./DataNodePicker";
+import type { DataNode } from "../types";
 
 interface Props { projectId: number; }
 
@@ -46,6 +46,8 @@ export default function CategoryTree({ projectId }: Props) {
   const [bvaDialogOpen, setBvaDialogOpen] = useState<{ id: number; name: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const newCatRef = useRef<HTMLInputElement>(null);
+  const [dataNodeTree, setDataNodeTree] = useState<DataNode[]>([]);
+  const [dataNodeMenuOpen, setDataNodeMenuOpen] = useState<{ categoryId: number; categoryName: string } | null>(null);
 
   useEffect(() => { fetchCategories(projectId); }, [projectId, fetchCategories]);
 
@@ -117,12 +119,20 @@ export default function CategoryTree({ projectId }: Props) {
     } catch { toast.add("Fehler beim Hinzufuegen", "error"); }
   };
 
-  // REQ-4018: Wert direkt aus DataNodePicker hinzufügen
-  const handleAddValueDirect = async (catId: number, value: string) => {
+  // REQ-4018: Werte aus DataNode anwenden
+  const applyDataNodeValues = async (categoryId: number, node: DataNode) => {
     try {
-      await createValue(catId, value);
-      toast.add("Wert aus Bibliothek hinzugefügt");
-    } catch { toast.add("Fehler beim Hinzufügen", "error"); }
+      let addedCount = 0;
+      for (const val of node.values) {
+        await createValue(categoryId, val.value);
+        addedCount++;
+      }
+      toast.add(`${addedCount} Werte aus ${node.name} hinzugefügt`);
+      if (expanded[categoryId]) fetchValues(categoryId);
+      setDataNodeMenuOpen(null);
+    } catch (err) {
+      toast.add("Fehler beim Hinzufügen", "error");
+    }
   };
 
   // Inline-Edit Kategorie (REQ-1213)
@@ -197,7 +207,18 @@ export default function CategoryTree({ projectId }: Props) {
           if (!values[ctx.id]) fetchValues(ctx.id);
         }},
         { label: "", separator: true, action: () => {} },
-        { label: "Datenklasse anwenden...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataClassCat({ id: c.id, name: c.name }); } },
+        { label: "Datenklasse anwenden...", action: async () => {
+          const c = categories.find((c) => c.id === ctx.id);
+          if (c) {
+            try {
+              const tree = await datanodesApi.getTree();
+              setDataNodeTree(tree);
+              setDataNodeMenuOpen({ categoryId: c.id, categoryName: c.name });
+            } catch (err) {
+              toast.add("Fehler beim Laden der Datenklassen", "error");
+            }
+          }
+        }},
         { label: "Grenzwertanalyse...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
         { label: "", separator: true, action: () => {} },
         // REQ-4016: Ergebnis-Kategorie toggle
@@ -447,11 +468,6 @@ export default function CategoryTree({ projectId }: Props) {
                       className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs rounded border border-slate-200">
                       +
                     </button>
-                    {/* REQ-4018: DataNodePicker – Wert aus Bibliothek wählen */}
-                    <DataNodePicker
-                      onSelect={(value) => handleAddValueDirect(cat.id, value)}
-                      placeholder="📚 Bibliothek"
-                    />
                   </div>
                 </div>
               )}
@@ -460,7 +476,7 @@ export default function CategoryTree({ projectId }: Props) {
         </ul>
       )}
 
-      {/* Datenklassen-Dialog */}
+      {/* Datenklassen-Dialog (Legacy) */}
       {dataClassCat && (
         <DataClassDialog
           categoryId={dataClassCat.id}
@@ -468,6 +484,27 @@ export default function CategoryTree({ projectId }: Props) {
           onClose={() => setDataClassCat(null)}
           onApplied={() => { if (expanded[dataClassCat.id]) fetchValues(dataClassCat.id); }}
         />
+      )}
+
+      {/* DataNode Baum Dialog (REQ-4018) */}
+      {dataNodeMenuOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setDataNodeMenuOpen(null)}>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-800">
+                Datenklasse anwenden auf: {dataNodeMenuOpen.categoryName}
+              </h3>
+              <button onClick={() => setDataNodeMenuOpen(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+            </div>
+            <div className="overflow-auto p-4 flex-1">
+              {dataNodeTree.length === 0 ? (
+                <p className="text-slate-400 text-sm py-8 text-center">Keine Datenklassen vorhanden</p>
+              ) : (
+                <DataNodeTreeView nodes={dataNodeTree} onSelect={(node) => applyDataNodeValues(dataNodeMenuOpen.categoryId, node)} />
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* BVA-Dialog (REQ-3041) */}
@@ -498,5 +535,84 @@ export default function CategoryTree({ projectId }: Props) {
         <p>Strg+Z: Rückgängig &nbsp; Strg+Y: Wiederholen</p>
       </div>
     </div>
+  );
+}
+
+// REQ-4018: Hierarchische DataNode-Ansicht im Dialog
+function DataNodeTreeView({ nodes, onSelect, depth = 0 }: { nodes: DataNode[]; onSelect: (node: DataNode) => void; depth?: number }) {
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  
+  const toggleExpand = (id: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  return (
+    <ul className={`space-y-0.5 ${depth > 0 ? 'ml-4 border-l-2 border-slate-200 pl-3' : ''}`}>
+      {nodes.map((node) => {
+        const isExpanded = expanded.has(node.id);
+        const hasContent = node.children.length > 0 || node.values.length > 0;
+        
+        return (
+          <li key={node.id}>
+            <div className="flex items-center gap-2 py-1">
+              {/* Expand Toggle */}
+              {hasContent ? (
+                <button
+                  onClick={() => toggleExpand(node.id)}
+                  className="text-slate-400 w-4 text-xs flex-shrink-0"
+                >
+                  {isExpanded ? '▼' : '▶'}
+                </button>
+              ) : (
+                <span className="w-4 flex-shrink-0" />
+              )}
+              
+              {/* Name + Werte-Anzahl */}
+              <span className="flex-1 text-sm text-slate-700 font-medium">
+                {node.name}
+                {node.values.length > 0 && (
+                  <span className="ml-2 text-xs text-slate-500">({node.values.length})</span>
+                )}
+              </span>
+              
+              {/* Auswahl-Button (nur wenn Werte vorhanden) */}
+              {node.values.length > 0 && (
+                <button
+                  onClick={() => onSelect(node)}
+                  className="px-2 py-0.5 text-xs bg-sky-600 text-white rounded hover:bg-sky-700 flex-shrink-0"
+                >
+                  Übernehmen
+                </button>
+              )}
+            </div>
+            
+            {/* Kinder rekursiv */}
+            {isExpanded && node.children.length > 0 && (
+              <DataNodeTreeView nodes={node.children} onSelect={onSelect} depth={depth + 1} />
+            )}
+            
+            {/* Werte-Vorschau (aufgeklappt) */}
+            {isExpanded && node.values.length > 0 && (
+              <ul className="ml-8 mt-1 space-y-0.5">
+                {node.values.slice(0, 5).map((v) => (
+                  <li key={v.id} className="text-xs text-slate-500">
+                    • {v.value}
+                  </li>
+                ))}
+                {node.values.length > 5 && (
+                  <li className="text-xs text-slate-400 italic">
+                    ... und {node.values.length - 5} weitere
+                  </li>
+                )}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
