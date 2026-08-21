@@ -1,508 +1,227 @@
-// REQ-2003: Datenklassen-Seite – Wiederverwendbare Aequivalenzklassen-Bibliothek
-import { useEffect, useRef, useState } from "react";
-import { dataclassApi } from "../api/client";
-import type { DataClass, DataClassValue } from "../api/client";
+// REQ-4018: DataClassesPage komplett auf DataNode-Baum umgestellt
+import React, { useState, useEffect, useCallback } from 'react';
+import { DataNode } from '../types';
+import { DataNodeTree } from '../components/DataNodeTree';
+import { datanodesApi } from '../api/client';
 
-const VALUE_TYPES = [
-  { value: "text", label: "Text" },
-  { value: "number", label: "Numerisch" },
-  { value: "date", label: "Datum" },
-  { value: "time", label: "Uhrzeit" },
-  { value: "boolean", label: "Boolean" },
-  { value: "email", label: "E-Mail" },
-  { value: "freetext", label: "Freitext (keine Validierung)" },
-];
+export default function DataClassesPage() {
+  const [tree, setTree] = useState<DataNode[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [bugmagnetImported, setBugmagnetImported] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'mine' | 'system'>('mine');
 
-const TYPE_COLORS: Record<string, string> = {
-  text: "bg-blue-100 text-blue-800",
-  number: "bg-green-100 text-green-800",
-  date: "bg-yellow-100 text-yellow-800",
-  time: "bg-pink-100 text-pink-800",
-  boolean: "bg-purple-100 text-purple-800",
-  email: "bg-orange-100 text-orange-800",
-  freetext: "bg-slate-100 text-slate-600",
-};
-
-const TYPE_HINTS: Record<string, string> = {
-  text: "Beliebiger nicht-leerer Text",
-  number: "Ganze Zahlen oder Dezimalzahlen (z.B. 42, -3.14)",
-  date: "Datum: YYYY-MM-DD oder DD.MM.YYYY",
-  time: "Uhrzeit: HH:MM oder HH:MM:SS",
-  boolean: "true / false / 1 / 0 / ja / nein",
-  email: "Gueltige E-Mail-Adresse",
-  freetext: "Beliebiger Text, keine Validierung",
-};
-
-// REQ-4014: Werte-Tabelle mit Spalten-Headern und Drag & Drop
-function DataClassValuesTable({
-  dc,
-  values,
-  onValuesChange,
-  onDelete,
-}: {
-  dc: DataClass;
-  values: DataClassValue[];
-  onValuesChange: (newValues: DataClassValue[]) => void;
-  onDelete: (vid: number) => void;
-}) {
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const handleDragStart = (idx: number) => {
-    setDragIdx(idx);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (idx: number) => {
-    if (dragIdx === null || dragIdx === idx) {
-      setDragIdx(null);
-      return;
-    }
-
-    const newValues = [...values];
-    const [moved] = newValues.splice(dragIdx, 1);
-    newValues.splice(idx, 0, moved);
-
-    onValuesChange(newValues);
-    setDragIdx(null);
-
-    // Speichern via API
-    setIsSaving(true);
+  const reload = useCallback(async () => {
+    setLoading(true);
     try {
-      await fetch(`/api/dataclasses/${dc.id}/values/reorder`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ value_ids: newValues.map((v) => v.id) }),
-      });
+      const t = await datanodesApi.getTree();
+      setTree(t);
     } catch (err) {
-      console.error("Fehler beim Speichern der Reihenfolge:", err);
-    } finally {
-      setIsSaving(false);
+      console.error('Failed to load DataNode tree:', err);
     }
-  };
+    setLoading(false);
+  }, []);
 
-  if (values.length === 0) {
-    return <p className="text-xs text-slate-400 mb-2">Noch keine Werte.</p>;
+  useEffect(() => {
+    reload();
+    datanodesApi.getBugMagnetStatus()
+      .then(d => setBugmagnetImported(d.imported))
+      .catch(console.error);
+  }, [reload]);
+
+  const systemNodes = tree.filter(n => n.is_system);
+  const userNodes = tree.filter(n => !n.is_system);
+
+  async function handleAddRoot() {
+    const name = prompt('Name der neuen Kategorie:');
+    if (!name?.trim()) return;
+    try {
+      await datanodesApi.create({ name: name.trim(), parent_id: null, is_system: false });
+      reload();
+    } catch (err) {
+      alert('Fehler beim Anlegen: ' + String(err));
+    }
+  }
+
+  async function handleAddChild(parentId: number) {
+    const name = prompt('Name der neuen Gruppe/Klasse:');
+    if (!name?.trim()) return;
+    try {
+      await datanodesApi.create({ name: name.trim(), parent_id: parentId, is_system: false });
+      reload();
+    } catch (err) {
+      alert('Fehler beim Anlegen: ' + String(err));
+    }
+  }
+
+  async function handleAddValue(nodeId: number) {
+    const value = prompt('Neuer Wert:');
+    if (!value?.trim()) return;
+    try {
+      await datanodesApi.addValue(nodeId, value.trim());
+      reload();
+    } catch (err) {
+      alert('Fehler beim Hinzufügen: ' + String(err));
+    }
+  }
+
+  async function handleDelete(nodeId: number) {
+    if (!confirm('Knoten und alle Unterpunkte löschen?')) return;
+    try {
+      await datanodesApi.delete(nodeId);
+      reload();
+    } catch (err) {
+      alert('Fehler beim Löschen: ' + String(err));
+    }
+  }
+
+  async function handleBugMagnetImport() {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const r = await datanodesApi.importBugMagnet();
+      setBugmagnetImported(true);
+      setImportMsg(`✅ ${r.nodes_created ?? '?'} Knoten importiert`);
+      reload();
+    } catch (err) {
+      setImportMsg('❌ Import fehlgeschlagen: ' + String(err));
+    }
+    setImporting(false);
+  }
+
+  async function handleImportJSON(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const r = await fetch('/api/dataclasses/import-user', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (r.ok) {
+        alert(`✅ ${d.imported} Klassen importiert`);
+        reload();
+      } else {
+        alert(`❌ ${d.detail}`);
+      }
+    } catch (err) {
+      alert('Fehler beim Import: ' + String(err));
+    }
+    e.target.value = '';
   }
 
   return (
-    <div className="overflow-x-auto mb-3">
-      <table className="w-full text-xs border-collapse">
-        <thead>
-          <tr className="bg-slate-100 border-b border-slate-200">
-            <th className="px-2 py-1 text-left w-10 text-slate-600 font-semibold">Reihenfolge</th>
-            <th className="px-2 py-1 text-left flex-1 text-slate-600 font-semibold">Wert</th>
-            <th className="px-2 py-1 text-center w-8 text-slate-600 font-semibold">Aktion</th>
-          </tr>
-        </thead>
-        <tbody>
-          {values.map((v, idx) => (
-            <tr
-              key={v.id}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(idx)}
-              className={`border-b border-slate-200 hover:bg-slate-50 cursor-move transition-colors ${
-                dragIdx === idx ? "opacity-50" : ""
-              }`}
-            >
-              <td className="px-2 py-1 text-center text-slate-400 font-semibold">⋮⋮</td>
-              <td className="px-2 py-1">{v.value}</td>
-              <td className="px-2 py-1 text-center">
-                <button
-                  onClick={() => onDelete(v.id)}
-                  className="text-slate-300 hover:text-red-500 text-xs"
-                  title="Löschen"
-                >
-                  ✕
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {isSaving && <p className="text-xs text-slate-400 mt-1">Speichern...</p>}
-    </div>
-  );
-}
+    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+      <h1 className="text-2xl font-bold text-theme-text">🗂️ Datenklassen-Bibliothek</h1>
 
-function DataClassCard({ dc, onDeleted }: { dc: DataClass; onDeleted: () => void }) {
-  const [values, setValues] = useState<DataClassValue[]>([]);
-  const [expanded, setExpanded] = useState(false);
-  const [newVal, setNewVal] = useState("");
-  const [adding, setAdding] = useState(false);
-  const [addError, setAddError] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const loadValues = async () => {
-    const vals = await dataclassApi.listValues(dc.id);
-    setValues(vals);
-  };
-
-  const handleExpand = () => {
-    if (!expanded) loadValues();
-    setExpanded(!expanded);
-  };
-
-  const handleAddValue = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newVal.trim()) return;
-    setAdding(true);
-    setAddError("");
-    try {
-      await dataclassApi.addValue(dc.id, newVal.trim());
-      setNewVal("");
-      await loadValues();
-      // Fokus bleibt im Eingabefeld fuer schnelle Mehrfach-Eingabe (UX)
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } catch (err: unknown) {
-      setAddError(String(err));
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const handleDeleteValue = async (vid: number) => {
-    await dataclassApi.deleteValue(vid);
-    setValues((prev) => prev.filter((v) => v.id !== vid));
-  };
-
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-slate-800">{dc.name}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${TYPE_COLORS[dc.value_type] ?? "bg-slate-100 text-slate-600"}`}>
-              {dc.value_type}
-            </span>
-          </div>
-          {dc.description && <p className="text-xs text-slate-500 mb-2">{dc.description}</p>}
-          <p className="text-xs text-slate-400 italic">{TYPE_HINTS[dc.value_type]}</p>
-        </div>
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-theme-border">
         <button
-          onClick={() => { if (window.confirm("Datenklasse löschen?")) onDeleted(); }}
-          className="text-red-400 hover:text-red-600 text-xs border border-red-200 rounded-lg px-2 py-1">
-          Löschen
+          onClick={() => setActiveTab('mine')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'mine'
+              ? 'border-theme-primary text-theme-primary'
+              : 'border-transparent text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          📁 Meine Datenklassen ({userNodes.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('system')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'system'
+              ? 'border-theme-primary text-theme-primary'
+              : 'border-transparent text-theme-text-muted hover:text-theme-text'
+          }`}
+        >
+          {bugmagnetImported ? '🐛 Bug Magnet Import' : '📋 Beispiele'} ({systemNodes.length})
         </button>
       </div>
 
-      <button onClick={handleExpand}
-        className="mt-3 text-sm text-sky-600 hover:underline flex items-center gap-1">
-        {expanded ? "▲" : "▼"} {values.length > 0 ? `${values.length} Wert(e)` : "Werte anzeigen/bearbeiten"}
-      </button>
-
-      {expanded && (
-        <div className="mt-3">
-          {/* REQ-4014: Tabelle mit Spalten-Headern und Drag & Drop */}
-          <DataClassValuesTable dc={dc} values={values} onValuesChange={setValues} onDelete={handleDeleteValue} />
-          <form onSubmit={handleAddValue} className="flex gap-2">
-            <input
-              ref={inputRef}
-              value={newVal}
-              onChange={(e) => setNewVal(e.target.value)}
-              placeholder={`Neuer Wert (${dc.value_type})...`}
-              className="flex-1 px-2 py-1 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400"
-            />
-            <button type="submit" disabled={adding || !newVal.trim()}
-              className="px-3 py-1 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50">
-              +
-            </button>
-          </form>
-          {addError && <p className="text-xs text-red-600 mt-1">{addError}</p>}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export default function DataClassesPage() {
-  const [dataclasses, setDataclasses] = useState<DataClass[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState("text");
-  const [newDesc, setNewDesc] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState("");
-  const [selected, setSelected] = useState<Set<number>>(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [bugmagnetImported, setBugmagnetImported] = useState(false);
-  const [importMessage, setImportMessage] = useState("");
-
-  const load = async () => {
-    setLoading(true);
-    try {
-      setDataclasses(await dataclassApi.list());
-      const r = await fetch('/api/dataclasses/bugmagnet-status');
-      if (r.ok) {
-        const d = await r.json();
-        setBugmagnetImported(d.imported);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    setCreating(true);
-    setCreateError("");
-    try {
-      await dataclassApi.create({ name: newName.trim(), value_type: newType, description: newDesc.trim() || undefined });
-      setNewName("");
-      setNewDesc("");
-      await load();
-    } catch (err: unknown) {
-      setCreateError(String(err));
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    await dataclassApi.delete(id);
-    setDataclasses((prev) => prev.filter((dc) => dc.id !== id));
-    setSelected((prev) => { const s = new Set(prev); s.delete(id); return s; });
-  };
-
-  const toggleSelect = (id: number) => {
-    setSelected((prev) => {
-      const s = new Set(prev);
-      if (s.has(id)) s.delete(id); else s.add(id);
-      return s;
-    });
-  };
-
-  const handleBulkDelete = async () => {
-    if (selected.size === 0) return;
-    setBulkDeleting(true);
-    try {
-      await dataclassApi.bulkDelete([...selected]);
-      setSelected(new Set());
-      await load();
-    } finally {
-      setBulkDeleting(false);
-    }
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImportMessage("");
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const r = await fetch('/api/dataclasses/import-user', { method: 'POST', body: formData });
-      const d = await r.json();
-      if (r.ok) {
-        setImportMessage(`✅ ${d.imported} Datenklasse(n) importiert`);
-        await load();
-        setTimeout(() => setImportMessage(""), 3000);
-      } else {
-        setImportMessage(`❌ Fehler: ${d.detail}`);
-      }
-    } catch (err) {
-      setImportMessage(`❌ Fehler: ${String(err)}`);
-    }
-    e.target.value = '';
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800">G.R.E.A.T. – Datenklassen</h1>
-        <div className="flex gap-2">
-          <a href="/app" className="text-sm text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-1">
-            Projekte
-          </a>
-          <a href="/ui/dataclasses" className="text-sm text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-1">
-            Klassische Ansicht
-          </a>
-          <a href="/docs" target="_blank" className="text-sm text-slate-500 hover:text-sky-600 border border-slate-200 rounded-lg px-3 py-1">
-            API-Docs
-          </a>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        {/* Neue Datenklasse anlegen */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-          <h2 className="text-base font-semibold text-slate-700 mb-4">Neue Datenklasse anlegen</h2>
-          <p className="text-sm text-slate-500 mb-4">
-            Datenklassen sind wiederverwendbare Äquivalenzklassen – z.B. "Statuswerte" mit den Werten "Aktiv", "Inaktiv", "Gesperrt".
-            Du kannst sie direkt in Kategorien eines Projekts einfügen.
-          </p>
-          <form onSubmit={handleCreate} className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_2fr_auto] gap-3 items-end">
-            <div>
-              <label className="block text-xs text-slate-500 mb-1 font-medium">Name</label>
-              <input value={newName} onChange={(e) => setNewName(e.target.value)}
-                placeholder="z.B. Statuswerte, Gewichtsklassen..." required
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400" />
-            </div>
-            <div>
-              <label className="block text-xs text-slate-500 mb-1 font-medium">Typ</label>
-              <select value={newType} onChange={(e) => setNewType(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
-                {VALUE_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-500 mb-1 font-medium">Beschreibung (optional)</label>
-              <input value={newDesc} onChange={(e) => setNewDesc(e.target.value)}
-                placeholder="Wofür wird diese Klasse genutzt?"
-                className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400" />
-            </div>
-            <button type="submit" disabled={creating || !newName.trim()}
-              className="px-4 py-2 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
-              {creating ? "..." : "Anlegen"}
-            </button>
-          </form>
-          {createError && <p className="text-sm text-red-600 mt-2">{createError}</p>}
-          <p className="text-xs text-slate-400 mt-2">Tipp: {TYPE_HINTS[newType]}</p>
-        </div>
-
-        {/* Datenklassen-Liste */}
-        <h2 className="text-base font-semibold text-slate-700 mb-3">Vorhandene Datenklassen ({dataclasses.length})</h2>
-        
-        {/* REQ-4013: Import/Export Kasten */}
-        <div className="p-4 rounded-lg bg-white border border-slate-200 mb-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">📁 Meine Datenklassen – Import / Export</h3>
-          <div className="flex gap-3 flex-wrap items-center">
-            {/* Export */}
+      {activeTab === 'mine' && (
+        <div className="space-y-4">
+          {/* Import/Export (REQ-4013 erhalten) */}
+          <div className="flex gap-3 items-center p-3 bg-theme-surface rounded-lg border border-theme-border">
+            <span className="text-sm text-theme-text-muted font-medium">Import / Export:</span>
             <a
               href="/api/dataclasses/export-user"
               download="my-dataclasses.json"
-              className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm font-medium"
+              className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded hover:opacity-90 transition-opacity"
             >
               📤 Exportieren
             </a>
-            {/* Import */}
-            <label className="px-4 py-2 bg-white border border-slate-300 rounded cursor-pointer hover:bg-slate-50 text-sm text-slate-700 font-medium">
-              📥 Importieren
-              <input
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={handleImport}
-              />
+            <label className="px-3 py-1.5 text-sm border border-theme-border rounded cursor-pointer hover:bg-theme-border text-theme-text transition-colors">
+              📥 Importieren (JSON)
+              <input type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
             </label>
           </div>
-          {importMessage && (
-            <p className={`text-sm mt-3 ${importMessage.includes("✅") ? "text-green-600" : "text-red-600"}`}>
-              {importMessage}
-            </p>
+
+          {/* Neue Kategorie */}
+          <button
+            onClick={handleAddRoot}
+            className="px-4 py-2 bg-theme-primary text-white rounded hover:opacity-90 text-sm font-medium transition-opacity"
+          >
+            + Neue Kategorie anlegen
+          </button>
+
+          {loading ? (
+            <p className="text-theme-text-muted text-sm">Lade...</p>
+          ) : userNodes.length === 0 ? (
+            <div className="p-8 text-center text-theme-text-muted border-2 border-dashed border-theme-border rounded-lg">
+              <p className="text-lg mb-2">Noch keine eigenen Datenklassen</p>
+              <p className="text-sm">Klicke auf "+ Neue Kategorie anlegen" um zu starten</p>
+            </div>
+          ) : (
+            <div className="bg-theme-surface rounded-lg border border-theme-border p-3">
+              <DataNodeTree
+                nodes={userNodes}
+                onAddChild={handleAddChild}
+                onAddValue={handleAddValue}
+                onDelete={handleDelete}
+              />
+            </div>
           )}
         </div>
+      )}
 
-        {loading ? (
-          <p className="text-slate-400 text-sm">Lade...</p>
-        ) : dataclasses.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl">
-            <p className="text-lg mb-1">📚</p>
-            <p className="font-medium">Noch keine Datenklassen</p>
-            <p className="text-sm mt-1">Lege deine erste wiederverwendbare Äquivalenzklasse an</p>
+      {activeTab === 'system' && (
+        <div className="space-y-4">
+          {/* BugMagnet Import */}
+          <div className="p-4 bg-theme-surface rounded-lg border border-theme-border space-y-2">
+            <p className="text-sm text-theme-text">
+              Beispielklassen von <strong>Bug Magnet</strong> – für die Inhalte ist der Urheber verantwortlich.
+            </p>
+            <a
+              href="https://github.com/gojko/bugmagnet/blob/master/template/config.json"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-theme-primary hover:underline block"
+            >
+              github.com/gojko/bugmagnet/blob/master/template/config.json
+            </a>
+            <button
+              onClick={handleBugMagnetImport}
+              disabled={importing}
+              className="px-4 py-2 bg-theme-primary text-white rounded hover:opacity-90 disabled:opacity-40 text-sm transition-opacity"
+            >
+              {importing ? '⏳ Importiere...' : bugmagnetImported ? '🔄 Aktualisieren' : '📥 Importieren'}
+            </button>
+            {importMsg && <p className="text-sm text-theme-text">{importMsg}</p>}
           </div>
-        ) : (
-          <>
-            {/* Auswahl-Toolbar: immer sichtbar wenn Datenklassen vorhanden */}
-            {dataclasses.length > 0 && (
-              <div className="flex items-center gap-2 mb-2 px-1">
-                <button
-                  onClick={() => {
-                    const deletable = dataclasses.filter((dc) => !dc.is_system);
-                    setSelected(selected.size === deletable.length ? new Set() : new Set(deletable.map((dc) => dc.id)));
-                  }}
-                  className="text-xs px-2 py-1 border border-slate-300 rounded hover:bg-slate-50"
-                >
-                  {selected.size === dataclasses.filter((dc) => !dc.is_system).length && selected.size > 0
-                    ? "Keinen markieren"
-                    : "Alle markieren"}
-                </button>
-                <button
-                  onClick={() => setSelected(new Set(dataclasses.filter((dc) => !dc.is_system && !selected.has(dc.id)).map((dc) => dc.id)))}
-                  className="text-xs px-2 py-1 border border-slate-300 rounded hover:bg-slate-50"
-                >
-                  Markierung umkehren
-                </button>
-              </div>
-            )}
 
-            {selected.size > 0 && (
-              <div className="flex items-center gap-3 mb-3 px-1">
-                <span className="text-sm text-slate-600">{selected.size} ausgewählt</span>
-                <button
-                  onClick={handleBulkDelete}
-                  disabled={bulkDeleting}
-                  className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
-                >
-                  {bulkDeleting ? "Löschen..." : "Auswahl löschen"}
-                </button>
-                <button
-                  onClick={() => setSelected(new Set())}
-                  className="px-3 py-1 text-sm border border-slate-300 rounded-lg hover:bg-slate-50"
-                >
-                  Abbrechen
-                </button>
-              </div>
-            )}
-            {/* REQ-3010 + REQ-4012: System-Datenklassen Sektion */}
-            {dataclasses.some((dc) => dc.is_system) && (
-              <div className="mb-6">
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                  {bugmagnetImported ? "Bug Magnet Import (schreibgeschützt)" : "Beispiele (schreibgeschützt)"}
-                </h3>
-                <div className="grid grid-cols-1 gap-3">
-                  {dataclasses.filter((dc) => dc.is_system).map((dc) => (
-                    <div key={dc.id} className="flex items-start gap-2">
-                      <div className="w-4 mt-3" />
-                      <div className="flex-1">
-                        <DataClassCard dc={dc} onDeleted={() => handleDelete(dc.id)} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* REQ-3010: User-Datenklassen Sektion */}
-            <div>
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-1">
-                Meine Datenklassen
-              </h3>
-              {dataclasses.filter((dc) => !dc.is_system).length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">Noch keine eigenen Datenklassen angelegt.</p>
-              ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {dataclasses.filter((dc) => !dc.is_system).map((dc) => (
-                    <div key={dc.id} className="flex items-start gap-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(dc.id)}
-                        onChange={() => toggleSelect(dc.id)}
-                        className="mt-3 h-4 w-4 rounded border-slate-300 text-blue-600"
-                      />
-                      <div className="flex-1">
-                        <DataClassCard dc={dc} onDeleted={() => handleDelete(dc.id)} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {loading ? (
+            <p className="text-theme-text-muted text-sm">Lade...</p>
+          ) : systemNodes.length === 0 ? (
+            <p className="text-theme-text-muted text-sm p-4">
+              Noch keine Beispieldaten – klicke auf "Importieren".
+            </p>
+          ) : (
+            <div className="bg-theme-surface rounded-lg border border-theme-border p-3">
+              <DataNodeTree nodes={systemNodes} />
             </div>
-          </>
-        )}
-      </main>
+          )}
+        </div>
+      )}
     </div>
   );
 }
