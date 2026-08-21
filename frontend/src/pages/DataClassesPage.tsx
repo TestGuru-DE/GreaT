@@ -95,7 +95,7 @@ export default function DataClassesPage() {
     const fd = new FormData();
     fd.append('file', file);
     try {
-      const r = await fetch('/api/dataclasses/import-user', { method: 'POST', body: fd });
+      const r = await fetch('/api/datanodes/import-user', { method: 'POST', body: fd });
       const d = await r.json();
       if (r.ok) {
         alert(`✅ ${d.imported} Klassen importiert`);
@@ -143,7 +143,7 @@ export default function DataClassesPage() {
           <div className="flex gap-3 items-center p-3 bg-theme-surface rounded-lg border border-theme-border">
             <span className="text-sm text-theme-text-muted font-medium">Import / Export:</span>
             <a
-              href="/api/dataclasses/export-user"
+              href="/api/datanodes/export-user"
               download="my-dataclasses.json"
               className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:opacity-90 transition-opacity"
             >
