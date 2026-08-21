@@ -1,4 +1,4 @@
-"""
+﻿"""
 REQ-4018: Hierarchische Datenklassen API.
 Router für Datenknoten mit Baumstruktur und BugMagnet-Import.
 """
@@ -7,7 +7,8 @@ from __future__ import annotations
 from typing import List, Optional
 import json
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 import httpx
 
@@ -232,3 +233,103 @@ def _import_node_recursive(
             value=str(data), 
             sort_order=0
         ))
+
+
+# REQ-4013: Export/Import User DataNodes (hierarchisch)
+
+def _node_to_dict(node) -> dict:
+    """Rekursiv einen DataNode in ein serialisierbares Dict umwandeln."""
+    return {
+        "name": node.name,
+        "values": [v.value for v in sorted(node.values, key=lambda x: x.sort_order)],
+        "children": [_node_to_dict(c) for c in sorted(node.children, key=lambda x: x.sort_order)]
+    }
+
+
+@router.get("/export-user")
+def export_user_datanodes(db: Session = Depends(get_db)):
+    """REQ-4013: Exportiert eigene (nicht-System) DataNodes als JSON."""
+    roots = db.query(DataNode).filter(
+        DataNode.is_system == False,
+        DataNode.parent_id == None
+    ).order_by(DataNode.sort_order, DataNode.name).all()
+    
+    result = [_node_to_dict(node) for node in roots]
+    return JSONResponse(
+        content={"version": "2.0", "datanodes": result},
+        headers={"Content-Disposition": "attachment; filename=my-dataclasses.json"}
+    )
+
+
+def _import_node_from_dict(data: dict, parent_id, db: Session):
+    """Rekursiv einen Knoten aus Dict importieren."""
+    name = data.get("name", "").strip()
+    if not name:
+        return
+    # Prüfe ob bereits vorhanden (Merge)
+    existing = db.query(DataNode).filter(
+        DataNode.name == name,
+        DataNode.parent_id == parent_id,
+        DataNode.is_system == False
+    ).first()
+    if existing:
+        node = existing
+    else:
+        node = DataNode(name=name, parent_id=parent_id, is_system=False)
+        db.add(node)
+        db.flush()
+    # Werte hinzufügen (nur neue)
+    existing_vals = {v.value for v in node.values}
+    for val in data.get("values", []):
+        if isinstance(val, str) and val.strip() and val not in existing_vals:
+            db.add(DataNodeValue(node_id=node.id, value=val))
+    # Kinder rekursiv
+    for child in data.get("children", []):
+        _import_node_from_dict(child, node.id, db)
+
+
+@router.post("/import-user")
+async def import_user_datanodes(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """REQ-4013: Importiert eigene DataNodes aus einer JSON-Datei (Merge-Strategie)."""
+    content = await file.read()
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungueltige JSON-Datei")
+    
+    imported = 0
+    # Neues Format v2.0: {"datanodes": [...]}
+    nodes_data = data.get("datanodes", [])
+    if nodes_data:
+        for item in nodes_data:
+            _import_node_from_dict(item, None, db)
+            imported += 1
+    else:
+        # Altes Format v1.0: {"dataclasses": [...]}
+        classes_data = data.get("dataclasses", [])
+        if not classes_data and isinstance(data, dict):
+            # Legacy: {name: [values]}
+            classes_data = [{"name": k, "values": v} for k, v in data.items() if isinstance(v, list)]
+        for item in classes_data:
+            name = item.get("name", "").strip()
+            if not name:
+                continue
+            existing = db.query(DataNode).filter(
+                DataNode.name == name,
+                DataNode.parent_id == None,
+                DataNode.is_system == False
+            ).first()
+            if existing:
+                node = existing
+            else:
+                node = DataNode(name=name, parent_id=None, is_system=False)
+                db.add(node)
+                db.flush()
+            existing_vals = {v.value for v in node.values}
+            for val in item.get("values", []):
+                if isinstance(val, str) and val.strip() and val not in existing_vals:
+                    db.add(DataNodeValue(node_id=node.id, value=val))
+            imported += 1
+    
+    db.commit()
+    return {"status": "ok", "imported": imported}
