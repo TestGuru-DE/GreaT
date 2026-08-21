@@ -97,6 +97,7 @@ def load_result_categories(db: Session, project_id: int) -> List[dict]:
         result.append({
             "id": c.id,
             "name": c.name,
+            "editable": True,
             "values": [{"id": v.id, "value": v.value} for v in values]
         })
     return result

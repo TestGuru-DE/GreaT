@@ -15,7 +15,6 @@ from ..database import get_db
 from .. import models, schemas
 from ..services import (
     load_categories_values,
-    load_all_categories_values,  # REQ-4016
     load_result_categories,  # REQ-4016
     generate_cases,
     assignment_from_testcase,
@@ -74,24 +73,27 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
         .order_by(models.Category.order_index, models.Category.id)
         .all()
     )
-    cat_by_name = {c.name: c.id for c in categories}
-    
-    # REQ-4016: Ergebnis-Kategorien laden
-    result_cat_ids = {c.id for c in categories if c.is_result}
 
     for idx, assignment in enumerate(cases, start=1):
         tc = models.TestCase(generation_id=gen.id, name=f"TC_{idx}")
         db.add(tc)
         db.flush()
-        
-        # Normale Kategorien (aus Generierung)
-        for k, v in assignment.items():
-            db.add(models.TestCaseValue(testcase_id=tc.id, category_id=cat_by_name[k], value=v))
-        
-        # REQ-4016: Ergebnis-Kategorien mit leeren Werten hinzufügen
+
+        persisted_assignment = dict(assignment)
         for cat in categories:
-            if cat.is_result:
-                db.add(models.TestCaseValue(testcase_id=tc.id, category_id=cat.id, value=""))
+            if cat.is_result and cat.name not in persisted_assignment:
+                persisted_assignment[cat.name] = ""
+
+        for cat in categories:
+            if cat.name not in persisted_assignment:
+                continue
+            db.add(
+                models.TestCaseValue(
+                    testcase_id=tc.id,
+                    category_id=cat.id,
+                    value=persisted_assignment[cat.name],
+                )
+            )
 
     db.commit()
     return schemas.GenerateResponse(generation_id=gen.id, count=len(cases))
@@ -131,6 +133,8 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
     # REQ-3063: Fehlerwerte laden für Markierung
     error_values = load_error_values(db, gen.project_id)
 
+    result_categories = load_result_categories(db, gen.project_id)
+
     out: List[dict] = []
     for tc in testcases:
         vals = (
@@ -139,13 +143,16 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             .order_by(models.TestCaseValue.id)
             .all()
         )
-        assignments = {name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value for v in vals}
+        assignments = {category.name: "" for category in categories}
+        for value_row in vals:
+            assignments[name_by_id.get(value_row.category_id, f"cat#{value_row.category_id}")] = value_row.value
         has_error = any(v in error_values for v in assignments.values() if v)  # REQ-4016: Ignoriere leere Werte
         
         # REQ-3050: Risikoabdeckung berechnen (Summe der risk_weight, leere Werte = 0)
         risk_coverage = sum(value_risk_map.get(val, 0) if val else 0 for val in assignments.values())
         
         out.append({
+            "id": tc.id,
             "name": tc.name,
             "assignments": assignments,
             "_has_error_value": has_error,
@@ -160,6 +167,59 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
     return {
         "testcases": out,
         "risk_summary": risk_summary,
+        "result_categories": result_categories,
+    }
+
+
+@router.patch("/testcases/{tcid}/assignments", response_model=schemas.TestCaseAssignmentUpdateResponse)
+def update_testcase_assignment(
+    tcid: int,
+    payload: schemas.TestCaseAssignmentUpdate,
+    db: Session = Depends(get_db),
+):
+    testcase = db.get(models.TestCase, tcid)
+    if testcase is None:
+        raise HTTPException(status_code=404, detail="Testcase not found.")
+
+    generation = db.get(models.Generation, testcase.generation_id)
+    if generation is None:
+        raise HTTPException(status_code=404, detail="Generation not found.")
+
+    category = (
+        db.query(models.Category)
+        .filter(
+            models.Category.project_id == generation.project_id,
+            models.Category.name == payload.category_name,
+        )
+        .first()
+    )
+    if category is None:
+        raise HTTPException(status_code=404, detail="Category not found.")
+
+    testcase_value = (
+        db.query(models.TestCaseValue)
+        .filter(
+            models.TestCaseValue.testcase_id == tcid,
+            models.TestCaseValue.category_id == category.id,
+        )
+        .first()
+    )
+    if testcase_value is None:
+        testcase_value = models.TestCaseValue(
+            testcase_id=tcid,
+            category_id=category.id,
+            value=payload.value,
+        )
+        db.add(testcase_value)
+    else:
+        testcase_value.value = payload.value
+
+    db.commit()
+
+    return {
+        "testcase_id": tcid,
+        "category_name": payload.category_name,
+        "value": payload.value,
     }
 
 
@@ -386,4 +446,3 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
         media_type=mime,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-

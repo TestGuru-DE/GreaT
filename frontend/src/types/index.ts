@@ -49,10 +49,23 @@ export interface GenerateResponse {
 }
 
 export interface TestCaseOut {
+  id: number;
   name: string;
   assignments: Record<string, string>;
   _has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
   risk_coverage?: number;      // REQ-3050: Risikoabdeckung (Summe risk_weight)
+}
+
+export interface ResultCategoryValue {
+  id: number;
+  value: string;
+}
+
+export interface ResultCategory {
+  id: number;
+  name: string;
+  editable: boolean;
+  values: ResultCategoryValue[];
 }
 
 // REQ-3051: Risikoabdeckungs-Zusammenfassung

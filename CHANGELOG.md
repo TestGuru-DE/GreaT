@@ -2,6 +2,14 @@
 
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [Unreleased]
+
+### 🐛 Bugfixes
+- **REQ-4016**: Ergebniswerte in der Testfallgenerierung sind jetzt wieder auswählbar und regelbasiert befüllbar.
+- Backend liefert Ergebnis-Kategorien inklusive auswählbarer Werte an die Testfalltabelle.
+- Regeln mit Ziel auf Ergebnis-Kategorien persistieren den gesetzten Wert jetzt korrekt im generierten Testfall.
+- React-Testfalltabelle erlaubt Bearbeitung von Ergebnis-Spalten per Auswahl oder Freitext direkt nach der Generierung.
+
 ## [1.5.0] - 2026-08-19
 
 ### ✨ Neue Features – Sprint 9
