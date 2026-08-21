@@ -64,7 +64,7 @@ export default function SettingsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('/api/dataclasses/bugmagnet-status')
+        const r = await fetch('/api/datanodes/bugmagnet-status')
         if (r.ok) {
           const d = await r.json()
           setBugmagnetImported(d.imported)
@@ -80,11 +80,11 @@ export default function SettingsPage() {
     setImporting(true)
     setImportStatus(null)
     try {
-      const r = await fetch('/api/dataclasses/bugmagnet-import', { method: 'POST' })
+      const r = await fetch('/api/datanodes/bugmagnet-import', { method: 'POST' })
       const d = await r.json()
       if (r.ok) {
         setBugmagnetImported(true)
-        setImportStatus(`✅ ${d.categories_imported} Kategorien importiert`)
+        setImportStatus(`✅ Import abgeschlossen (${d.nodes_created} Knoten)`)
       } else {
         setImportStatus(`❌ Fehler: ${d.detail}`)
       }
