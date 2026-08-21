@@ -1,4 +1,4 @@
-﻿"""
+"""
 REQ-4018: Hierarchische Datenklassen API.
 Router für Datenknoten mit Baumstruktur und BugMagnet-Import.
 """
@@ -246,7 +246,7 @@ def _node_to_dict(node) -> dict:
     }
 
 
-@router.get("/export-user")
+@router.get("/datanodes/export-user")
 def export_user_datanodes(db: Session = Depends(get_db)):
     """REQ-4013: Exportiert eigene (nicht-System) DataNodes als JSON."""
     roots = db.query(DataNode).filter(
@@ -288,7 +288,7 @@ def _import_node_from_dict(data: dict, parent_id, db: Session):
         _import_node_from_dict(child, node.id, db)
 
 
-@router.post("/import-user")
+@router.post("/datanodes/import-user")
 async def import_user_datanodes(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """REQ-4013: Importiert eigene DataNodes aus einer JSON-Datei (Merge-Strategie)."""
     content = await file.read()
