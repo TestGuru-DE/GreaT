@@ -1,4 +1,4 @@
-// REQ-4018: Hierarchische Datenklassen - Baumansicht
+﻿// REQ-4018: Hierarchische Datenklassen - Baumansicht
 import { useState } from 'react';
 import type { DataNode } from '../types';
 
@@ -82,7 +82,7 @@ export function DataNodeTree({
                   <button
                     title="Untergruppe hinzufügen"
                     onClick={() => { setAddingChild(node.id); setAddingValue(null); }}
-                    className="text-xs px-1.5 py-0.5 rounded bg-theme-primary text-white hover:bg-opacity-90"
+                    className="text-xs px-1.5 py-0.5 rounded bg-primary-600 text-white hover:bg-opacity-90"
                   >
                     + Gruppe
                   </button>
@@ -134,7 +134,7 @@ export function DataNodeTree({
                       setAddingChild(null);
                     }
                   }} 
-                  className="text-xs px-2 py-1 bg-theme-primary text-white rounded"
+                  className="text-xs px-2 py-1 bg-primary-600 text-white rounded"
                 >
                   ✓
                 </button>
@@ -177,7 +177,7 @@ export function DataNodeTree({
                       setAddingValue(null);
                     }
                   }} 
-                  className="text-xs px-2 py-1 bg-theme-primary text-white rounded"
+                  className="text-xs px-2 py-1 bg-primary-600 text-white rounded"
                 >
                   ✓
                 </button>
