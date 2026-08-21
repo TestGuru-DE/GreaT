@@ -11,6 +11,8 @@ export default function DataClassesPage() {
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'mine' | 'system'>('mine');
+  const [addingRoot, setAddingRoot] = useState(false);
+  const [newRootName, setNewRootName] = useState('');
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -34,32 +36,29 @@ export default function DataClassesPage() {
   const userNodes = tree.filter(n => !n.is_system);
 
   async function handleAddRoot() {
-    const name = prompt('Name der neuen Kategorie:');
-    if (!name?.trim()) return;
+    if (!newRootName.trim()) return;
     try {
-      await datanodesApi.create({ name: name.trim(), parent_id: null, is_system: false });
+      await datanodesApi.create({ name: newRootName.trim(), parent_id: null, is_system: false });
+      setNewRootName('');
+      setAddingRoot(false);
       reload();
     } catch (err) {
       alert('Fehler beim Anlegen: ' + String(err));
     }
   }
 
-  async function handleAddChild(parentId: number) {
-    const name = prompt('Name der neuen Gruppe/Klasse:');
-    if (!name?.trim()) return;
+  async function handleAddChild(parentId: number, name: string) {
     try {
-      await datanodesApi.create({ name: name.trim(), parent_id: parentId, is_system: false });
+      await datanodesApi.create({ name, parent_id: parentId, is_system: false });
       reload();
     } catch (err) {
       alert('Fehler beim Anlegen: ' + String(err));
     }
   }
 
-  async function handleAddValue(nodeId: number) {
-    const value = prompt('Neuer Wert:');
-    if (!value?.trim()) return;
+  async function handleAddValue(nodeId: number, value: string) {
     try {
-      await datanodesApi.addValue(nodeId, value.trim());
+      await datanodesApi.addValue(nodeId, value);
       reload();
     } catch (err) {
       alert('Fehler beim Hinzufügen: ' + String(err));
@@ -157,12 +156,41 @@ export default function DataClassesPage() {
           </div>
 
           {/* Neue Kategorie */}
-          <button
-            onClick={handleAddRoot}
-            className="px-4 py-2 bg-theme-primary text-white rounded hover:opacity-90 text-sm font-medium transition-opacity"
-          >
-            + Neue Kategorie anlegen
-          </button>
+          {addingRoot ? (
+            <div className="flex gap-2 items-center p-3 bg-theme-surface rounded-lg border border-theme-border">
+              <input
+                autoFocus
+                type="text"
+                value={newRootName}
+                onChange={e => setNewRootName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddRoot();
+                  if (e.key === 'Escape') { setAddingRoot(false); setNewRootName(''); }
+                }}
+                placeholder="Name der neuen Kategorie..."
+                className="flex-1 px-3 py-1.5 text-sm border border-theme-border rounded bg-white text-theme-text"
+              />
+              <button 
+                onClick={handleAddRoot}
+                className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded hover:opacity-90 transition-opacity"
+              >
+                Anlegen
+              </button>
+              <button 
+                onClick={() => { setAddingRoot(false); setNewRootName(''); }}
+                className="px-3 py-1.5 text-sm border border-theme-border rounded text-theme-text-muted hover:bg-theme-border transition-colors"
+              >
+                Abbrechen
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAddingRoot(true)}
+              className="px-4 py-2 bg-theme-primary text-white rounded hover:opacity-90 text-sm font-medium transition-opacity"
+            >
+              + Neue Kategorie anlegen
+            </button>
+          )}
 
           {loading ? (
             <p className="text-theme-text-muted text-sm">Lade...</p>

@@ -48,6 +48,7 @@ export default function CategoryTree({ projectId }: Props) {
   const newCatRef = useRef<HTMLInputElement>(null);
   const [dataNodeTree, setDataNodeTree] = useState<DataNode[]>([]);
   const [dataNodeMenuOpen, setDataNodeMenuOpen] = useState<{ categoryId: number; categoryName: string } | null>(null);
+  const [lastApplied, setLastApplied] = useState<string | null>(null);
 
   useEffect(() => { fetchCategories(projectId); }, [projectId, fetchCategories]);
 
@@ -127,9 +128,9 @@ export default function CategoryTree({ projectId }: Props) {
         await createValue(categoryId, val.value);
         addedCount++;
       }
-      toast.add(`${addedCount} Werte aus ${node.name} hinzugefügt`);
+      setLastApplied(`✅ ${addedCount} Werte aus "${node.name}" übernommen`);
+      setTimeout(() => setLastApplied(null), 3000);
       if (expanded[categoryId]) fetchValues(categoryId);
-      setDataNodeMenuOpen(null);
     } catch (err) {
       toast.add("Fehler beim Hinzufügen", "error");
     }
@@ -496,12 +497,25 @@ export default function CategoryTree({ projectId }: Props) {
               </h3>
               <button onClick={() => setDataNodeMenuOpen(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
             </div>
+            {lastApplied && (
+              <div className="mx-4 mt-3 p-2 bg-green-50 text-green-700 text-sm rounded border border-green-200">
+                {lastApplied}
+              </div>
+            )}
             <div className="overflow-auto p-4 flex-1">
               {dataNodeTree.length === 0 ? (
                 <p className="text-slate-400 text-sm py-8 text-center">Keine Datenklassen vorhanden</p>
               ) : (
                 <DataNodeTreeView nodes={dataNodeTree} onSelect={(node) => applyDataNodeValues(dataNodeMenuOpen.categoryId, node)} />
               )}
+            </div>
+            <div className="p-4 pt-3 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => { setDataNodeMenuOpen(null); setLastApplied(null); }}
+                className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm font-medium"
+              >
+                ✓ Fertig
+              </button>
             </div>
           </div>
         </div>

@@ -5,8 +5,8 @@ import type { DataNode } from '../types';
 interface Props {
   nodes: DataNode[];
   depth?: number;
-  onAddChild?: (parentId: number) => void;
-  onAddValue?: (nodeId: number) => void;
+  onAddChild?: (parentId: number, name: string) => void;
+  onAddValue?: (nodeId: number, value: string) => void;
   onDelete?: (nodeId: number) => void;
   onRename?: (nodeId: number, name: string) => void;
 }
@@ -27,6 +27,10 @@ export function DataNodeTree({
   onRename,
 }: Props) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [addingChild, setAddingChild] = useState<number | null>(null);
+  const [childName, setChildName] = useState('');
+  const [addingValue, setAddingValue] = useState<number | null>(null);
+  const [valueName, setValueName] = useState('');
 
   const toggleExpand = (id: number) => {
     setExpanded((prev) => {
@@ -77,14 +81,14 @@ export function DataNodeTree({
                 <div className="hidden group-hover:flex gap-1">
                   <button
                     title="Untergruppe hinzufügen"
-                    onClick={() => onAddChild?.(node.id)}
+                    onClick={() => { setAddingChild(node.id); setAddingValue(null); }}
                     className="text-xs px-1.5 py-0.5 rounded bg-theme-primary text-white hover:bg-opacity-90"
                   >
                     + Gruppe
                   </button>
                   <button
                     title="Wert hinzufügen"
-                    onClick={() => onAddValue?.(node.id)}
+                    onClick={() => { setAddingValue(node.id); setAddingChild(null); }}
                     className="text-xs px-1.5 py-0.5 rounded bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border"
                   >
                     + Wert
@@ -99,6 +103,92 @@ export function DataNodeTree({
                 </div>
               )}
             </div>
+
+            {/* Inline-Formular: Neue Gruppe */}
+            {addingChild === node.id && (
+              <div className="ml-6 mt-1 flex gap-2 items-center">
+                <input 
+                  autoFocus 
+                  type="text" 
+                  value={childName}
+                  onChange={e => setChildName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && childName.trim()) {
+                      onAddChild?.(node.id, childName.trim());
+                      setChildName(''); 
+                      setAddingChild(null);
+                    }
+                    if (e.key === 'Escape') { 
+                      setChildName(''); 
+                      setAddingChild(null); 
+                    }
+                  }}
+                  placeholder="Name der Gruppe/Klasse..."
+                  className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
+                />
+                <button 
+                  onClick={() => {
+                    if (childName.trim()) {
+                      onAddChild?.(node.id, childName.trim());
+                      setChildName(''); 
+                      setAddingChild(null);
+                    }
+                  }} 
+                  className="text-xs px-2 py-1 bg-theme-primary text-white rounded"
+                >
+                  ✓
+                </button>
+                <button 
+                  onClick={() => { setChildName(''); setAddingChild(null); }}
+                  className="text-xs px-2 py-1 text-theme-text-muted"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* Inline-Formular: Neuer Wert */}
+            {addingValue === node.id && (
+              <div className="ml-6 mt-1 flex gap-2 items-center">
+                <input 
+                  autoFocus 
+                  type="text" 
+                  value={valueName}
+                  onChange={e => setValueName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && valueName.trim()) {
+                      onAddValue?.(node.id, valueName.trim());
+                      setValueName(''); 
+                      setAddingValue(null);
+                    }
+                    if (e.key === 'Escape') { 
+                      setValueName(''); 
+                      setAddingValue(null); 
+                    }
+                  }}
+                  placeholder="Neuer Wert..."
+                  className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
+                />
+                <button 
+                  onClick={() => {
+                    if (valueName.trim()) {
+                      onAddValue?.(node.id, valueName.trim());
+                      setValueName(''); 
+                      setAddingValue(null);
+                    }
+                  }} 
+                  className="text-xs px-2 py-1 bg-theme-primary text-white rounded"
+                >
+                  ✓
+                </button>
+                <button 
+                  onClick={() => { setValueName(''); setAddingValue(null); }}
+                  className="text-xs px-2 py-1 text-theme-text-muted"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Kinder und Werte (aufgeklappt) */}
             {isExpanded && (
