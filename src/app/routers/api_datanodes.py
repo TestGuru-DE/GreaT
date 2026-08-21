@@ -1,4 +1,4 @@
-"""
+﻿"""
 REQ-4018: Hierarchische Datenklassen API.
 Router für Datenknoten mit Baumstruktur und BugMagnet-Import.
 """
