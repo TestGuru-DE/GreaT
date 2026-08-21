@@ -1,6 +1,6 @@
 // REQ-3052: Tests für Office-ähnliche Tabellenansicht
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import TestCasePanel from "../TestCasePanel";
 import { useGenerateStore } from "../../store/generateStore";
 
@@ -13,11 +13,13 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
   const mockStore = {
     testcases: [
       {
+        id: 1,
         name: "TC_1",
         assignments: { Kategorie1: "Wert1", Kategorie2: "WertA" },
         risk_coverage: 5.0,
       },
       {
+        id: 2,
         name: "TC_2",
         assignments: { Kategorie1: "Wert2", Kategorie2: "WertB" },
         risk_coverage: 3.0,
@@ -30,12 +32,14 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     generations: [],
     generationsLoading: false,
     riskSummary: null,
+    resultCategories: [],
     generationId: null,
     setStrategy: vi.fn(),
     generate: vi.fn(),
     fetchGenerations: vi.fn(),
     loadGeneration: vi.fn(),
     renameGeneration: vi.fn(),
+    updateAssignment: vi.fn(),
   };
 
   it("zeigt Zeilennummern in erster Spalte", () => {
@@ -131,12 +135,14 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
       ...mockStore,
       testcases: [
         {
+          id: 1,
           name: "TC_1",
           assignments: { Kategorie1: "Wert1" },
           risk_coverage: 5.0,
           _has_error_value: true,
         },
         {
+          id: 2,
           name: "TC_2",
           assignments: { Kategorie1: "Wert2" },
           risk_coverage: 3.0,
@@ -150,5 +156,48 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     const errorRow = container.querySelector(".bg-red-50");
     expect(errorRow).toBeInTheDocument();
     expect(errorRow).toHaveClass("border-l-4", "border-l-red-500");
+  });
+
+  it("rendert Ergebnis-Spalten als editierbare Eingaben mit Auswahlwerten", async () => {
+    const updateAssignment = vi.fn();
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...mockStore,
+      updateAssignment,
+      resultCategories: [
+        {
+          id: 10,
+          name: "Ergebnis 1",
+          editable: true,
+          values: [
+            { id: 100, value: "Pass" },
+            { id: 101, value: "Fail" },
+          ],
+        },
+      ],
+      testcases: [
+        {
+          id: 1,
+          name: "TC_1",
+          assignments: { Kategorie1: "Wert1", "Ergebnis 1": "" },
+          risk_coverage: 1.0,
+        },
+      ],
+    });
+
+    render(<TestCasePanel projectId={1} />);
+
+    const input = screen.getByLabelText("TC_1 – Ergebnis 1");
+    expect(input).toBeInTheDocument();
+    expect(screen.getByText("Pass")).toBeInTheDocument();
+    expect(screen.getByText("Fail")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "Pass" } });
+      fireEvent.blur(input);
+    });
+
+    await waitFor(() => {
+      expect(updateAssignment).toHaveBeenCalledWith(1, "Ergebnis 1", "Pass");
+    });
   });
 });

@@ -70,9 +70,13 @@ class GenerateResponse(BaseModel):
     count: int
 
 class TestCaseOut(BaseModel):
+    id: int
     name: str
     assignments: Dict[str, str]
+    has_error_value: bool = Field(default=False, alias="_has_error_value")
     risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
+
+    model_config = ConfigDict(populate_by_name=True)
 
 # REQ-3051: Risikoabdeckungs-Zusammenfassung
 class RiskSummary(BaseModel):
@@ -81,6 +85,35 @@ class RiskSummary(BaseModel):
     max_possible_risk: float
     risk_coverage_percent: float
     testcase_count: int
+
+
+class ResultCategoryValueRead(BaseModel):
+    id: int
+    value: str
+
+
+class ResultCategoryRead(BaseModel):
+    id: int
+    name: str
+    editable: bool = True
+    values: List[ResultCategoryValueRead] = []
+
+
+class TestcasesResponse(BaseModel):
+    testcases: List[TestCaseOut]
+    risk_summary: RiskSummary
+    result_categories: List[ResultCategoryRead] = []
+
+
+class TestCaseAssignmentUpdate(BaseModel):
+    category_name: str = Field(min_length=1, max_length=200)
+    value: str = Field(default="", max_length=500)
+
+
+class TestCaseAssignmentUpdateResponse(BaseModel):
+    testcase_id: int
+    category_name: str
+    value: str
 
 # REQ-2001: Generierungshistorie
 class GenerationSummary(BaseModel):

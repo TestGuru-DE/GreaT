@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
-import type { TestCaseOut, Strategy, RiskSummary } from "../types";
+import type { TestCaseOut, Strategy, RiskSummary, ResultCategory } from "../types";
 
 interface GenerateStore {
   testcases: TestCaseOut[];
@@ -14,11 +14,13 @@ interface GenerateStore {
   generations: GenerationSummary[];
   generationsLoading: boolean;
   riskSummary: RiskSummary | null; // REQ-3051
+  resultCategories: ResultCategory[];
   setStrategy: (s: Strategy) => void;
   generate: (projectId: number, applyRules?: boolean, tStrength?: number) => Promise<void>;
   fetchGenerations: (projectId: number) => Promise<void>;
   loadGeneration: (generationId: number) => Promise<void>;
   renameGeneration: (generationId: number, name: string) => Promise<void>;
+  updateAssignment: (testcaseId: number, categoryName: string, value: string) => Promise<void>;
 }
 
 export const useGenerateStore = create<GenerateStore>((set, get) => ({
@@ -31,11 +33,12 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
   generations: [],
   generationsLoading: false,
   riskSummary: null, // REQ-3051
+  resultCategories: [],
 
   setStrategy: (strategy) => set({ strategy }),
 
   generate: async (projectId, applyRules = false, tStrength = 2) => {
-    set({ loading: true, error: null, testcases: [], riskSummary: null });
+    set({ loading: true, error: null, testcases: [], riskSummary: null, resultCategories: [] });
     try {
       const res = await generateApi.run(projectId, { 
         strategy: get().strategy, 
@@ -46,6 +49,7 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
       set({
         testcases: data.testcases,
         riskSummary: data.risk_summary,
+        resultCategories: data.result_categories,
         generationId: res.generation_id,
         count: res.count,
         loading: false,
@@ -68,12 +72,13 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
   },
 
   loadGeneration: async (generationId) => {
-    set({ loading: true, error: null, testcases: [], riskSummary: null });
+    set({ loading: true, error: null, testcases: [], riskSummary: null, resultCategories: [] });
     try {
       const data = await generateApi.getTestcases(generationId);
       set({
         testcases: data.testcases,
         riskSummary: data.risk_summary,
+        resultCategories: data.result_categories,
         generationId,
         count: data.testcases.length,
         loading: false,
@@ -87,6 +92,23 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
     const updated = await generateApi.renameGeneration(generationId, name);
     set((state) => ({
       generations: state.generations.map((g) => g.id === generationId ? updated : g),
+    }));
+  },
+
+  updateAssignment: async (testcaseId, categoryName, value) => {
+    await generateApi.updateAssignment(testcaseId, categoryName, value);
+    set((state) => ({
+      testcases: state.testcases.map((testcase) =>
+        testcase.id === testcaseId
+          ? {
+              ...testcase,
+              assignments: {
+                ...testcase.assignments,
+                [categoryName]: value,
+              },
+            }
+          : testcase
+      ),
     }));
   },
 }));

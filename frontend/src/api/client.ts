@@ -5,7 +5,7 @@ import type {
   Project, ProjectCreate,
   Category, CategoryCreate,
   Value, ValueCreate,
-  GenerateRequest, GenerateResponse, TestCaseOut, RiskSummary,
+  GenerateRequest, GenerateResponse, TestCaseOut, RiskSummary, ResultCategory,
 } from "../types";
 
 const api = axios.create({
@@ -75,6 +75,7 @@ export interface GenerationSummary {
 export interface TestcasesResponse {
   testcases: TestCaseOut[];
   risk_summary: RiskSummary;
+  result_categories: ResultCategory[];
 }
 
 export const generateApi = {
@@ -88,6 +89,11 @@ export const generateApi = {
     api.patch<GenerationSummary>("/generations/" + generationId + "/rename", { name }).then((r) => r.data),
   deleteGeneration: (generationId: number) =>
     api.delete<{ok: boolean}>("/generations/" + generationId).then((r) => r.data),
+  updateAssignment: (testcaseId: number, categoryName: string, value: string) =>
+    api.patch<{ testcase_id: number; category_name: string; value: string }>(
+      "/testcases/" + testcaseId + "/assignments",
+      { category_name: categoryName, value },
+    ).then((r) => r.data),
 };
 
 // --- Rename + Reorder (REQ-1209, REQ-1213) ---

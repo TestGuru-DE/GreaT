@@ -21,24 +21,55 @@ export default function TestCasePanel({ projectId }: Props) {
     testcases, count, loading, error, strategy, setStrategy, generate,
     generations, generationsLoading, fetchGenerations, loadGeneration, generationId, renameGeneration,
     riskSummary, // REQ-3051
+    resultCategories,
+    updateAssignment,
   } = useGenerateStore();
 
   const [editingName, setEditingName] = useState<string | null>(null);
   const [applyRules, setApplyRules] = useState(false); // REQ-3005
   const [savingName, setSavingName] = useState(false);
   const [tStrength, setTStrength] = useState(2); // BUG-3: T-Wise Stärke
+  const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchGenerations(projectId);
   }, [projectId, fetchGenerations]);
 
+  useEffect(() => {
+    setDraftAssignments({});
+  }, [generationId, testcases]);
+
   const rows = testcases.map((tc, i) => ({
     "#": i + 1,
     "Risiko": tc.risk_coverage ?? 0,
+    "__testcaseId": tc.id,
+    "__testcaseName": tc.name,
     ...tc.assignments,
   } as Record<string, unknown>));
   const { sorted, sortCol, sortDir, toggleSort } = useSortableTable(rows);
   const columns = testcases.length > 0 ? Object.keys(testcases[0].assignments) : [];
+  const resultCategoryByName = Object.fromEntries(resultCategories.map((category) => [category.name, category]));
+
+  const draftKey = (testcaseId: number, column: string) => `${testcaseId}:${column}`;
+  const getDraftValue = (testcaseId: number, column: string, fallback: string) =>
+    draftAssignments[draftKey(testcaseId, column)] ?? fallback;
+
+  const resetDraftValue = (testcaseId: number, column: string) => {
+    setDraftAssignments((current) => {
+      const next = { ...current };
+      delete next[draftKey(testcaseId, column)];
+      return next;
+    });
+  };
+
+  const saveDraftValue = async (testcaseId: number, column: string, currentValue: string) => {
+    const nextValue = draftAssignments[draftKey(testcaseId, column)];
+    if (nextValue === undefined || nextValue === currentValue) {
+      return;
+    }
+    await updateAssignment(testcaseId, column, nextValue);
+    resetDraftValue(testcaseId, column);
+  };
 
   const handleExport = (format: "json" | "xlsx" | "csv") => {
     const genId = useGenerateStore.getState().generationId;
@@ -292,8 +323,9 @@ export default function TestCasePanel({ projectId }: Props) {
             </thead>
             <tbody>
               {sorted.map((row, i) => {
-                // Finde Original-Testcase für _has_error_value
-                const tc = testcases.find(t => t.name === (row["name"] ?? `TC_${row["#"]}`));
+                const testcaseId = Number(row["__testcaseId"] ?? 0);
+                const testcaseName = String(row["__testcaseName"] ?? `TC_${row["#"]}`);
+                const tc = testcases.find((testcase) => testcase.id === testcaseId);
                 const hasError = tc?._has_error_value ?? false;
                 const risk = Number(row["Risiko"] ?? 0);
                 return (
@@ -306,9 +338,58 @@ export default function TestCasePanel({ projectId }: Props) {
                     <td className="px-3 py-1.5 text-slate-400 text-xs">{String(row["#"] ?? "")}</td>
                     {/* REQ-3050: Risiko-Zelle */}
                     <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{risk.toFixed(1)}</td>
-                    {columns.map((col) => (
-                      <td key={col} className="px-3 py-1.5 text-slate-700">{String(row[col] ?? "-")}</td>
-                    ))}
+                    {columns.map((col) => {
+                      const resultCategory = resultCategoryByName[col];
+                      const currentValue = String(row[col] ?? "");
+                      if (!resultCategory?.editable) {
+                        return (
+                          <td key={col} className="px-3 py-1.5 text-slate-700">
+                            {currentValue || "-"}
+                          </td>
+                        );
+                      }
+
+                      const draftValue = getDraftValue(testcaseId, col, currentValue);
+                      return (
+                        <td key={col} className="px-3 py-1.5">
+                          <input
+                            aria-label={`${testcaseName} – ${col}`}
+                            list={`result-options-${resultCategory.id}`}
+                            value={draftValue}
+                            onChange={(event) =>
+                              setDraftAssignments((current) => ({
+                                ...current,
+                                [draftKey(testcaseId, col)]: event.target.value,
+                              }))
+                            }
+                            onBlur={() => {
+                              void saveDraftValue(testcaseId, col, currentValue);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                void saveDraftValue(testcaseId, col, currentValue);
+                              } else if (event.key === "Escape") {
+                                resetDraftValue(testcaseId, col);
+                              }
+                            }}
+                            placeholder="Ergebnis waehlen oder eingeben"
+                            className={
+                              "w-full min-w-36 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 " +
+                              (draftValue.trim()
+                                ? "border-slate-300 bg-white text-slate-700"
+                                : "border-amber-300 bg-amber-50 text-slate-500")
+                            }
+                          />
+                          <datalist id={`result-options-${resultCategory.id}`}>
+                            {resultCategory.values.map((valueOption) => (
+                              <option key={valueOption.id} value={valueOption.value}>
+                                {valueOption.value}
+                              </option>
+                            ))}
+                          </datalist>
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
