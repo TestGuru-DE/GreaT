@@ -135,3 +135,38 @@ class DataClassValue(Base):
 
     dataclass = relationship("DataClass", back_populates="dc_values")
 
+
+# ---------------------------------------------------------------------------
+# REQ-4018: Hierarchische Datenklassen – Selbstreferenzierender Baum
+# ---------------------------------------------------------------------------
+
+class DataNode(Base):
+    """REQ-4018: Hierarchischer Datenknoten (Kategorie/Gruppe/Klasse)."""
+    __tablename__ = "data_nodes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    parent_id = Column(Integer, ForeignKey("data_nodes.id", ondelete="CASCADE"), nullable=True)
+    is_system = Column(Boolean, default=False, nullable=False, server_default='0')
+    source = Column(String(100), nullable=True)  # z.B. "bugmagnet"
+    sort_order = Column(Integer, default=0, nullable=False, server_default='0')
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    # Relationships
+    parent = relationship("DataNode", back_populates="children", remote_side="DataNode.id")
+    children = relationship("DataNode", back_populates="parent", order_by="DataNode.sort_order", cascade="all, delete-orphan")
+    values = relationship("DataNodeValue", back_populates="node", order_by="DataNodeValue.sort_order", cascade="all, delete-orphan")
+
+
+class DataNodeValue(Base):
+    """REQ-4018: Wert eines Datenknotens."""
+    __tablename__ = "data_node_values"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    node_id = Column(Integer, ForeignKey("data_nodes.id", ondelete="CASCADE"), nullable=False)
+    value = Column(String(500), nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False, server_default='0')
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    node = relationship("DataNode", back_populates="values")
+

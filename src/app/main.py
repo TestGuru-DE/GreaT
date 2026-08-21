@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST
 from .database import Base, engine
-from .routers import api_projects, api_generate, api_dataclasses, api_health, api_backup
+from .routers import api_projects, api_generate, api_dataclasses, api_datanodes, api_health, api_backup
 from .system_dataclasses import seed_system_dataclasses
 from .seed_example import seed_example_project
 from .logging_config import setup_logging, get_logger
@@ -114,6 +114,7 @@ def _migrate_db() -> None:
 app.include_router(api_projects.router, prefix="/api")
 app.include_router(api_generate.router, prefix="/api")
 app.include_router(api_dataclasses.router, prefix="/api")
+app.include_router(api_datanodes.router, prefix="/api")  # REQ-4018: Hierarchische Datenklassen
 app.include_router(api_health.router)  # BUG-FIX: /health ohne /api-Prefix
 app.include_router(api_backup.router)  # REQ-4011: Datensicherung & Wiederherstellung
 # REQ-3011: HTMX-Router archiviert (2026-06-29)

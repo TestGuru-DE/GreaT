@@ -167,3 +167,22 @@ export const rulesApi = {
   delete: (projectId: number, ruleId: number) =>
     api.delete("/projects/" + projectId + "/rules/" + ruleId).then((r) => r.data),
 };
+
+// REQ-4018: Hierarchische Datenklassen (DataNodes)
+export const datanodesApi = {
+  getTree: () => api.get<import("../types").DataNode[]>("/datanodes/tree").then((r) => r.data),
+  get: (nodeId: number) => api.get<import("../types").DataNode>("/datanodes/" + nodeId).then((r) => r.data),
+  create: (data: Partial<import("../types").DataNode>) =>
+    api.post<import("../types").DataNode>("/datanodes", data).then((r) => r.data),
+  update: (nodeId: number, data: Partial<import("../types").DataNode>) =>
+    api.put<import("../types").DataNode>("/datanodes/" + nodeId, data).then((r) => r.data),
+  delete: (nodeId: number) => api.delete("/datanodes/" + nodeId).then((r) => r.data),
+  addValue: (nodeId: number, value: string, sort_order?: number) =>
+    api.post<import("../types").DataNodeValue>("/datanodes/" + nodeId + "/values", { value, sort_order: sort_order ?? 0 }).then((r) => r.data),
+  deleteValue: (nodeId: number, valueId: number) =>
+    api.delete("/datanodes/" + nodeId + "/values/" + valueId).then((r) => r.data),
+  importBugMagnet: () =>
+    api.post<{ status: string; nodes_created: number }>("/datanodes/bugmagnet-import").then((r) => r.data),
+  getBugMagnetStatus: () =>
+    api.get<{ imported: boolean }>("/datanodes/bugmagnet-status").then((r) => r.data),
+};

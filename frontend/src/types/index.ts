@@ -64,3 +64,22 @@ export interface RiskSummary {
 }
 
 export type Strategy = "each" | "linear" | "all" | "pairwise" | "risk_based" | "t_wise" | "mcdc";
+
+// REQ-4018: Hierarchische Datenklassen
+export interface DataNodeValue {
+  id: number;
+  node_id: number;
+  value: string;
+  sort_order: number;
+}
+
+export interface DataNode {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  is_system: boolean;
+  source: string | null;
+  sort_order: number;
+  values: DataNodeValue[];
+  children: DataNode[];
+}

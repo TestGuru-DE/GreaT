@@ -190,3 +190,40 @@ class BVAMultiRangeRequest(BaseModel):
         if not v:
             raise ValueError("Mindestens ein Bereich erforderlich")
         return v
+
+
+# REQ-4018: Hierarchische Datenklassen
+class DataNodeValueBase(BaseModel):
+    value: str
+    sort_order: int = 0
+
+class DataNodeValueRead(DataNodeValueBase):
+    id: int
+    node_id: int
+    model_config = ConfigDict(from_attributes=True)
+
+class DataNodeRead(BaseModel):
+    id: int
+    name: str
+    parent_id: Optional[int] = None
+    is_system: bool = False
+    source: Optional[str] = None
+    sort_order: int = 0
+    values: List[DataNodeValueRead] = []
+    children: List["DataNodeRead"] = []  # Rekursiv
+    
+    model_config = ConfigDict(from_attributes=True)
+
+# Für rekursive Referenz notwendig
+DataNodeRead.model_rebuild()
+
+class DataNodeCreate(BaseModel):
+    name: str
+    parent_id: Optional[int] = None
+    is_system: bool = False
+    source: Optional[str] = None
+    sort_order: int = 0
+
+class DataNodeValueCreate(BaseModel):
+    value: str
+    sort_order: int = 0
