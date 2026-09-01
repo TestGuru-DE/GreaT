@@ -14,6 +14,8 @@ Es oeffnen sich 2 Terminalfenster:
 - **GREAT Backend** – FastAPI auf Port 8000
 - **GREAT Frontend** – Vite Dev-Server auf Port 5173
 
+Hinweis: `Start.bat` baut vor dem Backend-Start das Frontend neu, damit Port `8000` denselben UI-Stand wie `5173` zeigt.
+
 Dann Browser oeffnen: **http://localhost:5173**
 
 ---
