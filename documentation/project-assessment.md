@@ -25,8 +25,8 @@ Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeSc
 - **PRs gemergt:** Sprintabschluss-Commit im aktuellen Branch
 
 ### Nächster Termin
-- **Sprint 10:** In Planung
-- **Fokus:** TBD
+- **Sprint 10:** In Planung (Scope freigegeben 2026-09-01)
+- **Fokus:** Port-Unification (Port 8000 Standard + Settings-Erweiterung, REQ-4007+), Risikobasierte Testfall-Sortierung (REQ-3034, bisher aufgeschoben aus Sprint 6), Max-Testfälle-Setting in Einstellungen (neu), GUI-Refresh nach Sichtenwechsel/Dialog-Schluss (UX-Fix), offene ToDo-Sichtung + Umsetzung, Multi-User-Analyse als Research/Klärungsauftrag (kein Impl. Sprint 10)
 
 ### Gesamtbewertung
 
@@ -462,3 +462,75 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
+## Sprint 10 – Planning Summary (2026-09-01)
+
+**Status:** 🔵 IN PLANUNG – Scope freigegeben durch Program Manager
+
+**Sprint-Ziel:** Qualitäts- und UX-Stabilisierung (Port-Unification, Risikobasierte Sortierung, Settings-Ausbau) + Research-Aufgabe Multi-User
+
+### Priorisierter Backlog Sprint 10
+
+| Prio | Aufgabe | REQ-IDs | Aufwand | Status |
+|---|---|---|---|---|
+| 1 | Offene ToDos sichten + priorisieren (Review-Task) | — | S | OFFEN |
+| 2 | Risikobasierte Kombination: absteigende Sortierung nach risk_coverage | REQ-3034 | M | OFFEN |
+| 3 | GUI-Aktualisierung: React-Reload nach Sichtenwechsel / Dialog-Schluss | REQ-4019 (neu) | M | OFFEN |
+| 4 | Port-Unification: Port 8000 Standard, Port 5173 nur Dev-Option, Settings-Erweiterung | REQ-1202, REQ-4007, REQ-4017 (neu) | M | OFFEN |
+| 5 | Max. Testfälle-Setting in Einstellungen (Default 1000) | REQ-4018 (neu) | S | OFFEN |
+| 6 | Multi-User-Analyse: Research + Klärung Benachrichtigungsfunktion (kein Impl.) | REQ-4001, REQ-4002 | S | OFFEN |
+| 7 | Offene ToDos aus Aufgabe 1 umsetzen (Scope TBD nach Aufgabe 1) | TBD | TBD | BLOCKIERT (→ Aufg. 1) |
+
+### REQ-Zuordnung
+
+| Aufgabe | Bekannte REQ-IDs | Anmerkung |
+|---|---|---|
+| 1 (Port-Unification) | REQ-1202 (Status: offen, Phase 2/Sprint 1, implizit implementiert), REQ-4007 (Tested Sprint 6), REQ-4017 (neu: Port-Wahl in Settings) | REQ-4007 bereits getestet – Sprint 10 ergänzt Settings-UI |
+| 2 (Risikobasierte Sortierung) | REQ-3034 (Planned, Phase 3 Sprint 6 – aufgeschoben) | Daten vorhanden (risk_weight via REQ-3007/3050), Algorithmus bekannt |
+| 3 (Max. Testfälle) | REQ-4018 (neu, p3-settings Bereich) | Einstellungen-Seite bereits vorhanden (REQ-3002, REQ-4012) |
+| 4 (GUI-Refresh) | REQ-4019 (neu) oder BUG-5 | React-State-Management (Zustand-Store) |
+| 5 (Multi-User) | REQ-4001, REQ-4002 (beide Planned Sprint 10+) | Nur Research/Klärung, keine Implementierung Sprint 10 |
+
+### Risikoeinschätzung pro Aufgabe
+
+| Aufgabe | W | I | Score | Ampel | Begründung |
+|---|---|---|---|---|---|
+| Port-Unification | 1 | 3 | 3 | 🟢 | REQ-4007 bereits getestet; Settings-UI ist inkrementell |
+| REQ-3034 Risikobasierte Sortierung | 2 | 2 | 4 | 🟢 | Algorithmus bekannt, risk_weight-Daten vorhanden (REQ-3050 ✅) |
+| Max. Testfälle-Setting | 1 | 2 | 2 | 🟢 | Einfache Settings-Erweiterung, Backend-Parameter |
+| ToDo-Review (Aufg. 1) | 1 | 1 | 1 | 🟢 | Nur Analyse, kein Code |
+| GUI-Refresh (React) | 2 | 3 | 6 | 🟡 | React-State-Änderungen können Seiteneffekte auslösen; QA-Review empfohlen |
+| Multi-User-Analyse | 4 | 4 | 16 | 🔴 | **ESKALATIONSPFLICHTIG** (Score ≥ 10): Architekturentscheid WebSocket/SSE/Polling offen; Auth (RISK-S-001 Score 20) noch nicht implementiert; Experten-Input Chief Architect + Security erforderlich |
+| ToDo-Umsetzung (Aufg. 7) | — | — | TBD | ⚪ | Scope erst nach Aufg. 1 bekannt; eigene Risikobewertung nach Review |
+
+### Empfehlung Multi-User-Analyse (Aufgabe 6)
+
+**Empfehlung: Research/Klärungsauftrag ohne Implementierung in Sprint 10. ✅ REALISTISCH.**
+
+Begründung:
+- REQ-4001 (Auth/JWT) ist Voraussetzung für jede Benachrichtigungsfunktion – noch **Planned**, nicht in Sprint 10
+- Architekturentscheidung (WebSocket vs. SSE vs. Polling) ist offen → Chief Architect Input zwingend
+- RISK-S-001 (keine Authentifizierung, Score 20) muss vor Multi-User-Features adressiert sein
+- Research-Output: ADR-Entwurf + Anforderungsliste für Sprint 11/12
+
+### Abhängigkeiten im Sprint
+
+```
+Aufgabe 4 (ToDo-Review) ──► Aufgabe 7 (Umsetzung)
+Aufgabe 3 (Settings) ────► kann parallel zu Aufgabe 1 (Port in Settings)
+Aufgabe 2 (REQ-3034) ────► unabhängig, Prio 2 nach Review
+Aufgabe 6 (Multi-User) ──► Research-Output als Input für Sprint-11-Planning
+```
+
+### Go/No-Go Empfehlung
+
+- ✅ **GO** für Aufgaben 1–5, 6 (Research only)
+- ⏳ Aufgabe 7: **HOLD** bis Aufgabe 1 (ToDo-Review) abgeschlossen
+- 🔴 Aufgabe 6 (Multi-User Implementierung): **NO-GO** für Sprint 10 – Research only
+- 🔴 Eskalation an **GREAT Chief Architect** erforderlich: Multi-User-Architekturentscheidung (Score 16), Port-Architektur-Bestätigung
+
+**Freigabe Sprint 10 (2026-09-01):**
+- ✅ Program Manager – Scope + Priorisierung freigegeben
+- ⏳ Chief Architect – Eskalation: Multi-User-Architektur + REQ-4019 Tech-Ansatz
+- ⏳ Senior QA Director – Test-Strategie für REQ-3034, REQ-4019
+
+---
