@@ -1,7 +1,7 @@
-# src/app/main.py - G.R.E.A.T. Application Entry Point
+﻿# src/app/main.py - G.R.E.A.T. Application Entry Point
 # DEBT-002 behoben: on_event(startup) -> Lifespan Context Manager
 # REQ-1202: React-Frontend wird als StaticFiles ausgeliefert (Production Build)
-# REQ-4007: GREAT_PORT Umgebungsvariable für portierbare Konfiguration
+# REQ-4007: GREAT_PORT Umgebungsvariable fÃ¼r portierbare Konfiguration
 # REQ-4009: Strukturiertes Logging via structlog
 import os
 import time
@@ -47,7 +47,7 @@ app = FastAPI(title="G.R.E.A.T. API", version="1.0.0", lifespan=lifespan)
 # REQ-4009: Request/Response-Logging Middleware
 @app.middleware("http")
 async def log_requests(request, call_next):
-    """Strukturiertes Logging für HTTP-Requests und Responses."""
+    """Strukturiertes Logging fÃ¼r HTTP-Requests und Responses."""
     start = time.time()
     try:
         response = await call_next(request)
@@ -131,7 +131,9 @@ if FRONTEND_DIST.exists():
     @app.get("/app/{path:path}", include_in_schema=False)
     @app.get("/dataclasses", include_in_schema=False)
     def serve_react(path: str = ""):
-        return FileResponse(str(FRONTEND_DIST / "index.html"))
+        response = FileResponse(str(FRONTEND_DIST / "index.html"))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        return response
 
 # ---------------------------------------------------------------------------
 # Komfort-Redirects
@@ -162,3 +164,4 @@ def whoami():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host=GREAT_HOST, port=GREAT_PORT, reload=True)
+
