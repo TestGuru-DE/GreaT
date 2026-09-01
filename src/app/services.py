@@ -151,6 +151,102 @@ def load_categories_values_weighted(db: Session, project_id: int) -> dict:
     return result
 
 
+def _normalize_forbidden_rule(rule) -> Optional[tuple[str, str, str, str]]:
+    """Normalisiert eine verbotene Kombination aus Tuple oder dict."""
+    if isinstance(rule, dict):
+        if_category = (
+            rule.get("if_category")
+            or rule.get("if_category_name")
+            or rule.get("ifCat")
+            or rule.get("if_category_id")
+        )
+        if_value = rule.get("if_value")
+        then_category = (
+            rule.get("then_category")
+            or rule.get("then_category_name")
+            or rule.get("thenCat")
+            or rule.get("then_category_id")
+        )
+        then_value = rule.get("then_value")
+        if if_category is None or if_value is None or then_category is None or then_value is None:
+            return None
+        return (str(if_category), str(if_value), str(then_category), str(then_value))
+
+    if isinstance(rule, (list, tuple)) and len(rule) == 4:
+        return (str(rule[0]), str(rule[1]), str(rule[2]), str(rule[3]))
+
+    return None
+
+
+def _category_value_risk(category_values, value: str) -> Optional[float]:
+    """Liest das Risiko eines Werts aus dict- oder tuple-basiertem Mapping."""
+    if category_values is None:
+        return None
+    if isinstance(category_values, dict):
+        risk = category_values.get(value)
+        if risk is None:
+            return None
+        return float(risk)
+
+    for entry in category_values:
+        if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+            if entry[0] == value:
+                return float(entry[1])
+    return None
+
+
+def calculate_all_combinations_max_risk(
+    category_risk_map: Optional[dict[str, dict[str, float] | list[tuple[str, float]]]] = None,
+    forbidden_rules: Optional[list] = None,
+) -> float:
+    """Berechnet das theoretische Risiko-Maximum für das vollständige All-Combinations-Set."""
+    if not category_risk_map:
+        return 0.0
+
+    total_cases = 1
+    total_average_risk = 0.0
+    for values in category_risk_map.values():
+        if not values:
+            continue
+        if isinstance(values, dict):
+            entries = list(values.items())
+        else:
+            entries = list(values)
+        if not entries:
+            continue
+        total_cases *= len(entries)
+        total_average_risk += sum(float(risk) for _, risk in entries) / len(entries)
+
+    max_possible_risk = float(total_cases * total_average_risk)
+
+    if forbidden_rules:
+        for rule in forbidden_rules:
+            normalized = _normalize_forbidden_rule(rule)
+            if normalized is None:
+                continue
+            if_category, if_value, then_category, then_value = normalized
+            if if_category not in category_risk_map or then_category not in category_risk_map:
+                continue
+
+            if_risk = _category_value_risk(category_risk_map.get(if_category), if_value)
+            then_risk = _category_value_risk(category_risk_map.get(then_category), then_value)
+            if if_risk is None or then_risk is None:
+                continue
+
+            multiplier = 1
+            for category_name, values in category_risk_map.items():
+                if category_name in (if_category, then_category):
+                    continue
+                if not values:
+                    continue
+                multiplier *= len(values)
+
+            penalty = (if_risk + then_risk) * multiplier
+            max_possible_risk -= penalty
+
+    return max(0.0, float(max_possible_risk))
+
+
 def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session = None, project_id: int = None, t_strength: int = 2) -> List[Dict[str, str]]:
     """Ruft die gewünschte Kombinatorik-Strategie auf (ohne Geschäftsregeln!)."""
     if strategy == "all":
@@ -366,7 +462,7 @@ def apply_multi_range_bva_to_parameter(
     ]
     results = generate_multi_range_bva(bva_ranges, points)
     return [
-        {"name": r.value, "is_error": r.is_error}
+        {"name": r.value, "is_error": r.is_error, "allowed": not r.is_error}
         for r in results
     ]
 
@@ -438,6 +534,8 @@ def calculate_generation_risk_summary(
     testcases: list[dict],
     value_risk_map: dict[str, float],
     num_categories: int,
+    category_risk_map: Optional[dict[str, dict[str, float] | list[tuple[str, float]]]] = None,
+    forbidden_rules: Optional[list] = None,
 ) -> dict:
     """
     Berechnet Risikoabdeckungs-Kennzahlen für eine gesamte Generierung.
@@ -446,6 +544,8 @@ def calculate_generation_risk_summary(
         testcases: Liste der Testfälle mit risk_coverage-Werten
         value_risk_map: Mapping von Wert-String zu risk_weight
         num_categories: Anzahl Kategorien im Projekt
+        category_risk_map: Optionales Mapping pro Kategorie für die absolute All-Combinations-Basis
+        forbidden_rules: Optional Liste verbotener Kombinationen (Tuple oder dict)
     
     Returns:
         {
@@ -462,17 +562,23 @@ def calculate_generation_risk_summary(
             "risk_coverage_percent": 0.0,
             "testcase_count": len(testcases),
         }
-    
-    max_weight = max(value_risk_map.values(), default=1.0)
-    max_per_testcase = num_categories * max_weight
-    max_possible = len(testcases) * max_per_testcase
-    
+
+    if category_risk_map is not None:
+        max_possible_risk = calculate_all_combinations_max_risk(
+            category_risk_map,
+            forbidden_rules=forbidden_rules,
+        )
+    else:
+        max_weight = max(value_risk_map.values(), default=1.0)
+        max_per_testcase = num_categories * max_weight
+        max_possible_risk = len(testcases) * max_per_testcase
+
     total_risk = sum(tc.get("risk_coverage", 0.0) for tc in testcases)
-    percent = round((total_risk / max_possible * 100), 1) if max_possible > 0 else 0.0
-    
+    percent = round((total_risk / max_possible_risk * 100), 1) if max_possible_risk > 0 else 0.0
+
     return {
         "total_risk": total_risk,
-        "max_possible_risk": max_possible,
+        "max_possible_risk": max_possible_risk,
         "risk_coverage_percent": percent,
         "testcase_count": len(testcases),
     }

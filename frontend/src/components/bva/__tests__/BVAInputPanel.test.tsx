@@ -73,4 +73,16 @@ describe("BVAInputPanel", () => {
     render(<BVAInputPanel config={invalidConfig} onChange={mockOnChange} />);
     expect(screen.getByText(/Ungültiger numerischer Wert/i)).toBeInTheDocument();
   });
+
+  it("zeigt Infinity im Multi-Range-Modus", () => {
+    const multiConfig: BVAConfig = {
+      ...defaultConfig,
+      ranges: [
+        { id: "r1", minVal: "", maxVal: "10", allowed: true },
+        { id: "r2", minVal: "11", maxVal: "", allowed: false },
+      ],
+    };
+    render(<BVAInputPanel config={multiConfig} onChange={mockOnChange} />);
+    expect(screen.getAllByText(/∞/i).length).toBeGreaterThan(0);
+  });
 });

@@ -3,7 +3,12 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateBVAPoints,
+  calculateMultiRangeBVAPoints,
+  extractPersistableBVAValues,
+  validateMultiRangeBVAConfig,
+  validateBVAConfig,
   type BVAConfig,
+  type BVARangeEntry,
 } from "../bva-calc";
 import Decimal from "decimal.js";
 
@@ -140,5 +145,64 @@ describe("calculateBVAPoints", () => {
     const result = calculateBVAPoints(config);
     expect(result).toHaveLength(4);
     expect(result.map((p) => p.value)).toEqual(["9", "10", "20", "21"]);
+  });
+
+  it("REQ-3041: akzeptiert Komma als Dezimaltrennzeichen in Single-Range", () => {
+    const errors = validateBVAConfig({
+      min: "10,01",
+      max: "10,05",
+      pointsPerBoundary: 2,
+    });
+    expect(errors).toHaveLength(0);
+
+    const result = calculateBVAPoints({
+      min: "10,01",
+      max: "10,05",
+      pointsPerBoundary: 2,
+    });
+    expect(result.map((p) => p.value)).toEqual(["10", "10.01", "10.05", "10.06"]);
+  });
+
+  it("REQ-3041: akzeptiert Komma als Dezimaltrennzeichen in Multi-Range", () => {
+    const ranges: BVARangeEntry[] = [
+      { id: "r1", minVal: "10,01", maxVal: "10,05", allowed: true },
+      { id: "r2", minVal: "10,06", maxVal: "10,10", allowed: true },
+    ];
+
+    const errors = validateMultiRangeBVAConfig(ranges);
+    expect(errors).toHaveLength(0);
+
+    const result = calculateMultiRangeBVAPoints(ranges, 2);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("blockiert ueberlappende Multi-Range-Bereiche", () => {
+    const ranges: BVARangeEntry[] = [
+      { id: "r1", minVal: "1", maxVal: "10", allowed: true },
+      { id: "r2", minVal: "10", maxVal: "20", allowed: true },
+    ];
+    const errors = validateMultiRangeBVAConfig(ranges);
+    expect(errors.some((msg) => /ueberschneid|überschneid|beruehr/i.test(msg))).toBe(true);
+    expect(calculateMultiRangeBVAPoints(ranges, 2)).toHaveLength(0);
+  });
+
+  it("laesst disjunkte Multi-Range-Bereiche zu", () => {
+    const ranges: BVARangeEntry[] = [
+      { id: "r1", minVal: "1", maxVal: "10", allowed: true },
+      { id: "r2", minVal: "11", maxVal: "20", allowed: true },
+    ];
+    const errors = validateMultiRangeBVAConfig(ranges);
+    expect(errors).toHaveLength(0);
+    const result = calculateMultiRangeBVAPoints(ranges, 2);
+    expect(result.length).toBeGreaterThan(0);
+  });
+
+  it("filtert Infinity beim Persistieren heraus", () => {
+    const values = extractPersistableBVAValues([
+      { value: "∞", type: "outside", label: "∞" },
+      { value: "-∞", type: "outside", label: "-∞" },
+      { value: "10", type: "boundary", label: "10" },
+    ]);
+    expect(values).toEqual(["10"]);
   });
 });

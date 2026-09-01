@@ -2,7 +2,7 @@
 Version: 1.1
 Phase: 3 – Sprint 9 Abgeschlossen
 Erstellt: 2026-06-10
-Aktualisiert: 2026-08-19
+Aktualisiert: 2026-09-01
 Erstellt von: Program Manager Agent
 Aktualisiert von: GitHub Copilot CLI
 
@@ -15,14 +15,14 @@ Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Ä
 Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
 Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeScript-Frontend in Entwicklung.
 
-**Aktueller Status: v1.5.0 (2026-08-19) – Sprint 9 ABGESCHLOSSEN.**
+**Aktueller Status: v1.5.1 (2026-09-01) – Sprint 9 ABGESCHLOSSEN / Release vorbereitet.**
 
 ### Letztes Release
-- **Version:** v1.5.0
-- **Datum:** 2026-08-19
-- **Neue Features:** REQ-4012 bis REQ-4016 (Datenklassen, BVA-Visualisierung, Ergebnis-Kategorien)
-- **Backend-Tests:** 340 (+7 seit v1.4.0)
-- **PRs gemergt:** 5 PRs (#36–#40)
+- **Version:** v1.5.1
+- **Datum:** 2026-09-01
+- **Neue Features:** BVA-Komma-Bugfix, Sprintabschluss und Release-Vorbereitung
+- **Backend-Tests:** 28 gezielte BVA-/API-Regressionstests (Plus Frontend-BVA-GUI-Suite)
+- **PRs gemergt:** Sprintabschluss-Commit im aktuellen Branch
 
 ### Nächster Termin
 - **Sprint 10:** In Planung

@@ -270,7 +270,7 @@ export default function TestCasePanel({ projectId }: Props) {
                 ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
                 : "bg-red-100 text-red-800 border border-red-300"
             }`}
-            title={`Summe: ${riskSummary.total_risk.toFixed(1)} / Max: ${riskSummary.max_possible_risk.toFixed(1)}`}
+            title={`Absolute Risikoabdeckung: ${riskSummary.risk_coverage_percent}% — 100% = All-Combinations-Maximum nach gültigen Regeln. Vergleich der erzeugten Testfälle mit der validierten Kombinationsbasis.`}
           >
             <span className="text-base">🛡️</span>
             <span>Risikoabdeckung: {riskSummary.risk_coverage_percent}%</span>

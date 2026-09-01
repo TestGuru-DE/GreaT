@@ -9,7 +9,11 @@ Quelle: ISTQB Foundation Level Syllabus, Boundary Value Analysis.
 """
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Union
+from typing import Union, Optional
+
+
+def _normalize_decimal_text(raw: Union[str, int, float]) -> str:
+    return str(raw).strip().replace(",", ".")
 
 
 class BVAError(ValueError):
@@ -43,8 +47,8 @@ def generate_bva_values(
         Deduplizierte, aufsteigend sortierte Liste von Wert-Strings.
     """
     try:
-        lo = Decimal(str(min_val))
-        hi = Decimal(str(max_val))
+        lo = Decimal(_normalize_decimal_text(min_val))
+        hi = Decimal(_normalize_decimal_text(max_val))
     except InvalidOperation as exc:
         raise BVAError(f"Ungültige Grenzwerte: min={min_val!r}, max={max_val!r}") from exc
 
@@ -98,6 +102,80 @@ class BVAMultiRangeResult:
     source_range: str  # z.B. "1-100 (erlaubt)"
 
 
+def _parse_optional_decimal(raw: str) -> Optional[Decimal]:
+    if raw is None:
+        return None
+    text = _normalize_decimal_text(raw)
+    if text == "":
+        return None
+    return Decimal(text)
+
+
+def _format_bound(raw: str, is_min: bool) -> str:
+    if raw is None or str(raw).strip() == "":
+        return "-∞" if is_min else "∞"
+    return str(raw)
+
+
+def _normalize_range(r: BVARange) -> tuple[Optional[Decimal], Optional[Decimal], str, str]:
+    lo = _parse_optional_decimal(r.min_val)
+    hi = _parse_optional_decimal(r.max_val)
+    if lo is not None and hi is not None and lo > hi:
+        lo, hi = hi, lo
+    return lo, hi, _format_bound(r.min_val, True), _format_bound(r.max_val, False)
+
+
+def _range_sort_key(lo: Optional[Decimal], hi: Optional[Decimal]) -> tuple[int, Decimal, Decimal]:
+    low_key = lo if lo is not None else Decimal("-Infinity")
+    high_key = hi if hi is not None else Decimal("Infinity")
+    return (0, low_key, high_key)
+
+
+def _range_overlaps(left: tuple[Optional[Decimal], Optional[Decimal]], right: tuple[Optional[Decimal], Optional[Decimal]]) -> bool:
+    left_lo, left_hi = left
+    right_lo, right_hi = right
+    left_hi_cmp = left_hi if left_hi is not None else Decimal("Infinity")
+    right_lo_cmp = right_lo if right_lo is not None else Decimal("-Infinity")
+    return left_hi_cmp >= right_lo_cmp
+
+
+def _generate_range_candidates(lo: Optional[Decimal], hi: Optional[Decimal], points: int) -> list[Decimal]:
+    if lo is None and hi is None:
+        return []
+
+    if lo is None:
+        eps = _epsilon(hi, hi)
+        if points == 2:
+            return [hi - eps, hi]
+        if points == 3:
+            return [hi - (eps * 2), hi - eps, hi]
+        if points == 4:
+            return [hi - (eps * 3), hi - (eps * 2), hi - eps, hi]
+        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
+
+    if hi is None:
+        eps = _epsilon(lo, lo)
+        if points == 2:
+            return [lo, lo + eps]
+        if points == 3:
+            return [lo, lo + eps, lo + (eps * 2)]
+        if points == 4:
+            return [lo, lo + eps, lo + (eps * 2), lo + (eps * 3)]
+        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
+
+    eps = _epsilon(lo, hi)
+    if points == 2:
+        return [lo - eps, lo, hi, hi + eps]
+    if points == 3:
+        return [lo - eps, lo, lo + eps, hi - eps, hi, hi + eps]
+    if points == 4:
+        return [
+            lo - (eps * 2), lo - eps, lo, lo + eps,
+            hi - eps, hi, hi + eps, hi + (eps * 2),
+        ]
+    raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
+
+
 def generate_multi_range_bva(
     ranges: list[BVARange],
     points: int = 2,
@@ -122,32 +200,32 @@ def generate_multi_range_bva(
     """
     if not ranges:
         return []
-    
-    # Alle Kandidaten mit Metadaten sammeln
+
+    normalized_ranges = [_normalize_range(r) for r in ranges]
+    ordered = sorted(enumerate(normalized_ranges), key=lambda item: _range_sort_key(item[1][0], item[1][1]))
+
+    for idx in range(1, len(ordered)):
+        prev = ordered[idx - 1][1][:2]
+        current = ordered[idx][1][:2]
+        if _range_overlaps(prev, current):
+            raise BVAError("Bereiche dürfen sich nicht überschneiden oder berühren.")
+
     all_candidates: dict[Decimal, BVAMultiRangeResult] = {}
-    
-    for r in ranges:
-        lo = Decimal(str(r.min_val))
-        hi = Decimal(str(r.max_val))
-        
-        raw_values = generate_bva_values(str(lo), str(hi), points)
-        
-        for v_str in raw_values:
-            v = Decimal(v_str)
-            if v in all_candidates:
-                continue  # Duplikat aus anderem Bereich überspringen
-            
-            # Bestimme ob Fehler
-            is_err = _classify_value(v, ranges)
-            
-            source = f"{r.min_val}-{r.max_val} ({'erlaubt' if r.allowed else 'nicht erlaubt'})"
-            all_candidates[v] = BVAMultiRangeResult(
-                value=v_str,
-                is_error=is_err,
-                source_range=source,
+
+    for index, (lo, hi, min_label, max_label) in ordered:
+        raw_values = _generate_range_candidates(lo, hi, points)
+        source_range = f"{min_label}-{max_label} ({'erlaubt' if ranges[index].allowed else 'nicht erlaubt'})"
+
+        for candidate in raw_values:
+            value_str = str(candidate)
+            if candidate in all_candidates:
+                continue
+            all_candidates[candidate] = BVAMultiRangeResult(
+                value=value_str,
+                is_error=_classify_value(candidate, ranges),
+                source_range=source_range,
             )
-    
-    # Aufsteigend sortiert
+
     return [all_candidates[k] for k in sorted(all_candidates.keys())]
 
 
@@ -161,8 +239,14 @@ def _classify_value(v: Decimal, ranges: list[BVARange]) -> bool:
     - In erlaubtem Bereich: False
     """
     for r in ranges:
-        lo = Decimal(str(r.min_val))
-        hi = Decimal(str(r.max_val))
-        if lo <= v <= hi:
+        lo = _parse_optional_decimal(r.min_val)
+        hi = _parse_optional_decimal(r.max_val)
+        if lo is not None and hi is not None and lo > hi:
+            lo, hi = hi, lo
+        if lo is None and hi is None:
+            continue
+        lower_ok = lo is None or lo <= v
+        upper_ok = hi is None or v <= hi
+        if lower_ok and upper_ok:
             return not r.allowed  # In nicht-erlaubtem Bereich = Fehler
     return True  # Außerhalb aller Bereiche = Fehler

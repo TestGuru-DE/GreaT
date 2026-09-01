@@ -4,7 +4,7 @@ REQ-3064: Multi-Range Boundary Value Analysis Tests.
 Testet mehrere angrenzende Äquivalenzklassen mit erlaubt/nicht-erlaubt-Markierung.
 """
 import pytest
-from combinatorics.boundary_value import generate_multi_range_bva, BVARange
+from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAError
 
 
 def test_single_range_equals_standard_bva():
@@ -42,6 +42,30 @@ def test_multi_range_no_duplicates():
     result = generate_multi_range_bva(ranges, 2)
     values = [r.value for r in result]
     assert len(values) == len(set(values)), "Duplikate gefunden!"
+
+
+def test_multi_range_touching_ranges_fail():
+    """Touching ranges wie 1-10 und 10-20 muessen blockiert werden."""
+    ranges = [
+        BVARange("1", "10", True),
+        BVARange("10", "20", True),
+    ]
+    with pytest.raises(BVAError):
+        generate_multi_range_bva(ranges, 2)
+
+
+def test_multi_range_disjoint_ranges_stay_valid():
+    """Disjunkte Bereiche wie 1-10 und 11-20 bleiben gueltig."""
+    ranges = [
+        BVARange("1", "10", True),
+        BVARange("11", "20", True),
+    ]
+    result = generate_multi_range_bva(ranges, 2)
+    values = [r.value for r in result]
+    assert "1" in values
+    assert "10" in values
+    assert "11" in values
+    assert "20" in values
 
 
 def test_multi_range_not_allowed_region_is_error():
@@ -130,3 +154,18 @@ def test_source_range_metadata():
     for r in result:
         assert r.source_range, "source_range sollte gesetzt sein"
         assert "-" in r.source_range, "source_range sollte Format 'min-max (...)' haben"
+
+
+def test_req_3041_accepts_comma_decimal_separator_in_multi_range():
+    """REQ-3041: Komma und Punkt als Dezimaltrennzeichen akzeptieren."""
+    ranges = [
+        BVARange("10,01", "10,05", True),
+        BVARange("10,06", "10,10", True),
+    ]
+
+    result = generate_multi_range_bva(ranges, 2)
+    values = [r.value for r in result]
+
+    assert "10.01" in values
+    assert "10.05" in values
+

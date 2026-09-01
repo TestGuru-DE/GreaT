@@ -1619,7 +1619,8 @@ Als Tester moechte ich nach einer Generierung sehen, wie viel Prozent des Gesamt
 **Akzeptanzkriterien:**
 - Nach Generierung wird ein Risikoabdeckungs-Prozentsatz angezeigt
 - Farbiges Badge: Gruen >= 80%, Gelb 50–79%, Rot < 50%
-- Berechnung basiert auf Summe der risk_weight aller erzeugten Testfaelle geteilt durch Summe aller moeglichen Werte
+- Absolute Risikoabdeckung = Summe der risk_weight aller generierten Testfälle / theoretisches All-Combinations-Maximum
+- Berechnung basiert auf Summe der risk_weight aller erzeugten Testfälle geteilt durch das theoretische All-Combinations-Maximum aller möglichen Wertkombinationen (dies ergänzt die bisherige generische Formulierung)
 
 ---
 

@@ -22,6 +22,7 @@ export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
           <tr>
             <th className="px-3 py-2 text-left font-semibold text-slate-700">Wert</th>
             <th className="px-3 py-2 text-left font-semibold text-slate-700">Typ</th>
+            <th className="px-3 py-2 text-left font-semibold text-slate-700">Bereich</th>
             <th className="px-3 py-2 text-left font-semibold text-slate-700">Status</th>
           </tr>
         </thead>
@@ -46,6 +47,9 @@ export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
                   {pt.value}
                 </td>
                 <td className="px-3 py-2 text-slate-600">{pt.label}</td>
+                <td className="px-3 py-2 text-slate-500 text-xs">
+                  {(pt as any).sourceRange ?? ""}
+                </td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusBg}`}>
                     {statusLabel}

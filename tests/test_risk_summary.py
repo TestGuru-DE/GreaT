@@ -26,6 +26,52 @@ def test_risk_summary_basic():
     assert result["max_possible_risk"] == 18.0
 
 
+def test_risk_summary_all_combinations_maximum_uses_category_weights():
+    """Vollständige 2-Kategorien-Generierung verwendet das absolute Kategorie-Basismaß."""
+    testcases = [
+        {"browser": "Chrome", "os": "Windows", "risk_coverage": 7.0},
+        {"browser": "Chrome", "os": "Linux", "risk_coverage": 6.0},
+        {"browser": "Firefox", "os": "Windows", "risk_coverage": 3.0},
+        {"browser": "Firefox", "os": "Linux", "risk_coverage": 2.0},
+    ]
+    value_risk_map = {"Chrome": 5.0, "Firefox": 1.0, "Windows": 2.0, "Linux": 1.0}
+    result = calculate_generation_risk_summary(
+        testcases,
+        value_risk_map=value_risk_map,
+        num_categories=2,
+        category_risk_map={
+            "browser": {"Chrome": 5.0, "Firefox": 1.0},
+            "os": {"Windows": 2.0, "Linux": 1.0},
+        },
+    )
+
+    assert result["total_risk"] == 18.0
+    assert result["max_possible_risk"] == 18.0
+    assert result["risk_coverage_percent"] == 100.0
+
+
+def test_risk_summary_partial_absolute_coverage_uses_category_basis():
+    """Teilabdeckung benutzt weiterhin die vollständige absolute Basis aus allen Kombinationen."""
+    testcases = [
+        {"browser": "Chrome", "os": "Windows", "risk_coverage": 7.0},
+        {"browser": "Chrome", "os": "Linux", "risk_coverage": 0.0},
+    ]
+    value_risk_map = {"Chrome": 5.0, "Firefox": 1.0, "Windows": 2.0, "Linux": 1.0}
+    result = calculate_generation_risk_summary(
+        testcases,
+        value_risk_map=value_risk_map,
+        num_categories=2,
+        category_risk_map={
+            "browser": {"Chrome": 5.0, "Firefox": 1.0},
+            "os": {"Windows": 2.0, "Linux": 1.0},
+        },
+    )
+
+    assert result["total_risk"] == 7.0
+    assert result["max_possible_risk"] == 18.0
+    assert result["risk_coverage_percent"] == pytest.approx(38.9, abs=0.1)
+
+
 def test_risk_summary_empty():
     """Leere Generierung ergibt 0% Risikoabdeckung."""
     result = calculate_generation_risk_summary([], {}, 0)
@@ -89,3 +135,28 @@ def test_risk_summary_rounding():
     # percent = 3.0 / 9.0 * 100 = 33.333... → 33.3
     result = calculate_generation_risk_summary(testcases, value_risk_map, num_categories=1)
     assert result["risk_coverage_percent"] == 33.3
+
+
+def test_risk_summary_forbidden_rule_reduces_all_combinations_maximum():
+    """# REQ-3051: Verbotene Kombinationen ziehen vom theoretischen All-Combinations-Maximum ab."""
+    category_risk_map = {
+        "browser": {"Chrome": 5.0, "Firefox": 1.0},
+        "os": {"Windows": 2.0, "Linux": 1.0},
+    }
+    forbidden_rules = [("browser", "Chrome", "os", "Windows")]
+    testcases = [
+        {"risk_coverage": 6.0},  # Chrome + Linux
+        {"risk_coverage": 3.0},  # Firefox + Windows
+        {"risk_coverage": 2.0},  # Firefox + Linux
+    ]
+
+    result = calculate_generation_risk_summary(
+        testcases,
+        value_risk_map={"Chrome": 5.0, "Firefox": 1.0, "Windows": 2.0, "Linux": 1.0},
+        num_categories=2,
+        category_risk_map=category_risk_map,
+        forbidden_rules=forbidden_rules,
+    )
+
+    assert result["max_possible_risk"] == 11.0
+    assert result["risk_coverage_percent"] == 100.0

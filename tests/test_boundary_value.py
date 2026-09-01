@@ -91,3 +91,10 @@ class TestGenerateBvaValuesValidierung:
         result = generate_bva_values(min_val=1, max_val=100, points=4)
         numeric = [float(v) for v in result]
         assert numeric == sorted(numeric)
+
+    def test_req_3041_komma_dezimaltrennzeichen_wird_akzeptiert(self):
+        # REQ-3041: Sowohl 10.01 als auch 10,01 sind g?ltig
+        result = generate_bva_values(min_val="10,01", max_val="10,05", points=2)
+        assert "10.01" in result
+        assert "10.05" in result
+        assert "10.06" in result

@@ -1,14 +1,13 @@
-﻿# Changelog
+# Changelog
 
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
-## [Unreleased]
+## [1.5.1] - 2026-09-01
 
-### 🐛 Bugfixes
-- **REQ-4016**: Ergebniswerte in der Testfallgenerierung sind jetzt wieder auswählbar und regelbasiert befüllbar.
-- Backend liefert Ergebnis-Kategorien inklusive auswählbarer Werte an die Testfalltabelle.
-- Regeln mit Ziel auf Ergebnis-Kategorien persistieren den gesetzten Wert jetzt korrekt im generierten Testfall.
-- React-Testfalltabelle erlaubt Bearbeitung von Ergebnis-Spalten per Auswahl oder Freitext direkt nach der Generierung.
+### 🐛 Bugfixes – Sprintabschluss
+- **REQ-3041 / REQ-3042**: Dezimaltrennzeichen mit Punkt oder Komma werden in der Grenzwertanalyse jetzt konsistent akzeptiert (`10.01`, `10,01`).
+- BVA-Validierung erkennt numerische Eingaben korrekt und vermeidet unnötige Fehlermeldungen beim Dateneingang.
+- Sprint-Release abgeschlossen und für den nächsten Sprint vorbereitet.
 
 ## [1.5.0] - 2026-08-19
 

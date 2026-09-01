@@ -461,6 +461,7 @@ class BvaRequest(BaseModel):
     min_val: float
     max_val: float
     points: int = 2
+    allowed: bool = True
 
 
 class BvaResponse(BaseModel):
@@ -479,8 +480,45 @@ def generate_bva_for_category(cid: int, payload: BvaRequest, db: Session = Depen
     except BVAError as e:
         raise HTTPException(status_code=400, detail=str(e))
     for val_str in bva_values:
-        v = models.Value(category_id=cid, value=val_str, risk_weight=1)
+        v = models.Value(category_id=cid, value=val_str, risk_weight=1, allowed=payload.allowed)
         db.add(v)
     db.commit()
     return BvaResponse(values=bva_values, category_id=cid)
 
+
+class BvaMultiRangeResponse(BaseModel):
+    values: list[str]
+    category_id: int
+
+
+@router.post("/categories/{cid}/bva/ranges", response_model=BvaMultiRangeResponse)
+def generate_multi_range_bva_for_category(
+    cid: int,
+    payload: schemas.BVAMultiRangeRequest,
+    db: Session = Depends(get_db),
+):
+    """REQ-3064: Mehrere BVA-Bereiche direkt erfassen und als Werte übernehmen."""
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Category not found.")
+    try:
+        from ..services import apply_multi_range_bva_to_parameter
+
+        results = apply_multi_range_bva_to_parameter(
+            [
+                {"min_val": r.min_val, "max_val": r.max_val, "allowed": r.allowed}
+                for r in payload.ranges
+            ],
+            payload.points,
+        )
+    except BVAError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    values = []
+    for item in results:
+        value = item["name"]
+        values.append(value)
+        db.add(models.Value(category_id=cid, value=value, risk_weight=1, allowed=item["allowed"]))
+
+    db.commit()
+    return BvaMultiRangeResponse(values=values, category_id=cid)

@@ -2,6 +2,10 @@
 // ISTQB-konform: 2-Wert = 4 Werte, 3-Wert = 6 Werte, 4-Wert = 8 Werte
 import Decimal from "decimal.js";
 
+function normalizeDecimalInput(value: string): string {
+  return value.replace(/,/g, ".").trim();
+}
+
 export type BVAPointType = "boundary" | "inside" | "outside";
 
 export interface BVAPoint {
@@ -16,6 +20,7 @@ export interface BVAConfig {
   pointsPerBoundary: 2 | 3 | 4;
   epsilon?: string;
   markAsErrorCase?: boolean;
+  ranges?: BVARangeEntry[];
 }
 
 /**
@@ -52,8 +57,8 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
   let minDec: Decimal;
   let maxDec: Decimal;
   try {
-    minDec = new Decimal(min);
-    maxDec = new Decimal(max);
+    minDec = new Decimal(normalizeDecimalInput(min));
+    maxDec = new Decimal(normalizeDecimalInput(max));
   } catch {
     return []; // Ungueltige Zahlen
   }
@@ -70,7 +75,7 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
 
   // Epsilon aus Bereich ableiten, falls nicht angegeben
   const epsilonDec = epsilon
-    ? new Decimal(epsilon)
+    ? new Decimal(normalizeDecimalInput(epsilon))
     : deriveEpsilon(minDec, maxDec);
 
   const points: BVAPoint[] = [];
@@ -116,6 +121,178 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
   });
 }
 
+function parseOptionalDecimal(value: string): Decimal | null {
+  const text = normalizeDecimalInput(value);
+  if (!text) return null;
+  return new Decimal(text);
+}
+
+function normalizeRange(range: BVARangeEntry): { min: Decimal | null; max: Decimal | null } {
+  let min: Decimal | null;
+  let max: Decimal | null;
+  try {
+    min = parseOptionalDecimal(range.minVal);
+    max = parseOptionalDecimal(range.maxVal);
+  } catch {
+    return { min: null, max: null };
+  }
+  if (min && max && min.greaterThan(max)) {
+    [min, max] = [max, min];
+  }
+  return { min, max };
+}
+
+function boundValue(bound: Decimal | null, isMin: boolean): string {
+  if (!bound) {
+    return isMin ? "-∞" : "∞";
+  }
+  return bound.toString();
+}
+
+function generateRangeCandidates(
+  min: Decimal | null,
+  max: Decimal | null,
+  pointsPerBoundary: 2 | 3 | 4
+): Array<{ value: Decimal; type: BVAPointType }> {
+  if (!min && !max) return [];
+
+  if (!min && max) {
+   const epsilon = deriveEpsilon(max, max);
+   if (pointsPerBoundary === 2) return [
+     { value: max.minus(epsilon), type: "inside" },
+     { value: max, type: "boundary" },
+   ];
+   if (pointsPerBoundary === 3) return [
+     { value: max.minus(epsilon.times(2)), type: "outside" },
+     { value: max.minus(epsilon), type: "inside" },
+     { value: max, type: "boundary" },
+   ];
+   return [
+     { value: max.minus(epsilon.times(3)), type: "outside" },
+     { value: max.minus(epsilon.times(2)), type: "outside" },
+     { value: max.minus(epsilon), type: "inside" },
+     { value: max, type: "boundary" },
+   ];
+  }
+
+  if (min && !max) {
+   const epsilon = deriveEpsilon(min, min);
+   if (pointsPerBoundary === 2) return [
+     { value: min, type: "boundary" },
+     { value: min.plus(epsilon), type: "inside" },
+   ];
+   if (pointsPerBoundary === 3) return [
+     { value: min, type: "boundary" },
+     { value: min.plus(epsilon), type: "inside" },
+     { value: min.plus(epsilon.times(2)), type: "outside" },
+   ];
+   return [
+     { value: min, type: "boundary" },
+     { value: min.plus(epsilon), type: "inside" },
+     { value: min.plus(epsilon.times(2)), type: "outside" },
+     { value: min.plus(epsilon.times(3)), type: "outside" },
+   ];
+  }
+
+  const epsilon = deriveEpsilon(min!, max!);
+  if (pointsPerBoundary === 2) {
+   return [
+     { value: min!.minus(epsilon), type: "outside" },
+     { value: min!, type: "boundary" },
+     { value: max!, type: "boundary" },
+     { value: max!.plus(epsilon), type: "outside" },
+   ];
+  }
+  if (pointsPerBoundary === 3) {
+   return [
+     { value: min!.minus(epsilon), type: "outside" },
+     { value: min!, type: "boundary" },
+     { value: min!.plus(epsilon), type: "inside" },
+     { value: max!.minus(epsilon), type: "inside" },
+     { value: max!, type: "boundary" },
+     { value: max!.plus(epsilon), type: "outside" },
+   ];
+  }
+  return [
+   { value: min!.minus(epsilon.times(2)), type: "outside" },
+   { value: min!.minus(epsilon), type: "outside" },
+   { value: min!, type: "boundary" },
+   { value: min!.plus(epsilon), type: "inside" },
+   { value: max!.minus(epsilon), type: "inside" },
+   { value: max!, type: "boundary" },
+   { value: max!.plus(epsilon), type: "outside" },
+   { value: max!.plus(epsilon.times(2)), type: "outside" },
+  ];
+}
+
+function rangeOverlaps(
+  left: { min: Decimal | null; max: Decimal | null },
+  right: { min: Decimal | null; max: Decimal | null }
+): boolean {
+  const leftMax = left.max ?? new Decimal("Infinity");
+  const rightMin = right.min ?? new Decimal("-Infinity");
+  return leftMax.greaterThanOrEqualTo(rightMin);
+}
+
+export function validateMultiRangeBVAConfig(ranges: BVARangeEntry[]): string[] {
+  const errors: string[] = [];
+
+  if (!ranges.length) {
+    errors.push("Mindestens ein Bereich erforderlich");
+    return errors;
+  }
+
+  const normalized = ranges.map((range, idx) => {
+    let min: Decimal | null = null;
+    let max: Decimal | null = null;
+    let parseError = false;
+
+    try {
+      min = parseOptionalDecimal(range.minVal);
+      max = parseOptionalDecimal(range.maxVal);
+    } catch {
+      parseError = true;
+    }
+
+    if (parseError) {
+      errors.push(`Bereich ${idx + 1}: Ungültiger numerischer Wert`);
+    }
+
+    if (!min && !max) {
+      errors.push(`Bereich ${idx + 1}: Minimum oder Maximum erforderlich`);
+    }
+
+    if (min && max && min.greaterThan(max)) {
+      [min, max] = [max, min];
+    }
+
+    return { min, max, label: `${boundValue(min, true)}-${boundValue(max, false)}` };
+  });
+
+  const ordered = normalized
+    .map((range, idx) => ({ idx, range }))
+    .sort((a, b) => {
+      const aMin = a.range.min ?? new Decimal("-Infinity");
+      const bMin = b.range.min ?? new Decimal("-Infinity");
+      if (aMin.lessThan(bMin)) return -1;
+      if (aMin.greaterThan(bMin)) return 1;
+      const aMax = a.range.max ?? new Decimal("Infinity");
+      const bMax = b.range.max ?? new Decimal("Infinity");
+      return aMax.comparedTo(bMax);
+    });
+
+  for (let i = 1; i < ordered.length; i++) {
+    const prev = ordered[i - 1].range;
+    const current = ordered[i].range;
+    if (rangeOverlaps(prev, current)) {
+      errors.push("Bereiche dürfen sich nicht überschneiden oder berühren.");
+      break;
+    }
+  }
+
+  return errors;
+}
+
 /**
  * Validiert BVA-Konfiguration.
  * @returns Array von Fehlermeldungen (leer = valide)
@@ -127,8 +304,8 @@ export function validateBVAConfig(config: BVAConfig): string[] {
   if (!config.max) errors.push("Maximum erforderlich");
 
   try {
-    new Decimal(config.min);
-    new Decimal(config.max);
+    new Decimal(normalizeDecimalInput(config.min));
+    new Decimal(normalizeDecimalInput(config.max));
     // Auto-swap erlaubt, keine weitere Validierung
   } catch {
     errors.push("Ungültiger numerischer Wert");
@@ -159,34 +336,43 @@ export function calculateMultiRangeBVAPoints(
   ranges: BVARangeEntry[],
   pointsPerBoundary: 2 | 3 | 4
 ): MultiRangeBVAPoint[] {
-  if (!ranges.length) return [];
+  if (validateMultiRangeBVAConfig(ranges).length > 0) return [];
+
+  const normalized = ranges.map((range) => ({
+    ...range,
+    ...normalizeRange(range),
+  }));
+
+  const ordered = [...normalized].sort((a, b) => {
+    const aMin = a.min ?? new Decimal("-Infinity");
+    const bMin = b.min ?? new Decimal("-Infinity");
+    if (aMin.lessThan(bMin)) return -1;
+    if (aMin.greaterThan(bMin)) return 1;
+    const aMax = a.max ?? new Decimal("Infinity");
+    const bMax = b.max ?? new Decimal("Infinity");
+    return aMax.comparedTo(bMax);
+  });
 
   const allCandidates = new Map<string, MultiRangeBVAPoint>();
 
-  ranges.forEach((range) => {
-    const rangePoints = calculateBVAPoints({
-      min: range.minVal,
-      max: range.maxVal,
-      pointsPerBoundary,
-    });
-
+  ordered.forEach((range) => {
+    const rangePoints = generateRangeCandidates(range.min, range.max, pointsPerBoundary);
     rangePoints.forEach((point) => {
-      if (allCandidates.has(point.value)) return; // Skip duplicates
-
-      const isError = classifyMultiRangeValue(point.value, ranges);
-      const sourceRange = `${range.minVal}-${range.maxVal} (${
+      const value = point.value.toString();
+      if (allCandidates.has(value)) return;
+      const sourceRange = `${boundValue(range.min, true)}-${boundValue(range.max, false)} (${
         range.allowed ? "erlaubt" : "nicht erlaubt"
       })`;
-
-      allCandidates.set(point.value, {
-        ...point,
-        isError,
+      allCandidates.set(value, {
+        value,
+        type: point.type,
+        label: value,
         sourceRange,
+        isError: classifyMultiRangeValue(value, normalized),
       });
     });
   });
 
-  // Sort by numeric value
   return Array.from(allCandidates.values()).sort((a, b) => {
     try {
       return new Decimal(a.value).comparedTo(new Decimal(b.value));
@@ -210,10 +396,11 @@ function classifyMultiRangeValue(
     const val = new Decimal(value);
 
     for (const range of ranges) {
-      const min = new Decimal(range.minVal);
-      const max = new Decimal(range.maxVal);
-
-      if (val.greaterThanOrEqualTo(min) && val.lessThanOrEqualTo(max)) {
+      const { min, max } = normalizeRange(range);
+      if (min === null && max === null) continue;
+      const lowerOk = min === null || val.greaterThanOrEqualTo(min);
+      const upperOk = max === null || val.lessThanOrEqualTo(max);
+      if (lowerOk && upperOk) {
         return !range.allowed; // In nicht-erlaubtem Bereich = Fehler
       }
     }
@@ -222,4 +409,16 @@ function classifyMultiRangeValue(
   } catch {
     return true; // Parse-Fehler = Fehler
   }
+}
+
+export function extractPersistableBVAValues(points: BVAPoint[]): string[] {
+  const seen = new Set<string>();
+  return points
+    .map((pt) => pt.value)
+    .filter((value) => value !== "∞" && value !== "-∞" && value.trim() !== "")
+    .filter((value) => {
+      if (seen.has(value)) return false;
+      seen.add(value);
+      return true;
+    });
 }

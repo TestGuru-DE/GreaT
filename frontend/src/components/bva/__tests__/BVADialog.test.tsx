@@ -4,6 +4,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BVADialog } from "../BVADialog";
 
+vi.mock("../../../api/bva", () => ({
+  bvaApi: {
+    generateMultiRange: vi.fn().mockResolvedValue({ values: ["10"], category_id: 1 }),
+  },
+}));
+
 describe("BVADialog", () => {
   const mockOnClose = vi.fn();
   const mockOnApply = vi.fn();
@@ -21,6 +27,13 @@ describe("BVADialog", () => {
     render(<BVADialog {...defaultProps} />);
     expect(screen.getByText(/Grenzwertanalyse/i)).toBeInTheDocument();
     expect(screen.getByText("Alter")).toBeInTheDocument();
+  });
+
+  it("zeigt 2/3/4 Punkte auch im Multi-Range-Dialog", () => {
+    render(<BVADialog {...defaultProps} />);
+    expect(screen.getByLabelText(/2 Punkte/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/3 Punkte/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/4 Punkte/i)).toBeInTheDocument();
   });
 
   it("ESC schließt Dialog", async () => {
@@ -44,8 +57,8 @@ describe("BVADialog", () => {
 
   it("Anwenden-Button ist enabled nach valider Eingabe", async () => {
     render(<BVADialog {...defaultProps} />);
-    const minInput = screen.getByLabelText(/Minimum/i);
-    const maxInput = screen.getByLabelText(/Maximum/i);
+    const minInput = screen.getAllByLabelText(/Minimum/i)[0];
+    const maxInput = screen.getAllByLabelText(/Maximum/i)[0];
 
     await userEvent.type(minInput, "10");
     await userEvent.type(maxInput, "20");
@@ -78,8 +91,8 @@ describe("BVADialog", () => {
     const user = userEvent.setup();
     render(<BVADialog {...defaultProps} onApply={errorApply} />);
 
-    const minInput = screen.getByLabelText(/Minimum/i);
-    const maxInput = screen.getByLabelText(/Maximum/i);
+    const minInput = screen.getAllByLabelText(/Minimum/i)[0];
+    const maxInput = screen.getAllByLabelText(/Maximum/i)[0];
     await user.type(minInput, "10");
     await user.type(maxInput, "20");
 
@@ -88,13 +101,13 @@ describe("BVADialog", () => {
     await user.click(applyBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Fehler/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Fehler$/)).toBeInTheDocument();
     }, { timeout: 3000 });
   });
 
   it("Focus-Trap: erster Fokus auf Min-Input", () => {
     render(<BVADialog {...defaultProps} />);
-    const minInput = screen.getByLabelText(/Minimum/i);
+    const minInput = screen.getAllByLabelText(/Minimum/i)[0];
     expect(minInput).toHaveFocus();
   });
 });

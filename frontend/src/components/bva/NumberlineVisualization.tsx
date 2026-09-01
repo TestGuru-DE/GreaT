@@ -112,6 +112,17 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
             >
               {pt.label}
             </text>
+            {(pt as any).sourceRange && (
+              <text
+                x={x}
+                y={lineY + 58}
+                textAnchor="middle"
+                fontSize="9"
+                fill="#94a3b8"
+              >
+                {(pt as any).sourceRange}
+              </text>
+            )}
           </g>
         );
       })}

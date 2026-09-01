@@ -15,6 +15,7 @@ from ..database import get_db
 from .. import models, schemas
 from ..services import (
     load_categories_values,
+    load_categories_values_weighted,
     load_result_categories,  # REQ-4016
     generate_cases,
     assignment_from_testcase,
@@ -160,8 +161,42 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
         })
 
     # REQ-3051: Generierungsweite Risikoabdeckung berechnen
+    category_risk_map = load_categories_values_weighted(db, gen.project_id)
+    forbidden_rules = []
+    db_rules = db.query(models.Rule).filter(models.Rule.project_id == gen.project_id).all()
+    for rule in db_rules:
+        if_category_name = name_by_id.get(rule.if_category_id)
+        then_category_name = name_by_id.get(rule.then_category_id)
+        if not if_category_name or not then_category_name:
+            continue
+
+        if rule.type == "exclude":
+            forbidden_rules.append((if_category_name, rule.if_value, then_category_name, rule.then_value))
+        elif rule.type == "combine":
+            allowed = []
+            if rule.then_values_json:
+                try:
+                    allowed = json.loads(rule.then_values_json) or []
+                except Exception:
+                    allowed = []
+            allowed_set = set(allowed)
+            then_values = [
+                row.value
+                for row in db.query(models.Value)
+                .filter(models.Value.category_id == rule.then_category_id)
+                .order_by(models.Value.id)
+                .all()
+            ]
+            for value in then_values:
+                if value not in allowed_set:
+                    forbidden_rules.append((if_category_name, rule.if_value, then_category_name, value))
+
     risk_summary = calculate_generation_risk_summary(
-        out, value_risk_map, len(categories)
+        out,
+        value_risk_map,
+        len(categories),
+        category_risk_map=category_risk_map,
+        forbidden_rules=forbidden_rules,
     )
 
     return {

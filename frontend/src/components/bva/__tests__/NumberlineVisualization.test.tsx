@@ -32,7 +32,7 @@ describe("NumberlineVisualization", () => {
       { value: "20", type: "boundary", label: "max" },
     ];
     const { container } = render(<NumberlineVisualization points={points} />);
-    const circles = container.querySelectorAll("circle");
+    const circles = container.querySelectorAll("svg > g:not([transform]) > circle");
     expect(circles).toHaveLength(3);
   });
 
@@ -59,7 +59,7 @@ describe("NumberlineVisualization", () => {
       { value: "42", type: "boundary", label: "single" },
     ];
     const { container } = render(<NumberlineVisualization points={points} />);
-    const circles = container.querySelectorAll("circle");
+    const circles = container.querySelectorAll("svg > g:not([transform]) > circle");
     expect(circles).toHaveLength(1);
   });
 });

@@ -3,7 +3,11 @@ import { useEffect, useState, useRef } from "react";
 import { BVAInputPanel } from "./BVAInputPanel";
 import { PreviewTable } from "./PreviewTable";
 import { NumberlineVisualization } from "./NumberlineVisualization";
-import { calculateBVAPoints, validateBVAConfig, type BVAConfig } from "../../lib/bva-calc";
+import {
+  calculateMultiRangeBVAPoints,
+  validateMultiRangeBVAConfig,
+  type BVAConfig,
+} from "../../lib/bva-calc";
 import { bvaApi } from "../../api/bva";
 
 interface BVADialogProps {
@@ -27,6 +31,9 @@ export function BVADialog({
     max: "",
     pointsPerBoundary: 2,
     markAsErrorCase: false,
+    ranges: [
+      { id: "range-1", minVal: "", maxVal: "", allowed: true },
+    ],
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,7 +49,7 @@ export function BVADialog({
         onClose();
       }
       if (e.key === "Enter" && !e.shiftKey) {
-        const isValid = validateBVAConfig(config).length === 0;
+        const isValid = validateMultiRangeBVAConfig(config.ranges ?? []).length === 0;
         if (isValid) {
           e.preventDefault();
           handleApply();
@@ -67,12 +74,8 @@ export function BVADialog({
     setLoading(true);
 
     try {
-      const minVal = parseFloat(config.min);
-      const maxVal = parseFloat(config.max);
-
-      const response = await bvaApi.generate(categoryId, {
-        min_val: minVal,
-        max_val: maxVal,
+      const response = await bvaApi.generateMultiRange(categoryId, {
+        ranges: config.ranges ?? [],
         points: config.pointsPerBoundary,
       });
 
@@ -87,8 +90,8 @@ export function BVADialog({
 
   if (!isOpen) return null;
 
-  const points = calculateBVAPoints(config);
-  const isValid = validateBVAConfig(config).length === 0;
+  const points = calculateMultiRangeBVAPoints(config.ranges ?? [], config.pointsPerBoundary);
+  const isValid = validateMultiRangeBVAConfig(config.ranges ?? []).length === 0;
 
   return (
     <div
