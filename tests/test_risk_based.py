@@ -1,7 +1,7 @@
 # REQ-0805: Risikogewichtete Generierung (Risk-Based Test Case Generation)
 # TDD: Tests werden VOR der Implementierung geschrieben.
 import pytest
-from combinatorics.risk_based import generate
+from combinatorics.risk_based import generate, compute_testcase_risk, sort_by_risk_descending
 
 
 class TestRiskBasedGenerate:
@@ -84,3 +84,73 @@ class TestRiskBasedGenerate:
         result_gew = generate(categories_gewichtet)
         result_ungew = generate(categories_ungewichtet)
         assert len(result_gew) >= len(result_ungew)
+
+
+class TestComputeTestcaseRisk:
+    """REQ-3034: Kumulierter Risiko-Score pro Testfall (kategorie-gescoped)."""
+
+    def test_compute_testcase_risk_summiert_pro_kategorie_korrekt(self):
+        # REQ-3034: Score = Summe der risk_weight je zugeordneter Kategorie/Wert-Kombination
+        category_risk_map = {
+            "Browser": [("Chrome", 3), ("Firefox", 2)],
+            "OS": [("Windows", 1), ("Linux", 5)],
+        }
+        tc = {"Browser": "Chrome", "OS": "Linux"}
+        assert compute_testcase_risk(tc, category_risk_map) == 8.0
+
+    def test_compute_testcase_risk_fehlender_wert_ergibt_null(self):
+        # REQ-3034: Unbekannter Wert/unbekannte Kategorie zaehlt als 0, kein KeyError
+        category_risk_map = {
+            "Browser": [("Chrome", 3)],
+        }
+        tc = {"Browser": "Safari", "OS": "Windows"}
+        assert compute_testcase_risk(tc, category_risk_map) == 0.0
+
+    def test_compute_testcase_risk_gleicher_wert_verschiedene_kategorien_kollidiert_nicht(self):
+        # REQ-3034 Regression: kategorie-gescoptes Lookup, kein globales/flaches Dict
+        # Derselbe Wert-String "A" hat in Kategorie1 Gewicht 3, in Kategorie2 Gewicht 9.
+        category_risk_map = {
+            "Kategorie1": [("A", 3), ("B", 1)],
+            "Kategorie2": [("A", 9), ("B", 1)],
+        }
+        tc = {"Kategorie1": "A", "Kategorie2": "B"}
+        # Erwartet: 3 (Kategorie1.A) + 1 (Kategorie2.B) = 4, NICHT 3 + 9 aus einem
+        # fehlerhaften flachen Dict das "A" global auf 9 mappen wuerde.
+        assert compute_testcase_risk(tc, category_risk_map) == 4.0
+
+
+class TestSortByRiskDescending:
+    """REQ-3034: Eigenstaendige, von generate() getrennte Risiko-Sortierung."""
+
+    def test_sort_by_risk_descending_leere_liste_und_leere_map(self):
+        assert sort_by_risk_descending([], {}) == []
+
+    def test_sort_by_risk_descending_tie_break_original_reihenfolge(self):
+        # REQ-3034: Bei Punktgleichheit gewinnt der urspruengliche Listenindex (aufsteigend)
+        category_risk_map = {
+            "A": [("x", 2), ("y", 2)],
+        }
+        testcases = [
+            {"A": "x"},  # Score 2, Index 0
+            {"A": "y"},  # Score 2, Index 1
+        ]
+        result = sort_by_risk_descending(testcases, category_risk_map)
+        # Gleicher Score -> Reihenfolge bleibt wie im Original
+        assert result == [{"A": "x"}, {"A": "y"}]
+
+    def test_sort_by_risk_descending_hoechstes_risiko_zuerst(self):
+        category_risk_map = {
+            "Browser": [("Chrome", 3), ("Firefox", 1)],
+            "OS": [("Windows", 1), ("Linux", 5)],
+        }
+        testcases = [
+            {"Browser": "Firefox", "OS": "Windows"},  # 1 + 1 = 2
+            {"Browser": "Chrome", "OS": "Linux"},      # 3 + 5 = 8
+            {"Browser": "Chrome", "OS": "Windows"},    # 3 + 1 = 4
+        ]
+        result = sort_by_risk_descending(testcases, category_risk_map)
+        assert result == [
+            {"Browser": "Chrome", "OS": "Linux"},
+            {"Browser": "Chrome", "OS": "Windows"},
+            {"Browser": "Firefox", "OS": "Windows"},
+        ]

@@ -11,6 +11,7 @@ from app.main import app
 from app.database import Base, get_db
 from app import models
 from src.app.services import sort_testcases_error_last, load_error_values
+from combinatorics.risk_based import sort_by_risk_descending
 
 
 # --- Isolierte Test-DB ---
@@ -124,4 +125,32 @@ def test_load_error_values(session, sample_project):
     assert "normal" not in errors
     assert len(errors) == 2
 
+
+def test_risk_sort_dann_error_sort_komposition_fehlerwert_landet_hinten():
+    """REQ-3034 + BUG-5/REQ-3018: Komposition auf Funktionsebene.
+
+    sort_by_risk_descending() wird ZUERST angewendet (Risiko-Sortierung),
+    danach sort_testcases_error_last() (Fehlerwert-Vorrang). Ein Testfall mit
+    hohem Risiko-Score, der aber einen Fehlerwert enthaelt, muss trotzdem am
+    Ende der finalen Liste landen.
+    """
+    category_risk_map = {
+        "Browser": [("Chrome", 10), ("Firefox", 1)],
+        "OS": [("Windows", 1), ("BrokenOS", 20)],  # BrokenOS ist Fehlerwert
+    }
+    testcases = [
+        {"Browser": "Firefox", "OS": "Windows"},   # Score 2, kein Fehlerwert
+        {"Browser": "Chrome", "OS": "BrokenOS"},   # Score 30, ABER Fehlerwert
+        {"Browser": "Chrome", "OS": "Windows"},    # Score 11, kein Fehlerwert
+    ]
+    error_values = {"BrokenOS"}
+
+    risk_sorted = sort_by_risk_descending(testcases, category_risk_map)
+    result = sort_testcases_error_last(risk_sorted, error_values)
+
+    # Der Fehlerwert-Testfall (trotz hoechstem Risiko) steht am Ende.
+    assert result[-1] == {"Browser": "Chrome", "OS": "BrokenOS"}
+    # Die verbleibenden (fehlerfreien) Testfaelle sind weiterhin nach Risiko sortiert.
+    assert result[0] == {"Browser": "Chrome", "OS": "Windows"}
+    assert result[1] == {"Browser": "Firefox", "OS": "Windows"}
 

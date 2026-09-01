@@ -16,7 +16,11 @@ export default function ProjectDetailPage() {
   const [rightTab, setRightTab] = useState<RightTab>("generate");
 
   const { projects, fetchProjects } = useProjectStore();
-  useEffect(() => { if (projects.length === 0) fetchProjects(); }, [projects.length, fetchProjects]);
+  // REQ-4019: Bei jedem Oeffnen dieser Ansicht (Sichtenwechsel/Navigation) Projektliste neu laden,
+  // damit z.B. ein zwischenzeitlich in einer anderen Ansicht umbenanntes Projekt sofort korrekt angezeigt wird.
+  // Bereits im Store vorhandene Daten werden dabei sofort angezeigt (kein Blockieren/Flackern),
+  // die Aktualisierung laeuft im Hintergrund.
+  useEffect(() => { fetchProjects(); }, [fetchProjects]);
   const project = projects.find((p) => p.id === projectId);
   const projectName = project?.name ?? `#${projectId}`;
 

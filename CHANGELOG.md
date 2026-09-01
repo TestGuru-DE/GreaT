@@ -2,6 +2,12 @@
 
 Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [Unreleased]
+
+### ✨ Neue Features
+- **REQ-3034**: Generierte Testfälle werden absteigend nach kumuliertem Risiko-Score sortiert (Summe der `risk_weight` aller zugewiesenen Werte je Testfall). Testfälle mit Fehlerwerten behalten weiterhin Vorrang (REQ-3018/BUG-5) und werden unabhängig von ihrem Risiko-Score ans Ende der Liste sortiert.
+- **REQ-4018**: Neue Einstellung "Maximale Anzahl Testfälle" (Default 1000) begrenzt die Anzahl generierter Testfälle pro Kombination, wenn kein expliziter `limit`-Wert im Request angegeben ist. Konfigurierbar über die Umgebungsvariable `GREAT_MAX_TESTCASES` (Backend) sowie über eine neue Karte auf der Einstellungen-Seite (Frontend, lokal gespeichert, ohne Server-Neustart wirksam).
+
 ## [1.5.1] - 2026-09-01
 
 ### 🐛 Bugfixes – Sprintabschluss

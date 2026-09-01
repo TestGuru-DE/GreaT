@@ -28,6 +28,12 @@ Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeSc
 - **Sprint 10:** In Planung (Scope freigegeben 2026-09-01)
 - **Fokus:** Port-Unification (Port 8000 Standard + Settings-Erweiterung, REQ-4007+), Risikobasierte Testfall-Sortierung (REQ-3034, bisher aufgeschoben aus Sprint 6), Max-Testfälle-Setting in Einstellungen (neu), GUI-Refresh nach Sichtenwechsel/Dialog-Schluss (UX-Fix), offene ToDo-Sichtung + Umsetzung, Multi-User-Analyse als Research/Klärungsauftrag (kein Impl. Sprint 10)
 
+### Sprint-10 Zwischenstand (Nacharbeit Aufgabe 2)
+- **REQ-3034** (Risikobasierte Testfall-Sortierung): Implementierung abgeschlossen, zugehörige Tests grün. Status in `requirements_v1.1.md` auf **DONE / TESTED** aktualisiert (Traceability-Nachtrag 2026-09-01).
+
+### Sprint-10 Zwischenstand (Nacharbeit Aufgabe 5 – Max. Testfälle-Setting)
+- **REQ-4018** (Max. Testfälle pro Kombination, Default 1000): Backend-Setting (`GREAT_MAX_TESTCASES`, Fallback robust) und Settings-Karte im Frontend implementiert, Generierung respektiert die Obergrenze ohne expliziten `limit`. Backend- und Frontend-Tests grün. REQ neu in `requirements_v1.1.md` angelegt und auf **DONE / TESTED** gesetzt (Nachtrag 2026-09-01).
+
 ### Gesamtbewertung
 
 | Dimension | Bewertung | Note |
@@ -476,7 +482,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 | 2 | Risikobasierte Kombination: absteigende Sortierung nach risk_coverage | REQ-3034 | M | OFFEN |
 | 3 | GUI-Aktualisierung: React-Reload nach Sichtenwechsel / Dialog-Schluss | REQ-4019 (neu) | M | OFFEN |
 | 4 | Port-Unification: Port 8000 Standard, Port 5173 nur Dev-Option, Settings-Erweiterung | REQ-1202, REQ-4007, REQ-4017 (neu) | M | OFFEN |
-| 5 | Max. Testfälle-Setting in Einstellungen (Default 1000) | REQ-4018 (neu) | S | OFFEN |
+| 5 | Max. Testfälle-Setting in Einstellungen (Default 1000) | REQ-4018 (neu) | S | ERLEDIGT |
 | 6 | Multi-User-Analyse: Research + Klärung Benachrichtigungsfunktion (kein Impl.) | REQ-4001, REQ-4002 | S | OFFEN |
 | 7 | Offene ToDos aus Aufgabe 1 umsetzen (Scope TBD nach Aufgabe 1) | TBD | TBD | BLOCKIERT (→ Aufg. 1) |
 
@@ -532,5 +538,57 @@ Aufgabe 6 (Multi-User) ──► Research-Output als Input für Sprint-11-Planni
 - ✅ Program Manager – Scope + Priorisierung freigegeben
 - ⏳ Chief Architect – Eskalation: Multi-User-Architektur + REQ-4019 Tech-Ansatz
 - ⏳ Senior QA Director – Test-Strategie für REQ-3034, REQ-4019
+
+---
+
+## EPIC-18 – Multi-User Nutzung (Teams bis 10 Personen) – Sprint 11–13 Planning (2026-09-01)
+
+**Status:** 🔵 SPRINTFÄHIG VORBEREITET – Program Manager Freigabe erteilt
+**Auslöser:** Eskalation Sprint 10 (Multi-User-Architektur, Score 16) aufgelöst durch ADR-012 (HYBRID-Ansatz)
+**Vollständige EPIC-Definition:** `Agenten und basisinfos/requirements_v1.1.md` → EPIC-18
+
+### Zielbild
+
+Teams bis 10 Personen arbeiten gemeinsam an G.R.E.A.T.-Projekten. Kollisionssichere
+Zusammenarbeit über Login/Rollen + Optimistic Concurrency + Stale-Data-Warning.
+**Keine** volle Realtime-Kollaboration (kein WebSocket-Live-Editing, kein Presence,
+kein CRDT/OT) in dieser Ausbaustufe – siehe ADR-012.
+
+### Sprint-Backlog (priorisiert)
+
+| Sprint | REQ-ID | Titel | Prio | Aufwand | Risiko | Status |
+|---|---|---|---|---|---|---|
+| 11 | REQ-4001 | Authentifizierung (OAuth2/JWT) | Must | L | 🟡 M | Planned |
+| 11 | REQ-4020 | Rollen & Rechte Basismodell (Admin/Editor/Viewer) | Should | M | 🟡 M | Planned |
+| 12 | REQ-4006 | Multi-User-Datenmodell (SQLite/PostgreSQL optional) | Must | L | 🟡 M | Planned |
+| 12 | REQ-4021 | Optimistic Concurrency Control (Versionsfeld, 409) | Must | L | 🟡 M | Planned |
+| 12 | REQ-4022 | Stale-Data-Warning Frontend | Must | M | 🟢 L | Planned |
+| 13 | REQ-4023 | Projekt-Sharing / Mitgliederverwaltung | Should | M | 🟡 M | Planned |
+| 13 | REQ-4024 | Minimaler Audit-Trail (last_modified_by/-at) | Should | S | 🟢 L | Planned |
+| 13 | – | Lasttest 10 gleichzeitige Nutzer + E2E-Konfliktszenario | Must | M | 🟡 M | Planned |
+
+*(Aufwand: S/M/L grob analog Story-Points niedrig/mittel/hoch; Risiko-Ampel wie Risk-Log-Schema)*
+
+### Out of Scope (explizit, siehe EPIC-18-Detail)
+
+Realtime-Kollaboration (WebSocket/SSE/CRDT), Live-Presence, Echtzeit-Benachrichtigungen,
+Enterprise-SSO, Multi-Tenant-SaaS, Teamgrößen > 10 Personen.
+
+### Freigabe-Voraussetzungen vor Sprint 11
+
+- ⏳ **Chief Architect:** ADR-007 (DB-Strategie SQLite/PostgreSQL) final bestätigen
+- ⏳ **Security Architect:** Auth-Schema-Review (OAuth2/JWT, Passwort-Hashing) vor Implementierung
+- ⏳ **Senior QA Director:** Teststrategie für Konfliktszenarien (REQ-4021/4022) freigeben
+- ✅ **Program Manager:** Scope, Priorität, Out-of-Scope-Abgrenzung freigegeben (dieses Dokument)
+
+### Risiken
+
+Siehe `documentation/risk-log.md` RISK-S-001 (20, bestehend), RISK-T-008 (12, neu für EPIC-18),
+RISK-T-006 (8, SQLite-Multi-User). RISK-S-001 und RISK-T-008 sind eskalationspflichtig (Score ≥ 10).
+
+### Go/No-Go
+
+- ✅ **GO** für Sprint-11-Planung (Backlog sprintfähig, REQs vollständig in requirements_v1.1.md)
+- 🔴 **Bedingung:** Sprint-11-Start erst nach Chief-Architect- und Security-Architect-Freigabe (siehe oben)
 
 ---

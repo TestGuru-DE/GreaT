@@ -10,7 +10,6 @@ import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
-import DataClassDialog from "./DataClassDialog";
 import { BVADialog } from "./bva/BVADialog";
 import UndoRedoToolbar from "./ui/UndoRedoToolbar";
 import type { DataNode } from "../types";
@@ -42,7 +41,6 @@ export default function CategoryTree({ projectId }: Props) {
   const [selectedCatId, setSelectedCatId] = useState<number | null>(null);
   const [selectedValId, setSelectedValId] = useState<{ catId: number; valId: number } | null>(null);
   const [ctx, setCtx] = useState<CtxState | null>(null);
-  const [dataClassCat, setDataClassCat] = useState<{ id: number; name: string } | null>(null);
   const [bvaDialogOpen, setBvaDialogOpen] = useState<{ id: number; name: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const newCatRef = useRef<HTMLInputElement>(null);
@@ -477,16 +475,6 @@ export default function CategoryTree({ projectId }: Props) {
         </ul>
       )}
 
-      {/* Datenklassen-Dialog (Legacy) */}
-      {dataClassCat && (
-        <DataClassDialog
-          categoryId={dataClassCat.id}
-          categoryName={dataClassCat.name}
-          onClose={() => setDataClassCat(null)}
-          onApplied={() => { if (expanded[dataClassCat.id]) fetchValues(dataClassCat.id); }}
-        />
-      )}
-
       {/* DataNode Baum Dialog (REQ-4018) */}
       {dataNodeMenuOpen && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setDataNodeMenuOpen(null)}>
@@ -528,7 +516,12 @@ export default function CategoryTree({ projectId }: Props) {
           categoryId={bvaDialogOpen.id}
           categoryName={bvaDialogOpen.name}
           projectId={projectId}
-          onClose={() => setBvaDialogOpen(null)}
+          onClose={() => {
+            // REQ-4019: Auch beim Schliessen ohne Anwenden (Abbrechen/Escape/Klick auf Hintergrund)
+            // muessen sichtbare Werte aktualisiert werden, falls sich Daten zwischenzeitlich geaendert haben.
+            if (expanded[bvaDialogOpen.id]) fetchValues(bvaDialogOpen.id);
+            setBvaDialogOpen(null);
+          }}
           onApply={(newValues) => {
             toast.add(`${newValues.length} Grenzwerte hinzugefügt`);
             if (expanded[bvaDialogOpen.id]) fetchValues(bvaDialogOpen.id);

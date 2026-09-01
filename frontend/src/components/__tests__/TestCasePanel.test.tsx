@@ -201,3 +201,92 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     });
   });
 });
+
+describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", () => {
+  const baseStore = {
+    testcases: [
+      { id: 1, name: "TC_1", assignments: { Kategorie1: "Wert1" }, risk_coverage: 5.0 },
+    ],
+    count: 1,
+    loading: false,
+    error: null,
+    strategy: "each" as const,
+    generations: [],
+    generationsLoading: false,
+    resultCategories: [],
+    generationId: 1,
+    setStrategy: vi.fn(),
+    generate: vi.fn(),
+    fetchGenerations: vi.fn(),
+    loadGeneration: vi.fn(),
+    renameGeneration: vi.fn(),
+    updateAssignment: vi.fn(),
+  };
+
+  it("zeigt kein Badge, wenn keine Generierung vorliegt (riskSummary = null)", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({ ...baseStore, riskSummary: null });
+    render(<TestCasePanel projectId={1} />);
+
+    expect(screen.queryByText(/Risikoabdeckung:/)).not.toBeInTheDocument();
+  });
+
+  it("zeigt gruenes Badge bei Risikoabdeckung >= 80%", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...baseStore,
+      riskSummary: { total_risk: 8, max_possible_risk: 10, risk_coverage_percent: 80, testcase_count: 1 },
+    });
+    const { container } = render(<TestCasePanel projectId={1} />);
+
+    expect(screen.getByText(/Risikoabdeckung: 80%/)).toBeInTheDocument();
+    const badge = container.querySelector(".bg-green-100");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("text-green-800", "border-green-300");
+  });
+
+  it("zeigt gelbes Badge bei Risikoabdeckung zwischen 50% und 79%", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...baseStore,
+      riskSummary: { total_risk: 6, max_possible_risk: 10, risk_coverage_percent: 60, testcase_count: 1 },
+    });
+    const { container } = render(<TestCasePanel projectId={1} />);
+
+    expect(screen.getByText(/Risikoabdeckung: 60%/)).toBeInTheDocument();
+    const badge = container.querySelector(".bg-yellow-100");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("text-yellow-800", "border-yellow-300");
+  });
+
+  it("zeigt rotes Badge bei Risikoabdeckung unter 50%", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...baseStore,
+      riskSummary: { total_risk: 3, max_possible_risk: 10, risk_coverage_percent: 30, testcase_count: 1 },
+    });
+    const { container } = render(<TestCasePanel projectId={1} />);
+
+    expect(screen.getByText(/Risikoabdeckung: 30%/)).toBeInTheDocument();
+    const badge = container.querySelector(".bg-red-100");
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveClass("text-red-800", "border-red-300");
+  });
+
+  it("zeigt Grenzwert 50% als gelb (nicht rot)", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...baseStore,
+      riskSummary: { total_risk: 5, max_possible_risk: 10, risk_coverage_percent: 50, testcase_count: 1 },
+    });
+    const { container } = render(<TestCasePanel projectId={1} />);
+
+    expect(container.querySelector(".bg-yellow-100")).toBeInTheDocument();
+    expect(container.querySelector(".bg-red-100")).not.toBeInTheDocument();
+  });
+
+  it("zeigt absolute Werte (total/max) neben dem Badge", () => {
+    vi.mocked(useGenerateStore).mockReturnValue({
+      ...baseStore,
+      riskSummary: { total_risk: 8, max_possible_risk: 10, risk_coverage_percent: 80, testcase_count: 1 },
+    });
+    render(<TestCasePanel projectId={1} />);
+
+    expect(screen.getByText("(8.0 / 10.0)")).toBeInTheDocument();
+  });
+});

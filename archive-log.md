@@ -128,4 +128,31 @@ Die Werte sind nun als vorinstallierte, löschgeschützte Datenklassen in der DB
 - `Start-Dev.bat` (neu): Backend (8000) + Vite Dev Server (5173) für Entwickler
 - `Start.sh` (aktualisiert): Wie Start.bat für Linux/Raspberry Pi
 
+## 2026-09-01 – Sprint 10, Aufgabe 7 (p3-dc-ux): Legacy-DataClassDialog archiviert
+
+**Grund**: Tech-Debt-Cleanup aus der ToDo-Sichtung (Sprint 10, Aufgabe 1 → Aufgabe 7). Der alte
+`DataClassDialog` in `CategoryTree.tsx` war toter Code: der zugehörige State `dataClassCat` wurde
+nirgends mehr per `setDataClassCat(...)` mit einem Wert befüllt (nur `onClose` setzte ihn zurück auf
+`null`), der Dialog war für Nutzer:innen unerreichbar. Der Kontextmenü-Eintrag „Datenklasse
+anwenden...“ öffnet bereits seit REQ-4018 ausschließlich den DataNode-Baum-Dialog
+(`setDataNodeMenuOpen(...)`).
+
+**Archiviert nach:** `archive/2026-09-01/frontend-legacy/DataClassDialog.tsx`
+
+| Datei | Original-Pfad | Grund |
+|---|---|---|
+| DataClassDialog.tsx | frontend/src/components/DataClassDialog.tsx | Unerreichbarer Legacy-Dialog (REQ-2003), vollständig ersetzt durch DataNode-Baum-Dialog (REQ-4018) |
+
+**Änderungen in `CategoryTree.tsx`:**
+- Import `import DataClassDialog from "./DataClassDialog";` entfernt
+- Toter State `dataClassCat` / `setDataClassCat` entfernt
+- Render-Block „Datenklassen-Dialog (Legacy)“ entfernt
+
+**Traceability:** REQ-3010 (Datenklassen-Ansicht), REQ-4018 (DataNode-Kontextmenü) – Bezug siehe
+`documentation/project-assessment.md` Sprint-10-Abschnitt (Aufgabe 7).
+
+**Regressionsschutz:** `frontend/src/components/__tests__/CategoryTree.test.tsx` – neue Testgruppe
+„CategoryTree - Legacy-DataClassDialog entfernt“ mit (a) Guard-Test gegen Wiedereinführung des
+Legacy-Imports und (b) Verhaltenstest, dass der Kontextmenü-Pfad weiterhin den DataNode-Dialog öffnet.
+
 

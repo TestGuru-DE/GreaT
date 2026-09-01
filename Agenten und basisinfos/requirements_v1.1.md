@@ -656,6 +656,7 @@ Erstellt von: Requirements Engineer Agent
 | REQ-4014 | Should | Kategorien-Tabelle + Drag&Drop Reihenfolge | Tested | Sprint 9 |
 | REQ-4015 | Should | BVA-Visualisierung überarbeitet + Fehlerwert-Fix | Tested | Sprint 9 |
 | REQ-4016 | Must | Ergebnis-Typ für Kategorien (ISTQB Expected Result) | Tested | Sprint 9 |
+| REQ-4018 | Should | Max. Testfälle pro Kombination (Setting, Default 1000) | DONE / TESTED | Sprint 10 |
 | REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 10+ |
 | REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10+ |
 | REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11+ |
@@ -1849,6 +1850,28 @@ damit ich ISTQB-konform nur erwartete Ergebnisse manuell oder regelbasiert befue
 
 ---
 
+### REQ-4018 | Max. Testfaelle pro Kombination (Setting)
+**Titel:** Konfigurierbare Obergrenze fuer generierte Testfaelle
+**Prioritaet:** Should
+**Status:** DONE / TESTED (Sprint 10 Nacharbeit, 2026-09-01)
+**Phase:** 4, Sprint 10
+**User Story:**
+Als Tester
+moechte ich eine maximale Anzahl generierter Testfaelle pro Kombination einstellen koennen (Default 1000)
+damit eine Generierung mit sehr vielen Kombinationen (z. B. Strategie "all") nicht unbegrenzt viele Testfaelle erzeugt und das System nicht ueberlastet.
+**Akzeptanzkriterien:**
+- Backend liest die Obergrenze konfigurierbar (Umgebungsvariable `GREAT_MAX_TESTCASES`), Default ist 1000
+- Ungueltige Werte (nicht-numerisch oder <= 0) fallen robust auf den Default zurueck
+- `POST /projects/{pid}/generate` respektiert die Obergrenze, wenn kein expliziter `limit` mitgeschickt wird
+- Ein expliziter, kleinerer `limit`-Wert im Request bleibt weiterhin massgeblich (bestehendes Verhalten unveraendert)
+- Die bestehende Validierung (`limit` muss positiv sein) bleibt unveraendert erhalten
+- Settings-Seite (Frontend) zeigt eine Karte "Maximale Anzahl Testfaelle" mit Eingabefeld, Default-Anzeige (1000) und Validierung (Bereich 1–100000)
+- Der Frontend-Wert wird lokal gespeichert (localStorage) und ohne Server-Neustart bei der naechsten Generierung als `limit` mitgeschickt
+**Abhaengigkeiten:** REQ-4007 (Analogie zum Port-Setting-Muster)
+**Traceability:** Sprint-10 Aufgabe 3 – Implementierung + Tests gruen (Backend: `tests/test_max_testcases_setting.py`; Frontend: `frontend/src/lib/__tests__/maxTestCasesSetting.test.ts`, `frontend/src/components/__tests__/MaxTestCasesSettingsCard.test.tsx`, `frontend/src/store/__tests__/generateStore.test.ts`), Nachtrag 2026-09-01
+
+---
+
 ### REQ-3033 | Transparente Analysegrenzen bei Regelkomplexitaet
 **Titel:** Heuristische Kennzeichnung komplexer Regelanalysen
 **Prioritaet:** Should
@@ -1870,7 +1893,7 @@ damit ich Warnungen bei komplexen Regelsaetzen richtig einordnen kann.
 ### REQ-3034 | Risikobasierte Testfall-Sortierung
 **Titel:** Generierte Testfaelle nach kumuliertem Risiko priorisieren
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** DONE / TESTED (Sprint 10 Nacharbeit, 2026-09-01)
 **Phase:** 3, Sprint 6
 **User Story:**
 Als Tester
@@ -1882,6 +1905,7 @@ damit ich zuerst die fachlich kritischsten Testfaelle ausfuehren kann.
 - Die Sortierung bleibt von der eigentlichen Generierungslogik getrennt
 - Fehlerwert-Sortierregeln aus REQ-3018 haben Vorrang vor reiner Risiko-Sortierung
 **Abhaengigkeiten:** REQ-3007, REQ-3018, REQ-0805
+**Traceability:** Sprint-10 Aufgabe 2 – Risk-Sortierung implementiert, zugehörige Tests gruen (Nachtrag 2026-09-01)
 
 ---
 
@@ -2108,17 +2132,213 @@ damit Boolean-Ausdruecke und Entscheidungslogik vollstaendig getestet werden.
 # PHASE 4 – Enterprise & KI
 *(ehemals Phase 3 Backlog – verschoben durch Entscheidung 2026-06-29)*
 
-### REQ-4001 | Authentifizierung (OAuth2/JWT)
-**Phase:** 4, Sprint 1 | **Status:** Planned
-
 ### REQ-4004 | Business Rule Based Testing
 **Phase:** 4, Sprint 2 | **Status:** Planned
 
 ### REQ-4005 | Ollama/LLM-Integration
 **Phase:** 4, Sprint 3 | **Status:** Planned
 
+---
+
+## EPIC-18 – Multi-User Nutzung (Teams bis 10 Personen)
+
+**Eingeplant:** Phase 4, Sprint 11–13
+**Freigegeben durch:** Program Manager Agent (2026-09-01)
+**Voraussetzung/Architektur-Leitplanke:** ADR-012 (HYBRID-Ansatz – Optimistic Concurrency + Stale-Warning, siehe decision-log.md)
+
+### Zielbild
+
+G.R.E.A.T. wird für Teams bis **10 gleichzeitig angemeldete Personen** nutzbar. Mehrere
+Tester:innen können am selben Projekt arbeiten (verschiedene Kategorien/Generierungen),
+ohne dass Änderungen sich unbemerkt gegenseitig überschreiben. Es handelt sich **nicht**
+um echte Realtime-Kollaboration (kein Live-Cursor, kein CRDT/OT) – das ist bewusst auf
+eine spätere Ausbaustufe verschoben (siehe Out of Scope). Diese Ausbaustufe ist die
+**Vorstufe**: Login/Rollen + optimistisches Sperren + Hinweis bei veralteten Daten.
+
+### In Scope (Sprint 11–13)
+
+- REQ-4001 – Authentifizierung (OAuth2/JWT) als Basisvoraussetzung
+- REQ-4006 – Multi-User-Datenmodell (SQLite weiterhin Default, PostgreSQL optional)
+- REQ-4020 – Rollen & Rechte Basismodell (Admin/Editor/Viewer)
+- REQ-4021 – Optimistic Concurrency Control (Versionsfeld + 409-Conflict-Antwort)
+- REQ-4022 – Stale-Data-Warning im Frontend (Banner + gezieltes Neuladen)
+- REQ-4023 – Projekt-Sharing / Mitgliederverwaltung pro Projekt
+- REQ-4024 – Minimaler Audit-Trail (wer hat zuletzt geändert)
+
+### Out of Scope (bewusst NICHT Sprint 11–13)
+
+- Echtzeit-Kollaboration (WebSocket/SSE Live-Editing, CRDT/Operational Transform)
+- Live-Presence-Anzeige ("wer schaut gerade zu") und Live-Cursor
+- Echtzeit-Benachrichtigungsfunktion (Push/E-Mail) – nur als Klärungsauftrag aus Sprint 10 vermerkt, keine Umsetzung
+- Enterprise-SSO (SAML/LDAP/Azure AD) – nur lokale OAuth2/JWT-Nutzer
+- Mandantenfähigkeit/Multi-Tenant-SaaS-Hosting
+- Team-Größe > 10 Personen (keine horizontale Skalierung/Cluster-Betrieb Ziel dieser Stufe)
+
+### Abhängigkeiten
+
+- REQ-4007 (GREAT_PORT/.env) – DONE, Voraussetzung für Konfigurationsmuster
+- REQ-4008 (Health-Check) – DONE, Voraussetzung für Monitoring im Multi-User-Betrieb
+- ADR-007 (DB-Strategie SQLite/PostgreSQL) – Bestätigung Chief Architect ausstehend
+- ADR-012 (HYBRID-Konfliktstrategie) – Accepted (Grundlage für REQ-4021/4022)
+- Security Architect Review für Auth-Schema (RISK-S-001) vor Sprint-11-Start zwingend
+- CORS-Konfiguration muss vor Multi-User-Release auf Whitelist umgestellt werden (Schulden-Item #8, phase-4-sprint-stabi-needs.md)
+
+### Risiken (EPIC-Ebene)
+
+| Risiko | W | I | Score | Ampel | Maßnahme |
+|---|---|---|---|---|---|
+| Fehlende Authentifizierung bei Multi-User-Rollout (RISK-S-001) | 5 | 4 | 20 | 🔴 | REQ-4001 vor jedem Multi-User-Feature zwingend abschließen |
+| Konflikte bei gleichzeitiger Bearbeitung ungeklärt (neu: RISK-T-008) | 3 | 4 | 12 | 🔴 | Optimistic Concurrency (REQ-4021) + Stale-Warning (REQ-4022) |
+| SQLite-Schreibkonflikte bei >5 gleichzeitigen Nutzern (RISK-T-006) | 2 | 4 | 8 | 🟡 | PostgreSQL optional (REQ-4006), Lasttest in Sprint 13 |
+| CORS/Origin-Policy zu offen vor Rollout | 3 | 3 | 9 | 🟡 | Whitelist vor Sprint-11-Release umsetzen |
+| Scope-Erwartung "Echtzeit" vs. tatsächlich Hybrid-Vorstufe (Stakeholder-Missverständnis) | 3 | 3 | 9 | 🟡 | Klare Kommunikation Out-of-Scope, Abnahme durch Program Manager |
+
+**Eskalationspflichtig (Score ≥ 10):** RISK-S-001 (20), RISK-T-008 (12, neu).
+
+---
+
+### REQ-4001 | Authentifizierung (OAuth2/JWT)
+**Titel:** Login/Token-basierte Authentifizierung als Voraussetzung für Multi-User
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 11
+**User Story:**
+Als Administrator
+moechte ich, dass sich Nutzer:innen mit Benutzername/Passwort anmelden und ein Token erhalten
+damit nur autorisierte Personen auf Projekte zugreifen koennen.
+**Akzeptanzkriterien:**
+- POST /auth/login akzeptiert Benutzername/Passwort und liefert JWT Access-Token + Refresh-Token
+- Passwoerter werden gehasht gespeichert (bcrypt/argon2), niemals im Klartext
+- Alle bestehenden API-Endpunkte pruefen ein gueltiges Token (Depends(get_current_user))
+- Abgelaufene/ungueltige Token liefern 401 mit klarer Fehlermeldung
+- Frontend zeigt Login-Maske, speichert Token sicher (httpOnly-Cookie oder memory, kein localStorage fuer Access-Token)
+- Logout invalidiert Refresh-Token serverseitig
+**TDD-Hinweis:** Test-first fuer Token-Erzeugung/-Validierung (pytest), danach Router-Absicherung; Frontend Login-Flow mit Vitest/RTL vor Implementierung der Komponente.
+**Abhaengigkeiten:** –
+**Blockiert:** REQ-4006, REQ-4020, REQ-4021, REQ-4022, REQ-4023, REQ-4024
+
+---
+
 ### REQ-4006 | Multi-User (PostgreSQL optional)
-**Phase:** 4, Sprint 4 | **Status:** Planned
+**Titel:** Mehrbenutzerfaehiger Datenzugriff fuer Teams bis 10 Personen
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 12
+**User Story:**
+Als Team-Mitglied
+moechte ich zeitgleich mit bis zu 9 weiteren Kolleg:innen an G.R.E.A.T.-Projekten arbeiten
+damit unser Team gemeinsam Testfaelle entwickeln kann, ohne sich gegenseitig zu blockieren.
+**Akzeptanzkriterien:**
+- SQLAlchemy Engine ist ueber DATABASE_URL konfigurierbar (Default: SQLite, optional PostgreSQL)
+- Alembic-Migrationen laufen gegen SQLite UND PostgreSQL
+- Connection Pooling (QueuePool) fuer PostgreSQL aktiv
+- Lasttest bestaetigt stabilen Betrieb mit 10 simulierten gleichzeitigen Nutzern (Lesen + Schreiben)
+- Bestehender Single-User-Betrieb (SQLite) bleibt ohne Regression funktionsfaehig
+**TDD-Hinweis:** tests/test_multi_user_db.py mit Parametrisierung SQLite/PostgreSQL (skip-if-unavailable), zuerst Test fuer Engine-Switch schreiben.
+**Abhaengigkeiten:** REQ-4001, ADR-007
+**Blockiert:** REQ-4021, REQ-4023
+
+---
+
+### REQ-4020 | Rollen & Rechte Basismodell
+**Titel:** Admin/Editor/Viewer-Rollen fuer Projekte und Team-Verwaltung
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 11
+**User Story:**
+Als Team-Lead
+moechte ich Mitgliedern Rollen (Admin, Editor, Viewer) zuweisen
+damit nicht jede Person versehentlich Projekte loeschen oder Nutzer verwalten kann.
+**Akzeptanzkriterien:**
+- Drei Rollen sind definiert: Admin (Vollzugriff inkl. Nutzerverwaltung), Editor (Projekte bearbeiten), Viewer (nur lesen)
+- Rollenpruefung erfolgt serverseitig auf allen schreibenden Endpunkten
+- Erste registrierte Person wird automatisch Admin
+- UI blendet nicht erlaubte Aktionen fuer Viewer aus/deaktiviert sie
+- Fehlversuch (Viewer versucht Schreibaktion) liefert 403 mit verstaendlicher Meldung
+**TDD-Hinweis:** Backend-Rollenpruefung zuerst als Unit-Test pro Rolle x Endpunkt-Matrix, danach Implementierung der Dependency.
+**Abhaengigkeiten:** REQ-4001
+**Blockiert:** REQ-4023
+
+---
+
+### REQ-4021 | Optimistic Concurrency Control
+**Titel:** Versionsfeld + Konflikterkennung statt Pessimistic Locking (HYBRID-Ansatz, ADR-012)
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 12
+**User Story:**
+Als Tester
+moechte ich gewarnt werden, wenn eine Kategorie/ein Testfall zwischenzeitlich von jemand anderem geaendert wurde
+damit ich meine Aenderung nicht versehentlich eine fremde Aenderung ueberschreibt.
+**Akzeptanzkriterien:**
+- Projekt, Kategorie, Wert und Testfall erhalten ein `version`-Feld (int, inkrementiert bei jedem Update)
+- PUT/PATCH-Requests senden die zuletzt gelesene `version` mit
+- Stimmt die Version nicht mit der aktuellen DB-Version ueberein: 409 Conflict mit aktuellem Serverstand im Body
+- Keine echte Sperre (kein Lock) – parallele Lesevorgaenge bleiben uneingeschraenkt moeglich
+- Konfliktfall ist durch Backend-Tests abgedeckt (zwei simulierte gleichzeitige Updates)
+**TDD-Hinweis:** Test zuerst fuer "zwei Updates mit gleicher Ausgangsversion -> zweites liefert 409" schreiben, danach Versionsfeld + Vergleichslogik implementieren.
+**Abhaengigkeiten:** REQ-4006
+**Blockiert:** REQ-4022
+
+---
+
+### REQ-4022 | Stale-Data-Warning im Frontend
+**Titel:** Hinweisbanner bei veralteten Daten nach 409-Conflict
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 12
+**User Story:**
+Als Tester
+moechte ich sofort erkennen, wenn meine Ansicht veraltet ist
+damit ich bewusst entscheiden kann, neu zu laden oder meine Aenderung dennoch (mit Ueberschreibungs-Bestaetigung) zu speichern.
+**Akzeptanzkriterien:**
+- Bei 409-Response zeigt das Frontend ein deutliches Banner: "Diese Ansicht ist veraltet – von {Nutzer} geaendert"
+- Aktionen im Banner: "Neu laden" (verwirft lokale Aenderung) oder "Trotzdem ueberschreiben" (mit Bestaetigungsdialog)
+- Kein automatisches, stilles Ueberschreiben ohne Nutzerinteraktion
+- Banner verschwindet nach gewaehlter Aktion
+- Kein Live-Update/Polling der Fremdaenderung (das ist bewusst Out of Scope, siehe EPIC-18)
+**TDD-Hinweis:** Vitest/RTL-Test fuer Banner-Zustand bei simuliertem 409-Response zuerst schreiben, danach Komponente implementieren.
+**Abhaengigkeiten:** REQ-4021
+**Blockiert:** –
+
+---
+
+### REQ-4023 | Projekt-Sharing / Mitgliederverwaltung
+**Titel:** Projekte gezielt mit Team-Mitgliedern teilen
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 13
+**User Story:**
+Als Projekt-Owner
+moechte ich festlegen koennen, welche Team-Mitglieder Zugriff auf mein Projekt haben
+damit nicht automatisch alle 10 Team-Mitglieder alle Projekte sehen.
+**Akzeptanzkriterien:**
+- Projekt hat eine Mitgliederliste (Nutzer + Rolle je Projekt: Editor/Viewer)
+- Owner (oder Admin) kann Mitglieder hinzufuegen/entfernen
+- Nutzer ohne Zugriff sehen das Projekt nicht in der Projektliste
+- Endpoint-Absicherung: 403 bei Zugriff ohne Mitgliedschaft
+**TDD-Hinweis:** Test zuerst fuer "Nutzer ohne Mitgliedschaft sieht Projekt X nicht in GET /projects", danach Filterlogik implementieren.
+**Abhaengigkeiten:** REQ-4006, REQ-4020
+**Blockiert:** –
+
+---
+
+### REQ-4024 | Minimaler Audit-Trail
+**Titel:** Nachvollziehbarkeit "wer hat zuletzt geaendert"
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 13
+**User Story:**
+Als Team-Lead
+moechte ich sehen, wer eine Kategorie oder einen Testfall zuletzt geaendert hat
+damit ich bei Rueckfragen die richtige Person ansprechen kann.
+**Akzeptanzkriterien:**
+- Projekt, Kategorie, Wert und Testfall speichern `last_modified_by` (User-ID) und `last_modified_at` (Timestamp)
+- Werte werden in der UI dezent angezeigt (z.B. Tooltip "Zuletzt geaendert von X am Y")
+- Kein vollstaendiges Audit-Log mit Historie (das ist REQ-4003 "Audit-Log", separat und spaeter) – nur letzter Stand
+**TDD-Hinweis:** Unit-Test fuer automatisches Setzen von last_modified_* bei jedem Update-Call, vor Implementierung schreiben.
+**Abhaengigkeiten:** REQ-4001, REQ-4006
+**Blockiert:** –
 
 ---
 

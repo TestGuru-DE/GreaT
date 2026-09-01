@@ -41,6 +41,7 @@ Erstellt von: Program Manager Agent
 | RISK-T-005 | Frontend-Technologie (HTMX) nicht auf Zielarchitektur (React) ausgerichtet | 5 | 3 | 15 | 🔴 | ADR-001 verfassen: Python beibehalten vs. .NET |
 | RISK-T-006 | SQLite für Multi-User-Betrieb ungeeignet | 2 | 4 | 8 | 🟡 | PostgreSQL-Migration in Roadmap vorbereiten |
 | RISK-T-007 | Keine Fehlerbehandlung in API (keine 4xx/5xx) | 4 | 3 | 12 | 🔴 | Exception Handler für FastAPI einführen |
+| RISK-T-008 | Konflikte bei gleichzeitiger Bearbeitung durch mehrere Nutzer (Multi-User, EPIC-18) | 3 | 4 | 12 | 🔴 | HYBRID-Ansatz (ADR-012): Optimistic Concurrency (REQ-4021) + Stale-Data-Warning (REQ-4022), keine volle Realtime-Kollaboration in Sprint 11–13 |
 
 ## Kategorie: Qualität
 

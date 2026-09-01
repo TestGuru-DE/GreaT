@@ -353,3 +353,125 @@ Leere Input-Felder (Option A): User füllt Min/Max manuell bei jeder BVA-Nutzung
 - **Entscheidung:** CSS-Variablen + Tailwind Dark Mode
 - **Begründung:** Einfach, performant (~0KB Overhead), kein zusätzliches Tooling nötig. Tailwind-`dark:`-Klassen + CSS-Custom-Properties für Theme-Werte. Theme-Klasse auf `<html>`-Element, LocalStorage-Persistenz.
 - **Alternativen verworfen:** Styled-Components (+50KB, Migration nötig), reine Tailwind-Config (schwer wartbar bei 5 Themes)
+
+---
+
+## ADR-012 – Multi-User-Konfliktstrategie: HYBRID (Optimistic Concurrency + Stale-Warning)
+
+**Datum:** 2026-09-01
+**Status:** ✅ Accepted
+
+**Kontext:**
+Sprint 10 hat "Multi-User-Analyse" als Research-Auftrag ergeben (RISK Score 16,
+eskalationspflichtig, siehe project-assessment.md Sprint-10-Abschnitt). Offene Frage:
+Volle Realtime-Kollaboration (WebSocket/SSE, Live-Cursor, CRDT/OT) vs. einfacherer
+Zwischenschritt für Teams bis 10 Personen.
+
+**Entscheidung:** HYBRID-Ansatz als Vorstufe zu echter Realtime-Kollaboration:
+- **Optimistic Concurrency Control**: Versionsfeld pro Entität (Projekt/Kategorie/Wert/Testfall),
+  Konflikt wird erst beim Speichern erkannt (409 Conflict), keine Sperren beim Lesen/Öffnen
+- **Stale-Data-Warning**: Nutzer wird im Konfliktfall aktiv informiert und entscheidet
+  (Neu laden vs. bewusst überschreiben) – kein stilles Überschreiben
+- **Explizit KEINE** Realtime-Kollaboration in Sprint 11–13 (kein WebSocket-Live-Editing,
+  kein Presence/Live-Cursor, kein CRDT/OT)
+
+**Begründung:**
+- Team-Größe bis 10 Personen macht seltene, statt permanente Kollisionen wahrscheinlich –
+  voller Realtime-Aufwand steht in keinem Verhältnis zum Nutzen dieser Ausbaustufe
+- Optimistic Concurrency ist mit bestehendem REST/FastAPI-Stack ohne neue Infrastruktur
+  (kein WebSocket-Server, kein zusätzlicher State-Sync-Mechanismus) umsetzbar
+- Reduziert Sicherheits- und Architekturrisiko: Auth (RISK-S-001, Score 20) muss ohnehin
+  zuerst stehen; Realtime-Kollaboration hätte zusätzliche Angriffsfläche geschaffen
+- Nutzer behält Kontrolle über Konfliktauflösung – vermeidet Datenverlust durch Auto-Merge-Fehler
+- Realtime-Kollaboration bleibt als spätere Ausbaustufe im Themenspeicher/Backlog auswählbar,
+  sobald Team-Größe/Anforderungen dies rechtfertigen
+
+**Konsequenzen:**
+- REQ-4021 (Optimistic Concurrency) und REQ-4022 (Stale-Data-Warning) werden in
+  requirements_v1.1.md (EPIC-18) als neue Requirements geführt
+- Kein WebSocket-/SSE-Server wird in Sprint 11–13 aufgebaut
+- Klare Kommunikation an Stakeholder: "Multi-User" bedeutet in dieser Stufe kollisionssichere
+  Zusammenarbeit, keine Echtzeit-Ansicht fremder Änderungen
+- Chief-Architect-Eskalation aus Sprint 10 (Multi-User-Architekturentscheidung, Score 16) ist
+  hiermit fachlich/Scope-seitig aufgelöst; technische Detailfreigabe (ADR-007 DB-Strategie,
+  Auth-Schema-Review) bleibt gesondert erforderlich vor Sprint-11-Start
+
+**Entscheider:** Program Manager Agent (Scope/Priorität), in Abstimmung mit GREAT Chief Architect
+(technische Machbarkeit der Eskalation aus Sprint 10)
+**Abhängigkeiten:** REQ-4001, REQ-4006, REQ-4021, REQ-4022, RISK-S-001, RISK-T-008 (neu)
+
+---
+
+## REQ-3051: API-Contract fuer Risikoabdeckungs-Gesamtprozentsatz nachgezogen
+
+**Status:** Umgesetzt (Developer, TDD)
+
+**Kontext:**
+REQ-3051 (Prozentuale Risikoabdeckung pro Generierung) war laut requirements_v1.1.md und
+project-assessment.md bereits als DONE/TESTED gefuehrt. Backend-Berechnung
+(`calculate_generation_risk_summary` in `src/app/services.py`) und Frontend-Badge
+(gruen/gelb/rot in `TestCasePanel.tsx`) waren funktional bereits vorhanden und die
+reinen Unit-Tests der Berechnungsfunktion (`tests/test_risk_summary.py`) gruen.
+
+**Gefundene Luecke (TDD RED):**
+- Der Endpunkt `GET /api/generations/{gid}/testcases` lieferte `risk_summary` zwar
+  korrekt im Response-Body, war aber ohne `response_model` deklariert. Das
+  vorbereitete Schema `schemas.TestcasesResponse`/`schemas.RiskSummary` war im
+  OpenAPI-Dokument nicht sichtbar (leeres Response-Schema) – Bruch mit dem sonst
+  durchgaengigen API-Muster (alle anderen Endpunkte nutzen `response_model`).
+- Keine Integrationstests auf API-Ebene fuer den Gesamtprozentsatz (nur Unit-Tests der
+  reinen Berechnungsfunktion).
+- Kein Test fuer die Farbwahl des Badges (gruen >=80 %, gelb 50-79 %, rot <50 %) und
+  keine Store-Tests, die belegen, dass `riskSummary` nach `generate()`/
+  `loadGeneration()` aus der API uebernommen wird.
+
+**Massnahme:**
+- `response_model=schemas.TestcasesResponse` am Endpunkt ergaenzt (1 Zeile,
+  bestehendes Muster wiederverwendet, keine Verhaltensaenderung der Response-Struktur).
+- Neue Tests: `tests/test_req3051_risk_summary_api.py` (API-Contract + Gesamtprozentsatz),
+  Ergaenzungen in `frontend/src/store/__tests__/generateStore.test.ts` (riskSummary-Uebernahme)
+  und `frontend/src/components/__tests__/TestCasePanel.test.tsx` (Badge-Farben/Grenzwerte).
+
+**Ergebnis:** REQ-3051 bleibt DONE/TESTED, jetzt mit vollstaendiger Test- und API-Vertragsabdeckung.
+**Entscheider:** GREAT Senior Developer Agent
+**Abhaengigkeiten:** REQ-3050
+
+---
+
+## REQ-3003 / REQ-3004: Testabdeckung fuer Regeleditor in RulesPanel nachgezogen (Todo p3s2-frontend-rules-editor)
+
+**Status:** Umgesetzt (Developer, TDD)
+
+**Kontext:**
+Todo `p3s2-frontend-rules-editor` verlangte den Regeleditor oberhalb der Regelanzeige im
+`RulesPanel` (Formular mit Typ-/Kategorie-/Wert-Dropdowns, direktes Speichern, Konflikt-Warnung).
+Bei Pruefung war die Implementierung in `frontend/src/components/RulesPanel.tsx` bereits
+vollstaendig vorhanden (Kommentarkopf referenziert REQ-1216 + REQ-3003 + REQ-3004), jedoch
+**ohne jegliche Tests** – es existierte keine `RulesPanel.test.tsx`.
+
+**Gefundene Luecke (TDD):**
+- Keine automatisierten Tests fuer das Regelformular (Typ-/Kategorie-/Wert-Dropdowns), das
+  direkte Speichern neuer Regeln sowie die Konflikt-Warnung samt Hervorhebung der betroffenen
+  Regel in der Regelanzeige.
+
+**Massnahme:**
+- Neue Testdatei `frontend/src/components/__tests__/RulesPanel.test.tsx` (4 Tests, TDD-Stil
+  analog zu `CategoryTree.test.tsx`, `rulesApi`/`categoriesApi` gemockt):
+  - REQ-3003: Formular zeigt Typ-, Kategorie- und Wert-Dropdowns oberhalb der Regelanzeige.
+  - REQ-3003: Neue Regel wird direkt ueber `rulesApi.create` gespeichert und erscheint sofort
+    in der Regelanzeige.
+  - REQ-3004: Konflikt-Antwort (`conflict_with`) fuehrt zu Warnmeldung „Regelwiderspruch mit
+    Regel #N" und visueller Hervorhebung (Amber) der betroffenen Regel in der Liste; Speichern
+    bleibt trotzdem erfolgreich (kein Hard-Block).
+  - REQ-3004: Widerspruchsfreie Regel zeigt Erfolgsmeldung ohne Hervorhebung (Abgrenzung/Regression).
+- Keine Aenderung an Produktivcode noetig – Implementierung erfuellte bereits alle
+  Akzeptanzkriterien; erste Testlaeufe scheiterten nur an mehrdeutigen Testabfragen
+  (Options-Text vs. Anzeige-Text), nicht an fachlicher Logik. Nach Praezisierung der Queries
+  (`within(list)`) sind alle 4 Tests gruen.
+
+**Ergebnis:** Frontend-Suite 26/26 Testdateien, 166 Tests gruen (2 vorbestehend uebersprungen).
+Backend-Regression `tests/test_phase3_sprint2.py` (14 Tests) weiterhin gruen. REQ-3003/REQ-3004
+sind funktional und testseitig abgesichert; Status in `requirements_v1.1.md` sollte bei
+naechster QA-Freigabe von „Planned" auf „DONE/TESTED" aktualisiert werden.
+**Entscheider:** GREAT Senior Developer Agent
+**Abhaengigkeiten:** REQ-3003, REQ-3004

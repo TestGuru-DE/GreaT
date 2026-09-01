@@ -1,4 +1,6 @@
-﻿# NOTICE – G.R.E.A.T.
+﻿**Note (English):** This document is bilingual. The German original follows immediately below. The full English translation is provided further down in a clearly separated section titled "ENGLISH VERSION".
+
+# NOTICE – G.R.E.A.T.
 
 **Projekt:** G.R.E.A.T. (Georg Radikal Einfacher Automatisierter TestcaseDesigner)  
 **Copyright:** © 2026 Georg Haupt  
@@ -102,3 +104,115 @@ Beiträge zum Projekt sind willkommen. Mit einem Beitrag erklärt sich die/der B
 | Consultant generiert Testfälle für Kunden | Berater rechnet Testfall-Design gegenüber Kunden ab | Genehmigungspflichtig | Vertrag + Umsatzbeteiligung |
 | Tool-Anbieter integriert G.R.E.A.T. | Kommerzielles Tool nutzt G.R.E.A.T. als Bestandteil | Genehmigungspflichtig | Vertrag + Umsatzbeteiligung |
 | SaaS-Anbieter | Kostenpflichtiges G.R.E.A.T.-Hosting für Dritte | Genehmigungspflichtig | Vertrag + Umsatzbeteiligung |
+
+---
+---
+
+# ENGLISH VERSION
+
+> **This is the complete English translation of the German original above. It is provided for convenience; the German version above remains the authoritative text.**
+
+# NOTICE – G.R.E.A.T.
+
+**Project:** G.R.E.A.T. (Georg Radikal Einfacher Automatisierter TestcaseDesigner)  
+**Copyright:** © 2026 Georg Haupt  
+**License:** GNU Affero General Public License v3.0 (AGPL-3.0) – see [LICENSE](LICENSE)
+
+---
+
+## Purpose of G.R.E.A.T.
+
+G.R.E.A.T. is a **tool for software testers** for the systematic generation of test cases using modern combinatorial methods. Its goal is to simplify and make software quality assurance more efficient.
+
+---
+
+## Terms of Use
+
+Usage is divided into two clearly distinct categories:
+
+### 1. FREE Usage (under AGPL-3.0)
+
+The **intended use of G.R.E.A.T. as a tool for designing test cases** is **free of charge** – even in commercial contexts. This explicitly includes:
+
+- **Private use** by individuals
+- **Scientific and academic use** (universities, education, research)
+- **Use by software manufacturers to test their own products** (internal testing process), even for commercial products
+- **Use by companies to test self-developed or self-used software** (internal quality assurance)
+- **Use in non-commercial open-source projects**
+
+Examples of free usage:
+- A software manufacturer uses G.R.E.A.T. to design test cases for its own commercial product ✅
+- An internal QA team uses G.R.E.A.T. for quality assurance of the company's own applications ✅
+- A university uses G.R.E.A.T. in teaching ✅
+- A student uses G.R.E.A.T. for her thesis ✅
+
+Free usage is subject to the full copyleft obligations of the AGPL-3.0:
+- All changes to the source code must be published under the same license
+- The share-alike obligation also applies when provided as a network/web service (SaaS)
+- The complete source code (including own modifications) must be made accessible
+
+### 2. LICENSE-REQUIRING Usage (with revenue share)
+
+A **commercial exploitation of G.R.E.A.T. itself** – i.e., the use of G.R.E.A.T. as the basis of a revenue-generating activity – requires **prior written permission** from the author (Georg Haupt) and is tied to a **revenue share**.
+
+The following are in particular considered license-requiring usage:
+
+- **Consultants or service providers** who use G.R.E.A.T. to create test cases on behalf of third parties and invoice for it
+- **Consulting companies** that use G.R.E.A.T. as part of paid client projects
+- **Tool vendors** who integrate G.R.E.A.T. into their own (commercial or proprietary) product or resell it as part of their offering
+- **SaaS providers** who operate G.R.E.A.T. as a paid service for third parties
+- Any **sub-licensing**, **resale**, or **rebranding** of G.R.E.A.T.
+
+Examples of license-requiring usage:
+- A consultant creates test cases for clients using G.R.E.A.T. and invoices them ❌ (permission required)
+- A tool vendor integrates G.R.E.A.T. into its commercial test automation product ❌ (permission required)
+- A SaaS company offers G.R.E.A.T. as a paid cloud solution ❌ (permission required)
+
+**For clarification – distinguishing criterion:**
+
+> The decisive factor is NOT whether the tested product is commercial, but whether G.R.E.A.T. itself is the source of revenue.
+
+- Tested product is commercial, G.R.E.A.T. is an internal tool → **free**
+- G.R.E.A.T. is marketed, sold, or billed as a service/product → **license required**
+
+**Procedure for license-requiring usage:**
+1. Contact the author before starting usage
+2. Conclude an individual license agreement including revenue share
+3. Only then is usage authorized in the corresponding context
+
+**Without permission, such usage is prohibited.**
+
+---
+
+## Disclaimer
+
+The software is provided **without any warranty**. Use is **at your own risk**. The author assumes **no liability whatsoever** for direct or indirect damages that may arise from its use. This applies to both usage categories mentioned above.
+
+---
+
+## Contributions
+
+Contributions to the project are welcome. By contributing, the contributor agrees that:
+
+- The contribution is published under AGPL-3.0
+- The copyrights to the project remain with the original author
+- The dual-licensing arrangement (AGPL + license-requiring exploitation) may also be applied to the contribution
+
+---
+
+## Contact
+
+- **Repository:** https://github.com/TestGuru-DE/GreaT
+- **License requests:** via GitHub Issues or direct contact with the repository owner
+
+---
+
+## Summary
+
+| Type of Use | Example | Cost | Requirement |
+|---|---|---|---|
+| Private, education, science | Student uses tool for bachelor's thesis | Free | AGPL-3.0 |
+| Manufacturer tests own product | Company uses G.R.E.A.T. for QA of its own software | Free | AGPL-3.0 |
+| Consultant generates test cases for clients | Consultant bills clients for test case design | License required | Contract + revenue share |
+| Tool vendor integrates G.R.E.A.T. | Commercial tool uses G.R.E.A.T. as a component | License required | Contract + revenue share |
+| SaaS provider | Paid G.R.E.A.T. hosting for third parties | License required | Contract + revenue share |

@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from .. import models, schemas
+from ..config import get_max_testcases  # REQ-4018: konfigurierbare Obergrenze
 from ..services import (
     load_categories_values,
     load_categories_values_weighted,
@@ -24,6 +25,7 @@ from ..services import (
     sort_testcases_error_last,
     calculate_generation_risk_summary,
 )
+from combinatorics.risk_based import sort_by_risk_descending
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
 router = APIRouter(tags=["API"])
@@ -57,12 +59,20 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
                 engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
         cases = RuleEngine(engine_rules).apply(cases)
 
-    # BUG-5: Fehlerwert-Testfälle ans Ende sortieren
+    # REQ-3034: Zuerst nach Risiko absteigend sortieren (von Generierung getrennt)
+    category_risk_map = load_categories_values_weighted(db, pid)
+    cases = sort_by_risk_descending(cases, category_risk_map)
+
+    # BUG-5/REQ-3018: Fehlerwert-Testfaelle ans Ende sortieren (hat Vorrang vor Risiko-Sortierung)
     error_values = load_error_values(db, pid)
     cases = sort_testcases_error_last(cases, error_values)
 
-    if payload.limit is not None:
-        cases = cases[: payload.limit]
+    # REQ-4018: Maximale Anzahl Testfaelle respektieren.
+    # Ein expliziter, positiver 'limit' im Request bleibt wie bisher massgeblich.
+    # Wird kein 'limit' mitgeschickt, greift die konfigurierbare Obergrenze
+    # (Default 1000), damit die Generierung nicht unbegrenzt explodieren kann.
+    effective_limit = payload.limit if payload.limit is not None else get_max_testcases()
+    cases = cases[:effective_limit]
 
     gen = models.Generation(project_id=pid, strategy=payload.strategy)
     db.add(gen)
@@ -100,7 +110,7 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     return schemas.GenerateResponse(generation_id=gen.id, count=len(cases))
 
 
-@router.get("/generations/{gid}/testcases")
+@router.get("/generations/{gid}/testcases", response_model=schemas.TestcasesResponse)
 def get_testcases(gid: int, db: Session = Depends(get_db)):
     """REQ-3050 + REQ-3051: Testfälle mit risk_coverage + risk_summary."""
     gen = db.get(models.Generation, gid)

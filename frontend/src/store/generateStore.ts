@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
 import type { TestCaseOut, Strategy, RiskSummary, ResultCategory } from "../types";
+import { readMaxTestCases } from "../lib/maxTestCasesSetting"; // REQ-4018
 
 interface GenerateStore {
   testcases: TestCaseOut[];
@@ -44,6 +45,7 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
         strategy: get().strategy, 
         apply_rules: applyRules,
         t_strength: tStrength, // BUG-3: T-Wise Stärke
+        limit: readMaxTestCases(), // REQ-4018: Obergrenze aus Einstellungen respektieren
       });
       const data = await generateApi.getTestcases(res.generation_id);
       set({

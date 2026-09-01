@@ -49,3 +49,40 @@ def generate(categories: dict[str, list[tuple[str, int]]]) -> list[dict[str, str
         testcases.append(tc)
 
     return testcases
+
+
+def compute_testcase_risk(testcase: dict[str, str], category_risk_map: dict[str, list[tuple[str, int]]]) -> float:
+    """REQ-3034: Summiert den Risiko-Score eines Testfalls kategorie-gescoped.
+
+    Fuer jede Kategorie im Testfall wird der zugewiesene Wert in der jeweiligen
+    Kategorie-Werteliste (NICHT global/flach) nachgeschlagen und dessen risk_weight
+    aufsummiert. Fehlt der Wert oder die Kategorie in category_risk_map, zaehlt er
+    als 0 (kein KeyError). Es wird KEIN max(1, weight)-Floor angewendet (das ist
+    Coverage-Semantik aus generate()/REQ-0805, nicht Risiko-Semantik).
+    """
+    total = 0.0
+    for cat_name, value in testcase.items():
+        weighted_values = category_risk_map.get(cat_name)
+        if not weighted_values:
+            continue
+        for candidate_value, weight in weighted_values:
+            if candidate_value == value:
+                total += weight
+                break
+    return total
+
+
+def sort_by_risk_descending(
+    testcases: list[dict[str, str]], category_risk_map: dict[str, list[tuple[str, int]]]
+) -> list[dict[str, str]]:
+    """REQ-3034: Sortiert Testfaelle absteigend nach kumuliertem Risiko-Score.
+
+    Eigenstaendige, von generate() getrennte Sortierfunktion. Deterministischer
+    Tie-Break bei Punktgleichheit: urspruenglicher Listenindex aufsteigend
+    (explizit im Sortierschluessel, nicht nur implizite Stabilitaet).
+    Muss VOR sort_testcases_error_last() aufgerufen werden, damit dessen
+    Fehlerwert-Vorrang (REQ-3018) die finale Reihenfolge dominiert.
+    """
+    indexed = list(enumerate(testcases))
+    indexed.sort(key=lambda pair: (-compute_testcase_risk(pair[1], category_risk_map), pair[0]))
+    return [tc for _, tc in indexed]

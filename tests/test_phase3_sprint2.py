@@ -261,3 +261,62 @@ class TestGenerateWithRules:
             for tc in cases
         )
         assert found_forbidden, "Ohne Regeln soll Chrome+Linux vorkommen"
+
+    def test_generate_apply_rules_default_false_without_field(self):
+        """REQ-3005: Wird 'apply_rules' im Request nicht mitgeschickt, gilt Default False
+        (bisheriges Verhalten) – Regeln werden NICHT angewendet."""
+        pid, cid1, cid2 = create_project_with_categories()
+        client.post(f"/api/projects/{pid}/rules", json={
+            "type": "exclude",
+            "if_category_id": cid1,
+            "if_value": "Chrome",
+            "then_category_id": cid2,
+            "then_value": "Linux",
+        })
+        r = client.post(f"/api/projects/{pid}/generate", json={
+            "strategy": "all",
+        })
+        assert r.status_code == 200, r.text
+        gen_id = r.json()["generation_id"]
+        cases_r = client.get(f"/api/generations/{gen_id}/testcases")
+        cases = cases_r.json()["testcases"]
+        found_forbidden = any(
+            tc["assignments"].get("Browser") == "Chrome"
+            and tc["assignments"].get("OS") == "Linux"
+            for tc in cases
+        )
+        assert found_forbidden, "Ohne 'apply_rules'-Feld soll Default False gelten (Chrome+Linux vorhanden)"
+
+    def test_generate_with_rules_apply_combine_rule(self):
+        """REQ-3005: apply_rules=true → CombineRule wird beim Generieren angewendet
+        (nicht nur Forbidden/Dependency)."""
+        pid, cid1, cid2 = create_project_with_categories()
+        # Wenn Browser=Chrome, dann OS darf NUR "Windows" sein (Linux wird gefiltert).
+        client.post(f"/api/projects/{pid}/rules", json={
+            "type": "combine",
+            "if_category_id": cid1,
+            "if_value": "Chrome",
+            "then_category_id": cid2,
+            "then_values": ["Windows"],
+        })
+        r = client.post(f"/api/projects/{pid}/generate", json={
+            "strategy": "all",
+            "apply_rules": True,
+        })
+        assert r.status_code == 200, r.text
+        gen_id = r.json()["generation_id"]
+        cases_r = client.get(f"/api/generations/{gen_id}/testcases")
+        assert cases_r.status_code == 200
+        cases = cases_r.json()["testcases"]
+        found_forbidden = any(
+            tc["assignments"].get("Browser") == "Chrome"
+            and tc["assignments"].get("OS") == "Linux"
+            for tc in cases
+        )
+        assert not found_forbidden, "CombineRule muss Chrome+Linux herausfiltern"
+        found_allowed = any(
+            tc["assignments"].get("Browser") == "Chrome"
+            and tc["assignments"].get("OS") == "Windows"
+            for tc in cases
+        )
+        assert found_allowed, "Chrome+Windows ist gemaess CombineRule weiterhin erlaubt"
