@@ -1,4 +1,4 @@
-# G.R.E.A.T. – Schnellstart
+﻿# G.R.E.A.T. â€“ Schnellstart
 
 > Voraussetzung: Installation abgeschlossen (siehe **INSTALLATION.md**)
 
@@ -11,8 +11,11 @@
 Doppelklick auf die Datei **`Start.bat`** im Projektordner.
 
 Es oeffnen sich 2 Terminalfenster:
-- **GREAT Backend** – FastAPI auf Port 8000
-- **GREAT Frontend** – Vite Dev-Server auf Port 5173
+- **GREAT Backend** â€“ FastAPI auf Port 8000
+- **GREAT Frontend** â€“ Vite Dev-Server auf Port 5173
+
+Hinweis: Port 8000 ist der Standard. Port 5173 ist nur fuer die lokale Dev-Option gedacht. Den bevorzugten lokalen Port kannst du in **Einstellungen** setzen (wirksam nach Neustart).
+
 
 Hinweis: `Start.bat` baut vor dem Backend-Start das Frontend neu, damit Port `8000` denselben UI-Stand wie `5173` zeigt.
 
@@ -22,14 +25,14 @@ Dann Browser oeffnen: **http://localhost:5173**
 
 ### Manuell starten (2 Terminals)
 
-**Terminal 1 – Backend:**
+**Terminal 1 â€“ Backend:**
 ```cmd
 cd C:\...\GreaT
 set PYTHONPATH=src
 python -m uvicorn src.app.main:app --reload --port 8000
 ```
 
-**Terminal 2 – Frontend (Entwicklermodus mit Hot-Reload):**
+**Terminal 2 â€“ Frontend (Entwicklermodus mit Hot-Reload):**
 ```cmd
 cd C:\...\GreaT\frontend
 npm run dev
@@ -73,7 +76,7 @@ Browser: **http://localhost:8000**
 - Namen eingeben und auf **Anlegen** klicken
 
 ### 2. Kategorien und Werte definieren
-- Projekt anklicken → **Oeffnen**
+- Projekt anklicken â†’ **Oeffnen**
 - Linke Spalte: Kategoriename eingeben, **+** klicken
 - Kategorie aufklappen (Pfeil), Werte hinzufuegen
 
@@ -109,9 +112,9 @@ Beide Terminalfenster schliessen oder jeweils **STRG + C** druecken.
 
 | Problem | Loesung |
 |---|---|
-| Port 8000 belegt | `netstat -ano \| findstr :8000` → Prozess beenden |
+| Port 8000 belegt | `netstat -ano \| findstr :8000` â†’ Prozess beenden |
 | `pip` nicht gefunden | Python neu installieren, "Add to PATH" aktivieren |
 | `npm` nicht gefunden | Node.js neu installieren, "Add to PATH" aktivieren |
 | Seite leer / weisser Bildschirm | `cd frontend && npm run build` erneut ausfuehren |
 | `ModuleNotFoundError` | `pip install -r requirements.txt` erneut ausfuehren |
-| Datenbankfehler | `great.db` loeschen – wird beim Neustart automatisch neu angelegt |
+| Datenbankfehler | `great.db` loeschen â€“ wird beim Neustart automatisch neu angelegt |

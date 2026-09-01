@@ -1,8 +1,9 @@
-// REQ-3002 + REQ-3045: Einstellungen + Theme-System
+﻿// REQ-3002 + REQ-3045: Einstellungen + Theme-System
 // REQ-4011: Datensicherung & Wiederherstellung
 // REQ-4012: BugMagnet-Import
 import { useState, useEffect } from 'react'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { PortSettingsCard } from '../components/PortSettingsCard'
 
 export default function SettingsPage() {
   const [backupPassword, setBackupPassword] = useState('')
@@ -47,14 +48,14 @@ export default function SettingsPage() {
       const r = await fetch(url, { method: 'POST', body: form })
       const data = await r.json()
       if (r.ok) {
-        setRestoreStatus(`✅ ${data.projects_restored} Projekte wiederhergestellt`)
+        setRestoreStatus(`âœ… ${data.projects_restored} Projekte wiederhergestellt`)
         setRestoreFile(null)
         setRestorePassword('')
       } else {
-        setRestoreStatus(`❌ Fehler: ${data.detail}`)
+        setRestoreStatus(`âŒ Fehler: ${data.detail}`)
       }
     } catch (e) {
-      setRestoreStatus(`❌ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+      setRestoreStatus(`âŒ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
     } finally {
       setIsLoading(false)
     }
@@ -84,12 +85,12 @@ export default function SettingsPage() {
       const d = await r.json()
       if (r.ok) {
         setBugmagnetImported(true)
-        setImportStatus(`✅ Import abgeschlossen (${d.nodes_created} Knoten)`)
+        setImportStatus(`âœ… Import abgeschlossen (${d.nodes_created} Knoten)`)
       } else {
-        setImportStatus(`❌ Fehler: ${d.detail}`)
+        setImportStatus(`âŒ Fehler: ${d.detail}`)
       }
     } catch (e) {
-      setImportStatus(`❌ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+      setImportStatus(`âŒ Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
     } finally {
       setImporting(false)
     }
@@ -99,16 +100,18 @@ export default function SettingsPage() {
     <main className="max-w-2xl mx-auto px-6 py-12">
       <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">Einstellungen</h1>
       
+    <PortSettingsCard />
+
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
         <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">Erscheinungsbild</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-          Wähle ein Theme für die Oberfläche. Die Einstellung wird automatisch gespeichert.
+          WÃ¤hle ein Theme fÃ¼r die OberflÃ¤che. Die Einstellung wird automatisch gespeichert.
         </p>
         <ThemeSwitcher />
       </section>
 
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">💾 Datensicherung (REQ-4011)</h2>
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">ðŸ’¾ Datensicherung (REQ-4011)</h2>
         
         <div className="space-y-4">
           {/* Export */}
@@ -117,7 +120,7 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <input
                 type="password"
-                placeholder="Passwort (optional, für Verschlüsselung)"
+                placeholder="Passwort (optional, fÃ¼r VerschlÃ¼sselung)"
                 value={backupPassword}
                 onChange={e => setBackupPassword(e.target.value)}
                 className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
@@ -127,7 +130,7 @@ export default function SettingsPage() {
                 disabled={isLoading}
                 className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition"
               >
-                {isLoading ? '⏳ Lädt...' : '📥 Sicherung herunterladen'}
+                {isLoading ? 'â³ LÃ¤dt...' : 'ðŸ“¥ Sicherung herunterladen'}
               </button>
             </div>
           </div>
@@ -144,7 +147,7 @@ export default function SettingsPage() {
               />
               <input
                 type="password"
-                placeholder="Passwort (falls verschlüsselt)"
+                placeholder="Passwort (falls verschlÃ¼sselt)"
                 value={restorePassword}
                 onChange={e => setRestorePassword(e.target.value)}
                 className="w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
@@ -154,7 +157,7 @@ export default function SettingsPage() {
                 disabled={!restoreFile || isLoading}
                 className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition"
               >
-                {isLoading ? '⏳ Verarbeitet...' : '📤 Wiederherstellen'}
+                {isLoading ? 'â³ Verarbeitet...' : 'ðŸ“¤ Wiederherstellen'}
               </button>
               {restoreStatus && (
                 <p className="text-sm text-slate-700 dark:text-slate-300 mt-2 p-2 bg-slate-100 dark:bg-slate-700 rounded">
@@ -168,11 +171,11 @@ export default function SettingsPage() {
 
       {/* REQ-4012: Datenklassen / BugMagnet Import */}
       <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">🗂️ Datenklassen</h2>
+        <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-4">ðŸ—‚ï¸ Datenklassen</h2>
         <div className="space-y-3">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             Beispielklassen Importieren von Bug Magnet Git.<br />
-            <span className="text-xs text-slate-500 dark:text-slate-400">Für die Inhalte ist der Urheber verantwortlich.</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">FÃ¼r die Inhalte ist der Urheber verantwortlich.</span>
           </p>
           <a
             href="https://github.com/gojko/bugmagnet/blob/master/template/config.json"
@@ -187,7 +190,7 @@ export default function SettingsPage() {
             disabled={importing}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded transition"
           >
-            {importing ? '⏳ Importiere...' : bugmagnetImported ? '🔄 Aktualisieren' : '📥 Importieren'}
+            {importing ? 'â³ Importiere...' : bugmagnetImported ? 'ðŸ”„ Aktualisieren' : 'ðŸ“¥ Importieren'}
           </button>
           {importStatus && <p className="text-sm text-slate-700 dark:text-slate-300 p-2 bg-slate-100 dark:bg-slate-700 rounded">{importStatus}</p>}
         </div>
