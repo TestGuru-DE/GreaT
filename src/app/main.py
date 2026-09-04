@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="G.R.E.A.T. API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="G.R.E.A.T. API", version="1.5.2", lifespan=lifespan)
 
 
 # REQ-4009: Request/Response-Logging Middleware

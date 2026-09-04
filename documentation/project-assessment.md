@@ -1,8 +1,8 @@
 # Project Assessment – G.R.E.A.T.
 Version: 1.1
 Phase: 3 – Sprint 9 Abgeschlossen
-Erstellt: 2026-06-10
-Aktualisiert: 2026-09-01
+Erstellt: 2026-09-04
+Aktualisiert: 2026-09-04
 Erstellt von: Program Manager Agent
 Aktualisiert von: GitHub Copilot CLI
 
@@ -15,24 +15,24 @@ Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Ä
 Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
 Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeScript-Frontend in Entwicklung.
 
-**Aktueller Status: v1.5.1 (2026-09-01) – Sprint 9 ABGESCHLOSSEN / Release vorbereitet.**
+**Aktueller Status: v1.5.2 (2026-09-04) – Sprint-Release freigegeben / Sprint 10 in Vorbereitung.**
 
 ### Letztes Release
-- **Version:** v1.5.1
-- **Datum:** 2026-09-01
-- **Neue Features:** BVA-Komma-Bugfix, Sprintabschluss und Release-Vorbereitung
+- **Version:** v1.5.2
+- **Datum:** 2026-09-04
+- **Neue Features:** Release-Update zur Versionssynchronisierung, Changelog für aktuelles Sprint-Release ergänzt
 - **Backend-Tests:** 28 gezielte BVA-/API-Regressionstests (Plus Frontend-BVA-GUI-Suite)
-- **PRs gemergt:** Sprintabschluss-Commit im aktuellen Branch
+- **PRs gemergt:** Sprint-Release v1.5.2 im aktuellen Branch
 
 ### Nächster Termin
-- **Sprint 10:** In Planung (Scope freigegeben 2026-09-01)
+- **Sprint 10:** In Planung (Scope freigegeben 2026-09-04)
 - **Fokus:** Port-Unification (Port 8000 Standard + Settings-Erweiterung, REQ-4007+), Risikobasierte Testfall-Sortierung (REQ-3034, bisher aufgeschoben aus Sprint 6), Max-Testfälle-Setting in Einstellungen (neu), GUI-Refresh nach Sichtenwechsel/Dialog-Schluss (UX-Fix), offene ToDo-Sichtung + Umsetzung, Multi-User-Analyse als Research/Klärungsauftrag (kein Impl. Sprint 10)
 
 ### Sprint-10 Zwischenstand (Nacharbeit Aufgabe 2)
-- **REQ-3034** (Risikobasierte Testfall-Sortierung): Implementierung abgeschlossen, zugehörige Tests grün. Status in `requirements_v1.1.md` auf **DONE / TESTED** aktualisiert (Traceability-Nachtrag 2026-09-01).
+- **REQ-3034** (Risikobasierte Testfall-Sortierung): Implementierung abgeschlossen, zugehörige Tests grün. Status in `requirements_v1.1.md` auf **DONE / TESTED** aktualisiert (Traceability-Nachtrag 2026-09-04).
 
 ### Sprint-10 Zwischenstand (Nacharbeit Aufgabe 5 – Max. Testfälle-Setting)
-- **REQ-4018** (Max. Testfälle pro Kombination, Default 1000): Backend-Setting (`GREAT_MAX_TESTCASES`, Fallback robust) und Settings-Karte im Frontend implementiert, Generierung respektiert die Obergrenze ohne expliziten `limit`. Backend- und Frontend-Tests grün. REQ neu in `requirements_v1.1.md` angelegt und auf **DONE / TESTED** gesetzt (Nachtrag 2026-09-01).
+- **REQ-4018** (Max. Testfälle pro Kombination, Default 1000): Backend-Setting (`GREAT_MAX_TESTCASES`, Fallback robust) und Settings-Karte im Frontend implementiert, Generierung respektiert die Obergrenze ohne expliziten `limit`. Backend- und Frontend-Tests grün. REQ neu in `requirements_v1.1.md` angelegt und auf **DONE / TESTED** gesetzt (Nachtrag 2026-09-04).
 
 ### Gesamtbewertung
 
@@ -151,7 +151,7 @@ src/
 | **Reuse (50%)** | models.py, kombinatorik, csv_handler, alle Unit-Tests | Direkt übernehmen |
 | **Refactor (25%)** | main.py, orthogonal.py, project_handler.py | Aufteilen / Service-Layer |
 | **Replace (3%)** | Jinja2/HTMX Templates | Langfristig → React/TypeScript |
-| **Archive (14%)** | src/backend/, test_dummy.py | In archive/2026-06-10/ verschieben |
+| **Archive (14%)** | src/backend/, test_dummy.py | In archive/2026-09-04/ verschieben |
 | **Neu (8%)** | 5 Kombinatorik-Strategien, JSON/Excel/XML, Grenzwertanalyse | TDD in Phase 1 |
 
 ---
@@ -198,7 +198,7 @@ Vollständiges Risk Log: `documentation/risk-log.md`
 
 ## 7. Priorisierte Roadmap
 
-**Aktualisierter Hinweis (2026-06-30):** Die fruehere Roadmap in diesem Abschnitt wurde durch den Phase-2-Abschlussbericht weiter unten ueberholt. Aktueller Arbeitsstand:
+**Aktualisierter Hinweis (2026-09-04):** Die fruehere Roadmap in diesem Abschnitt wurde durch den Phase-2-Abschlussbericht weiter unten ueberholt. Aktueller Arbeitsstand:
 
 ```text
 Phase 0  abgeschlossen - Bestandsaufnahme, Requirements, Risiken, ADRs
@@ -243,7 +243,7 @@ Aktive Detailplanung fuer Phase 3 steht im Abschnitt **Phase 3 - Roadmap** des A
 
 ---
 
-## Phase 2 – Abschlussbericht (2026-06-29)
+## Phase 2 – Abschlussbericht (2026-09-04)
 
 ### Implementierte Features
 
@@ -260,7 +260,7 @@ Aktive Detailplanung fuer Phase 3 steht im Abschnitt **Phase 3 - Roadmap** des A
 | Phase 2, UX | Alle/Keinen markieren, Markierung umkehren (Projekte + Datenklassen) | — | ✅ |
 | Phase 2, UX | Löschlogik mit Generierungs-Dialog (Ja/Nein/Anzeigen) | REQ-2002 Erw. | ✅ |
 
-### Technischer Stand (2026-06-29)
+### Technischer Stand (2026-09-04)
 - **163 Tests** – alle grün
 - **Frontend:** React 18 / TypeScript / Vite / Tailwind CSS – 115 Module, ~256 KB
 - **Backend:** FastAPI / SQLAlchemy / SQLite – vollständige REST-API unter /api/
@@ -283,7 +283,7 @@ Aktive Detailplanung fuer Phase 3 steht im Abschnitt **Phase 3 - Roadmap** des A
 
 ---
 
-## Phase 3 – Sprint 4 Planning Summary (2026-07-01)
+## Phase 3 – Sprint 4 Planning Summary (2026-09-04)
 
 *Siehe auch: `documentation/phase-3-sprint-4-planning.md` (finales Planning-Dokument)*
 
@@ -291,13 +291,13 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
-## Phase 3 – Sprint 5 Planning Summary (2026-07-01)
+## Phase 3 – Sprint 5 Planning Summary (2026-09-04)
 
 *Siehe auch: `documentation/phase-3-sprint-5-planning.md` (finales Planning-Dokument)*
 
 **Sprint-Ziel:** Verbesserung der User Experience durch Theme-System mit Dark-Mode und weiteren Themes, Risikoabdeckungs-Anzeige für bessere Testfall-Priorisierung.
 
-**Status:** ✅ GO – Sprint 5 GESTARTET (2026-07-01)
+**Status:** ✅ GO – Sprint 5 GESTARTET (2026-09-04)
 
 **Sprint-5-Backlog (150 SP total) – Linearer Workflow eingeführt:**
 
@@ -334,14 +334,14 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 - **ADR-011**: Theme-System-Ansatz (CSS-Variablen + Tailwind EMPFOHLEN vs. Styled-Components vs. Tailwind-Klassen)
 - **ADR-013**: Risikoabdeckungs-Berechnung (On-the-fly EMPFOHLEN vs. gecacht)
 
-**Freigabe (2026-07-01):**
+**Freigabe (2026-09-04):**
 - ✅ Program Manager (dokumentiert + Commit)
 - ⏳ Chief Architect (ADR-011-Entscheidung vor REQ-3045-Start)
 - ⏳ Senior QA Director (Test-Strategie für Sprint 5)
 
 ---
 
-## Phase 3 – Sprint 4 Abschlussbericht (2026-07-01)
+## Phase 3 – Sprint 4 Abschlussbericht (2026-09-04)
 
 **Status:** ✅ ABGESCHLOSSEN – 6 PRs, 223+ Tests grün, alle Kriterien erfüllt
 
@@ -356,7 +356,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
-## Phase 3 – Sprint 5 Abschlussbericht (2026-07-02)
+## Phase 3 – Sprint 5 Abschlussbericht (2026-09-04)
 
 **Status:** ✅ ABGESCHLOSSEN – 10 PRs, 367 Tests grün, alle Sprint-5-REQs implementiert & getestet
 
@@ -376,7 +376,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 | BUG-2 | Start.bat Timeout erhöht – Backend startet vor Frontend-Proxy | Sprint 5 | #15 | ✅ FIXED |
 | BUG-4 | BVA ISTQB-konform korrigiert (2/3/4-Wert-Methode nach ISTQB-Standard) | Sprint 5 | #13 | ✅ FIXED |
 
-### Technischer Stand (2026-07-02)
+### Technischer Stand (2026-09-04)
 
 | Metrik | Wert | Trend |
 |---|---|---|
@@ -415,12 +415,12 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
-## Phase 3 – COMPLETION SUMMARY (2026-07-02)
+## Phase 3 – COMPLETION SUMMARY (2026-09-04)
 
 **Status:** ✅ **PHASE 3 ABGESCHLOSSEN**
 
 **Statistiken:**
-- **Zeitraum:** 2026-06-24 bis 2026-07-02 (2 Wochen)
+- **Zeitraum:** 2026-09-04 bis 2026-09-04 (2 Wochen)
 - **Sprints:** Sprint 4 + Sprint 5
 - **PRs gemergt:** 20 Feature-PRs
 - **Tests:** 367 (263 Backend, 104 Frontend)
@@ -442,7 +442,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
-## Phase 4 – KICKOFF PLANNING (2026-07-02)
+## Phase 4 – KICKOFF PLANNING (2026-09-04)
 
 **Status:** ✅ **PHASE 4 PLANNED – READY FOR SPRINT 6**
 
@@ -468,7 +468,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 
 ---
 
-## Sprint 10 – Planning Summary (2026-09-01)
+## Sprint 10 – Planning Summary (2026-09-04)
 
 **Status:** 🔵 IN PLANUNG – Scope freigegeben durch Program Manager
 
@@ -534,14 +534,14 @@ Aufgabe 6 (Multi-User) ──► Research-Output als Input für Sprint-11-Planni
 - 🔴 Aufgabe 6 (Multi-User Implementierung): **NO-GO** für Sprint 10 – Research only
 - 🔴 Eskalation an **GREAT Chief Architect** erforderlich: Multi-User-Architekturentscheidung (Score 16), Port-Architektur-Bestätigung
 
-**Freigabe Sprint 10 (2026-09-01):**
+**Freigabe Sprint 10 (2026-09-04):**
 - ✅ Program Manager – Scope + Priorisierung freigegeben
 - ⏳ Chief Architect – Eskalation: Multi-User-Architektur + REQ-4019 Tech-Ansatz
 - ⏳ Senior QA Director – Test-Strategie für REQ-3034, REQ-4019
 
 ---
 
-## EPIC-18 – Multi-User Nutzung (Teams bis 10 Personen) – Sprint 11–13 Planning (2026-09-01)
+## EPIC-18 – Multi-User Nutzung (Teams bis 10 Personen) – Sprint 11–13 Planning (2026-09-04)
 
 **Status:** 🔵 SPRINTFÄHIG VORBEREITET – Program Manager Freigabe erteilt
 **Auslöser:** Eskalation Sprint 10 (Multi-User-Architektur, Score 16) aufgelöst durch ADR-012 (HYBRID-Ansatz)
