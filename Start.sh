@@ -43,13 +43,14 @@ fi
 # Port konfigurieren (REQ-4007: GREAT_PORT Umgebungsvariable)
 GREAT_PORT=${GREAT_PORT:-8000}
 
+BANNER_PORT_ADJUSTMENT=$(printf ' %.0s' $(seq ${#GREAT_PORT} 5))
 # Server starten
 echo ""
 echo "╔═══════════════════════════════════════════╗"
 echo "║  G.R.E.A.T. – Test Case Designer          ║"
-echo "║  Port: $GREAT_PORT                              ║"
-echo "║  http://localhost:$GREAT_PORT                   ║"
-echo "║  API-Doku: http://localhost:$GREAT_PORT/docs    ║"
+echo "║  Port: ${GREAT_PORT}${BANNER_PORT_ADJUSTMENT}                             ║"
+echo "║  http://localhost:${GREAT_PORT}${BANNER_PORT_ADJUSTMENT}                  ║"
+echo "║  API-Doku: http://localhost:${GREAT_PORT}/docs${BANNER_PORT_ADJUSTMENT}   ║"
 echo "╚═══════════════════════════════════════════╝"
 echo ""
 
