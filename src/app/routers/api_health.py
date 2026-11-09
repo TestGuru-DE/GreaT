@@ -27,7 +27,7 @@ def health_check(db: Session = Depends(get_db)):
 
     return {
         "status": status,
-        "version": "1.0.0",
+        "version": "1.5.2",
         "db": db_status,
         "uptime_seconds": uptime_seconds,
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

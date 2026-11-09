@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="G.R.E.A.T. API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="G.R.E.A.T. API", version="1.5.2", lifespan=lifespan)
 
 # REQ-4xxx (EPIC-18 / ADR-015): CORS-Whitelist aus Config (kein Wildcard)
 app.add_middleware(

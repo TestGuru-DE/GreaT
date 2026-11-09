@@ -15,6 +15,12 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Bugfix B2 – Schwarzer Bildschirm mit "Minified React error #300"** bei "Neu generieren" (alle Strategien) und bei "Vorherige Generierung laden": In `frontend/src/components/TestCasePanel.tsx` wurde ein Zustands-Hook bedingt im JSX aufgerufen und verletzte damit die React-Hook-Regeln. Der Wert wird jetzt einmal am Anfang der Komponente gelesen. Regressionstests: Block "BUGFIX React #300 (Rules of Hooks)" in `frontend/src/components/__tests__/TestCasePanel.test.tsx`. Bezug: REQ-3052, REQ-5006.
 - **Bugfix B3 – Ein Anzeigefehler beendet die gesamte Anwendung:** Neue Fehlergrenze `frontend/src/components/ErrorBoundary.tsx`, eingebunden in `frontend/src/App.tsx`. Bei Render-Fehlern erscheint jetzt eine Fehlermeldung mit Schaltflaeche zum Neuladen statt eines schwarzen Bildschirms. Bugfix-Scope ohne eigene REQ-ID.
 
+## [1.5.2] - 2026-09-04
+
+### 🔧 Release-Update
+- Versionsnummer in Backend- und Frontend-Metadaten auf 1.5.2 synchronisiert.
+- Changelog für das aktuelle Release ergänzt.
+
 ## [1.5.1] - 2026-09-01
 
 ### 🐛 Bugfixes – Sprintabschluss
