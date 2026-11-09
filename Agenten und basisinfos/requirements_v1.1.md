@@ -657,7 +657,7 @@ Erstellt von: Requirements Engineer Agent
 | REQ-4015 | Should | BVA-Visualisierung überarbeitet + Fehlerwert-Fix | Tested | Sprint 9 |
 | REQ-4016 | Must | Ergebnis-Typ für Kategorien (ISTQB Expected Result) | Tested | Sprint 9 |
 | REQ-4018 | Should | Max. Testfälle pro Kombination (Setting, Default 1000) | DONE / TESTED | Sprint 10 |
-| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Planned | Sprint 10+ |
+| REQ-4001 | Must | Authentifizierung (OAuth2/JWT) | Implemented | Sprint 11 |
 | REQ-4002 | Should | Team-Verwaltung (Projekte teilen) | Planned | Sprint 10+ |
 | REQ-4003 | Could | Audit-Log (Wer hat was wann geändert) | Planned | Sprint 11+ |
 | REQ-4004 | Should | MCDC + T-Wise Optimierung | Planned | Sprint 9+ |
@@ -2164,6 +2164,10 @@ eine spätere Ausbaustufe verschoben (siehe Out of Scope). Diese Ausbaustufe ist
 - REQ-4022 – Stale-Data-Warning im Frontend (Banner + gezieltes Neuladen)
 - REQ-4023 – Projekt-Sharing / Mitgliederverwaltung pro Projekt
 - REQ-4024 – Minimaler Audit-Trail (wer hat zuletzt geändert)
+- REQ-4025 – Benutzerverwaltung im Frontend (CRUD-Nutzer, Rollen, Passwörter)
+- REQ-4026 – Datenbank-Reset behält Admin-Konto (Bugfix)
+- REQ-4027 – Erststart-Hinweis auf der Login-Seite (solange Default-Admin das Standardpasswort hat; Risikoakzeptanz durch Projektinhaber, RISK-S-016)
+- REQ-4028 – Pflicht-Passwortwechsel nach Erstanmeldung mit Standardpasswort (serverseitige Sperre, Folge-REQ zu REQ-4027, Massnahme RISK-S-016)
 
 ### Out of Scope (bewusst NICHT Sprint 11–13)
 
@@ -2190,17 +2194,18 @@ eine spätere Ausbaustufe verschoben (siehe Out of Scope). Diese Ausbaustufe ist
 | Fehlende Authentifizierung bei Multi-User-Rollout (RISK-S-001) | 5 | 4 | 20 | 🔴 | REQ-4001 vor jedem Multi-User-Feature zwingend abschließen |
 | Konflikte bei gleichzeitiger Bearbeitung ungeklärt (neu: RISK-T-008) | 3 | 4 | 12 | 🔴 | Optimistic Concurrency (REQ-4021) + Stale-Warning (REQ-4022) |
 | SQLite-Schreibkonflikte bei >5 gleichzeitigen Nutzern (RISK-T-006) | 2 | 4 | 8 | 🟡 | PostgreSQL optional (REQ-4006), Lasttest in Sprint 13 |
+| Default-Admin mit bekanntem Standardpasswort `changeme123!` (RISK-S-016) | 4 | 5 | 20 | 🔴 | Massnahme REQ-4028 (Pflicht-Passwortwechsel, serverseitig). Hinweis auf der Login-Seite (REQ-4027) nur unter **Risikoakzeptanz durch Projektinhaber, RISK-S-016** (Georg Hartel, 2026-11-03); Security Architect hat den Klartext-Hinweis abgelehnt |
 | CORS/Origin-Policy zu offen vor Rollout | 3 | 3 | 9 | 🟡 | Whitelist vor Sprint-11-Release umsetzen |
 | Scope-Erwartung "Echtzeit" vs. tatsächlich Hybrid-Vorstufe (Stakeholder-Missverständnis) | 3 | 3 | 9 | 🟡 | Klare Kommunikation Out-of-Scope, Abnahme durch Program Manager |
 
-**Eskalationspflichtig (Score ≥ 10):** RISK-S-001 (20), RISK-T-008 (12, neu).
+**Eskalationspflichtig (Score ≥ 10):** RISK-S-001 (20), RISK-S-016 (20, Risikoakzeptanz Projektinhaber für REQ-4027, Massnahme REQ-4028), RISK-T-008 (12, neu).
 
 ---
 
 ### REQ-4001 | Authentifizierung (OAuth2/JWT)
 **Titel:** Login/Token-basierte Authentifizierung als Voraussetzung für Multi-User
 **Prioritaet:** Must
-**Status:** Planned
+**Status:** Implemented (Backend)
 **Phase:** 4, Sprint 11
 **User Story:**
 Als Administrator
@@ -2243,7 +2248,7 @@ damit unser Team gemeinsam Testfaelle entwickeln kann, ohne sich gegenseitig zu 
 ### REQ-4020 | Rollen & Rechte Basismodell
 **Titel:** Admin/Editor/Viewer-Rollen fuer Projekte und Team-Verwaltung
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** Implemented (Backend, Frontend fehlt)
 **Phase:** 4, Sprint 11
 **User Story:**
 Als Team-Lead
@@ -2257,7 +2262,7 @@ damit nicht jede Person versehentlich Projekte loeschen oder Nutzer verwalten ka
 - Fehlversuch (Viewer versucht Schreibaktion) liefert 403 mit verstaendlicher Meldung
 **TDD-Hinweis:** Backend-Rollenpruefung zuerst als Unit-Test pro Rolle x Endpunkt-Matrix, danach Implementierung der Dependency.
 **Abhaengigkeiten:** REQ-4001
-**Blockiert:** REQ-4023
+**Blockiert:** REQ-4023, REQ-4025
 
 ---
 
@@ -2342,6 +2347,128 @@ damit ich bei Rueckfragen die richtige Person ansprechen kann.
 
 ---
 
+### REQ-4025 | Benutzerverwaltung im Frontend (EPIC-18)
+**Titel:** Benutzerverwaltung in Einstellungen (Erstellen, Loeschen, Rolle aendern, Passwort aendern)
+**Prioritaet:** Must
+**Status:** Done / TESTED
+**Phase:** 4, Sprint 11+
+**User Story:**
+Als Admin
+moechte ich in den Einstellungen Nutzer verwalten (anlegen, loeschen, Rolle aendern, Passwort aendern)
+damit ich mein Team ohne technische Kenntnisse konfigurieren kann.
+**Akzeptanzkriterien:**
+- Admin sieht in Einstellungen alle Nutzer mit Benutzername, Rolle, Status (aktiv/inaktiv)
+- Admin kann neuen Nutzer anlegen (Benutzername, Passwort, Rolle)
+- Admin kann Rolle eines Nutzers aendern (Admin, Editor, Viewer)
+- Admin kann Nutzer loeschen (nicht sich selbst)
+- Admin kann Passwort eines Nutzers aendern (auch sein eigenes)
+- Editor/Viewer koennen keine Nutzer verwalten (403)
+- Bei Loeschen eines Nutzers: dessen Projektmitgliedschaften werden entfernt
+**TDD-Hinweis:** Backend-Tests fuer CRUD-Endpunkte zuerst, dann Frontend-Tests
+**Abhaengigkeiten:** REQ-4001, REQ-4020
+**Blockiert:** –
+
+---
+
+### REQ-4026 | Datenbank-Reset behaelt Admin-Konto (Bugfix)
+**Titel:** Datenbank-zuruecksetzen behaelt aktuelles Admin-Konto oder erstellt Standard-Admin
+**Prioritaet:** Must (Bugfix)
+**Status:** Done (Backend) – Change Request CR-4026-01 offen (Umsetzung in `services.py` ausstehend)
+**Phase:** 4, Sprint 11+
+**User Story:**
+Als Admin
+moechte ich die Datenbank zuruecksetzen koennen ohne danach ausgesperrt zu werden.
+**Akzeptanzkriterien:**
+- Datenbank-Reset loescht alle Projekte/Kategorien/Werte/Testfaelle
+- User-Tabelle bleibt erhalten (aktive Nutzer werden nicht geloescht)
+- Nach Reset ist der Admin weiterhin eingeloggt
+- Falls kein Admin existiert: Standard-Admin (admin / changeme123!) wird erstellt
+  - *Change Request CR-4026-01 (2026-11-03):* Vorher lautete dieser Punkt `Standard-Admin (admin/admin123)`. Geaendert, damit Start-Bootstrap (`DEFAULT_ADMIN_PASSWORD`, `bootstrap.py`) und Reset-Pfad (`services.py`) dasselbe Standardpasswort verwenden. Entscheidung Projektinhaber (Georg Hartel). Der alte Wert `admin123` entfaellt.
+**Change Request CR-4026-01 (2026-11-03):**
+- Aenderung: Standardpasswort im Reset-Pfad von `admin123` auf `changeme123!` (= `DEFAULT_ADMIN_PASSWORD`, einzige Definition).
+- Umsetzung offen: `src/app/services.py` (Zeile ~85, Reset-Pfad) und Test in `tests/test_user_management.py` anpassen. Bis dahin gilt der Code-Stand `admin123` als Abweichung von diesem REQ.
+- Erneute Pruefung nach Umsetzung: Test "Reset ohne Admin erzeugt Admin mit `DEFAULT_ADMIN_PASSWORD`" (Gleichheit mit Bootstrap-Konstante, vgl. REQ-4027 AK-1).
+**TDD-Hinweis:** Test fuer "Reset behaelt User-Tabelle" zuerst (bestehend); fuer CR-4026-01 Test auf neuen Standardwert zuerst rot, dann anpassen.
+**Abhaengigkeiten:** REQ-4001, REQ-4027 (Konsistenz des Standardpassworts)
+**Blockiert:** –
+
+---
+
+### REQ-4027 | Erststart-Hinweis auf der Login-Seite (Default-Admin)
+**Titel:** Standard-Zugangsdaten auf der Anmeldemaske anzeigen, solange der Default-Admin das Standardpasswort hat
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 11+
+**Risiko:** RISK-S-016 (Score 20)
+**Risikoakzeptanz:** Risikoakzeptanz durch Projektinhaber, RISK-S-016 (Georg Hartel, 2026-11-03). Der Security Architect hat die Anzeige des Standardpassworts im Klartext als Risiko abgelehnt. Der Projektinhaber akzeptiert das Risiko bewusst. Die Auflagen AK-10 bis AK-14 gelten trotzdem. Die Massnahme zur Risikoreduktion ist REQ-4028 (Pflicht-Passwortwechsel).
+**User Story:**
+Als neue Nutzerin beim ersten Start
+moechte ich auf der Anmeldemaske die Standard-Zugangsdaten des Admin-Kontos sehen
+damit ich mich sofort anmelden kann und weiss, dass ich das Passwort danach aendern muss.
+**Akzeptanzkriterien:**
+- AK-1 (Konsistenz): Das Standardpasswort ist genau einmal als Backend-Konstante `DEFAULT_ADMIN_PASSWORD` definiert (Wert `changeme123!`). Start-Bootstrap (`ensure_first_admin`), Reset (`reset_database_state`, siehe REQ-4026 CR-4026-01) und Hinweistext verwenden diese Konstante. Test: alle Pfade erzeugen bzw. erwarten denselben Wert.
+- AK-2 (Anzeige): Given der Benutzer `admin` existiert mit `is_first_admin=True`, `is_active=True` und `check_password(DEFAULT_ADMIN_PASSWORD)` ist wahr, When die Login-Seite geladen wird, Then steht unter dem Feld "Benutzername" der Text `Standardbenutzer: admin` und unter dem Feld "Passwort" der Text `Standardpasswort: changeme123! (bitte nach der ersten Anmeldung aendern)`.
+- AK-3 (Ausblenden nach Passwortwechsel): Given der Default-Admin hat ein anderes Passwort als `DEFAULT_ADMIN_PASSWORD` (z.B. nach Passwortwechsel gemaess REQ-4025 oder REQ-4028), When die Login-Seite geladen wird, Then wird kein Erststart-Hinweis angezeigt.
+- AK-4 (Ausblenden ohne Default-Admin): Given kein Benutzer `admin` mit `is_first_admin=True` und `is_active=True` existiert, Then wird kein Erststart-Hinweis angezeigt.
+- AK-5 (Login mit Standardpasswort): Given der Default-Admin meldet sich erfolgreich mit `DEFAULT_ADMIN_PASSWORD` an und hat sein Passwort nicht geaendert, When er danach die Login-Seite erneut oeffnet, Then bleibt der Hinweis sichtbar. Hat er es geaendert, gilt AK-3.
+- AK-6 (Endpunkt-Vertrag): Die Statusabfrage (z.B. `GET /auth/first-start-hint`, ohne Authentifizierung) liefert ausschliesslich `{"show_hint": true|false}`. Keine Passwoerter, Benutzernamen, Rollen, IDs oder weiteren Nutzerdaten. Test: Schluesselmenge der Antwort ist in allen Zustaenden exakt `{"show_hint"}`.
+- AK-7 (Frontend-Konstante): Der angezeigte Passworttext stammt aus einer einzigen Frontend-Konstante, deren Wert mit `DEFAULT_ADMIN_PASSWORD` uebereinstimmt. Pruefung per Test oder Review-Checkliste (Drift-Risiko durch Zweitdefinition).
+- AK-8 (Fehlerfall): Given die Statusabfrage schlaegt fehl, Then wird kein Hinweis angezeigt, aber die Anmeldung bleibt voll nutzbar (kein Blockieren des Logins).
+- AK-9 (Freigabe-Gate, aktualisiert 2026-11-03): Die Umsetzung ist durch die Risikoakzeptanz des Projektinhabers fuer RISK-S-016 freigegeben. Der Security Architect hat den Klartext-Hinweis als Risiko abgelehnt. Der Hinweis ist nur bis zur Umsetzung von REQ-4028 (Pflicht-Passwortwechsel) vertretbar. Das Risiko bleibt als akzeptiert dokumentiert, nicht als geloest.
+- AK-10 (Flag-Lebenszyklus, Security-Auflage): Der Zustand "Standardpasswort aktiv" wird persistiert (z.B. Flag `default_password_active`). Das Flag wird gesetzt, wenn der Default-Admin angelegt wird (Start oder Reset). Es wird geloescht, sobald ein erfolgreicher Passwortwechsel auf einen Nicht-Default-Wert erfolgt (REQ-4028 AK-6). AK-2 bis AK-5 lesen diesen Zustand. Offen: Flag oder Laufzeit-Pruefung `check_password` (siehe offene Frage 3).
+- AK-11 (Rate-Limit, Security-Auflage): Der Statusendpunkt (AK-6) ist rate-limitiert, damit er nicht als Orakel fuer Brute-Force-Versuche genutzt werden kann. Schwelle: `OFFEN – Vorschlag 10 Anfragen pro Minute und Client-IP` (Entscheidung siehe offene Frage 4). Bei Ueberschreitung: HTTP 429, Antwort ohne Zustandsdaten.
+- AK-12 (Keine Geheimnisse in Antworten, Security-Auflage): Passwort, Passwort-Hash und Passwortlaenge werden in keiner API-Antwort, keinem Log und keiner Fehlermeldung ausgegeben. Das gilt auch fuer REQ-4028 (Selbst-Passwortwechsel).
+- AK-13 (Endpunkt nur Bool): Der Statusendpunkt liefert nur `show_hint` als Bool (AK-6). Keine weiteren Felder, auch nicht im Fehlerfall.
+- AK-14 (Default-Passwort-Ablehnung beim Wechsel, Security-Auflage): Ein Passwortwechsel auf ein bekanntes Standardpasswort wird abgelehnt. Das gilt fuer `changeme123!` und `admin123` sowie fuer alle Werte aus REQ-4028 AK-5. Die Pruefung ist in REQ-4028 AK-5 definiert.
+**TDD-Hinweis:** Backend zuerst (pytest): Flag fuer Zustaende "Standard aktiv -> true", "geaendert -> false", "kein/inaktiver Admin -> false", Schluesselmenge der Antwort. Danach Router. Frontend zuerst (Vitest/RTL): exakter Text unter beiden Feldern, Ausblenden bei `show_hint=false`, Fehlerfall ohne Blockade.
+**Abhaengigkeiten:** REQ-4001 (Login-Seite und Auth-Router), REQ-4020 (Admin-Rolle, erster Nutzer ist Admin), REQ-4025 (Passwortwechsel durch Admin, Status Done/TESTED), REQ-4026 (Standard-Admin-Anlage bei Reset; Passwortwert vereinheitlicht auf `changeme123!`, Umsetzung CR-4026-01 offen)
+**Blockiert:** –
+**Traceability:** RISK-S-016 | project-assessment.md Punkt 6 | src/app/bootstrap.py (ensure_first_admin) | src/app/services.py (reset_database_state) | REQ-4028 (Massnahme)
+**Entschieden (2026-11-03, Projektinhaber):**
+- Standardpasswort einheitlich `changeme123!` (Start war bereits `changeme123!`; Reset `admin123` entfaellt per CR-4026-01).
+- Risikoakzeptanz fuer den Hinweis (RISK-S-016), Folge-REQ REQ-4028 als Pflicht-Massnahme.
+- Wortlaut der Hinweise: `Standardbenutzer: admin` und `Standardpasswort: changeme123! (bitte nach der ersten Anmeldung aendern)`.
+
+**Offene Fragen (RUECKFRAGE an Nutzer / Security Architect):**
+1. Release-Kopplung: Werden REQ-4027 und REQ-4028 im selben Release ausgeliefert? Empfehlung: ja. Ohne REQ-4028 bleibt der Hinweis ein offenes, akzeptiertes Risiko ohne Gegenmassnahme.
+2. Security Architect: Bestaetigung, dass die Auflagen AK-10 bis AK-14 als ausreichend fuer die Risikoakzeptanz gelten (Review, kein Freigabe-Gate mehr).
+3. Flag-Persistenz vs. Laufzeitpruefung: Empfehlung Flag (AK-10), damit der Statusendpunkt nicht bei jedem Aufruf Passwort-Hashes vergleicht.
+4. Rate-Limit-Schwelle (AK-11) festlegen.
+
+### REQ-4028 | Pflicht-Passwortwechsel nach Erstanmeldung
+**Titel:** Erzwungener Passwortwechsel, solange der Default-Admin das Standardpasswort hat (serverseitige Sperre)
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 11+
+**Risiko:** RISK-S-016 (Score 20) – Massnahme zur Risikoreduktion. Folge-REQ zu REQ-4027, dessen Hinweis unter Risikoakzeptanz durch den Projektinhaber steht.
+**User Story:**
+Als Administrator, der sich mit dem Standardpasswort anmeldet,
+moechte ich direkt zur Passwortaenderung gefuehrt werden und erst danach G.R.E.A.T. nutzen,
+damit das oeffentlich dokumentierte Standardpasswort nicht dauerhaft gueltig bleibt.
+**Akzeptanzkriterien:**
+- AK-1 (UI-Redirect): Given die Anmeldung mit `DEFAULT_ADMIN_PASSWORD` war erfolgreich und das Flag `default_password_active` (REQ-4027 AK-10) ist gesetzt, When das Frontend den Login abschliesst, Then wird der Nutzer auf die Seite "Passwort aendern" geleitet. Andere Seiten sind bis dahin nicht erreichbar (Route-Guard).
+- AK-2 (Serverseitige Sperre): Solange das Flag gesetzt ist, liefern alle Routen ausser Login, Token-Refresh, Logout, Statusendpunkt (REQ-4027 AK-6) und dem eigenen Passwortwechsel (AK-3) HTTP 403 mit maschinenlesbarem Code `password_change_required`. Test: Endpunkt-Matrix (alle Routen x Flag gesetzt/nicht gesetzt).
+- AK-3 (Eigener Passwortwechsel – Luecke): Jeder angemeldete Nutzer kann sein eigenes Passwort aendern. Eingabe: aktuelles Passwort, neues Passwort, Bestaetigung. Falsches aktuelles Passwort liefert eine klare Fehlermeldung ohne Hinweis auf den Hash. *Luecke:* Heute kann nur ein Admin Passwoerter in der Benutzerverwaltung setzen (REQ-4025, auch das eigene). Ein Selbst-Wechsel-Endpunkt und eine Seite "Passwort aendern" fuer alle Rollen fehlen. REQ-4028 schliesst diese Luecke.
+- AK-4 (Mindestlaenge): Neues Passwort hat mindestens `OFFEN – Vorschlag 12 Zeichen` (siehe offene Frage 1). Die Pruefung ist serverseitig. Das Frontend zeigt die Regel vorab an.
+- AK-5 (Default-Ablehnung): Ein neues Passwort wird abgelehnt, wenn es nach Trim und ohne Beruecksichtigung der Gross-/Kleinschreibung einem bekannten Standardpasswort entspricht. Startliste (Backend-Konstante): `changeme123!`, `admin123`, `admin`, `password`. Die Fehlermeldung gibt das abgelehnte Passwort nicht zurueck.
+- AK-6 (Flag-Loeschen): Bei erfolgreichem Wechsel auf einen Nicht-Default-Wert wird das Flag `default_password_active` geloescht. Danach ist die Sperre (AK-2) aufgehoben und der Hinweis (REQ-4027 AK-3) verschwindet. Test: Zustandsuebergang "Standard aktiv -> geaendert".
+- AK-7 (Kein Umgehen): Die Sperre gilt serverseitig. Der Frontend-Redirect allein genuegt nicht. Test: Direkter API-Aufruf mit gueltigem Token auf eine gesperrte Route liefert 403.
+- AK-8 (Fehlversuche begrenzt): Fehlgeschlagene Selbst-Wechsel-Versuche (falsches aktuelles Passwort) sind rate-limitiert. Schwelle: `OFFEN` (siehe offene Frage 5).
+- AK-9 (Keine Geheimnisse): Passwort, Passwort-Hash und Passwortlaenge erscheinen in keiner API-Antwort, keinem Log und keiner Fehlermeldung (wie REQ-4027 AK-12).
+- AK-10 (Geltungsbereich, Stand 2026-11-03): Heute betrifft das Flag nur den Default-Admin. Die Ausweitung auf von Admins angelegte Nutzer mit Initialpasswort ist offen (siehe offene Frage 2).
+**TDD-Hinweis:** Backend zuerst (pytest): Endpunkt-Matrix Flag x Route (403 ausser Ausnahmen, AK-2), Passwort-Policy-Unit-Tests (AK-4, AK-5), Zustandsuebergang (AK-6), Selbst-Wechsel verlangt aktuelles Passwort (AK-3). Danach Router. Frontend zuerst (Vitest/RTL): Redirect nach Login bei gesetztem Flag, Fehlermeldung bei abgelehntem Standardpasswort.
+**Abhaengigkeiten:** REQ-4001 (Auth-Router, Token), REQ-4020 (Rollen, Sperre rollenunabhaengig), REQ-4025 (Admin-Passwortsetzung, Luecke Selbst-Wechsel), REQ-4026 (Standard-Admin-Anlage; CR-4026-01 offen), REQ-4027 (Flag, Statusendpunkt)
+**Blockiert:** –
+**Traceability:** RISK-S-016 | REQ-4027 (Risikoakzeptanz, AK-10 Flag, AK-6 Endpunkt) | REQ-4025 (Luecke) | REQ-4026 (CR-4026-01) | src/app/bootstrap.py | src/app/services.py
+**Offene Fragen (RUECKFRAGE an Georg Hartel):**
+1. Mindestlaenge: Bestaetigung von 12 Zeichen (Vorschlag Security Architect). Soll die Regel auch fuer Passwoerter gelten, die Admins in REQ-4025 setzen? Empfehlung: ja.
+2. Geltungsbereich: Nur Default-Admin (heute) oder auch Nutzer mit Initialpasswort, das ein Admin vergeben hat? Empfehlung: auch diese, sonst umgeht ein Initialpasswort die Sperre.
+3. UX-Ziel fuer Nicht-Admins: Sollen Editor und Viewer die Seite "Passwort aendern" in der Navigation sehen (ohne Zugang zur Benutzerverwaltung)? Empfehlung: ja. Heute gibt es fuer sie keinen Weg, das eigene Passwort zu aendern.
+4. Ablehnungsliste AK-5: Startliste (`changeme123!`, `admin123`, `admin`, `password`) bestaetigen oder erweitern (Security Architect).
+5. Rate-Limit-Schwellen fuer AK-8 (Fehlversuche) und REQ-4027 AK-11 (Statusendpunkt, Vorschlag 10/Minute/IP) festlegen.
+
+---
+
 ## Aufgehobene Regeln & Umklassifizierungen
 
 ### REQ-0011 | View-Synchronitätspflicht – AUFGEHOBEN
@@ -2368,3 +2495,510 @@ REQ-4003-Placeholder in Phase 4 obsolet.
 **Grund:** Combinatorics Expert Empfehlung: MCDC sollte zeitiger in Phase 3 implementiert werden.
 RuleEngine-Refactor (REQ-3040) ermöglicht frühzeitige MCDC-Integration.
 REQ-4002-Placeholder bleibt als Referenz, REQ-3044 ist maßgeblich.
+
+---
+
+# EPIC-19 – Installation & Distribution
+
+### REQ-5001 | Windows-Installationspaket (GREAT.exe)
+**Titel:** Portable Windows-EXE fuer nicht-technische Nutzer
+**Prioritaet:** Must
+**Status:** In Progress
+**Phase:** 4, Sprint 11+
+**Risiko:** RISK-B-002 (Score 16)
+**Implementierung:** 2026-10-05 (DevOps Engineer Agent)
+- `GREAT.spec` – PyInstaller-Spec-Datei (onefile, no-console)
+- `build-exe.bat` – automatischer Build mit Smoke-Test
+- `src/app/main.py` – sys.frozen-Erkennung + Auto-Browser-Start
+- `src/app/config.py` – DB-Pfad-Anpassung fuer portable Modus
+- `INSTALLATION.md` / `QUICKSTART.md` – Endnutzer-Dokumentation
+**User Story:**
+Als nicht-technisch versierter Tester
+moechte ich G.R.E.A.T. durch eine einzige Datei installieren koennen
+damit ich keine Entwickler-Tools (Python, Node.js, Git) benoetige und sofort starten kann.
+**Akzeptanzkriterien:**
+- Eine einzige Datei `GREAT.exe` (oder ein kleines Installationsarchiv < 200 MB)
+- Doppelklick auf `GREAT.exe` startet den Server
+- Browser wird automatisch auf `http://localhost:8000` geoeffnet
+- Keine Python- oder Node.js-Installation erforderlich
+- Datenbank wird beim ersten Start automatisch angelegt
+- Funktioniert ohne Internetverbindung (alle Dependencies eingebettet)
+- Funktioniert auf Windows 10/11 (64-bit)
+- Deinstallation: einfach Datei loeschen (portable)
+**Abhaengigkeiten:** REQ-1202 (Frontend-Build), REQ-4007 (GREAT_PORT)
+**Technik:** PyInstaller (einzelne EXE) oder Inno Setup (Installer) – Entscheidung durch DevOps Engineer
+**TDD-Hinweis:** Build-Skript testbar durch automatischen Smoke-Test (Server startet, /health antwortet, Browser oeffnet)
+**Blockiert:** –
+
+---
+
+# EPIC-20 – Entscheidungstabelle (Decision Table Testing)
+
+**Eingeplant:** Phase 4, Sprint 14+
+**Freigegeben durch:** Georg Hartel (2026-10-05)
+**Fachliche Grundlage:** `documentation/research-decision-table-istqb.md`
+**Standard-Referenz:** ISTQB CTFL v4.0 Syllabus FL-4.2.3 (K3 Apply) / CTAL-TA 3.2.4 (K4 Analyse)
+
+### Zielbild
+
+G.R.E.A.T. unterstuetzt **Entscheidungstabellentest nach ISTQB** als eigenstaendige
+Kombinatorik-Strategie. Der Tester definiert **Ursachen** (Conditions) und **Wirkungen**
+(Effects), setzt optional **Constraints** (E, I, O, R, M), und das System generiert
+automatisch eine Entscheidungstabelle, bei der **jede Spalte = 1 Testfall** ist.
+
+Die Entscheidungstabelle folgt dem klassischen ISTQB-Aufbau (4 Quadranten), adaptiert
+fuer G.R.E.A.T.: Ursachen als Zeilen oben, Wirkungen als Zeilen unten, jede Spalte
+als Testfall mit Y/N/— (Ursachen) und X/— (Wirkungen).
+
+**Phasen-Plan:**
+- **Phase 1 (MVP):** Button, Ursache/Wirkung-Kategorien, Tabelle, Boolean-Generierung, Auto-Generierung, andere Funktionen ausgrauen
+- **Phase 2:** Constraints (E, I, O, R, M) mit Dialog
+- **Phase 3:** Collapsing (Regel-Zusammenfassung), Checksum-Validierung, Extended Entry, Don't Care, Widerspruchserkennung, Vollstaendigkeitspruefung
+- **Phase 4:** Cause-Effect-Graph-Visualisierung, Priorisierung von Wirkungen (Override)
+
+**Nutzerentscheidungen (Georg Hartel, 2026-10-05):**
+- Eigenstaendiges EPIC (nicht Teil von EPIC-06)
+- Explizite Wahl Ursache/Wirkung bei jeder neuen Kategorie
+- G.R.E.A.T.-adaptiertes Tabellenformat (nicht 1:1 ISTQB-Quadranten, aber fachlich korrekt)
+- Boolean (Ja/Nein) als Default, Extended Entry fuer multiple Werte
+- Constraints ueber separaten Dialog, mehrere Ursachen waehlbar
+- Kein Hard-Limit fuer Ursachen, nur durch globales Max-Testfaelle-Limit (REQ-4018) begrenzt
+- Wirkungen: Binär (X/—) als Default, Text als Option
+- **Tabelle-Fuellung:** Ursachen-Bereich wird automatisch mit allen Kombinationen gefuellt. Wirkungen-Bereich bleibt initial komplett leer. Tester tragt manuell ein, welche Wirkung auf welche Ursachen-Kombination zutrifft.
+- Andere Kombinatorik-Funktionen ausgegraut im Entscheidungstabelle-Modus
+
+---
+
+### REQ-5000 | Entscheidungstabelle-Button in Kategorien & Werte
+**Titel:** Button „Entscheidungstabelle" in der Kategorien & Werte-Ansicht
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich einen Button „Entscheidungstabelle" in der Kategorien & Werte-Ansicht sehen
+damit ich den Entscheidungstabelle-Modus starten kann.
+**Akzeptanzkriterien:**
+- Neuer Button „Entscheidungstabelle" ist in der Kategorien & Werte-Ansicht sichtbar
+- Klick auf den Button schaltet in den Entscheidungstabelle-Modus
+- Im Modus sind nur Kategorien vom Typ „Ursache" oder „Wirkung" relevant
+- Kategorien vom Typ „Standard" (nicht Ursache/Wirkung) werden ignoriert
+- Der Button ist deaktiviert, wenn keine Ursache- und keine Wirkungskategorie existiert
+**Abhaengigkeiten:** REQ-5002 (Kategorie-Typ Ursache/Wirkung)
+**Traceability:** documentation/research-decision-table-istqb.md §2 (Tabellarischer Aufbau)
+
+---
+
+### REQ-5002 | Kategorie-Typ: Ursache/Wirkung (explizite Wahl)
+**Titel:** Explizite Wahl „Ursache" oder „Wirkung" bei jeder neuen Kategorie
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich bei jeder neuen Kategorie explizit waehlen koennen, ob sie eine Ursache (Condition) oder eine Wirkung (Effect) ist
+damit das System weiss, welche Kategorien in den oberen und welche in den unteren Teil der Entscheidungstabelle gehoeren.
+**Akzeptanzkriterien:**
+- Beim Anlegen einer neuen Kategorie erscheint ein Auswahlmenue: „Standard" | „Ursache" | „Wirkung"
+- Default ist „Standard" (bisheriges Verhalten)
+- Ursache-Kategorien erscheinen im oberen Teil (Condition Stubs) der Entscheidungstabelle
+- Wirkung-Kategorien erscheinen im unteren Teil (Action Stubs) der Entscheidungstabelle
+- Standard-Kategorien werden im Entscheidungstabelle-Modus ignoriert
+- Die Typzuordnung ist nachtraeglich aenderbar (Umbenennen-Dropdown)
+**Abhaengigkeiten:** REQ-0300 (Kategorie anlegen)
+**Traceability:** documentation/research-decision-table-istqb.md §2 (Tabellarischer Aufbau), Nutzerentscheidung 2026-10-05
+
+---
+
+### REQ-5003 | Entscheidungstabelle-Layout (Ursachen oben, Wirkungen unten)
+**Titel:** G.R.E.A.T.-adaptiertes Entscheidungstabelle-Layout
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich die Entscheidungstabelle mit Ursachen oben und Wirkungen unten sehen
+damit ich die logische Struktur (Wenn Ursachen → Dann Wirkungen) intuitiv erfassen kann.
+**Akzeptanzkriterien:**
+- Obere Sektion: Zeilen fuer jede Ursache-Kategorie (Condition Stubs)
+- Untere Sektion: Zeilen fuer jede Wirkung-Kategorie (Action Stubs)
+- Spalten repraesentieren Regeln/Testfaelle (R1, R2, R3, ...)
+- Ursachenzellen werden **automatisch** mit Y (Ja), N (Nein) oder Extended-Entry-Werten gefuellt (alle Kombinationen)
+- Wirkungszellen sind **initial komplett leer** (kein Vorbelegen, kein —)
+- Der Tester tragt **manuell** ein, welche Wirkung auf welche Ursachen-Kombination zutrifft
+- Trennlinie zwischen Ursachen- und Wirkungsbereich ist sichtbar
+- Tabelle ist horizontal scrollbar bei vielen Regeln
+**Abhaengigkeiten:** REQ-5000, REQ-5002, REQ-5004
+**Traceability:** documentation/research-decision-table-istqb.md §2 (4 Quadranten), §3 (Entscheidungslogik)
+
+---
+
+### REQ-5004 | Boolean-Werte als Default (Ja/Nein)
+**Titel:** Boolean-Werte (Ja/Nein) als Default fuer Ursache-Kategorien
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich dass Ursache-Kategorien standardmaessig Boolean-Werte (Ja/Nein) verwenden
+damit ich Entscheidungstabellen schnell aufsetzen kann ohne jede Ursache manuell zu konfigurieren.
+**Akzeptanzkriterien:**
+- Jede Ursache-Kategorie hat automatisch zwei Werte: „Ja" (Y) und „Nein" (N)
+- Diese Werte sind im Entscheidungstabelle-Modus als Y/N in den Zellen sichtbar
+- Der Tester kann die Bezeichnungen anpassen (z.B. „Wahr"/„Falsch")
+- Die interne Repraesentation bleibt Y/N
+- Don't Care (—) ist als dritter Zustand verfuegbar (manuell, REQ-5016)
+**Abhaengigkeiten:** REQ-5002, REQ-0302 (Wert anlegen)
+**Traceability:** documentation/research-decision-table-istqb.md §3 (Condition Entries: Y/N/—)
+
+---
+
+### REQ-5005 | Automatische Regelgenerierung (alle gueltigen Kombinationen)
+**Titel:** Automatische Generierung aller gueltigen Ursachenkombinationen
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich dass das System automatisch alle gueltigen Kombinationen der Ursachen generiert
+damit ich keine manuelle Kombinatorik durchfuehren muss und jede Spalte der Tabelle einem Testfall entspricht.
+**Akzeptanzkriterien:**
+- Bei N Ursachen werden 2^N Kombinationen generiert (vollstaendige Entscheidungstabelle)
+- Jede Kombination wird als eigene Spalte (Regel R1, R2, ...) dargestellt
+- **Ursachen-Bereich:** Pro Spalte sind die Ursachenzellen **automatisch** mit Y oder N gefuellt (oder Extended-Entry-Werten)
+- **Wirkungen-Bereich:** Die Wirkungszellen sind **initial komplett leer** (kein Vorbelegen)
+- Der Tester tragt **manuell** in jede Wirkungszelle ein, welche Wirkung auf die Ursachen-Kombination in dieser Spalte zutrifft
+- Optional: Regeln koennen definiert werden (z.B. "Wenn C1=Y UND C2=N → E1"), die dann Wirkungszellen automatisch fuellen
+- Die Anzahl der generierten Spalten respektiert das globale Max-Testfaelle-Limit (REQ-4018)
+- Bei Uberschreitung des Limits: Warnung und Abbruch der Generierung
+**Abhaengigkeiten:** REQ-5000, REQ-5002, REQ-5003, REQ-5004, REQ-4018
+**Traceability:** documentation/research-decision-table-istqb.md §8 (Algorithmische Generierung), §8 (Maximale Anzahl Regeln)
+
+---
+
+### REQ-5006 | Andere Kombinatorik-Funktionen ausgrauen
+**Titel:** Andere Kombinatorik-Strategien im Entscheidungstabelle-Modus ausgrauen
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 4, Sprint 14 (P1 – MVP)
+**User Story:**
+Als Tester
+moechte ich dass andere Kombinatorik-Strategien (Pairwise, All Combinations, etc.) im Entscheidungstabelle-Modus ausgegraut sind
+damit ich nicht versehentlich eine falsche Strategie auswaehle und die Entscheidungstabelle ueberschreibe.
+**Akzeptanzkriterien:**
+- Im Entscheidungstabelle-Modus sind alle anderen Kombinatorik-Buttons ausgegraut (disabled)
+- Versucht der Nutzer eine andere Strategie auszuwaelen, erscheint ein Hinweis: „Entscheidungstabelle-Modus aktiv – andere Strategien sind nicht verfuegbar"
+- Der Nutzer kann den Entscheidungstabelle-Modus verlassen, um zurueck zur normalen Kombinatorik zu wechseln
+- Die Entscheidungstabelle-Daten bleiben gespeichert und sind nach Ruecksprung wiederherstellbar
+**Abhaengigkeiten:** REQ-5000, REQ-0800-0807 (bestehende Kombinatorik-Strategien)
+**Traceability:** Nutzerentscheidung 2026-10-05
+
+---
+
+### REQ-5007 | Constraint E (Exclusive)
+**Titel:** Exclusive-Constraint (maximal eine Ursache kann wahr sein)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich fuer eine Gruppe von Ursachen ein Exclusive-Constraint setzen
+damit Kombinationen, bei denen mehr als eine Ursache gleichzeitig wahr ist, als ungueltig markiert und aus der Tabelle entfernt werden.
+**Akzeptanzkriterien:**
+- Der Constraint E (Exclusive) kann fuer 2 oder mehr Ursachen zugewiesen werden
+- Nach Anwendung: Alle Regeln, bei denen 2+ der betroffenen Ursachen Y sind, werden entfernt
+- Regeln, bei denen keine oder genau eine der Ursachen Y ist, bleiben erhalten
+- Die entfernten Regeln erscheinen nicht in der generierten Tabelle
+- Der Constraint ist in der UI sichtbar (Symbol + Beschreibung)
+**Abhaengigkeiten:** REQ-5012 (Constraint-Dialog), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen: Exclusive/E)
+
+---
+
+### REQ-5008 | Constraint O (One-and-Only-One)
+**Titel:** One-and-Only-One-Constraint (genau eine Ursache muss wahr sein)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich fuer eine Gruppe von Ursachen ein One-and-Only-One-Constraint setzen
+damit nur Kombinationen, bei denen genau eine Ursache wahr ist, als gueltig gelten.
+**Akzeptanzkriterien:**
+- Der Constraint O (One-and-Only-One) kann fuer 2 oder mehr Ursachen zugewiesen werden
+- Nach Anwendung: Alle Regeln, bei denen 0 oder 2+ der betroffenen Ursachen Y sind, werden entfernt
+- Regeln, bei denen genau eine der Ursachen Y ist, bleiben erhalten
+- Die entfernten Regeln erscheinen nicht in der generierten Tabelle
+- Der Constraint ist in der UI sichtbar (Symbol + Beschreibung)
+**Abhaengigkeiten:** REQ-5012 (Constraint-Dialog), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen: One-and-Only-One/O)
+
+---
+
+### REQ-5009 | Constraint I (Inclusive)
+**Titel:** Inclusive-Constraint (mindestens eine Ursache muss wahr sein)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich fuer eine Gruppe von Ursachen ein Inclusive-Constraint setzen
+damit Kombinationen, bei denen keine der Ursachen wahr ist, als ungueltig markiert und entfernt werden.
+**Akzeptanzkriterien:**
+- Der Constraint I (Inclusive) kann fuer 2 oder mehr Ursachen zugewiesen werden
+- Nach Anwendung: Alle Regeln, bei denen alle betroffenen Ursachen N sind, werden entfernt
+- Regeln, bei denen mindestens eine der Ursachen Y ist, bleiben erhalten
+- Die entfernten Regeln erscheinen nicht in der generierten Tabelle
+- Der Constraint ist in der UI sichtbar (Symbol + Beschreibung)
+**Abhaengigkeiten:** REQ-5012 (Constraint-Dialog), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen: Inclusive/I)
+
+---
+
+### REQ-5010 | Constraint R (Requires)
+**Titel:** Requires-Constraint (Wenn C1 wahr, dann muss C2 auch wahr sein)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich einen Requires-Constraint zwischen zwei Ursachen setzen
+damit Kombinationen, bei denen die erste Ursache wahr aber die zweite falsch ist, als ungueltig entfernt werden.
+**Akzeptanzkriterien:**
+- Der Constraint R (Requires) wird zwischen zwei Ursachen C1 → C2 zugewiesen
+- Nach Anwendung: Alle Regeln, bei denen C1=Y und C2=N, werden entfernt
+- Regeln, bei denen C1=N (C2 beliebig) oder C1=Y und C2=Y, bleiben erhalten
+- Die Richtung des Constraints ist in der UI sichtbar (Pfeil C1 → C2)
+- Der Constraint ist in der UI sichtbar (Symbol + Beschreibung)
+**Abhaengigkeiten:** REQ-5012 (Constraint-Dialog), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen: Requires/R)
+
+---
+
+### REQ-5011 | Constraint M (Mask)
+**Titel:** Mask-Constraint (Wenn Wirkung E1, dann E2 erzwungen falsch)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich einen Mask-Constraint zwischen zwei Wirkungen setzen
+damit in allen Regeln, wo E1=X, automatisch E2=— gesetzt wird.
+**Akzeptanzkriterien:**
+- Der Constraint M (Mask) wird zwischen zwei Wirkungen E1 → E2 zugewiesen
+- Nach Anwendung: In allen Regeln, wo E1=X, wird E2 auf — gesetzt
+- Die Richtung des Constraints ist in der UI sichtbar (Pfeil E1 → E2)
+- Der Constraint ist in der UI sichtbar (Symbol + Beschreibung)
+- Der Constraint wirkt nur auf Wirkungszellen, nicht auf Ursachenzellen
+**Abhaengigkeiten:** REQ-5012 (Constraint-Dialog), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen: Mask/M), §6 (Inhibitors/Mask)
+
+---
+
+### REQ-5012 | Constraint-Dialog (mehrere Ursachen waehlbar)
+**Titel:** Separater Dialog zur Definition von Constraints
+**Prioritaet:** Must
+**Status:** In Progress (Backend: CRUD-API + persist. Speicherung + /generate-Integration abgeschlossen; Frontend-Dialog: offen, UX-Lead)
+**Phase:** 4, Sprint 15 (P2 – Constraints)
+**User Story:**
+Als Tester
+moechte ich in einem separaten Dialog mehrere Ursachen oder Wirkungen auswaehlen und einen Constraint-Typ zuweisen
+damit ich logische Beziehungen zwischen Bedingungen und Aktionen einfach definieren kann.
+**Akzeptanzkriterien:**
+- Dialog oeffnet sich per Button „Constraint hinzufuegen" in der Entscheidungstabelle-Ansicht
+- Links: Auswahlliste aller Ursache- und Wirkungskategorien (Checkboxen, Mehrfachauswahl)
+- Rechts: Dropdown fuer Constraint-Typ (E, I, O, R, M)
+- Bei R (Requires) und M (Mask): genau 2 Eintraege erforderlich (Richtung C1→C2 bzw. E1→E2)
+- Bei E, I, O: mindestens 2 Eintraege erforderlich (Gruppe)
+- Validierung: Ungueltige Kombinationen (z.B. R mit 3 Ursachen) werden abgelehnt mit Hinweis
+- Nach Bestaetigung: Constraints werden angewendet, Tabelle aktualisiert
+- Liste aller aktiven Constraints ist sichtbar und editierbar
+**Abhaengigkeiten:** REQ-5007-5011 (Constraint-Typen), REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §5 (Constraint-Typen), Nutzerentscheidung 2026-10-05
+
+---
+
+### REQ-5013 | Automatische Reduktion (Collapsing)
+**Titel:** Automatisches Zusammenfassen redundanter Regeln (Collapsing)
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich dass das System automatisch redundante Regeln zusammenfasst
+damit die Entscheidungstabelle kompakter wird und weniger Testfaelle notwendig sind.
+**Akzeptanzkriterien:**
+- Zwei Regeln koennen zusammengefasst werden wenn:
+  1. Identische Aktionen (Wirkungen) in beiden Regeln
+  2. Genau eine Ursache unterscheidet sich zwischen den Regeln
+  3. Zusammen genommen decken sie alle Werte dieser einen Ursache ab (Y und N)
+- Die unterscheidende Ursache wird in der zusammengefassten Regel zu Don't Care (—)
+- Der Vorgang ist wiederholbar (kaskadierendes Collapsing)
+- Der Nutzer kann Collapsing als Option aktivieren/deaktivieren
+- Nach Collapsing: Anzahl der reduzierten Regeln wird angezeigt
+**Abhaengigkeiten:** REQ-5005, REQ-5017 (Don't Care)
+**Traceability:** documentation/research-decision-table-istqb.md §4 (Collapsing: 3 strenge Bedingungen)
+
+---
+
+### REQ-5014 | Checksum-Validierung
+**Titel:** Checksum-Validierung der Entscheidungstabelle
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich eine Checksum-Validierung meiner Entscheidungstabelle sehen
+damit ich erkenne, ob die Tabelle vollstaendig, lueckenhaft oder ueberschneidend ist.
+**Akzeptanzkriterien:**
+- Checksum = Summe(2^(Anzahl Don't-Care pro Regel)) fuer alle Regeln
+- Vergleich mit 2^n (n = Anzahl Ursachen):
+  - = 2^n → Gruenes Symbol „Vollstaendig" (Notwendige Bedingung erfueellt)
+  - > 2^n → Gelbes Symbol „Uberschneidungen" (Overlap)
+  - < 2^n → Rotes Symbol „Luecken" (Gap)
+- Die Checksum wird nach jeder Aenderung (Constraints, Collapsing) neu berechnet
+- Hinweis: „Checksum allein beweist weder Vollstaendigkeit noch Widerspruchsfreiheit"
+**Abhaengigkeiten:** REQ-5005, REQ-5013 (Collapsing), REQ-5017 (Don't Care)
+**Traceability:** documentation/research-decision-table-istqb.md §4 (Checksum-Validierung)
+
+---
+
+### REQ-5015 | Extended Entry (multiple Werte pro Ursache)
+**Titel:** Extended Entry – Multiple Werte pro Ursache (z.B. T-Shirt-Größen)
+**Prioritaet:** Could
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich Ursachen mit mehr als zwei Werten definieren koennen (z.B. S/M/L/XL)
+damit ich auch nicht-boolesche Bedingungen in Entscheidungstabellen abbilden kann.
+**Akzeptanzkriterien:**
+- Ursache-Kategorien koennen optional mehr als 2 Werte haben (Extended Entry)
+- Die Werte erscheinen in der Ursachenzeile als Dropdown pro Zelle
+- Bei der Generierung wird das kartesische Produkt aller Ursache-Werte berechnet
+- Die Anzahl der Regeln ist das Produkt der Wertemengen aller Ursachen
+- Boolean (Ja/Nein) bleibt der Default; Extended Entry ist eine Option
+- Die Werte sind in der Tabelle als Text sichtbar (nicht Y/N)
+**Abhaengigkeiten:** REQ-5002, REQ-5004, REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §3 (Condition Entries), Nutzerentscheidung 2026-10-05
+
+---
+
+### REQ-5016 | Wirkungen als Text (nicht nur binär)
+**Titel:** Wirkungen als Freitext statt nur binär (X/—)
+**Prioritaet:** Could
+**Status:** Implemented
+
+---
+
+### REQ-5017 | Don't Care manuell setzen
+**Titel:** Manuelles Setzen von Don't Care (—) in Ursachenzellen
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich in Ursachenzellen manuell „Don't Care" (—) setzen koennen
+damit ich ausdruecken kann, dass eine Bedingung fuer eine bestimmte Regel irrelevant ist.
+**Akzeptanzkriterien:**
+- Jede Ursachenzelle kann drei Werte annehmen: Y (Ja), N (Nein), — (Don't Care)
+- Don't Care wird durch Klick auf die Zelle oder per Dropdown gesetzt
+- Visuell: — ist grau hinterlegt oder mit einem Dash-Symbol dargestellt
+- Don't Care bedeutet: Diese Bedingung ist fuer die Regel irrelevant (beide Y und N moeglich)
+- Bei der Testfall-Generierung: Don't Care-Werte werden als „beliebig" behandelt
+- Manuelles Setzen ist auch nach automatischer Generierung moeglich
+**Abhaengigkeiten:** REQ-5003, REQ-5004, REQ-5005
+**Traceability:** documentation/research-decision-table-istqb.md §3 (Condition Entries: — Don't Care)
+
+---
+
+### REQ-5018 | Cause-Effect-Graph-Visualisierung
+**Titel:** Graphische Visualisierung der Cause-Effect-Beziehungen
+**Prioritaet:** Could
+**Status:** In Progress (Backend-Daten implementiert, Frontend-Visualisierung offen)
+**Phase:** 4, Sprint 17 (P4 – Graph)
+**User Story:**
+Als Tester
+moechte ich eine grafische Visualisierung der Cause-Effect-Beziehungen sehen
+damit ich die logischen Zusammenhaenge zwischen Ursachen, Constraints und Wirkungen intuitiv erfassen kann.
+**Akzeptanzkriterien:**
+- Graphische Darstellung: Ursachen als Knoten links, Wirkungen als Knoten rechts
+- Constraints werden als Kanten zwischen Knoten dargestellt (farbig nach Typ: E=rot, I=gruen, O=blau, R=orange, M=lila)
+- Boolesche Operatoren (AND, OR, NOT) werden als Zwischenknoten dargestellt
+- Der Graph ist interaktiv (Zoom, Drag, Hover-Info)
+- Der Graph kann aus der Entscheidungstabelle generiert und zurueck exportiert werden
+- Der Graph dient als Denkwerkzeug („The graph is the thinking tool")
+**Abhaengigkeiten:** REQ-5002, REQ-5007-5011 (Constraints), REQ-5003
+**Traceability:** documentation/research-decision-table-istqb.md §1 (Cause-Effect Graphing vs. Decision Table Testing), §5 (5-Stufen-Prozess)
+
+---
+
+### REQ-5019 | Widerspruchserkennung
+**Titel:** Erkennung von widerspruechlichen Regeln in der Entscheidungstabelle
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich sofort gewarnt werden, wenn zwei Regeln mit identischen oder ueberlappenden Bedingungen unterschiedliche Wirkungen haben
+damit ich inkonsistente Entscheidungstabellen erkenne und korrigieren kann.
+**Akzeptanzkriterien:**
+- Zwei Regeln mit identischen Ursacheneintraegen (Y/N/—) aber unterschiedlichen Wirkungseintraegen → Widerspruch
+- Ueberlappende Regeln (durch Don't Care) mit unterschiedlichen Wirkungen → Widerspruch
+- M-Constraint-Verletzung (E1=X und E2=X, obwohl M(E1→E2) gilt) → Widerspruch
+- Widersprueche werden rot markiert mit Hinweis: „Regel R_X und R_Y widersprechen sich"
+- Der Widerspruch wird bei jeder Aenderung neu geprueft
+- Speichern ist trotzdem moeglich (Warnung, kein Hard-Block)
+**Abhaengigkeiten:** REQ-5003, REQ-5005, REQ-5011 (Mask), REQ-5017 (Don't Care)
+**Traceability:** documentation/research-decision-table-istqb.md §8 (Widerspruchserkennung)
+
+---
+
+### REQ-5020 | Vollstaendigkeitspruefung (Luecken-Erkennung)
+**Titel:** Pruefung auf ungedeckte gueltige Kombinationen
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 4, Sprint 16 (P3 – Optimierung)
+**User Story:**
+Als Tester
+moechte ich erkennen, wenn gueltige Ursachenkombinationen in der Entscheidungstabelle nicht abgedeckt sind
+damit ich Luecken in meiner Testabdeckung erkenne und schließe.
+**Akzeptanzkriterien:**
+- Das System prueft, ob alle gueltigen Kombinationen (nach Constraint-Filterung) in der Tabelle vertreten sind
+- Fehlt eine Kombination: Roter Hinweis „Luecke: Kombination [Ursachenwerte] ist nicht abgedeckt"
+- Checksum < 2^n (nach Constraint-Filterung) → Hinweis auf moegliche Luecken
+- Gueltige Kombination ohne zugeordnete Aktion → Hinweis „Keine Wirkung definiert"
+- Der Tester kann fehlende Regeln automatisch hinzufuegen lassen (Button „Luecken schliessen")
+- Die Pruefung laeuft nach jeder Aenderung automatisch
+**Abhaengigkeiten:** REQ-5005, REQ-5007-5011 (Constraints), REQ-5014 (Checksum)
+**Traceability:** documentation/research-decision-table-istqb.md §8 (Vollstaendigkeitspruefung)
+
+---
+
+### REQ-5021 | Priorisierung von Wirkungen (Override)
+**Titel:** Priorisierung von Wirkungen bei mehreren gleichzeitig aktiven Wirkungen
+**Prioritaet:** Could
+**Status:** In Progress (Backend-Logik implementiert, UI-Prioritaetsanzeige offen)
+**Phase:** 4, Sprint 17 (P4 – Graph)
+**User Story:**
+Als Tester
+moechte ich Wirkungen priorisieren koennen, sodass bei mehreren gleichzeitig aktiven Wirkungen eine bestimmte Wirkung Vorrang hat
+damit ich Superposition/Override-Szenarien korrekt abbilden kann.
+**Akzeptanzkriterien:**
+- Jede Wirkung kann eine Prioritaet (1=hoechst, N=niedrigst) zugewiesen bekommen
+- Wenn in einer Regel mehrere Wirkungen X sind, gewinnt die hoechst-priorisierte
+- Niedriger-priorisierte Wirkungen werden zu — (Don't Care)
+- Die Priorisierung wird in der UI sichtbar (Prioritaetsnummer neben Wirkung)
+- Fruehe Validierungsfehler (hohe Prioritaet) machen spaetere Bedingungen zu Don't Care → Tabellenreduktion
+- Die Priorisierung wirkt nur im Override-Modus (opt-in)
+**Abhaengigkeiten:** REQ-5002, REQ-5003, REQ-5011 (Mask)
+**Traceability:** documentation/research-decision-table-istqb.md §6 (Superposition/Override, Priority/Precedence)
+
+---
+
+### Hinweis zur EPIC-Nummerierung
+
+Der Nutzer hat EPIC-19 gewuenscht. EPIC-19 existiert bereits (Installation & Distribution, REQ-5001).
+Dieses neue EPIC wurde als **EPIC-20** angelegt, um die Nummerierungskollision zu vermeiden.
+**REQ-5001** bleibt dem bestehenden EPIC-19 (Installation) zugeordnet.
+Die neuen REQs beginnen mit **REQ-5000** und enden bei **REQ-5021**.

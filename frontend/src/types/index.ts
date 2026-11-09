@@ -3,23 +3,56 @@
 export interface Project {
   id: number;
   name: string;
+  version?: number; // REQ-4021
 }
 
 export interface ProjectCreate {
   name: string;
 }
 
+// REQ-5002: Kategorie-Typ (standard, cause = Ursache, effect = Wirkung)
+export type CategoryType = "standard" | "cause" | "effect";
+
 export interface Category {
   id: number;
   name: string;
   order_index: number;
   is_result?: boolean;  // REQ-4016: Ergebnis-Kategorie (Expected Result)
+  category_type?: CategoryType; // REQ-5002
 }
 
 export interface CategoryCreate {
   name: string;
   order_index?: number;
   is_result?: boolean;  // REQ-4016
+  category_type?: CategoryType; // REQ-5002
+}
+
+// REQ-5003/5005: Entscheidungstabelle (Antwort von POST /api/decision-table/generate)
+export interface DecisionTableCause {
+  id: number;
+  name: string;
+  values?: string[];
+}
+
+export interface DecisionTableEffect {
+  id: number;
+  name: string;
+  values?: string[];
+}
+
+export interface DecisionTableRow {
+  id: number;
+  causes: Record<string, string>;
+  effects: Record<string, string | null>;
+}
+
+export interface DecisionTableGenerateResponse {
+  causes: DecisionTableCause[];
+  effects: DecisionTableEffect[];
+  rules: DecisionTableRow[];
+  total_rules: number;
+  rules_after_constraints?: number;
 }
 
 export interface Value {

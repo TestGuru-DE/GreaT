@@ -24,8 +24,13 @@ coverage.xml
 
 # Datenbank (Laufzeit-Daten, nicht ins Repo)
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
+
+# REQ-5001: User-Datenverzeichnis fuer portable EXE
+.great/
 
 # Env / Secrets
 .env

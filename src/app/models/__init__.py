@@ -1,20 +1,29 @@
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import relationship
-from .database import Base
+from ..database import Base
 from sqlalchemy import Boolean, String
+
+# REQ-4023: Import User first (ProjectMembership references it), then ProjectMembership
+from .auth import User  # noqa: F401
+from .project_membership import ProjectMembership  # noqa: F401
 
 
 class Project(Base):
     __tablename__ = "projects"
     id = Column(Integer, primary_key=True)
     name = Column(String(200), unique=True, nullable=False)
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     categories = relationship("Category", back_populates="project", cascade="all, delete-orphan")
     generations = relationship("Generation", back_populates="project", cascade="all, delete-orphan")
+    memberships = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")  # REQ-4023
 
 class Category(Base):
     __tablename__ = "categories"
@@ -23,9 +32,14 @@ class Category(Base):
     name = Column(String(200), nullable=False)
     order_index = Column(Integer, default=0, nullable=False)
     is_result = Column(Boolean, default=False, nullable=False, server_default='0')  # REQ-4016: Ergebnis-Typ
+    category_type = Column(String(20), default="standard", server_default="standard", nullable=False)  # REQ-5002: Kategorie-Typ (standard, cause, effect)
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     project = relationship("Project", back_populates="categories")
     values = relationship("Value", back_populates="category", cascade="all, delete-orphan")
@@ -40,9 +54,13 @@ class Value(Base):
     vtype = Column(String(20), nullable=False, default="string") # NEU
     order_index = Column(Integer, nullable=False, default=0)
     is_default = Column(Boolean, nullable=False, default=False)  # REQ-3008
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     category = relationship("Category", back_populates="values")
 
@@ -52,10 +70,14 @@ class Generation(Base):
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     strategy = Column(String(50), nullable=False)
     name = Column(String(300), nullable=True)  # REQ-2004: Editierbarer Name
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     coverage_meta = Column(Text, nullable=True)  # JSON-String (optional)ing (optional)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     project = relationship("Project", back_populates="generations")
     testcases = relationship("TestCase", back_populates="generation", cascade="all, delete-orphan")
@@ -65,6 +87,10 @@ class TestCase(Base):
     id = Column(Integer, primary_key=True)
     generation_id = Column(Integer, ForeignKey("generations.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(200), nullable=False)
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     generation = relationship("Generation", back_populates="testcases")
     values = relationship("TestCaseValue", back_populates="testcase", cascade="all, delete-orphan")
@@ -75,6 +101,10 @@ class TestCaseValue(Base):
     testcase_id = Column(Integer, ForeignKey("testcases.id", ondelete="CASCADE"), nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
     value = Column(String(500), nullable=False)
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     testcase = relationship("TestCase", back_populates="values")
 
@@ -91,6 +121,7 @@ class Rule(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
 
     type = Column(String(20), nullable=False, default="dependency")
 
@@ -102,6 +133,9 @@ class Rule(Base):
     # Für type='combine': Ziel-Kategorie steht in then_category_id,
     # die Zielwerte stehen JSON-kodiert als Array in then_values_json (z. B. '["DE","US","FR"]').
     then_values_json = Column(Text, nullable=True)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +153,11 @@ class DataClass(Base):
     value_type = Column(String(30), nullable=False, default="text")
     description = Column(String(500), nullable=True)
     is_system = Column(Boolean, nullable=False, default=False)  # REQ-2005: System-Datenklassen
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     dc_values = relationship("DataClassValue", back_populates="dataclass", cascade="all, delete-orphan")
 
@@ -131,7 +169,11 @@ class DataClassValue(Base):
     dataclass_id = Column(Integer, ForeignKey("dataclasses.id", ondelete="CASCADE"), nullable=False)
     value = Column(String(500), nullable=False)
     sort_order = Column(Integer, nullable=False, default=0)  # REQ-4014: Drag & Drop Reihenfolge
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
 
     dataclass = relationship("DataClass", back_populates="dc_values")
 
@@ -150,7 +192,11 @@ class DataNode(Base):
     is_system = Column(Boolean, default=False, nullable=False, server_default='0')
     source = Column(String(100), nullable=True)  # z.B. "bugmagnet"
     sort_order = Column(Integer, default=0, nullable=False, server_default='0')
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
     
     # Relationships
     parent = relationship("DataNode", back_populates="children", remote_side="DataNode.id")
@@ -166,7 +212,11 @@ class DataNodeValue(Base):
     node_id = Column(Integer, ForeignKey("data_nodes.id", ondelete="CASCADE"), nullable=False)
     value = Column(String(500), nullable=False)
     sort_order = Column(Integer, default=0, nullable=False, server_default='0')
+    version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    # REQ-4024: Audit-Trail
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
     
     node = relationship("DataNode", back_populates="values")
 

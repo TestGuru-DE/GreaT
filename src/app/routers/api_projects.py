@@ -4,17 +4,18 @@ REQ-1206: DELETE-Endpunkte
 REQ-1209: Reorder-Endpunkt fuer Kategorien
 REQ-1213: Rename-Endpunkte
 """
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field as PydanticField
+from pydantic import BaseModel, Field as PydanticField, field_validator
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from combinatorics.boundary_value import generate_bva_values, BVAError
 
-router = APIRouter(tags=["API"])
+router = APIRouter(tags=["API"], dependencies=[Depends(require_api_capable)])
 
 
 def _generation_display_name(g: "models.Generation") -> str:
@@ -28,7 +29,7 @@ def _generation_display_name(g: "models.Generation") -> str:
 
 @router.get("/strategies", response_model=List[str])
 def list_strategies() -> List[str]:
-    return ["all", "each", "linear", "pairwise", "risk_based"]
+    return ["all", "each", "linear", "pairwise", "risk_based", "t_wise", "mcdc"]  # REQ-3039, REQ-3044
 
 
 # ---------------------------------------------------------------------------
@@ -36,11 +37,17 @@ def list_strategies() -> List[str]:
 # ---------------------------------------------------------------------------
 
 @router.get("/projects", response_model=List[schemas.ProjectRead])
-def list_projects(db: Session = Depends(get_db)):
-    return db.query(models.Project).order_by(models.Project.id).all()
+def list_projects(db: Session = Depends(get_db), current_user=Depends(require_api_capable)):
+    """REQ-4023: Admin sieht alle Projekte; andere Rollen nur Projekte mit Mitgliedschaft."""
+    query = db.query(models.Project)
+    if current_user.role != "admin":
+        from ..models.project_membership import ProjectMembership
+        member_ids = db.query(ProjectMembership.project_id).filter(ProjectMembership.user_id == current_user.id)
+        query = query.filter(models.Project.id.in_(member_ids))
+    return query.order_by(models.Project.id).all()
 
 
-@router.post("/projects", response_model=schemas.ProjectRead)
+@router.post("/projects", response_model=schemas.ProjectRead, dependencies=[Depends(require_writer)])
 def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)):
     exists = db.query(models.Project).filter(models.Project.name == payload.name).first()
     if exists:
@@ -52,12 +59,17 @@ def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)
     return p
 
 
-@router.delete("/projects/{pid}")
+@router.delete("/projects/{pid}", dependencies=[Depends(require_writer)])
 def delete_project(pid: int, db: Session = Depends(get_db)):
     """REQ-1206: Projekt loeschen."""
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+    # Projektbezogene Tabellen ohne ON DELETE CASCADE vorher leeren (keine verwaisten Reste).
+    from ..models.decision_table_constraint import DecisionTableConstraint
+    from ..models.project_membership import ProjectMembership
+    db.query(DecisionTableConstraint).filter(DecisionTableConstraint.project_id == pid).delete(synchronize_session=False)
+    db.query(ProjectMembership).filter(ProjectMembership.project_id == pid).delete(synchronize_session=False)
     db.delete(project)
     db.commit()
     return {"ok": True, "id": pid}
@@ -77,7 +89,7 @@ def list_categories(pid: int, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/projects/{pid}/categories", response_model=schemas.CategoryRead)
+@router.post("/projects/{pid}/categories", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
 def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Depends(get_db)):
     project = db.get(models.Project, pid)
     if not project:
@@ -86,7 +98,8 @@ def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Dep
         project_id=pid, 
         name=payload.name, 
         order_index=payload.order_index,
-        is_result=payload.is_result  # REQ-4016
+        is_result=payload.is_result,  # REQ-4016
+        category_type=payload.category_type,  # REQ-5002
     )
     db.add(c)
     db.commit()
@@ -94,7 +107,7 @@ def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Dep
     return c
 
 
-@router.delete("/categories/{cid}")
+@router.delete("/categories/{cid}", dependencies=[Depends(require_writer)])
 def delete_category(cid: int, db: Session = Depends(get_db)):
     """REQ-1206: Kategorie loeschen."""
     cat = db.get(models.Category, cid)
@@ -109,39 +122,59 @@ class RenameCategory(BaseModel):
     name: str = PydanticField(min_length=1, max_length=200)
 
 
-class UpdateCategoryProperties(BaseModel):  # REQ-4016
-    is_result: bool
+class UpdateCategoryProperties(BaseModel):  # REQ-4016 / REQ-5002
+    is_result: Optional[bool] = None
+    category_type: Optional[str] = None
+
+    @field_validator("category_type")
+    @classmethod
+    def _check_type(cls, v):
+        if v is not None and v not in schemas.VALID_CATEGORY_TYPES:
+            raise ValueError("category_type muss standard, cause oder effect sein.")
+        return v
 
 
 class ReorderRequest(BaseModel):
     order: List[int]
 
 
-@router.patch("/categories/{cid}/rename", response_model=schemas.CategoryRead)
-def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get_db)):
+
+def _stamp_audit(entity, current_user) -> None:
+    """REQ-4024: Audit-Trail (last_modified_by / last_modified_at) setzen."""
+    from datetime import datetime, timezone
+    entity.last_modified_by = current_user.id
+    entity.last_modified_at = datetime.now(timezone.utc)
+
+
+@router.patch("/categories/{cid}/rename", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
+def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get_db), current_user=Depends(require_writer)):
     """REQ-1213: Kategorie umbenennen."""
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found.")
     cat.name = payload.name
+    _stamp_audit(cat, current_user)
     db.commit()
     db.refresh(cat)
     return cat
 
 
-@router.patch("/categories/{cid}/properties", response_model=schemas.CategoryRead)
+@router.patch("/categories/{cid}/properties", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
 def update_category_properties(cid: int, payload: UpdateCategoryProperties, db: Session = Depends(get_db)):
     """REQ-4016: Kategorie-Eigenschaften aktualisieren (z.B. is_result)."""
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found.")
-    cat.is_result = payload.is_result
+    if payload.is_result is not None:
+        cat.is_result = payload.is_result
+    if payload.category_type is not None:
+        cat.category_type = payload.category_type
     db.commit()
     db.refresh(cat)
     return cat
 
 
-@router.patch("/projects/{pid}/categories/reorder")
+@router.patch("/projects/{pid}/categories/reorder", dependencies=[Depends(require_writer)])
 def reorder_categories(pid: int, payload: ReorderRequest, db: Session = Depends(get_db)):
     """REQ-1209: Kategorien-Reihenfolge aendern."""
     for idx, cid in enumerate(payload.order):
@@ -161,7 +194,7 @@ def list_values(cid: int, db: Session = Depends(get_db)):
     return db.query(models.Value).filter(models.Value.category_id == cid).order_by(models.Value.id).all()
 
 
-@router.post("/categories/{cid}/values", response_model=schemas.ValueRead)
+@router.post("/categories/{cid}/values", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
 def create_value(cid: int, payload: schemas.ValueCreate, db: Session = Depends(get_db)):
     cat = db.get(models.Category, cid)
     if not cat:
@@ -180,7 +213,7 @@ def create_value(cid: int, payload: schemas.ValueCreate, db: Session = Depends(g
     return v
 
 
-@router.delete("/values/{vid}")
+@router.delete("/values/{vid}", dependencies=[Depends(require_writer)])
 def delete_value(vid: int, db: Session = Depends(get_db)):
     """REQ-1206: Wert loeschen."""
     val = db.get(models.Value, vid)
@@ -195,21 +228,22 @@ class RenameValue(BaseModel):
     value: str = PydanticField(min_length=1, max_length=500)
 
 
-@router.patch("/values/{vid}/rename", response_model=schemas.ValueRead)
-def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db)):
+@router.patch("/values/{vid}/rename", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
+def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db), current_user=Depends(require_writer)):
     """REQ-1213: Wert umbenennen."""
     val = db.get(models.Value, vid)
     if not val:
         raise HTTPException(status_code=404, detail="Value not found.")
     val.value = payload.value
+    _stamp_audit(val, current_user)
     db.commit()
     db.refresh(val)
     return val
 
 
 # REQ-3007: Wert-Eigenschaften aktualisieren
-@router.patch("/values/{vid}/properties", response_model=schemas.ValueRead)
-def update_value_properties(vid: int, payload: schemas.ValuePropertiesUpdate, db: Session = Depends(get_db)):
+@router.patch("/values/{vid}/properties", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
+def update_value_properties(vid: int, payload: schemas.ValuePropertiesUpdate, db: Session = Depends(get_db), current_user=Depends(require_writer)):
     """REQ-3007: Risiko, Datentyp und Fehlerwert eines Werts aktualisieren."""
     val = db.get(models.Value, vid)
     if not val:
@@ -220,13 +254,14 @@ def update_value_properties(vid: int, payload: schemas.ValuePropertiesUpdate, db
         val.vtype = payload.vtype
     if payload.allowed is not None:
         val.allowed = payload.allowed
+    _stamp_audit(val, current_user)
     db.commit()
     db.refresh(val)
     return val
 
 
 # REQ-3008: Default-Wert setzen
-@router.patch("/values/{vid}/set-default", response_model=schemas.ValueRead)
+@router.patch("/values/{vid}/set-default", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
 def set_default_value(vid: int, db: Session = Depends(get_db)):
     """REQ-3008: Setzt einen Wert als Default für seine Kategorie (nur einer pro Kategorie)."""
     val = db.get(models.Value, vid)
@@ -300,7 +335,7 @@ def _detect_conflicts(new_rule: models.Rule, existing: list) -> list[int]:
     return conflicts
 
 
-@router.post("/projects/{pid}/rules", status_code=201, response_model=schemas.RuleRead)
+@router.post("/projects/{pid}/rules", status_code=201, response_model=schemas.RuleRead, dependencies=[Depends(require_writer)])
 def api_create_rule(pid: int, payload: schemas.RuleCreate, db: Session = Depends(get_db)):
     """REQ-3003: Neue Regel anlegen. REQ-3004: Konflikt-Erkennung."""
     project = db.get(models.Project, pid)
@@ -347,7 +382,7 @@ def api_create_rule(pid: int, payload: schemas.RuleCreate, db: Session = Depends
     )
 
 
-@router.delete("/projects/{pid}/rules/{rid}")
+@router.delete("/projects/{pid}/rules/{rid}", dependencies=[Depends(require_writer)])
 def api_delete_rule(pid: int, rid: int, db: Session = Depends(get_db)):
     """REQ-3003: Regel löschen."""
     rule = db.get(models.Rule, rid)
@@ -387,7 +422,7 @@ def list_generations(pid: int, db: Session = Depends(get_db)):
     return result
 
 
-@router.post("/projects/bulk-delete", response_model=schemas.BulkDeleteResponse)
+@router.post("/projects/bulk-delete", response_model=schemas.BulkDeleteResponse, dependencies=[Depends(require_writer)])
 def bulk_delete_projects(payload: schemas.BulkDeleteRequest, db: Session = Depends(get_db)):
     """REQ-2002: Mehrere Projekte auf einmal löschen (blockiert wenn Generierungen vorhanden)."""
     from ..services import project_has_generations
@@ -406,7 +441,7 @@ def bulk_delete_projects(payload: schemas.BulkDeleteRequest, db: Session = Depen
     return schemas.BulkDeleteResponse(deleted=deleted, blocked=blocked)
 
 
-@router.post("/projects/bulk-delete-force", response_model=schemas.BulkDeleteResponse)
+@router.post("/projects/bulk-delete-force", response_model=schemas.BulkDeleteResponse, dependencies=[Depends(require_writer)])
 def bulk_delete_projects_force(payload: schemas.BulkDeleteRequest, db: Session = Depends(get_db)):
     """REQ-2002: Mehrere Projekte inkl. aller abhängiger Daten löschen."""
     from ..services import force_delete_project
@@ -422,7 +457,7 @@ def bulk_delete_projects_force(payload: schemas.BulkDeleteRequest, db: Session =
 
 
 # REQ-2004: Editierbarer Generierungsname
-@router.patch("/generations/{gid}/rename", response_model=schemas.GenerationSummary)
+@router.patch("/generations/{gid}/rename", response_model=schemas.GenerationSummary, dependencies=[Depends(require_writer)])
 def rename_generation(gid: int, payload: schemas.GenerationRenameRequest, db: Session = Depends(get_db)):
     """REQ-2004: Setzt einen benutzerdefinierten Namen fuer eine Generierung."""
     g = db.get(models.Generation, gid)
@@ -442,7 +477,7 @@ def rename_generation(gid: int, payload: schemas.GenerationRenameRequest, db: Se
 
 
 # REQ-3009: Einzelne Generierung löschen
-@router.delete("/generations/{gid}")
+@router.delete("/generations/{gid}", dependencies=[Depends(require_writer)])
 def delete_generation(gid: int, db: Session = Depends(get_db)):
     """REQ-3009: Löscht eine Generierung inkl. aller Testfälle."""
     g = db.get(models.Generation, gid)
@@ -469,7 +504,7 @@ class BvaResponse(BaseModel):
     category_id: int
 
 
-@router.post("/categories/{cid}/bva", response_model=BvaResponse)
+@router.post("/categories/{cid}/bva", response_model=BvaResponse, dependencies=[Depends(require_writer)])
 def generate_bva_for_category(cid: int, payload: BvaRequest, db: Session = Depends(get_db)):
     """REQ-0306: Grenzwertanalyse."""
     cat = db.get(models.Category, cid)
@@ -491,7 +526,7 @@ class BvaMultiRangeResponse(BaseModel):
     category_id: int
 
 
-@router.post("/categories/{cid}/bva/ranges", response_model=BvaMultiRangeResponse)
+@router.post("/categories/{cid}/bva/ranges", response_model=BvaMultiRangeResponse, dependencies=[Depends(require_writer)])
 def generate_multi_range_bva_for_category(
     cid: int,
     payload: schemas.BVAMultiRangeRequest,
@@ -522,3 +557,32 @@ def generate_multi_range_bva_for_category(
 
     db.commit()
     return BvaMultiRangeResponse(values=values, category_id=cid)
+
+
+# ---------------------------------------------------------------------------
+# REQ-4021/REQ-4024: Projekt aktualisieren mit Optimistic Concurrency + Audit
+# ---------------------------------------------------------------------------
+
+class ProjectUpdate(BaseModel):
+    name: Optional[str] = PydanticField(default=None, min_length=1, max_length=200)
+    version: Optional[int] = None
+
+
+@router.put("/projects/{pid}", response_model=schemas.ProjectRead)
+def update_project(
+    pid: int,
+    payload: ProjectUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_writer),
+):
+    """REQ-4021: Projekt aktualisieren; Version-Konflikt -> 409."""
+    from ..concurrency import update_with_version
+    update_data = payload.model_dump(exclude={"version"}, exclude_unset=True)
+    return update_with_version(
+        db=db,
+        model=models.Project,
+        entity_id=pid,
+        client_version=payload.version,
+        update_data=update_data,
+        current_user_id=current_user.id,
+    )

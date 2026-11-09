@@ -11,10 +11,24 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Alle /api/, /ui/ und /docs Anfragen gehen an FastAPI
-      "/api": { target: backendUrl, changeOrigin: true },
-      "/ui": { target: backendUrl, changeOrigin: true },
-      "/docs": { target: backendUrl, changeOrigin: true },
+      // Alle /api/, /ui/, /docs und /auth Anfragen gehen an FastAPI
+      "/api": {
+        target: backendUrl,
+        changeOrigin: true,
+      },
+      "/ui": {
+        target: backendUrl,
+        changeOrigin: true,
+      },
+      "/docs": {
+        target: backendUrl,
+        changeOrigin: true,
+      },
+      // REQ-4001: Auth-Endpunkte (JWT in httpOnly-Cookies)
+      "/auth": {
+        target: backendUrl,
+        changeOrigin: true,
+      },
     },
   },
   build: {

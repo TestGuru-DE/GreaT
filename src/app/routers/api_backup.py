@@ -9,7 +9,10 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Project, Category, Value
+from app.models.auth import User
 from app.logging_config import get_logger
+from app.services import reset_database_state
+from app.auth_deps import require_api_capable, require_admin
 
 try:
     from cryptography.fernet import Fernet, InvalidToken
@@ -89,6 +92,7 @@ def _export_data(db: Session) -> dict:
 def create_backup(
     password: str = Query(default=None, description="Optionales Passwort für Verschlüsselung"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
 ):
     """Backup aller Daten als ZIP herunterladen."""
     data = _export_data(db)
@@ -115,13 +119,35 @@ def create_backup(
     )
 
 
+@router.post("/reset")
+def reset_database(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """Setzt die komplette Datenbank auf den Standard-Startzustand zurück.
+    
+    BLOCKER B2: Nur Admin darf die DB zuruecksetzen.
+    """
+    try:
+        result = reset_database_state(db)
+        log.info("database_reset", reset=result.get("reset"))
+        return result
+    except Exception as exc:  # pragma: no cover - runtime safety
+        log.exception("database_reset_failed", error=str(exc))
+        raise HTTPException(status_code=500, detail="Datenbank konnte nicht zurückgesetzt werden")
+
+
 @router.post("/restore")
 async def restore_backup(
     file: UploadFile = File(...),
     password: str = Query(default=None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
 ):
-    """Backup wiederherstellen."""
+    """Backup wiederherstellen.
+    
+    BLOCKER B3: Nur Admin darf Daten wiederherstellen (verhindert Dateninjektion).
+    """
     content = await file.read()
     zip_buffer = io.BytesIO(content)
 
@@ -145,10 +171,18 @@ async def restore_backup(
 
     for proj_data in data.get("projects", []):
         name = proj_data["name"]
-        # Namenskonflikt: Suffix anhängen
+        # Namenskonflikt: Suffix mit Zaeler anhaengen (REQ-4011)
         existing = db.query(Project).filter(Project.name == name).first()
         if existing:
-            name = f"{name}_restored"
+            counter = 1
+            while True:
+                candidate = f"{name}_restored_{counter}"
+                if not db.query(Project).filter(Project.name == candidate).first():
+                    name = candidate
+                    break
+                counter += 1
+                if counter > 100:  # Safety limit
+                    raise HTTPException(status_code=409, detail=f"Zu viele Konflikte fuer Projekt '{name}'")
 
         project = Project(name=name)
         db.add(project)

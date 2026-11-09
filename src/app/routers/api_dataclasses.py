@@ -5,7 +5,8 @@ REQ-4012: BugMagnet-Import.
 """
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -14,10 +15,11 @@ from sqlalchemy.orm import Session
 import httpx
 
 from ..database import get_db
+from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..dataclass_validator import validate_value, DATACLASS_TYPES
 
-router = APIRouter(tags=["Datenklassen"])
+router = APIRouter(tags=["Datenklassen"], dependencies=[Depends(require_api_capable)])
 
 BUGMAGNET_URL = "https://raw.githubusercontent.com/gojko/bugmagnet/master/template/config.json"
 
@@ -28,7 +30,7 @@ def list_dataclasses(db: Session = Depends(get_db)):
     return db.query(models.DataClass).order_by(models.DataClass.name).all()
 
 
-@router.post("/dataclasses", response_model=schemas.DataClassRead)
+@router.post("/dataclasses", response_model=schemas.DataClassRead, dependencies=[Depends(require_writer)])
 def create_dataclass(payload: schemas.DataClassCreate, db: Session = Depends(get_db)):
     """REQ-2003: Neue Datenklasse erstellen."""
     if payload.value_type not in DATACLASS_TYPES:
@@ -51,7 +53,7 @@ def create_dataclass(payload: schemas.DataClassCreate, db: Session = Depends(get
 
 
 # REQ-2006: Bulk-Delete Datenklassen (VOR /{dcid} registriert um Routing-Konflikte zu vermeiden)
-@router.post("/dataclasses/bulk-delete", response_model=schemas.DataclassBulkDeleteResponse)
+@router.post("/dataclasses/bulk-delete", response_model=schemas.DataclassBulkDeleteResponse, dependencies=[Depends(require_writer)])
 def bulk_delete_dataclasses(payload: schemas.DataclassBulkDeleteRequest, db: Session = Depends(get_db)):
     """REQ-2006: Mehrere Datenklassen gleichzeitig loeschen. System-Klassen werden uebersprungen."""
     deleted = 0
@@ -69,7 +71,7 @@ def bulk_delete_dataclasses(payload: schemas.DataclassBulkDeleteRequest, db: Ses
     return schemas.DataclassBulkDeleteResponse(deleted=deleted, blocked=blocked)
 
 
-@router.delete("/dataclasses/{dcid}")
+@router.delete("/dataclasses/{dcid}", dependencies=[Depends(require_writer)])
 def delete_dataclass(dcid: int, db: Session = Depends(get_db)):
     """REQ-2003: Datenklasse loeschen. System-Datenklassen sind geschuetzt (REQ-2005)."""
     dc = db.get(models.DataClass, dcid)
@@ -91,7 +93,7 @@ def list_dataclass_values(dcid: int, db: Session = Depends(get_db)):
     return db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dcid).order_by(models.DataClassValue.sort_order, models.DataClassValue.id).all()
 
 
-@router.post("/dataclasses/{dcid}/values", response_model=schemas.DataClassValueRead)
+@router.post("/dataclasses/{dcid}/values", response_model=schemas.DataClassValueRead, dependencies=[Depends(require_writer)])
 def add_dataclass_value(dcid: int, payload: schemas.DataClassValueCreate, db: Session = Depends(get_db)):
     """REQ-2003: Wert zu Datenklasse hinzufuegen (mit Typvalidierung)."""
     dc = db.get(models.DataClass, dcid)
@@ -107,7 +109,7 @@ def add_dataclass_value(dcid: int, payload: schemas.DataClassValueCreate, db: Se
     return v
 
 
-@router.delete("/dataclasses/values/{vid}")
+@router.delete("/dataclasses/values/{vid}", dependencies=[Depends(require_writer)])
 def delete_dataclass_value(vid: int, db: Session = Depends(get_db)):
     """REQ-2003: Einzelnen Wert aus Datenklasse loeschen."""
     v = db.get(models.DataClassValue, vid)
@@ -118,7 +120,7 @@ def delete_dataclass_value(vid: int, db: Session = Depends(get_db)):
     return {"ok": True, "id": vid}
 
 
-@router.put("/dataclasses/{dcid}/values/reorder")
+@router.put("/dataclasses/{dcid}/values/reorder", dependencies=[Depends(require_writer)])
 def reorder_dataclass_values(dcid: int, payload: dict, db: Session = Depends(get_db)):
     """REQ-4014: Speichert neue Reihenfolge der Werte einer Datenklasse."""
     dc = db.get(models.DataClass, dcid)
@@ -141,7 +143,7 @@ def reorder_dataclass_values(dcid: int, payload: dict, db: Session = Depends(get
     return {"status": "ok"}
 
 
-@router.post("/categories/{cid}/apply-dataclass")
+@router.post("/categories/{cid}/apply-dataclass", dependencies=[Depends(require_writer)])
 def apply_dataclass_to_category(cid: int, payload: schemas.ApplyDataClassRequest, db: Session = Depends(get_db)):
     """REQ-2003: Alle Werte einer Datenklasse als Kategorie-Werte hinzufuegen."""
     cat = db.get(models.Category, cid)
@@ -191,7 +193,7 @@ def export_user_dataclasses(db: Session = Depends(get_db)):
     )
 
 
-@router.post("/dataclasses/import-user")
+@router.post("/dataclasses/import-user", dependencies=[Depends(require_writer)])
 async def import_user_dataclasses(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """REQ-4013: Importiert eigene Datenklassen aus einer JSON-Datei (Merge-Strategie)."""
     content = await file.read()
@@ -255,7 +257,7 @@ def bugmagnet_status(db: Session = Depends(get_db)):
     return {"imported": has_bugmagnet}
 
 
-@router.post("/dataclasses/bugmagnet-import")
+@router.post("/dataclasses/bugmagnet-import", dependencies=[Depends(require_writer)])
 async def import_bugmagnet(db: Session = Depends(get_db)):
     """
     REQ-4012: Importiert BugMagnet-Datenklassen von GitHub.
@@ -297,3 +299,34 @@ async def import_bugmagnet(db: Session = Depends(get_db)):
 
     db.commit()
     return {"status": "ok", "categories_imported": created, "source": "bugmagnet"}
+
+
+# ---------------------------------------------------------------------------
+# REQ-4021/REQ-4024: Datenklasse aktualisieren mit Optimistic Concurrency + Audit
+# ---------------------------------------------------------------------------
+
+class DataClassUpdate(BaseModel):
+    name: Optional[str] = None
+    value_type: Optional[str] = None
+    description: Optional[str] = None
+    version: Optional[int] = None
+
+
+@router.put("/dataclasses/{dcid}", response_model=schemas.DataClassRead)
+def update_dataclass(
+    dcid: int,
+    payload: DataClassUpdate,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_writer),
+):
+    """REQ-4021: Datenklasse aktualisieren; Version-Konflikt -> 409."""
+    from ..concurrency import update_with_version
+    update_data = payload.model_dump(exclude={"version"}, exclude_unset=True)
+    return update_with_version(
+        db=db,
+        model=models.DataClass,
+        entity_id=dcid,
+        client_version=payload.version,
+        update_data=update_data,
+        current_user_id=current_user.id,
+    )

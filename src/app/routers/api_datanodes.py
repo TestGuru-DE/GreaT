@@ -1,6 +1,7 @@
 """
 REQ-4018: Hierarchische Datenklassen API.
 Router für Datenknoten mit Baumstruktur und BugMagnet-Import.
+REQ-4021: Optimistic Concurrency Control in PUT/PATCH
 """
 from __future__ import annotations
 
@@ -14,6 +15,9 @@ import httpx
 
 from ..database import get_db
 from .. import models, schemas
+from ..auth_deps import require_writer, require_api_capable, require_admin, get_current_user
+from ..models.auth import User
+from ..concurrency import update_with_version
 
 router = APIRouter(tags=["DataNodes"])
 
@@ -47,8 +51,11 @@ def get_node_label(node: models.DataNode, db: Session) -> str:
 
 
 @router.get("/datanodes/bugmagnet-status")
-def bugmagnet_status(db: Session = Depends(get_db)):
-    """REQ-4018: Prüft ob BugMagnet bereits importiert wurde."""
+def bugmagnet_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
+    """REQ-4018: Prueft ob BugMagnet bereits importiert wurde."""
     imported = db.query(models.DataNode).filter(
         models.DataNode.source == "bugmagnet"
     ).first() is not None
@@ -56,10 +63,14 @@ def bugmagnet_status(db: Session = Depends(get_db)):
 
 
 @router.post("/datanodes/bugmagnet-import")
-async def import_bugmagnet(db: Session = Depends(get_db)):
+async def import_bugmagnet(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
     """
     REQ-4018: Importiert BugMagnet vollständig als Baum.
     Unterstützt alle 4 Ebenen und Mischknoten.
+    BLOCKER: Nur Admin darf BugMagnet importieren.
     """
     # 1. JSON von GitHub laden
     try:
@@ -89,7 +100,10 @@ async def import_bugmagnet(db: Session = Depends(get_db)):
 
 
 @router.get("/datanodes", response_model=List[schemas.DataNodeRead])
-def list_root_nodes(db: Session = Depends(get_db)):
+def list_root_nodes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
     """REQ-4018: Alle Wurzelknoten (parent_id=None)."""
     return db.query(models.DataNode).filter(
         models.DataNode.parent_id == None
@@ -97,7 +111,10 @@ def list_root_nodes(db: Session = Depends(get_db)):
 
 
 @router.get("/datanodes/tree", response_model=List[schemas.DataNodeRead])
-def get_full_tree(db: Session = Depends(get_db)):
+def get_full_tree(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
     """REQ-4018: Vollständiger Baum (für Frontend-Tree-View)."""
     return db.query(models.DataNode).filter(
         models.DataNode.parent_id == None
@@ -105,7 +122,11 @@ def get_full_tree(db: Session = Depends(get_db)):
 
 
 @router.get("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
-def get_node(node_id: int, db: Session = Depends(get_db)):
+def get_node(
+    node_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
     """REQ-4018: Einzelnen Knoten mit Kindern und Werten laden."""
     node = db.get(models.DataNode, node_id)
     if not node:
@@ -114,7 +135,11 @@ def get_node(node_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/datanodes", response_model=schemas.DataNodeRead)
-def create_node(data: schemas.DataNodeCreate, db: Session = Depends(get_db)):
+def create_node(
+    data: schemas.DataNodeCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
     """REQ-4018: Neuen Knoten erstellen."""
     node = models.DataNode(**data.model_dump())
     db.add(node)
@@ -124,20 +149,30 @@ def create_node(data: schemas.DataNodeCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
-def update_node(node_id: int, data: schemas.DataNodeCreate, db: Session = Depends(get_db)):
-    """REQ-4018: Knoten aktualisieren."""
-    node = db.get(models.DataNode, node_id)
-    if not node:
-        raise HTTPException(404, "Knoten nicht gefunden")
-    for k, v in data.model_dump(exclude_unset=True).items():
-        setattr(node, k, v)
-    db.commit()
-    db.refresh(node)
-    return node
+def update_node(
+    node_id: int,
+    data: schemas.DataNodeUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
+    """REQ-4018: Knoten aktualisieren mit Concurrency-Support."""
+    result = update_with_version(
+        db=db,
+        model=models.DataNode,
+        entity_id=node_id,
+        client_version=data.version,
+        update_data=data.model_dump(exclude={"version"}, exclude_unset=True),
+        current_user_id=current_user.id,
+    )
+    return result
 
 
 @router.delete("/datanodes/{node_id}")
-def delete_node(node_id: int, db: Session = Depends(get_db)):
+def delete_node(
+    node_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
     """REQ-4018: Knoten löschen (cascade)."""
     node = db.get(models.DataNode, node_id)
     if not node:
@@ -148,7 +183,12 @@ def delete_node(node_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/datanodes/{node_id}/values", response_model=schemas.DataNodeValueRead)
-def add_value(node_id: int, data: schemas.DataNodeValueCreate, db: Session = Depends(get_db)):
+def add_value(
+    node_id: int,
+    data: schemas.DataNodeValueCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
     """REQ-4018: Wert zu Knoten hinzufügen."""
     node = db.get(models.DataNode, node_id)
     if not node:
@@ -161,7 +201,12 @@ def add_value(node_id: int, data: schemas.DataNodeValueCreate, db: Session = Dep
 
 
 @router.delete("/datanodes/{node_id}/values/{value_id}")
-def delete_value(node_id: int, value_id: int, db: Session = Depends(get_db)):
+def delete_value(
+    node_id: int,
+    value_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
     """REQ-4018: Wert von Knoten löschen."""
     val = db.get(models.DataNodeValue, value_id)
     if not val or val.node_id != node_id:
@@ -247,7 +292,10 @@ def _node_to_dict(node) -> dict:
 
 
 @router.get("/datanodes/export-user")
-def export_user_datanodes(db: Session = Depends(get_db)):
+def export_user_datanodes(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
     """REQ-4013: Exportiert eigene (nicht-System) DataNodes als JSON."""
     roots = db.query(DataNode).filter(
         DataNode.is_system == False,
@@ -289,7 +337,11 @@ def _import_node_from_dict(data: dict, parent_id, db: Session):
 
 
 @router.post("/datanodes/import-user")
-async def import_user_datanodes(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def import_user_datanodes(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_writer),
+):
     """REQ-4013: Importiert eigene DataNodes aus einer JSON-Datei (Merge-Strategie)."""
     content = await file.read()
     try:

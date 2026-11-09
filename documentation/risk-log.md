@@ -52,6 +52,7 @@ Erstellt von: Program Manager Agent
 | RISK-Q-003 | Fehlende Tests für Geschäftsregeln | 5 | 4 | 20 | 🔴 | Sofortmaßnahme in Phase 1 Sprint 1 |
 | RISK-Q-004 | Mutation Testing Ziel (>=90%) nicht erreichbar ohne Basis-Tests | 3 | 3 | 9 | 🟡 | Erst Coverage 100%, dann Mutation Testing |
 | RISK-Q-005 | Keine Systemtests (End-to-End) vorhanden | 4 | 3 | 12 | 🔴 | Playwright oder Selenium für E2E Tests |
+| RISK-Q-006 | Verstoesse gegen die React-Hook-Regeln (B2, Fehler #300) und fehlende Fehlergrenze (B3) werden nicht automatisch erkannt, da ESLint nicht konfiguriert ist | 3 | 4 | 12 | 🔴 | Vorschlag: ESLint mit `react-hooks`-Regeln einfuehren. Teilweise gemindert: Error Boundary (B3) und Regressionstests in `TestCasePanel.test.tsx` (B2) vorhanden |
 
 ## Kategorie: Sicherheit
 
@@ -62,13 +63,14 @@ Erstellt von: Program Manager Agent
 | RISK-S-003 | Sensitive Daten in tanos.db nicht verschlüsselt | 2 | 3 | 6 | 🟡 | Dokumentieren: Testdaten sind nicht sensitiv, für Produktiv: Encryption at Rest |
 | RISK-S-004 | OWASP Top 10 nicht systematisch geprüft | 3 | 4 | 12 | 🔴 | Security Review durch Security Architect Agent vor Release |
 | RISK-S-005 | Keine Input-Validierung auf UI-Ebene (HTMX-Forms) | 3 | 3 | 9 | 🟡 | Pydantic-Validierung auf API-Ebene prüfen und erweitern |
+| RISK-S-016 | Default-Admin mit festem Passwort `changeme123!` (src/app/bootstrap.py); kein Zwang zum Passwortwechsel nach dem ersten Login; Passwort steht im Quellcode des Repositories | 4 | 5 | 20 | 🔴 | Hinweis auf Login-Seite (Risikoakzeptanz), Pflicht-Passwortwechsel (REQ-4028), Ablehnung bekannter Defaults, Rate-Limit 10/min/IP. **Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03). Hinweis zeigt Standardpasswort auf Login-Seite. Score bleibt 20 (Risiko nicht beseitigt, nur gemildert).** |
 
 ## Kategorie: Betrieb
 
 | ID | Risiko | W | I | Score | Ampel | Maßnahme |
 |---|---|---|---|---|---|---|
 | RISK-B-001 | Keine CI/CD Pipeline – manuelle Releases fehleranfällig | 4 | 4 | 16 | 🔴 | GitHub Actions Pipeline (Tests + Lint + Build) |
-| RISK-B-002 | Kein Installationspaket für Nicht-Techniker (GREAT.exe fehlt) | 4 | 4 | 16 | 🔴 | PyInstaller oder NSIS Installer erstellen |
+| RISK-B-002 | Kein Installationspaket für Nicht-Techniker (GREAT.exe fehlt) | 4 | 4 | 16 | 🔴 | PyInstaller build-exe.bat + GREAT.spec implementiert (REQ-5001, 2026-10-05); Smoke-Test im Build-Skript; finale QA-Pruefung ausstehend |
 | RISK-B-003 | Start.bat ohne Fehlerbehandlung | 2 | 2 | 4 | 🟢 | Verbessern mit Fehler-Output |
 | RISK-B-004 | Keine Logging-Infrastruktur | 3 | 3 | 9 | 🟡 | Python logging + log-Rotation einführen |
 | RISK-B-005 | tanos.db ohne Backup-Strategie | 3 | 4 | 12 | 🔴 | Automatisches DB-Backup dokumentieren |
@@ -80,12 +82,12 @@ Erstellt von: Program Manager Agent
 | Rank | ID | Score | Beschreibung |
 |---|---|---|---|
 | 1 | RISK-S-001 | 20 | Keine Authentifizierung |
-| 2 | RISK-T-001 | 20 | Monolithischer main.py |
-| 3 | RISK-T-002 | 20 | Kein Migrations-Framework |
-| 4 | RISK-F-002 | 20 | Geschäftsregeln fehlerhaft |
-| 5 | RISK-Q-003 | 20 | Tests für Geschäftsregeln fehlen |
-| 6 | RISK-F-003 | 16 | Grenzwertanalyse fehlt |
-| 7 | RISK-B-001 | 16 | Keine CI/CD |
-| 8 | RISK-B-002 | 16 | Kein Installationspaket |
-| 9 | RISK-T-005 | 15 | Frontend-Technologie-Konflikt |
-| 10 | RISK-F-001 | 15 | Kombinatorik-Korrektheit |
+| 2 | RISK-S-016 | 20 | Default-Admin-Passwort (Risikoakzeptanz, gemildert) |
+| 3 | RISK-T-001 | 20 | Monolithischer main.py |
+| 4 | RISK-T-002 | 20 | Kein Migrations-Framework |
+| 5 | RISK-F-002 | 20 | Geschäftsregeln fehlerhaft |
+| 6 | RISK-Q-003 | 20 | Tests für Geschäftsregeln fehlen |
+| 7 | RISK-F-003 | 16 | Grenzwertanalyse fehlt |
+| 8 | RISK-B-001 | 16 | Keine CI/CD |
+| 9 | RISK-B-002 | 16 | Kein Installationspaket |
+| 10 | RISK-T-005 | 15 | Frontend-Technologie-Konflikt |

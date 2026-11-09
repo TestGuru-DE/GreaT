@@ -1,7 +1,8 @@
 // REQ-1207 + REQ-3053: Zustand Store fuer Kategorien und Werte mit Undo/Redo
+// REQ-5002: Kategorie-Typ (Standard/Ursache/Wirkung)
 import { create } from "zustand";
 import { categoriesApi, valuesApi } from "../api/client";
-import type { Category, Value } from "../types";
+import type { Category, Value, CategoryType } from "../types";
 
 interface CategorySnapshot {
   categories: Category[];
@@ -24,7 +25,7 @@ interface CategoryStore {
   resetHistory: () => void;
   // Original actions
   fetchCategories: (projectId: number) => Promise<void>;
-  createCategory: (projectId: number, name: string) => Promise<void>;
+  createCategory: (projectId: number, name: string, categoryType?: CategoryType, isResult?: boolean) => Promise<void>;
   deleteCategory: (categoryId: number) => Promise<void>;
   fetchValues: (categoryId: number) => Promise<void>;
   createValue: (categoryId: number, value: string, riskWeight?: number) => Promise<void>;
@@ -102,9 +103,9 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     }
   },
 
-  createCategory: async (projectId, name) => {
+  createCategory: async (projectId, name, categoryType = "standard", isResult = false) => {
     get().snapshot(); // Snapshot vor Änderung
-    const cat = await categoriesApi.create(projectId, { name });
+    const cat = await categoriesApi.create(projectId, { name, category_type: categoryType, is_result: isResult });
     set((s) => ({ categories: [...s.categories, cat] }));
   },
 

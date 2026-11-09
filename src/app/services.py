@@ -14,10 +14,58 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from . import models
+from .database import Base, engine
+from .seed_example import seed_example_project
+from .system_dataclasses import seed_system_dataclasses
 from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
 from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAMultiRangeResult
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
+
+
+def reset_database_state(db: Session) -> dict:
+    """Setzt die Fachdaten zurueck und stellt die Startkonfiguration wieder her.
+
+    REQ-1300: KEIN drop_all. Nutzer (users) und Refresh-Tokens bleiben erhalten,
+    alle anderen Tabellen werden in abhaengiger Reihenfolge geleert.
+    REQ-4026 CR-4026-01 / REQ-4027 AK-10/AK-12: Existiert kein Admin mehr, wird der
+    Standard-Admin (DEFAULT_ADMIN_PASSWORD, Flag default_password_active) angelegt.
+    Die Antwort enthaelt niemals ein Passwort.
+    """
+    from .bootstrap import DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD
+    from .models.auth import User
+
+    keep = {"users", "refresh_tokens"}
+    for table in reversed(Base.metadata.sorted_tables):
+        if table.name in keep:
+            continue
+        db.execute(table.delete())
+    db.commit()
+
+    seed_system_dataclasses(db)
+    seed_example_project(db)
+    db.commit()
+
+    admin_created = False
+    if db.query(User).filter(User.role == "admin").first() is None:
+        admin = User(
+            username=DEFAULT_ADMIN_USERNAME,
+            role="admin",
+            is_active=True,
+            is_first_admin=True,
+            default_password_active=True,
+        )
+        admin.set_password(DEFAULT_ADMIN_PASSWORD)
+        db.add(admin)
+        db.commit()
+        admin_created = True
+
+    return {
+        "status": "ok",
+        "reset": True,
+        "default_admin_created": admin_created,
+        "default_admin_username": DEFAULT_ADMIN_USERNAME if admin_created else None,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -247,28 +295,35 @@ def calculate_all_combinations_max_risk(
     return max(0.0, float(max_possible_risk))
 
 
-def generate_cases(categories: Dict[str, List[str]], strategy: str, db: Session = None, project_id: int = None, t_strength: int = 2) -> List[Dict[str, str]]:
-    """Ruft die gewünschte Kombinatorik-Strategie auf (ohne Geschäftsregeln!)."""
+def generate_cases(
+    categories: Dict[str, List[str]],
+    strategy: str,
+    db: Session = None,
+    project_id: int = None,
+    t_strength: int = 2,
+    rule_engine=None,
+) -> List[Dict[str, str]]:
+    """Ruft die gewuenschte Kombinatorik-Strategie auf."""
     if strategy == "all":
         return all_combinations.generate(categories)
     if strategy == "each":
-        return each_choice.generate(categories)
+        return each_choice.generate(categories, rule_engine=rule_engine)
     if strategy in ("pairwise", "orthogonal"):
-        return orthogonal.generate(categories)
+        return orthogonal.generate(categories, rule_engine=rule_engine)
     if strategy == "linear":
-        return linear_expansion.generate(categories)
+        return linear_expansion.generate(categories, rule_engine=rule_engine)
     if strategy == "t_wise":
-        # REQ-3039: T-Wise mit konfigurierbarer Stärke
-        return t_wise.generate(categories, t=t_strength)
+        # REQ-3039: T-Wise mit konfigurierbarer Staerke
+        return t_wise.generate(categories, t=t_strength, rule_engine=rule_engine)
     if strategy == "risk_based":
-        # Risikogewichtete Generierung benötigt Gewichte aus der DB
+        # Risikogewichtete Generierung benoetigt Gewichte aus der DB
         if db is not None and project_id is not None:
             weighted = load_categories_values_weighted(db, project_id)
             return risk_based_generate(weighted)
         # Fallback ohne Gewichte: wie each_choice
-        return each_choice.generate(categories)
+        return each_choice.generate(categories, rule_engine=rule_engine)
     if strategy == "mcdc":
-        return mcdc.generate(categories)
+        return mcdc.generate(categories, rule_engine=rule_engine)
     raise HTTPException(status_code=400, detail=f"Unbekannte Strategie: {strategy}")
 
 
@@ -378,6 +433,11 @@ def force_delete_project(db: Session, pid: int) -> None:
     if cids:
         db.query(models.Value).filter(models.Value.category_id.in_(cids)).delete(synchronize_session=False)
         db.query(models.Category).filter(models.Category.id.in_(cids)).delete(synchronize_session=False)
+    # Projektbezogene Tabellen ohne ON DELETE CASCADE vorher leeren (keine verwaisten Reste).
+    from .models.decision_table_constraint import DecisionTableConstraint
+    from .models.project_membership import ProjectMembership
+    db.query(DecisionTableConstraint).filter(DecisionTableConstraint.project_id == pid).delete(synchronize_session=False)
+    db.query(ProjectMembership).filter(ProjectMembership.project_id == pid).delete(synchronize_session=False)
     db.query(models.Project).filter(models.Project.id == pid).delete(synchronize_session=False)
 
 

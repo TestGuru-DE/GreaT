@@ -3,14 +3,28 @@
 @tailwind utilities;
 
 /* Theme-System – CSS Custom Properties */
+/* REQ-3045 (Sofort-Fix, Nutzerbeschwerde): "Normal"-Theme zeigt Hintergrund BLAU,
+   Schrift WEISS und Akzente ROT. Ersetzt die vorherige Hell-Palette (weisser
+   Hintergrund/dunkle Schrift/blauer Akzent) aus der Erstumsetzung sowie die
+   Sprint-11-Zwischenentscheidung "Normal (HSV)" (Akzent blau/weiss, Hintergrund
+   blieb weiss) - siehe decision-log.md fuer Historie. Ausserdem wurden zuvor
+   fehlende Tokens (surface-hover, text-muted, danger, success, warning) ergaenzt,
+   die es bei den anderen Themes bereits gab, bei "Normal" aber fehlten. */
 :root {
-  --color-bg: #ffffff;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
+  --color-bg: #1e3a8a;
+  --color-surface: #1e40af;
+  --color-surface-hover: #1d4ed8;
+  --color-border: #3b82f6;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #dbeafe;
+  --color-text-muted: #93c5fd;
+  --color-accent: #dc2626;
+  --color-accent-hover: #b91c1c;
+  --color-accent-text: #ffffff;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  color-scheme: dark;
 }
 
 /* Dark Theme */

@@ -18,8 +18,21 @@ cd /d %~dp0
 
 echo [1/2] Baue Frontend fuer Port 8000...
 pushd frontend
+if errorlevel 1 (
+  echo.
+  echo FEHLER: Verzeichnis "frontend" nicht gefunden.
+  pause
+  exit /b 1
+)
 call npm run build
-if errorlevel 1 exit /b 1
+if errorlevel 1 (
+  echo.
+  echo FEHLER: Frontend-Build fehlgeschlagen. Bitte die Meldung oben pruefen.
+  echo        Falls "npm" nicht erkannt wird: Node.js installieren und Start.bat neu starten.
+  popd
+  pause
+  exit /b 1
+)
 popd
 
 echo [2/2] Starte FastAPI Backend...

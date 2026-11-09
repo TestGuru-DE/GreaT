@@ -7,6 +7,7 @@ REQ-4006: Multi-User Support
 """
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.pool import QueuePool
 from .config import DATABASE_URL
 
 
@@ -35,8 +36,10 @@ def _create_engine():
         # PostgreSQL oder andere Datenbanken
         return create_engine(
             DATABASE_URL,
+            poolclass=QueuePool,
             pool_size=10,
             max_overflow=20,
+            pool_pre_ping=True,
             echo=False,
         )
 

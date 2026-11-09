@@ -7,6 +7,13 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 ### ✨ Neue Features
 - **REQ-3034**: Generierte Testfälle werden absteigend nach kumuliertem Risiko-Score sortiert (Summe der `risk_weight` aller zugewiesenen Werte je Testfall). Testfälle mit Fehlerwerten behalten weiterhin Vorrang (REQ-3018/BUG-5) und werden unabhängig von ihrem Risiko-Score ans Ende der Liste sortiert.
 - **REQ-4018**: Neue Einstellung "Maximale Anzahl Testfälle" (Default 1000) begrenzt die Anzahl generierter Testfälle pro Kombination, wenn kein expliziter `limit`-Wert im Request angegeben ist. Konfigurierbar über die Umgebungsvariable `GREAT_MAX_TESTCASES` (Backend) sowie über eine neue Karte auf der Einstellungen-Seite (Frontend, lokal gespeichert, ohne Server-Neustart wirksam).
+- **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts. Risikoakzeptanz durch Projektinhaber (RISK-S-016, Score 20, gemildert durch REQ-4028).
+- **REQ-4028**: Pflicht-Passwortwechsel nach Erstanmeldung fuer Default-Admin. Selbst-Passwortwechsel fuer alle Benutzerrollen (Admin/Editor/Viewer).
+
+### Fixed
+- **Bugfix B1 – Testfalltabelle nach "Neu generieren" bzw. "Vorherige Generierung laden" nicht sichtbar:** Der API-Client (`frontend/src/api/client.ts`) sendet die Anmelde-Cookies jetzt mit (`withCredentials: true`). Seit der Umstellung auf JWT in httpOnly-Cookies (REQ-4001) wurden Generierungs-Anfragen ohne Cookies mit 401/403 abgewiesen, dadurch blieb die Tabelle leer. Bezug: REQ-4001, REQ-2001.
+- **Bugfix B2 – Schwarzer Bildschirm mit "Minified React error #300"** bei "Neu generieren" (alle Strategien) und bei "Vorherige Generierung laden": In `frontend/src/components/TestCasePanel.tsx` wurde ein Zustands-Hook bedingt im JSX aufgerufen und verletzte damit die React-Hook-Regeln. Der Wert wird jetzt einmal am Anfang der Komponente gelesen. Regressionstests: Block "BUGFIX React #300 (Rules of Hooks)" in `frontend/src/components/__tests__/TestCasePanel.test.tsx`. Bezug: REQ-3052, REQ-5006.
+- **Bugfix B3 – Ein Anzeigefehler beendet die gesamte Anwendung:** Neue Fehlergrenze `frontend/src/components/ErrorBoundary.tsx`, eingebunden in `frontend/src/App.tsx`. Bei Render-Fehlern erscheint jetzt eine Fehlermeldung mit Schaltflaeche zum Neuladen statt eines schwarzen Bildschirms. Bugfix-Scope ohne eigene REQ-ID.
 
 ## [1.5.1] - 2026-09-01
 

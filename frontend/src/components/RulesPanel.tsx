@@ -151,7 +151,7 @@ export default function RulesPanel({ projectId }: Props) {
             <select
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
             >
               {Object.entries(TYPE_LABELS).map(([val, label]) => (
                 <option key={val} value={val}>{label}</option>
@@ -166,7 +166,7 @@ export default function RulesPanel({ projectId }: Props) {
               <select
                 value={form.if_cat}
                 onChange={(e) => setForm((f) => ({ ...f, if_cat: Number(e.target.value) }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
               >
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -176,7 +176,7 @@ export default function RulesPanel({ projectId }: Props) {
               <select
                 value={form.if_val}
                 onChange={(e) => setForm((f) => ({ ...f, if_val: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
               >
                 {ifVals.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
@@ -192,7 +192,7 @@ export default function RulesPanel({ projectId }: Props) {
               <select
                 value={form.then_cat}
                 onChange={(e) => setForm((f) => ({ ...f, then_cat: Number(e.target.value) }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
               >
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -222,7 +222,7 @@ export default function RulesPanel({ projectId }: Props) {
                 <select
                   value={form.then_val}
                   onChange={(e) => setForm((f) => ({ ...f, then_val: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white"
+                  className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
                 >
                   {thenVals.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -252,30 +252,30 @@ export default function RulesPanel({ projectId }: Props) {
               const hasConflict = (rule.conflict_with?.length ?? 0) > 0;
               return (
                 <li key={rule.id}
-                  className={`flex items-start gap-3 px-3 py-2.5 border rounded-xl text-sm ${
+                  className={`flex items-start gap-3 px-3 py-2.5 border rounded-xl text-sm text-black ${
                     hasConflict
                       ? "bg-amber-50 border-amber-300"
                       : "bg-white border-slate-200 hover:bg-slate-50"
                   }`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Wenn</span>
+                      <span className="text-xs font-semibold text-black uppercase tracking-wide">Wenn</span>
                       <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.if_category_id)}
                       </span>
-                      <span className="text-slate-400">=</span>
+                      <span className="text-black">=</span>
                       <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-xs font-mono truncate max-w-24">
                         {rule.if_value}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-black uppercase tracking-wide">
                         {rule.type === "exclude" ? "Nicht mit" : "Dann"}
                       </span>
                       <span className="px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700 rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.then_category_id)}
                       </span>
-                      <span className="text-slate-400">=</span>
+                      <span className="text-black">=</span>
                       {rule.then_values_json ? (
                         <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-xs font-mono">
                           {JSON.parse(rule.then_values_json).join(", ")}

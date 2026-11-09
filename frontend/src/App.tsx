@@ -7,6 +7,9 @@ import ProjectDetailPage from "./pages/ProjectDetailPage";
 import DataClassesPage from "./pages/DataClassesPage";
 import GenerationsPage from "./pages/GenerationsPage";
 import SettingsPage from "./pages/SettingsPage";
+import LoginPage from "./pages/LoginPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 import TopNav from "./components/TopNav";
 import { ToastContainer } from "./components/Toast";
 import { setupSystemThemeSync } from "./lib/theme";
@@ -27,13 +30,19 @@ export default function App() {
       <TopNav />
       <div className="flex-1">
         <Routes>
-          <Route path="/" element={<ProjectsPage />} />
-          <Route path="/app" element={<ProjectsPage />} />
-          <Route path="/app/*" element={<ProjectsPage />} />
-          <Route path="/projects/:id" element={<ProjectDetailPage />} />
-          <Route path="/dataclasses" element={<DataClassesPage />} />
-          <Route path="/generations" element={<GenerationsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          {/* REQ-4001 / REQ-4028: Login ist oeffentlich, alles andere nur mit Anmeldung */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route element={<ProtectedRoute />}>
+            {/* REQ-4028 AK-1: Pflicht-Passwortwechsel (Ziel der Route-Sperre) */}
+            <Route path="/account/password" element={<ChangePasswordPage />} />
+            <Route path="/" element={<ProjectsPage />} />
+            <Route path="/app" element={<ProjectsPage />} />
+            <Route path="/app/*" element={<ProjectsPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/dataclasses" element={<DataClassesPage />} />
+            <Route path="/generations" element={<GenerationsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+          </Route>
         </Routes>
       </div>
       <ToastContainer />

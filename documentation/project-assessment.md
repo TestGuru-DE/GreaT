@@ -2,7 +2,7 @@
 Version: 1.1
 Phase: 3 – Sprint 9 Abgeschlossen
 Erstellt: 2026-06-10
-Aktualisiert: 2026-09-01
+Aktualisiert: 2026-09-04
 Erstellt von: Program Manager Agent
 Aktualisiert von: GitHub Copilot CLI
 
@@ -15,11 +15,11 @@ Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Ä
 Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
 Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeScript-Frontend in Entwicklung.
 
-**Aktueller Status: v1.5.1 (2026-09-01) – Sprint 9 ABGESCHLOSSEN / Release vorbereitet.**
+**Aktueller Status: v1.5.2 (2026-09-04) – Sprint 9 ABGESCHLOSSEN / Release vorbereitet.**
 
 ### Letztes Release
-- **Version:** v1.5.1
-- **Datum:** 2026-09-01
+- **Version:** v1.5.2
+- **Datum:** 2026-09-04
 - **Neue Features:** BVA-Komma-Bugfix, Sprintabschluss und Release-Vorbereitung
 - **Backend-Tests:** 28 gezielte BVA-/API-Regressionstests (Plus Frontend-BVA-GUI-Suite)
 - **PRs gemergt:** Sprintabschluss-Commit im aktuellen Branch
@@ -33,6 +33,48 @@ Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeSc
 
 ### Sprint-10 Zwischenstand (Nacharbeit Aufgabe 5 – Max. Testfälle-Setting)
 - **REQ-4018** (Max. Testfälle pro Kombination, Default 1000): Backend-Setting (`GREAT_MAX_TESTCASES`, Fallback robust) und Settings-Karte im Frontend implementiert, Generierung respektiert die Obergrenze ohne expliziten `limit`. Backend- und Frontend-Tests grün. REQ neu in `requirements_v1.1.md` angelegt und auf **DONE / TESTED** gesetzt (Nachtrag 2026-09-01).
+
+### Bugfix-Nachtrag 2026-11-03 (Frontend: Testfalltabelle)
+
+Heute behobene Bugs im dokumentierten Bugfix-Scope. Es gibt keine neuen Features, keine neue REQ-ID und keine Aenderung am Requirement-Status; die Statuspflege liegt beim Requirements Engineer. Der Nutzer hat die Korrekturen im Browser bestaetigt.
+
+| ID | Symptom | Ursache | Fix | Bezug (laut Auftrag) |
+|---|---|---|---|---|
+| B1 | Testfalltabelle nach "Neu generieren" / "Vorherige Generierung laden" nicht sichtbar, auch bei aelteren Generierungen | Axios-Client sendete keine Auth-Cookies (`withCredentials` fehlte). Seit REQ-4001 (JWT in httpOnly-Cookies) lieferten die Generierungs-Endpunkte 401/403 | `withCredentials: true` in `frontend/src/api/client.ts` | REQ-4001, REQ-2001 |
+| B2 | Schwarzer Bildschirm, "Minified React error #300" bei "Neu generieren" (alle 7 Strategien) und "Vorherige Generierung laden" | In `frontend/src/components/TestCasePanel.tsx` wurde `useDecisionTableStore` bedingt im JSX aufgerufen (Verstoss gegen die React-Hook-Regeln); die Anzahl der Hooks wechselte zwischen den Renders | Hook einmal oben in der Komponente: `const decisionTableMode = useDecisionTableStore((s) => s.mode);` | REQ-3052, REQ-5006 |
+| B3 | Ein Render-Fehler beendet die gesamte App mit schwarzem Bildschirm | Keine Fehlergrenze (Error Boundary) vorhanden | Neue Komponente `frontend/src/components/ErrorBoundary.tsx`, eingebunden in `frontend/src/App.tsx`; zeigt Fehlermeldung mit Reload-Button | kein eigenes REQ (Stabilitaets-Bugfix) |
+
+**Hinweis zur REQ-Zuordnung:** Die Zuordnung der REQ-IDs stammt aus dem Bugfix-Auftrag und ist nicht abschliessend geprueft. REQ-1208 ist in `requirements_v1.1.md` nicht als eigene ID zu finden (das Assessment nennt nur den Bereich REQ-1206-1208); bitte im Requirements Engineer klaeren.
+
+**Testlage (Stand 2026-11-03, uebernommen aus dem Bugfix-Bericht):**
+- Frontend-Gesamtlauf: 414 bestanden, 1 fehlgeschlagen (vorbestehend, siehe Offene Punkte), 2 uebersprungen.
+- `tsc --noEmit`: ohne Fehler.
+- B2: Block "BUGFIX React #300 (Rules of Hooks)" in `TestCasePanel.test.tsx` (Strategiewechsel, Ladezustand, Generieren fuer alle 7 Strategien, "Vorherige Generierung laden", Entscheidungstabellen-Modus). Vor dem Fix rot nachgewiesen, danach 29/29 gruen.
+- B1 und B3: Fuer diese beiden Bugs liegt kein dokumentierter automatisierter Regressionstest vor. Nachweis ist bisher die Browser-Bestaetigung durch den Nutzer.
+- Backend-Tests: fuer diesen Nachtrag nicht gemeldet, daher hier nicht bewertet.
+
+**Verworfene Hypothese (Lessons Learned, keine Aenderung im Changelog):** Zwischenzeitlich wurde in `frontend/vite.config.ts` ein `Origin`-Header-Override fuer die Proxy-Pfade (/api, /ui, /docs, /auth) eingefuehrt, weil ein CORS-Problem vermutet wurde. Die Vermutung war falsch: Der Vite-Proxy leitet Anfragen same-origin weiter, CORS greift dabei nicht. Der Override wurde wieder entfernt. Das verbleibende `changeOrigin: true` ist die uebliche Proxy-Standardoption und kein Teil dieses Overrides. Lehre: Hypothesen vor einer Code-Aenderung im Netzwerkprotokoll des Browsers pruefen.
+
+**Offene Punkte:**
+1. Vorbestehender Testfehler `frontend/src/components/__tests__/UserManagement.test.tsx`: Der Test erwartet das Feld `password`, der Code sendet `new_password`. Der Vertrag zwischen Frontend und Backend ist offen. Nicht Teil dieses Nachtrags.
+2. ESLint ist nicht konfiguriert, daher wird die Regel `react-hooks/rules-of-hooks` nicht automatisch geprueft. Empfehlung: Plugin `eslint-plugin-react-hooks` (MIT) einfuehren. Risiko siehe `RISK-Q-006` in `documentation/risk-log.md`.
+3. `TestCasePanel` abonniert den gesamten Generate-Store ohne Selector. Das kann unnoetige Renderkosten verursachen. Nicht geaendert.
+4. Die Kombinatorik-Algorithmen wurden durch diese Bugfixes nicht neu verifiziert. Die Frontend-Tests pruefen nur Anzeige- und Hook-Verhalten.
+5. Fuer B1 und B3 fehlt ein dokumentierter automatisierter Test (siehe Testlage).
+6. REQ-1208 ist im Requirements-Dokument nicht als eigene ID vorhanden (siehe Hinweis oben).
+
+### Feature-Nachtrag 2026-11-03 (Erststart-Hinweis + Pflicht-Passwortwechsel)
+
+| ID | Titel | REQ | Status |
+|---|---|---|---|
+| Erststart-Hinweis | Login-Seite zeigt Standardpasswort fuer Default-Admin bei Erstanmeldung | REQ-4027 | Backend implementiert, Frontend in Arbeit |
+| Pflicht-Passwortwechsel | Admin muss Passwort nach Erstanmeldung aendern; Selbst-Passwortwechsel fuer alle Rollen | REQ-4028 | Backend implementiert, Frontend in Arbeit |
+
+**Risikoakzeptanz:** RISK-S-016 (Default-Admin-Passwort, Score 20) durch Projektinhaber Georg Hartel am 2026-11-03 akzeptiert. Der Security Architect hatte den Klartext-Hinweis abgelehnt; das Risiko bleibt (Score 20), wird aber durch Pflicht-Passwortwechsel, Ablehnung bekannter Default-Passwoerter und Rate-Limit gemildert. Siehe `documentation/risk-log.md`.
+
+**Testlage (Backend):** 63 neue Tests, 794/796 im Gesamtlauf (2 vorbestehend fehlgeschlagen). Frontend-Tests: TBD (Frontend parallel in Arbeit).
+
+**Keine Aenderung der Roadmap oder Phase-Planung.**
 
 ### Gesamtbewertung
 

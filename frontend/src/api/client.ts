@@ -28,6 +28,9 @@ export const projectsApi = {
     api.post<Project>("/projects", data).then((r) => r.data),
   delete: (id: number) =>
     api.delete<{ok: boolean}>("/projects/" + id).then((r) => r.data),
+  // REQ-4021: Umbenennen mit Versionspruefung (version weglassen = ohne Pruefung)
+  update: (id: number, data: { name: string; version?: number }) =>
+    api.put<Project>("/projects/" + id, data).then((r) => r.data),
   forceDelete: (id: number) =>
     api.delete<{ok: boolean}>("/projects/" + id + "/force").then((r) => r.data),
   bulkDelete: (ids: number[]) =>
@@ -108,6 +111,9 @@ export const renameApi = {
 export const categoryPropertiesApi = {
   updateIsResult: (categoryId: number, is_result: boolean) =>
     api.patch<Category>("/categories/" + categoryId + "/properties", { is_result }).then((r) => r.data),
+  // REQ-5002: Kategorie-Typ standard | cause | effect
+  updateCategoryType: (categoryId: number, category_type: "standard" | "cause" | "effect") =>
+    api.patch<Category>("/categories/" + categoryId + "/properties", { category_type }).then((r) => r.data),
 };
 
 export const reorderApi = {

@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..config import get_max_testcases  # REQ-4018: konfigurierbare Obergrenze
 from ..services import (
@@ -28,10 +29,28 @@ from ..services import (
 from combinatorics.risk_based import sort_by_risk_descending
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
-router = APIRouter(tags=["API"])
+router = APIRouter(tags=["API"], dependencies=[Depends(require_api_capable)])
 
 
-@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse)
+
+def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
+    """REQ-3005/REQ-3040: Regel-Engine aus den Projektregeln aufbauen."""
+    db_rules = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
+    cat_name_by_id = {c.id: c.name for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+    engine_rules = []
+    for r in db_rules:
+        ic = cat_name_by_id.get(r.if_category_id, "")
+        tc_name = cat_name_by_id.get(r.then_category_id, "")
+        if r.type == "exclude":
+            engine_rules.append(ForbiddenRule(ic, r.if_value, tc_name, r.then_value))
+        elif r.type == "dependency":
+            engine_rules.append(DependencyRule(ic, r.if_value, tc_name, r.then_value))
+        elif r.type == "combine":
+            allowed = json.loads(r.then_values_json or "[]")
+            engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
+    return RuleEngine(engine_rules)
+
+@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer)])
 def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
     if payload.limit is not None and payload.limit <= 0:
         raise HTTPException(status_code=400, detail="limit must be positive")
@@ -40,24 +59,13 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     if not catmap or any(len(v) == 0 for v in catmap.values()):
         raise HTTPException(status_code=400, detail="Project must have categories and values.")
 
-    cases = generate_cases(catmap, payload.strategy, db=db, project_id=pid, t_strength=payload.t_strength)
-
-    # REQ-3005: Regeln anwenden wenn gewünscht
+    # REQ-3005/REQ-3040: Regeln VOR der Generierung an die Strategien uebergeben
+    rule_engine = None
     if payload.apply_rules:
-        db_rules = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
-        cat_name_by_id = {c.id: c.name for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
-        engine_rules = []
-        for r in db_rules:
-            ic = cat_name_by_id.get(r.if_category_id, "")
-            tc_name = cat_name_by_id.get(r.then_category_id, "")
-            if r.type == "exclude":
-                engine_rules.append(ForbiddenRule(ic, r.if_value, tc_name, r.then_value))
-            elif r.type == "dependency":
-                engine_rules.append(DependencyRule(ic, r.if_value, tc_name, r.then_value))
-            elif r.type == "combine":
-                allowed = json.loads(r.then_values_json or "[]")
-                engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
-        cases = RuleEngine(engine_rules).apply(cases)
+        rule_engine = _build_rule_engine(db, pid)
+    cases = generate_cases(catmap, payload.strategy, db=db, project_id=pid, t_strength=payload.t_strength, rule_engine=rule_engine)
+    if rule_engine is not None:
+        cases = rule_engine.apply(cases)
 
     # REQ-3034: Zuerst nach Risiko absteigend sortieren (von Generierung getrennt)
     category_risk_map = load_categories_values_weighted(db, pid)
@@ -216,7 +224,7 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
     }
 
 
-@router.patch("/testcases/{tcid}/assignments", response_model=schemas.TestCaseAssignmentUpdateResponse)
+@router.patch("/testcases/{tcid}/assignments", response_model=schemas.TestCaseAssignmentUpdateResponse, dependencies=[Depends(require_writer)])
 def update_testcase_assignment(
     tcid: int,
     payload: schemas.TestCaseAssignmentUpdate,

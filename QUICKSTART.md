@@ -1,25 +1,47 @@
 ﻿# G.R.E.A.T. â€“ Schnellstart
 
-> Voraussetzung: Installation abgeschlossen (siehe **INSTALLATION.md**)
+> **Zwei Startoptionen:** Portable EXE (Endnutzer) oder Entwickler-Modus
 
 ---
 
-## System starten
+## Option 1: Portable EXE (Endnutzer)
+
+> **Keine Entwickler-Tools erforderlich!**
+
+### Starten
+
+1. **Doppelklick auf `GREAT.exe`**
+2. Der Browser oeffnet sich automatisch auf `http://localhost:8000`
+3. Falls der Browser nicht oeffnet: Manuel zu `http://localhost:8000` navigieren
+
+### Stoppen
+
+- **Task-Manager** (STRG + SHIFT + ESC)
+- Prozess **GREAT.exe** auswÃ¤hlen
+- **Aufgabe beenden** klicken
+
+### Daten
+
+- Datenbank: `%USERPROFILE%\.great\great.db` (automatisch angelegt)
+- Die Datenbank bleibt erhalten, auch nach dem Beenden
+- Zum Loeschen: `%USERPROFILE%\.great\great.db` loeschen â€“ wird beim naechsten Start neu angelegt
+
+---
+
+## Option 2: Entwickler-Modus
+
+> Voraussetzung: Installation abgeschlossen (siehe **INSTALLATION.md**)
 
 ### Einfachste Methode: Doppelklick auf Start.bat
 
 Doppelklick auf die Datei **`Start.bat`** im Projektordner.
 
-Es oeffnen sich 2 Terminalfenster:
+Es oeffnet sich ein Terminalfenster:
 - **GREAT Backend** â€“ FastAPI auf Port 8000
-- **GREAT Frontend** â€“ Vite Dev-Server auf Port 5173
 
-Hinweis: Port 8000 ist der Standard. Port 5173 ist nur fuer die lokale Dev-Option gedacht. Den bevorzugten lokalen Port kannst du in **Einstellungen** setzen (wirksam nach Neustart).
+Dann Browser oeffnen: **http://localhost:8000**
 
-
-Hinweis: `Start.bat` baut vor dem Backend-Start das Frontend neu, damit Port `8000` denselben UI-Stand wie `5173` zeigt.
-
-Dann Browser oeffnen: **http://localhost:5173**
+> `Start.bat` baut vor dem Backend-Start das Frontend neu, damit Port `8000` denselben UI-Stand wie `5173` zeigt.
 
 ---
 
@@ -104,7 +126,11 @@ Browser: **http://localhost:8000**
 
 ## System stoppen
 
-Beide Terminalfenster schliessen oder jeweils **STRG + C** druecken.
+| Modus | Stoppen |
+|---|---|
+| **Portable EXE** | Task-Manager â†’ GREAT.exe beenden |
+| **Start.bat** | Terminalfenster schliessen oder STRG + C |
+| **Manuell** | Beide Terminals: STRG + C |
 
 ---
 
@@ -118,3 +144,5 @@ Beide Terminalfenster schliessen oder jeweils **STRG + C** druecken.
 | Seite leer / weisser Bildschirm | `cd frontend && npm run build` erneut ausfuehren |
 | `ModuleNotFoundError` | `pip install -r requirements.txt` erneut ausfuehren |
 | Datenbankfehler | `great.db` loeschen â€“ wird beim Neustart automatisch neu angelegt |
+| GREAT.exe startet nicht | Windows Defender/Firewall kann blockieren â€“ Ausnahme hinzufuegen |
+| Browser oeffnet sich nicht | Manuel zu `http://localhost:8000` navigieren |

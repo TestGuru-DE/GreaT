@@ -1,6 +1,8 @@
-// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
-import { useEffect, useState } from "react";
+﻿// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
+import { useEffect, useRef, useState } from "react";
+import { rulesApi } from "../api/client";
 import { useGenerateStore } from "../store/generateStore";
+import { useDecisionTableStore } from "../store/decisionTableStore";
 import { useSortableTable } from "../hooks/useSortableTable";
 import type { Strategy } from "../types";
 
@@ -27,13 +29,39 @@ export default function TestCasePanel({ projectId }: Props) {
 
   const [editingName, setEditingName] = useState<string | null>(null);
   const [applyRules, setApplyRules] = useState(false); // REQ-3005
+  const applyRulesTouched = useRef(false);
   const [savingName, setSavingName] = useState(false);
   const [tStrength, setTStrength] = useState(2); // BUG-3: T-Wise Stärke
   const [draftAssignments, setDraftAssignments] = useState<Record<string, string>>({});
+  // REQ-3041/REQ-5010: Entscheidungstabellen-Modus sperrt die Generierung in dieser Ansicht
+  const dtMode = useDecisionTableStore((s) => s.mode);
 
   useEffect(() => {
     fetchGenerations(projectId);
   }, [projectId, fetchGenerations]);
+
+
+  useEffect(() => {
+    let cancelled = false;
+    applyRulesTouched.current = false;
+    setApplyRules(false);
+
+    void rulesApi.list(projectId)
+      .then((rules) => {
+        if (!cancelled && !applyRulesTouched.current) {
+          setApplyRules(rules.length > 0);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && !applyRulesTouched.current) {
+          setApplyRules(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   useEffect(() => {
     setDraftAssignments({});
@@ -123,9 +151,14 @@ export default function TestCasePanel({ projectId }: Props) {
     <div className="flex flex-col h-full gap-3">
       {/* Steuerung – Neu generieren */}
       <div className="flex gap-3 items-end flex-wrap border-b border-slate-100 pb-3">
+        {dtMode && (
+          <p className="w-full text-xs text-amber-700">
+            Entscheidungstabelle-Modus aktiv: Die Generierung wird in der Entscheidungstabelle gesteuert.
+          </p>
+        )}
         <div>
           <label className="block text-xs text-slate-500 mb-1 font-medium">Strategie</label>
-          <select value={strategy} onChange={(e) => setStrategy(e.target.value as Strategy)}
+          <select value={strategy} onChange={(e) => setStrategy(e.target.value as Strategy)} disabled={dtMode}
             className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
             {STRATEGIES.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -137,7 +170,10 @@ export default function TestCasePanel({ projectId }: Props) {
           <input
             type="checkbox"
             checked={applyRules}
-            onChange={(e) => setApplyRules(e.target.checked)}
+            onChange={(e) => {
+              applyRulesTouched.current = true;
+              setApplyRules(e.target.checked);
+            }}
             className="rounded border-slate-300 text-sky-600 focus:ring-sky-400"
           />
           Mit Regeln generieren
@@ -156,7 +192,7 @@ export default function TestCasePanel({ projectId }: Props) {
             />
           </div>
         )}
-        <button onClick={() => generate(projectId, applyRules, strategy === "t_wise" ? tStrength : undefined)} disabled={loading}
+        <button onClick={() => generate(projectId, applyRules, strategy === "t_wise" ? tStrength : undefined)} disabled={loading || dtMode}
           className="px-4 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
           {loading ? "Generiere..." : "Neu generieren"}
         </button>

@@ -82,9 +82,9 @@ export default function GenerationsPanel({ projectId }: Props) {
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button onClick={() => startEdit(g)} title="Umbenennen" className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">✏️</button>
-            <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">JSON</button>
-            <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">Excel</button>
-            <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">CSV</button>
+            <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">JSON</button>
+            <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">Excel</button>
+            <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">CSV</button>
             <button onClick={() => handleDelete(g.id)} title="Löschen" className="text-xs px-2 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50">🗑️</button>
           </div>
         </div>

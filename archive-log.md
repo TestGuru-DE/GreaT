@@ -152,7 +152,57 @@ anwenden...“ öffnet bereits seit REQ-4018 ausschließlich den DataNode-Baum-D
 `documentation/project-assessment.md` Sprint-10-Abschnitt (Aufgabe 7).
 
 **Regressionsschutz:** `frontend/src/components/__tests__/CategoryTree.test.tsx` – neue Testgruppe
-„CategoryTree - Legacy-DataClassDialog entfernt“ mit (a) Guard-Test gegen Wiedereinführung des
+„CategoryTree - Legacy-DataClassDialog entfernt" mit (a) Guard-Test gegen Wiedereinführung des
 Legacy-Imports und (b) Verhaltenstest, dass der Kontextmenü-Pfad weiterhin den DataNode-Dialog öffnet.
 
+## 2026-10-05 – OpenCode/OpenChamber Agent-Konfiguration korrigiert
+
+**Grund**: Die alten `.opencode/agents/*.agent.md`-Dateien nutzten ein veraltetes Format
+(VS Code / GitHub Copilot Frontmatter mit ungueltigen Keys wie `name:`, `agents:`,
+`argument-hint:`, `user-invocable:` und einer Liste-basierten `tools:`). OpenCode/OpenChamber
+erwartet ein anderes Frontmatter-Format mit `description:`, `mode:`, `permission:` und
+einem Markdown-Body als System-Prompt.
+
+**Massnahme**: 14 neue korrekte Agent-Dateien in `.opencode/agents/*.md` erstellt.
+Alte Dateien nach `archive/2026-10-05/opencode-agents-legacy/` verschoben.
+Zusaetzlich `opencode.json` angelegt mit `default_agent: "great-orchestrator"`.
+
+| Datei | Original-Pfad | Grund |
+|---|---|---|
+| great-orchestrator.agent.md | .opencode/agents/great-orchestrator.agent.md | Veraltetes Frontmatter (doppelte YAML-Delimiter, ungueltige Keys) |
+| great-senior-developer.agent.md | .opencode/agents/great-senior-developer.agent.md | Gleiche Probleme |
+| great-qa-director.agent.md | .opencode/agents/great-qa-director.agent.md | Gleiche Probleme |
+| great-program-manager.agent.md | .opencode/agents/great-program-manager.agent.md | Gleiche Probleme |
+| great-architect.agent.md | .opencode/agents/great-architect.agent.md | Gleiche Probleme |
+| great-requirements-engineer.agent.md | .opencode/agents/great-requirements-engineer.agent.md | Gleiche Probleme |
+| great-combinatorics-expert.agent.md | .opencode/agents/great-combinatorics-expert.agent.md | Gleiche Probleme |
+| great-ux-lead.agent.md | .opencode/agents/great-ux-lead.agent.md | Gleiche Probleme |
+| great-security-architect.agent.md | .opencode/agents/great-security-architect.agent.md | Gleiche Probleme |
+| great-devops-engineer.agent.md | .opencode/agents/great-devops-engineer.agent.md | Gleiche Probleme |
+| great-legacy-auditor.agent.md | .opencode/agents/great-legacy-auditor.agent.md | Gleiche Probleme |
+| great-technical-writer.agent.md | .opencode/agents/great-technical-writer.agent.md | Gleiche Probleme |
+| great-web-research.agent.md | .opencode/agents/great-web-research.agent.md | Gleiche Probleme |
+| great-senior-prompt-engineer.agent.md | .opencode/agents/great-senior-prompt-engineer.agent.md | Gleiche Probleme |
+
+**Neue korrekte Dateien:** `.opencode/agents/great-*.md` (14 Dateien, korrigiertes Frontmatter)
+**Neue Konfiguration:** `opencode.json` (default_agent: great-orchestrator)
+
+**Korrekturen pro Datei:**
+- `name:` entfernt (Dateiname wird zum Agent-Namen)
+- `mode:` gesetzt (`primary` fuer Orchestrator, `subagent` fuer alle anderen)
+- `permission:` mit granularer Berechtigungssteuerung (read, edit, bash mit Glob-Patterns, task, skill, webfetch, websearch, glob, grep)
+- `tools:` (Liste) durch `permission:` (Object) ersetzt
+- `agents:`, `argument-hint:`, `user-invocable:` aus Frontmatter entfernt (in Body als System-Prompt-Info integriert)
+- Doppelte YAML-Delimiter (`---`) entfernt
+- Skills-Pfade von `.github/skills/` auf `.opencode/skills/` aktualisiert
+- Instructions-Pfade auf `.github/instructions/` (korrekte Source of Truth)
+
+
+
+
+## 2026-11-08 - Veraltete models.py
+
+| Datum | Quelle | Ziel | Begruendung | Agent |
+|---|---|---|---|---|
+| 2026-11-08 | src/app/models.py | archive/2026-11-08/models.py | Vom Paket src/app/models/ ueberdeckt (Python laedt das Paket). Veralteter Stand ohne is_result, category_type, DataNode, Versionsfelder. Entscheidung des Nutzers. | GREAT Senior Developer |
 

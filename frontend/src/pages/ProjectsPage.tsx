@@ -121,7 +121,10 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    // REQ-3045 (Sofort-Fix): Theme-Tokens statt hartkodiertem bg-slate-50/dark:-Klassen.
+    // Das Theme-System setzt "theme-dark" (nicht "dark") auf <html>, daher griffen die
+    // Tailwind "dark:"-Varianten hier nie - Startseite blieb immer hell/weiss/schwarz.
+    <div className="min-h-screen bg-theme-bg">
       {/* Generierungs-Dialog */}
       {dialogData && (
         <DeleteProjectDialog
@@ -136,37 +139,37 @@ export default function ProjectsPage() {
         />
       )}
 
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">G.R.E.A.T. &ndash; Testfall Designer</h1>
-        <a href="/app/dataclasses" className="text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1">
+      <header className="bg-theme-surface border-b border-theme-border px-6 py-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-theme-text">G.R.E.A.T. &ndash; Testfall Designer</h1>
+        <a href="/app/dataclasses" className="text-sm text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg px-3 py-1">
           Datenklassen
         </a>
-        <a href="/docs" target="_blank" className="text-sm text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1">
+        <a href="/docs" target="_blank" className="text-sm text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg px-3 py-1">
           API-Docs
         </a>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4 dark:text-slate-100">Projekte</h2>
+        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-4 text-theme-text">Projekte</h2>
           <form onSubmit={handleCreate} className="flex gap-3 mb-6">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Neues Projekt..."
-              className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="flex-1 px-3 py-2 rounded-lg border border-theme-border bg-theme-bg text-theme-text text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent"
             />
             <button type="submit" disabled={creating || !newName.trim()}
-              className="px-4 py-2 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50">
+              className="px-4 py-2 bg-theme-accent text-theme-accent-text text-sm rounded-lg hover:bg-theme-accent-hover disabled:opacity-50">
               {creating ? "..." : "Anlegen"}
             </button>
           </form>
 
           {error && (
-            <div className="mb-4 px-4 py-2 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm">{error}</div>
+            <div className="mb-4 px-4 py-2 bg-theme-surface border-2 border-theme-danger rounded-lg text-theme-danger text-sm">{error}</div>
           )}
           {msg && (
-            <div className={`mb-4 px-4 py-2 rounded-lg text-sm border ${msg.ok ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700 text-green-700 dark:text-green-300" : "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300"}`}>
+            <div className={`mb-4 px-4 py-2 rounded-lg text-sm border-2 bg-theme-surface ${msg.ok ? "border-theme-success text-theme-success" : "border-theme-warning text-theme-warning"}`}>
               {msg.text}
             </div>
           )}
@@ -174,12 +177,12 @@ export default function ProjectsPage() {
           {/* Auswahl-Toolbar */}
           {projects.length > 0 && (
             <div className="mb-2 flex gap-2 items-center px-1">
-              <button onClick={toggleAll} className="text-xs px-2 py-1 border border-slate-300 rounded hover:bg-slate-50">
+              <button onClick={toggleAll} className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover">
                 {selected.size === projects.length ? "Keinen markieren" : "Alle markieren"}
               </button>
               <button
                 onClick={() => setSelected(new Set(projects.filter((p) => !selected.has(p.id)).map((p) => p.id)))}
-                className="text-xs px-2 py-1 border border-slate-300 rounded hover:bg-slate-50"
+                className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover"
               >
                 Markierung umkehren
               </button>
@@ -188,51 +191,51 @@ export default function ProjectsPage() {
 
           {/* Bulk-Aktions-Toolbar */}
           {selected.size > 0 && (
-            <div className="mb-3 flex gap-2 items-center px-3 py-2 bg-sky-50 border border-sky-200 rounded-lg">
-              <span className="text-sm text-sky-700 font-medium">{selected.size} ausgewählt</span>
+            <div className="mb-3 flex gap-2 items-center px-3 py-2 bg-theme-surface border-2 border-theme-accent rounded-lg">
+              <span className="text-sm text-theme-accent font-medium">{selected.size} ausgewählt</span>
               <button onClick={handleBulkDelete} disabled={working}
-                className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 ml-2">
+                className="px-3 py-1 text-sm bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 disabled:opacity-50 ml-2">
                 {working ? "Prüfe..." : "Löschen"}
               </button>
-              <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-theme-text-secondary hover:text-theme-text">
                 Auswahl aufheben
               </button>
             </div>
           )}
 
           {loading ? (
-            <p className="text-slate-400 dark:text-slate-500 text-sm">Lade Projekte...</p>
+            <p className="text-theme-text-muted text-sm">Lade Projekte...</p>
           ) : projects.length === 0 ? (
-            <p className="text-slate-400 dark:text-slate-500 text-sm">Noch keine Projekte vorhanden.</p>
+            <p className="text-theme-text-muted text-sm">Noch keine Projekte vorhanden.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b-2 border-slate-200 dark:border-slate-700">
+                <tr className="border-b-2 border-theme-border">
                   <th className="px-2 py-2 w-8">
                     <input type="checkbox"
                       checked={selected.size === projects.length && projects.length > 0}
                       onChange={toggleAll}
                       className="rounded" title="Alle auswählen" />
                   </th>
-                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium w-12">ID</th>
-                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium">Name</th>
-                  <th className="px-4 py-2 text-left text-slate-500 dark:text-slate-400 font-medium w-40">Aktionen</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-12">ID</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium">Name</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-40">Aktionen</th>
                 </tr>
               </thead>
               <tbody>
                 {projects.map((p) => (
                   <tr key={p.id}
-                    className={"border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 " + (selected.has(p.id) ? "bg-sky-50 dark:bg-sky-900/30" : "")}>
+                    className={"border-b border-theme-border hover:bg-theme-surface-hover " + (selected.has(p.id) ? "bg-theme-surface-hover" : "")}>
                     <td className="px-2 py-2">
                       <input type="checkbox" checked={selected.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded" />
                     </td>
-                    <td className="px-4 py-2 text-slate-400 dark:text-slate-500">{p.id}</td>
-                    <td className="px-4 py-2 font-medium dark:text-slate-200">{p.name}</td>
+                    <td className="px-4 py-2 text-theme-text-muted">{p.id}</td>
+                    <td className="px-4 py-2 font-medium text-theme-text">{p.name}</td>
                     <td className="px-4 py-2">
                       <button onClick={() => navigate("/projects/" + p.id)}
-                        className="text-sky-600 dark:text-sky-400 hover:underline text-sm mr-3">Öffnen</button>
+                        className="text-theme-accent hover:underline text-sm mr-3">Öffnen</button>
                       <button onClick={() => handleDeleteSingle(p)} disabled={working}
-                        className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-sm disabled:opacity-50">Löschen</button>
+                        className="text-theme-danger hover:opacity-80 text-sm disabled:opacity-50">Löschen</button>
                     </td>
                   </tr>
                 ))}

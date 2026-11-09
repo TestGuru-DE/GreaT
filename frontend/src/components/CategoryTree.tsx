@@ -1,18 +1,17 @@
 // REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
-// REQ-4018: Kontextmenü mit DataNode-Baum
 import { useEffect, useRef, useState } from "react";
 import { useCategoryStore } from "../store/categoryStore";
-import { categoriesApi, categoryPropertiesApi, datanodesApi } from "../api/client";  // REQ-4016
-import { renameApi, reorderApi } from "../api/client";
+import { categoriesApi } from "../api/client";
+import { renameApi, reorderApi, categoryPropertiesApi } from "../api/client";
 import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
 import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import { BVADialog } from "./bva/BVADialog";
+import DataNodeApplyDialog from "./DataNodeApplyDialog";
 import UndoRedoToolbar from "./ui/UndoRedoToolbar";
-import type { DataNode } from "../types";
 
 interface Props { projectId: number; }
 
@@ -32,6 +31,8 @@ export default function CategoryTree({ projectId }: Props) {
   const toast = useToastStore();
 
   const [newCatName, setNewCatName] = useState("");
+  // REQ-5002/REQ-4016: Typ der neuen Kategorie
+  const [newCatKind, setNewCatKind] = useState<"normal" | "ergebnis" | "ursache" | "wirkung">("normal");
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const [newValue, setNewValue] = useState<Record<number, string>>({});
   const [editingCat, setEditingCat] = useState<number | null>(null);
@@ -42,11 +43,10 @@ export default function CategoryTree({ projectId }: Props) {
   const [selectedValId, setSelectedValId] = useState<{ catId: number; valId: number } | null>(null);
   const [ctx, setCtx] = useState<CtxState | null>(null);
   const [bvaDialogOpen, setBvaDialogOpen] = useState<{ id: number; name: string } | null>(null);
+  // REQ-4018: Ziel-Dialog "Datenklasse anwenden auf:" (DataNode-Baum)
+  const [dataNodeDialog, setDataNodeDialog] = useState<{ id: number; name: string } | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
   const newCatRef = useRef<HTMLInputElement>(null);
-  const [dataNodeTree, setDataNodeTree] = useState<DataNode[]>([]);
-  const [dataNodeMenuOpen, setDataNodeMenuOpen] = useState<{ categoryId: number; categoryName: string } | null>(null);
-  const [lastApplied, setLastApplied] = useState<string | null>(null);
 
   useEffect(() => { fetchCategories(projectId); }, [projectId, fetchCategories]);
 
@@ -101,11 +101,22 @@ export default function CategoryTree({ projectId }: Props) {
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
+    const kind = newCatKind === "ursache" ? "cause" : newCatKind === "wirkung" ? "effect" : "standard";
+    const isResult = newCatKind === "ergebnis";
     try {
-      await createCategory(projectId, newCatName.trim());
+      await createCategory(projectId, newCatName.trim(), kind, isResult);
       toast.add("Kategorie angelegt");
       setNewCatName("");
+      setNewCatKind("normal");
     } catch { toast.add("Fehler beim Anlegen", "error"); }
+  };
+
+  const changeCategoryType = async (catId: number, type: "standard" | "cause" | "effect") => {
+    try {
+      await categoryPropertiesApi.updateCategoryType(catId, type);
+      await fetchCategories(projectId);
+      toast.add("Kategorie-Typ geaendert");
+    } catch { toast.add("Fehler beim Aendern des Typs", "error"); }
   };
 
   const handleAddValue = async (catId: number) => {
@@ -116,22 +127,6 @@ export default function CategoryTree({ projectId }: Props) {
       toast.add("Wert hinzugefuegt");
       setNewValue((s) => ({ ...s, [catId]: "" }));
     } catch { toast.add("Fehler beim Hinzufuegen", "error"); }
-  };
-
-  // REQ-4018: Werte aus DataNode anwenden
-  const applyDataNodeValues = async (categoryId: number, node: DataNode) => {
-    try {
-      let addedCount = 0;
-      for (const val of node.values) {
-        await createValue(categoryId, val.value);
-        addedCount++;
-      }
-      setLastApplied(`✅ ${addedCount} Werte aus "${node.name}" übernommen`);
-      setTimeout(() => setLastApplied(null), 3000);
-      if (expanded[categoryId]) fetchValues(categoryId);
-    } catch (err) {
-      toast.add("Fehler beim Hinzufügen", "error");
-    }
   };
 
   // Inline-Edit Kategorie (REQ-1213)
@@ -201,35 +196,17 @@ export default function CategoryTree({ projectId }: Props) {
       const cat = categories.find((c) => c.id === ctx.id);
       return [
         { label: "Umbenennen (F2)", action: () => startEditCat(ctx.id, cat?.name ?? "") },
+        // REQ-5002: Typ nachtraeglich aendern
+        { label: "Typ: Normal", action: () => changeCategoryType(ctx.id, "standard") },
+        { label: "Typ: Ursache", action: () => changeCategoryType(ctx.id, "cause") },
+        { label: "Typ: Wirkung", action: () => changeCategoryType(ctx.id, "effect") },
         { label: "Wert hinzufügen", action: () => {
           setExpanded((s) => ({ ...s, [ctx.id]: true }));
           if (!values[ctx.id]) fetchValues(ctx.id);
         }},
         { label: "", separator: true, action: () => {} },
-        { label: "Datenklasse anwenden...", action: async () => {
-          const c = categories.find((c) => c.id === ctx.id);
-          if (c) {
-            try {
-              const tree = await datanodesApi.getTree();
-              setDataNodeTree(tree);
-              setDataNodeMenuOpen({ categoryId: c.id, categoryName: c.name });
-            } catch (err) {
-              toast.add("Fehler beim Laden der Datenklassen", "error");
-            }
-          }
-        }},
+        { label: "Datenklasse anwenden...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataNodeDialog({ id: c.id, name: c.name }); } },
         { label: "Grenzwertanalyse...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
-        { label: "", separator: true, action: () => {} },
-        // REQ-4016: Ergebnis-Kategorie toggle
-        { label: cat?.is_result ? "✓ Ergebnis-Kategorie" : "Als Ergebnis-Kategorie markieren", 
-          action: async () => {
-            try {
-              await categoryPropertiesApi.updateIsResult(ctx.id, !cat?.is_result);
-              await fetchCategories(projectId);
-              toast.add(cat?.is_result ? "Normale Kategorie" : "Ergebnis-Kategorie (Expected Result)");
-            } catch { toast.add("Fehler beim Aktualisieren", "error"); }
-          }
-        },
         { label: "", separator: true, action: () => {} },
         { label: "Löschen", danger: true, action: () => {
           if (confirm("Kategorie löschen?"))
@@ -273,6 +250,14 @@ export default function CategoryTree({ projectId }: Props) {
 
       {/* Neue Kategorie */}
       <form onSubmit={handleAddCategory} className="flex gap-2 mb-4">
+        <select aria-label="Kategorie-Typ" value={newCatKind}
+          onChange={(e) => setNewCatKind(e.target.value as typeof newCatKind)}
+          className="px-2 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+          <option value="normal">Normal</option>
+          <option value="ergebnis">Ergebnis</option>
+          <option value="ursache">Ursache</option>
+          <option value="wirkung">Wirkung</option>
+        </select>
         <input ref={newCatRef} value={newCatName}
           onChange={(e) => setNewCatName(e.target.value)}
           placeholder="Neue Kategorie eingeben..."
@@ -338,10 +323,17 @@ export default function CategoryTree({ projectId }: Props) {
                     />
                   ) : (
                     <span onDoubleClick={(e) => { e.stopPropagation(); startEditCat(cat.id, cat.name); }}
-                      className="truncate flex items-center gap-1">{cat.name}
-                      {/* REQ-4016: Ergebnis-Kategorie-Indikator */}
-                      {cat.is_result && <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium whitespace-nowrap flex-shrink-0">📊 Result</span>}
-                    </span>
+                      className="truncate">{cat.name}</span>
+                  )}
+                  {/* REQ-5002/REQ-4016: Kategorie-Typ visuell anzeigen */}
+                  {cat.category_type === "cause" && (
+                    <span className="ml-1 flex-shrink-0 text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5" title="Ursache">U</span>
+                  )}
+                  {cat.category_type === "effect" && (
+                    <span className="ml-1 flex-shrink-0 text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5" title="Wirkung">W</span>
+                  )}
+                  {cat.is_result && (
+                    <span className="ml-1 flex-shrink-0 text-xs bg-purple-100 text-purple-700 rounded-full px-1.5 py-0.5" title="Ergebnis">E</span>
                   )}
                   {/* Werte-Zaehler Badge */}
                   <span className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal">
@@ -456,7 +448,7 @@ export default function CategoryTree({ projectId }: Props) {
                     )}
                   </ul>
                   {/* Neuer Wert */}
-                  <div className="flex gap-1.5 flex-wrap items-center">
+                  <div className="flex gap-1.5">
                     <input value={newValue[cat.id] ?? ""}
                       onChange={(e) => setNewValue((s) => ({ ...s, [cat.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddValue(cat.id); } }}
@@ -475,38 +467,21 @@ export default function CategoryTree({ projectId }: Props) {
         </ul>
       )}
 
-      {/* DataNode Baum Dialog (REQ-4018) */}
-      {dataNodeMenuOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setDataNodeMenuOpen(null)}>
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800">
-                Datenklasse anwenden auf: {dataNodeMenuOpen.categoryName}
-              </h3>
-              <button onClick={() => setDataNodeMenuOpen(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
-            </div>
-            {lastApplied && (
-              <div className="mx-4 mt-3 p-2 bg-green-50 text-green-700 text-sm rounded border border-green-200">
-                {lastApplied}
-              </div>
-            )}
-            <div className="overflow-auto p-4 flex-1">
-              {dataNodeTree.length === 0 ? (
-                <p className="text-slate-400 text-sm py-8 text-center">Keine Datenklassen vorhanden</p>
-              ) : (
-                <DataNodeTreeView nodes={dataNodeTree} onSelect={(node) => applyDataNodeValues(dataNodeMenuOpen.categoryId, node)} />
-              )}
-            </div>
-            <div className="p-4 pt-3 border-t border-slate-200 flex justify-end">
-              <button
-                onClick={() => { setDataNodeMenuOpen(null); setLastApplied(null); }}
-                className="px-4 py-2 bg-sky-600 text-white rounded hover:bg-sky-700 text-sm font-medium"
-              >
-                ✓ Fertig
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* REQ-4018: Datenklasse anwenden (DataNode-Baum) */}
+      {dataNodeDialog && (
+        <DataNodeApplyDialog
+          categoryName={dataNodeDialog.name}
+          onClose={() => setDataNodeDialog(null)}
+          onApply={async (values) => {
+            const catId = dataNodeDialog.id;
+            for (const v of values) {
+              await createValue(catId, v);
+            }
+            toast.add(`${values.length} Werte uebernommen`);
+            fetchValues(catId);
+            setDataNodeDialog(null);
+          }}
+        />
       )}
 
       {/* BVA-Dialog (REQ-3041) */}
@@ -517,8 +492,7 @@ export default function CategoryTree({ projectId }: Props) {
           categoryName={bvaDialogOpen.name}
           projectId={projectId}
           onClose={() => {
-            // REQ-4019: Auch beim Schliessen ohne Anwenden (Abbrechen/Escape/Klick auf Hintergrund)
-            // muessen sichtbare Werte aktualisiert werden, falls sich Daten zwischenzeitlich geaendert haben.
+            // REQ-4019: Werte auch beim Abbrechen neu laden (Regression-Schutz)
             if (expanded[bvaDialogOpen.id]) fetchValues(bvaDialogOpen.id);
             setBvaDialogOpen(null);
           }}
@@ -542,84 +516,5 @@ export default function CategoryTree({ projectId }: Props) {
         <p>Strg+Z: Rückgängig &nbsp; Strg+Y: Wiederholen</p>
       </div>
     </div>
-  );
-}
-
-// REQ-4018: Hierarchische DataNode-Ansicht im Dialog
-function DataNodeTreeView({ nodes, onSelect, depth = 0 }: { nodes: DataNode[]; onSelect: (node: DataNode) => void; depth?: number }) {
-  const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  
-  const toggleExpand = (id: number) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  return (
-    <ul className={`space-y-0.5 ${depth > 0 ? 'ml-4 border-l-2 border-slate-200 pl-3' : ''}`}>
-      {nodes.map((node) => {
-        const isExpanded = expanded.has(node.id);
-        const hasContent = node.children.length > 0 || node.values.length > 0;
-        
-        return (
-          <li key={node.id}>
-            <div className="flex items-center gap-2 py-1">
-              {/* Expand Toggle */}
-              {hasContent ? (
-                <button
-                  onClick={() => toggleExpand(node.id)}
-                  className="text-slate-400 w-4 text-xs flex-shrink-0"
-                >
-                  {isExpanded ? '▼' : '▶'}
-                </button>
-              ) : (
-                <span className="w-4 flex-shrink-0" />
-              )}
-              
-              {/* Name + Werte-Anzahl */}
-              <span className="flex-1 text-sm text-slate-700 font-medium">
-                {node.name}
-                {node.values.length > 0 && (
-                  <span className="ml-2 text-xs text-slate-500">({node.values.length})</span>
-                )}
-              </span>
-              
-              {/* Auswahl-Button (nur wenn Werte vorhanden) */}
-              {node.values.length > 0 && (
-                <button
-                  onClick={() => onSelect(node)}
-                  className="px-2 py-0.5 text-xs bg-sky-600 text-white rounded hover:bg-sky-700 flex-shrink-0"
-                >
-                  Übernehmen
-                </button>
-              )}
-            </div>
-            
-            {/* Kinder rekursiv */}
-            {isExpanded && node.children.length > 0 && (
-              <DataNodeTreeView nodes={node.children} onSelect={onSelect} depth={depth + 1} />
-            )}
-            
-            {/* Werte-Vorschau (aufgeklappt) */}
-            {isExpanded && node.values.length > 0 && (
-              <ul className="ml-8 mt-1 space-y-0.5">
-                {node.values.slice(0, 5).map((v) => (
-                  <li key={v.id} className="text-xs text-slate-500">
-                    • {v.value}
-                  </li>
-                ))}
-                {node.values.length > 5 && (
-                  <li className="text-xs text-slate-400 italic">
-                    ... und {node.values.length - 5} weitere
-                  </li>
-                )}
-              </ul>
-            )}
-          </li>
-        );
-      })}
-    </ul>
   );
 }

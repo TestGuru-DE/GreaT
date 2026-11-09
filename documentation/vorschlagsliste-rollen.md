@@ -28,6 +28,7 @@
 
 **Vorschläge:**
 - **Test-Coverage-Analyse**: Nach der Generierung anzeigen welcher Prozentsatz der theoretisch möglichen Kombinationen abgedeckt ist.
+- **Entscheidungstabelle (Ursache-Wirkungs-Tabelle) nach ISTQB**: Tabellarische Darstellung von Bedingungen und zugehörigen Aktionen, mit Regeln zur Ableitung von Testfällen aus Ursache-Wirkungs-Beziehungen.
 - **Testfall-Kommentar**: Jeder Testfall kann einen Freitext-Kommentar bekommen (z. B. „Bekannter Bug", „Priorisiert").
 - **Generierungs-Vergleich**: Zwei Generierungen desselben Projekts nebeneinander vergleichen – welche Testfälle neu/weggefallen sind.
 - **Fehlerwert-Report**: Export eines separaten Reports der nur Fehlerwert-Testfälle enthält.
@@ -48,6 +49,8 @@
 
 **Vorschläge:**
 - **Kombinatorische Abdeckungsanzeige**: N-Wise Coverage-Metrik (1-wise = each, 2-wise = pairwise) nach Generierung anzeigen.
+- **T-Wise / N-Wise-Generierung**: Flexible N-Wise-Strategie (z. B. 3-wise, 4-wise) zusätzlich zu Pairwise, um tiefere Kombinationen ohne vollständige Exhaustive Generation zu prüfen.
+- **MCDC-Analyse**: Modified Condition/Decision Coverage für komplexe Bedingungen auswerten, damit Entscheidungen systematisch auf ungenaue Logik geprüft werden.
 - **Orthogonale Arrays (OA) als Strategie**: Echte OA-Matrizen (Taguchi) als zusätzliche Strategie neben Pairwise.
 - **Constraint-Komplexitätsmessung**: Bei REQ-3015 (toter Wert) Einschränkung auf einfache Fälle da vollständige Constraint-Propagation NP-hard ist bei großen Regelsets.
 - **Testfall-Gewichtung**: Risikogewichtete Sortierung (höchstes kumuliertes Risiko der Werte = erster Testfall).
@@ -60,6 +63,7 @@
 - **Manuelle Kombinatorik als Tabellengitter**: REQ-3016 sollte eine echte Tabelle sein (wie Excel), mit Zellen-Navigation (Tab/Enter).
 - **Wert-Suche in Kategorien**: Suchfeld über der Werteliste bei großen Kategorien (>10 Werte).
 - **Responsive Verbesserungen**: Mobile-Ansicht für Tablet-Nutzung (Review von Testfällen unterwegs).
+- **Theme-System**: Mehrere visuelle Themes (z. B. Hell, Dark, Steampunk, Rainbow) als Designsystem mit WCAG-konformen Kontrasten und einfacher Umschaltfunktion.
 - **Dark Mode**: Optionaler Dark Mode (über Einstellungen, die bereits als Leerseite existieren).
 - **Onboarding-Tour**: Kurze geführte Einführung für Erstnutzer (Schritt-für-Schritt durch Projekt anlegen → Kategorien → Generieren).
 

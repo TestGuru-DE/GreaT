@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { THEMES, getTheme, setTheme, type ThemeName } from '../lib/theme'
 
+// REQ-3045 (Sofort-Fix): Label wieder schlichtes "Normal" - "(HSV)" war
+// irrefuehrend, da die aktuelle Ziel-Palette (Hintergrund blau, Schrift weiss,
+// Akzent ROT) keine Hamburger-SV-Vereinsfarben (Blau/Weiss, kein Rot) mehr sind.
 const THEME_LABELS: Record<ThemeName, string> = {
   'normal': '☀️ Normal',
   'dark': '🌙 Dark',
@@ -25,9 +28,11 @@ export function ThemeSwitcher() {
           key={theme}
           onClick={() => handleSelect(theme)}
           className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+            // REQ-3045 (Sofort-Fix): Theme-Tokens statt hartkodiertem bg-blue-50/bg-gray-100,
+            // damit der Umschalter selbst dem aktiven Theme sichtbar folgt.
             current === theme
-              ? 'ring-2 ring-blue-500 dark:ring-sky-400 bg-blue-50 dark:bg-sky-900/30 dark:text-sky-300'
-              : 'bg-gray-100 dark:bg-slate-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600'
+              ? 'ring-2 ring-theme-accent bg-theme-accent text-theme-accent-text'
+              : 'bg-theme-surface text-theme-text-secondary hover:bg-theme-surface-hover hover:text-theme-text'
           }`}
         >
           {THEME_LABELS[theme]}

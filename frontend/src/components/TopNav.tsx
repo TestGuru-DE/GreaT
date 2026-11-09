@@ -1,17 +1,33 @@
 // REQ-3001: Einheitliche Top-Navigation in jeder Ansicht
-import { NavLink } from "react-router-dom";
+// REQ-4028 AK-3: "Passwort aendern" fuer alle Rollen
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 
 const NAV_ITEMS = [
   { to: "/",              label: "Projekte" },
   { to: "/dataclasses",  label: "Datenklassen" },
   { to: "/generations",  label: "Generierungen" },
   { to: "/settings",     label: "Einstellungen" },
+  // REQ-4028: "Passwort aendern" fuer alle Rollen (Editor/Viewer haben keinen anderen Weg)
+  { to: "/account/password", label: "Passwort aendern" },
 ];
 
 export default function TopNav() {
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
-    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-6 py-0 flex items-center gap-1">
-      <span className="text-sm font-bold text-sky-700 dark:text-sky-400 mr-4 py-4 shrink-0">G.R.E.A.T.</span>
+    // REQ-3045: Theme-Tokens statt hartkodiertem bg-white/dark:-Klassen.
+    // Das Theme-System setzt "theme-dark" (nicht "dark") auf <html>, daher greifen
+    // Tailwind "dark:"-Varianten hier nie - stattdessen ueber CSS-Custom-Properties themen.
+    <header className="bg-theme-surface border-b border-theme-border px-6 py-0 flex items-center gap-1">
+      <span className="text-sm font-bold text-theme-accent mr-4 py-4 shrink-0">G.R.E.A.T.</span>
       <nav className="flex items-center gap-1 flex-1">
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -21,8 +37,8 @@ export default function TopNav() {
             className={({ isActive }) =>
               "px-4 py-4 text-sm border-b-2 transition-colors " +
               (isActive
-                ? "border-sky-600 dark:border-sky-400 text-sky-700 dark:text-sky-300 font-semibold"
-                : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600")
+                ? "border-theme-accent text-theme-accent font-semibold"
+                : "border-transparent text-theme-text-secondary hover:text-theme-text hover:border-theme-border")
             }
           >
             {item.label}
@@ -33,10 +49,19 @@ export default function TopNav() {
         href="/docs"
         target="_blank"
         rel="noopener noreferrer"
-        className="px-3 py-1 text-xs text-slate-400 dark:text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-700 rounded-lg ml-2"
+        className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-2"
       >
         API-Docs
       </a>
+      {user && (
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-danger border border-theme-border rounded-lg ml-1"
+          title={`Abmelden (${user.username})`}
+        >
+          Logout
+        </button>
+      )}
     </header>
   );
 }

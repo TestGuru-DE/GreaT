@@ -1,6 +1,6 @@
 # src/app/schemas.py
 from typing import List, Optional, Dict
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
@@ -8,18 +8,39 @@ class ProjectCreate(BaseModel):
 class ProjectRead(BaseModel):
     id: int
     name: str
+    version: int = 0  # REQ-4021: Versionsnummer fuer Konflikterkennung
     model_config = ConfigDict(from_attributes=True)
 
 class CategoryCreate(BaseModel):
     name: str
     order_index: int = 0
     is_result: bool = False  # REQ-4016: Ergebnis-Kategorie
+    category_type: str = "standard"  # REQ-5002: standard | cause | effect
+
+    @field_validator("category_type")
+    @classmethod
+    def validate_category_type(cls, v: str) -> str:
+        if v not in VALID_CATEGORY_TYPES:
+            raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
+        return v
+
+class CategoryUpdate(BaseModel):
+    # REQ-5002: optional; None = unveraendert
+    category_type: Optional[str] = None
+
+    @field_validator("category_type")
+    @classmethod
+    def validate_category_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in VALID_CATEGORY_TYPES:
+            raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
+        return v
 
 class CategoryRead(BaseModel):
     id: int
     name: str
     order_index: int
     is_result: bool = False  # REQ-4016: Ergebnis-Typ (Expected Result)
+    category_type: str = "standard"  # REQ-5002
     model_config = ConfigDict(from_attributes=True)
 
 class ValueCreate(BaseModel):
@@ -27,6 +48,8 @@ class ValueCreate(BaseModel):
     risk_weight: int = 1
 
 VALID_VTYPES = {"string", "number", "date", "time", "boolean", "email", "text"}
+# REQ-5002: Kategorie-Typ (Ursache/Wirkung fuer Entscheidungstabelle)
+VALID_CATEGORY_TYPES = {"standard", "cause", "effect"}
 
 class ValueRead(BaseModel):
     id: int
@@ -260,3 +283,70 @@ class DataNodeCreate(BaseModel):
 class DataNodeValueCreate(BaseModel):
     value: str
     sort_order: int = 0
+
+class DataNodeUpdate(BaseModel):
+    # REQ-4018/REQ-4021: Teil-Update; nur gesetzte Felder werden uebernommen
+    name: Optional[str] = None
+    parent_id: Optional[int] = None
+    sort_order: Optional[int] = None
+    version: Optional[int] = None  # Optimistic Concurrency (REQ-4021)
+
+# REQ-4025: Benutzerverwaltung
+VALID_USER_ROLES = {"admin", "editor", "viewer", "api_user"}
+
+def _check_user_role(v: Optional[str]) -> Optional[str]:
+    if v is not None and v not in VALID_USER_ROLES:
+        raise ValueError(f"role muss einer von {sorted(VALID_USER_ROLES)} sein.")
+    return v
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=1, max_length=200)
+    role: str = "viewer"
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        return _check_user_role(v)
+
+class UserUpdate(BaseModel):
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: Optional[str]) -> Optional[str]:
+        return _check_user_role(v)
+
+class UserPasswordChange(BaseModel):
+    # Frontend sendet {"password": ...}, Tests/API-Doku {"new_password": ...}: beide akzeptieren
+    new_password: str = Field(min_length=1, max_length=200, validation_alias=AliasChoices("new_password", "password"))
+
+class UserRead(BaseModel):
+    id: int
+    username: str
+    role: str
+    is_active: bool = True
+    model_config = ConfigDict(from_attributes=True)
+
+# REQ-4028 AK-3: Selbst-Passwortwechsel
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=200)
+    new_password: str = Field(min_length=1, max_length=200)
+
+# REQ-4023: Projekt-Mitgliedschaften
+class ProjectMemberRead(BaseModel):
+    user_id: int
+    username: Optional[str] = None
+    role: str
+
+class AddProjectMemberRequest(BaseModel):
+    user_id: int
+    role: str = "viewer"
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, v: str) -> str:
+        if v not in {"editor", "viewer"}:
+            raise ValueError("role muss 'editor' oder 'viewer' sein.")
+        return v
