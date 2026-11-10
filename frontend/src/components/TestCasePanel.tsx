@@ -72,6 +72,7 @@ export default function TestCasePanel({ projectId }: Props) {
     "Risiko": tc.risk_coverage ?? 0,
     "__testcaseId": tc.id,
     "__testcaseName": tc.name,
+    "__hasError": tc.has_error_value ?? false,  // REQ-3063
     ...tc.assignments,
   } as Record<string, unknown>));
   const { sorted, sortCol, sortDir, toggleSort } = useSortableTable(rows);
@@ -109,19 +110,21 @@ export default function TestCasePanel({ projectId }: Props) {
   const exportTableAsCSV = () => {
     if (testcases.length === 0) return;
     
-    // Header-Zeile erstellen
-    const headers = ["#", "Risiko", ...columns];
+    // Header-Zeile erstellen (REQ-3063: Fehlerwert-Spalte)
+    const headers = ["#", "Risiko", ...columns, "Fehlerwert"];
     const csvHeader = headers.map(h => `"${h}"`).join(";");
     
     // Datenzeilen erstellen
     const csvRows = sorted.map((row) => {
+      const hasError = row["__hasError"] ?? false;
       const values = [
         String(row["#"] ?? ""),
         String(Number(row["Risiko"] ?? 0).toFixed(1)),
         ...columns.map(col => {
           const val = String(row[col] ?? "-");
           return `"${val.replace(/"/g, '""')}"`;
-        })
+        }),
+        hasError ? "JA" : "NEIN",  // REQ-3063
       ];
       return values.join(";");
     });
@@ -362,7 +365,7 @@ export default function TestCasePanel({ projectId }: Props) {
                 const testcaseId = Number(row["__testcaseId"] ?? 0);
                 const testcaseName = String(row["__testcaseName"] ?? `TC_${row["#"]}`);
                 const tc = testcases.find((testcase) => testcase.id === testcaseId);
-                const hasError = tc?._has_error_value ?? false;
+                const hasError = tc?.has_error_value ?? false;
                 const risk = Number(row["Risiko"] ?? 0);
                 return (
                   <tr key={i} className={
@@ -371,7 +374,10 @@ export default function TestCasePanel({ projectId }: Props) {
                       ? "bg-red-50 border-l-4 border-l-red-500" 
                       : i % 2 === 0 ? "bg-white" : "bg-slate-50/50")
                   }>
-                    <td className="px-3 py-1.5 text-slate-400 text-xs">{String(row["#"] ?? "")}</td>
+                    <td className="px-3 py-1.5 text-slate-400 text-xs flex items-center gap-1">
+                      {String(row["#"] ?? "")}
+                      {hasError && <span title="Fehlerwert-Testfall" className="text-red-500 text-sm">⚠️</span>}
+                    </td>
                     {/* REQ-3050: Risiko-Zelle */}
                     <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{risk.toFixed(1)}</td>
                     {columns.map((col) => {

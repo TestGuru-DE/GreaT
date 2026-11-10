@@ -174,7 +174,7 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             "id": tc.id,
             "name": tc.name,
             "assignments": assignments,
-            "_has_error_value": has_error,
+            "has_error_value": has_error,
             "risk_coverage": float(risk_coverage),
         })
 
@@ -303,6 +303,9 @@ def export_generation_csv(
     )
     cat_headers: List[str] = [c.name for c in cats]
 
+    # REQ-3063: Fehlerwert-Spalte im Export
+    error_values = load_error_values(db, gen.project_id)
+
     out = io.StringIO(newline="")
     writer = csv.writer(out, delimiter=";", lineterminator="\r\n", quoting=csv.QUOTE_MINIMAL)
 
@@ -312,6 +315,7 @@ def export_generation_csv(
     headers = cat_headers + ["__TestCaseID", "__GenerationID", "__Strategy"]
     if include_status:
         headers.append("Status")
+    headers.append("Fehlerwert")  # REQ-3063
     writer.writerow(headers)
 
     for tc in tcs:
@@ -320,6 +324,9 @@ def export_generation_csv(
         row += [tc.id, gen.id, gen.strategy]
         if include_status:
             row.append(status_for_assignment(gen.project_id, a, db))
+        # REQ-3063: Fehlerwert markieren
+        has_error = any(v in error_values for v in a.values() if v)
+        row.append("JA" if has_error else "NEIN")
         writer.writerow(row)
 
     csv_text: str = out.getvalue()
@@ -395,6 +402,9 @@ def export_generation_json(gen_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
+    # REQ-3063: Fehlerwert-Spalte im Export
+    error_values = load_error_values(db, gen.project_id)
+
     testcases_out: List[dict] = []
     for tc in testcases_db:
         vals = (
@@ -407,7 +417,13 @@ def export_generation_json(gen_id: int, db: Session = Depends(get_db)):
             name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value
             for v in vals
         }
-        testcases_out.append({"name": tc.name, "assignments": assignments})
+        # REQ-3063: Fehlerwert markieren
+        has_error = any(val in error_values for val in assignments.values() if val)
+        testcases_out.append({
+            "name": tc.name,
+            "assignments": assignments,
+            "has_error_value": has_error,
+        })
 
     payload = {
         "generation_id": gen.id,
@@ -460,12 +476,15 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
         .all()
     )
 
+    # REQ-3063: Fehlerwert-Spalte im Export
+    error_values = load_error_values(db, gen.project_id)
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = f"Generation_{gen.id}"
 
     # Header-Zeile (fett)
-    headers = cat_headers + ["TC-ID", "Generierungs-ID", "Strategie"]
+    headers = cat_headers + ["TC-ID", "Generierungs-ID", "Strategie", "Fehlerwert"]
     for col_idx, header in enumerate(headers, start=1):
         cell = ws.cell(row=1, column=col_idx, value=header)
         cell.font = Font(bold=True)
@@ -484,6 +503,9 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
         }
         row_data = [assignments.get(h, "") for h in cat_headers]
         row_data += [tc.id, gen.id, gen.strategy]
+        # REQ-3063: Fehlerwert markieren
+        has_error = any(val in error_values for val in assignments.values() if val)
+        row_data.append("JA" if has_error else "NEIN")
         for col_idx, value in enumerate(row_data, start=1):
             ws.cell(row=row_idx, column=col_idx, value=value)
 

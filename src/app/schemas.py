@@ -96,7 +96,7 @@ class TestCaseOut(BaseModel):
     id: int
     name: str
     assignments: Dict[str, str]
-    has_error_value: bool = Field(default=False, alias="_has_error_value")
+    has_error_value: bool = False  # REQ-3063: Flag für Fehlerwert-Markierung
     risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
 
     model_config = ConfigDict(populate_by_name=True)

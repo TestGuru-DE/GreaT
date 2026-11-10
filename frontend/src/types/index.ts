@@ -85,7 +85,7 @@ export interface TestCaseOut {
   id: number;
   name: string;
   assignments: Record<string, string>;
-  _has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
+  has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
   risk_coverage?: number;      // REQ-3050: Risikoabdeckung (Summe risk_weight)
 }
 

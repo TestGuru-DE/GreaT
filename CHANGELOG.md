@@ -6,9 +6,16 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ### ✨ Neue Features
 - **REQ-3034**: Generierte Testfälle werden absteigend nach kumuliertem Risiko-Score sortiert (Summe der `risk_weight` aller zugewiesenen Werte je Testfall). Testfälle mit Fehlerwerten behalten weiterhin Vorrang (REQ-3018/BUG-5) und werden unabhängig von ihrem Risiko-Score ans Ende der Liste sortiert.
+- **REQ-3063**: **Fehlerwert-Kennzeichnung in allen Export-Formaten** (CSV, JSON, Excel). Neue Spalte "Fehlerwert" (JA/NEIN) bzw. `has_error_value` (true/false) markiert Testfälle, die mindestens einen Wert mit `allowed=False` enthalten.
 - **REQ-4018**: Neue Einstellung "Maximale Anzahl Testfälle" (Default 1000) begrenzt die Anzahl generierter Testfälle pro Kombination, wenn kein expliziter `limit`-Wert im Request angegeben ist. Konfigurierbar über die Umgebungsvariable `GREAT_MAX_TESTCASES` (Backend) sowie über eine neue Karte auf der Einstellungen-Seite (Frontend, lokal gespeichert, ohne Server-Neustart wirksam).
 - **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts. Risikoakzeptanz durch Projektinhaber (RISK-S-016, Score 20, gemildert durch REQ-4028).
 - **REQ-4028**: Pflicht-Passwortwechsel nach Erstanmeldung fuer Default-Admin. Selbst-Passwortwechsel fuer alle Benutzerrollen (Admin/Editor/Viewer).
+
+### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
+- **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
+- **Authentifizierung & Multi-User (REQ-4006-4020)**: JWT-Auth, Login-Seite, User-Management, Rollen (Admin/Editor/Viewer), Passwort-Policy, Rate Limiting, Projekt-Freigabe
+- **Frontend**: DecisionTable, CauseEffectGraph, ProtectedRoute, StaleDataWarning, ErrorBoundary, Theme-System (Dark Mode, Steampunk, Rainbow, Heavy Metal)
+- **Backend**: Neue API-Endpunkte fuer Decision Table, Auth, Sharing; Models-Package; Middleware; Migrationen
 
 ### Fixed
 - **Bugfix B1 – Testfalltabelle nach "Neu generieren" bzw. "Vorherige Generierung laden" nicht sichtbar:** Der API-Client (`frontend/src/api/client.ts`) sendet die Anmelde-Cookies jetzt mit (`withCredentials: true`). Seit der Umstellung auf JWT in httpOnly-Cookies (REQ-4001) wurden Generierungs-Anfragen ohne Cookies mit 401/403 abgewiesen, dadurch blieb die Tabelle leer. Bezug: REQ-4001, REQ-2001.
