@@ -216,15 +216,20 @@ export default function CategoryTree({ projectId }: Props) {
         }},
       ];
     }
+    const currentVal = (values[ctx.catId!] ?? []).find((v) => v.id === ctx.id);
+    const isDefault = currentVal?.is_default === true;
     return [
-      { label: "★ Als Default markieren", action: async () => {
+      { label: isDefault ? "✕ Default entfernen" : "★ Als Default markieren", action: async () => {
         const catId = ctx.catId!;
-        await categoriesApi.setDefault(ctx.id);
+        if (isDefault) {
+          await categoriesApi.unsetDefault(ctx.id);
+        } else {
+          await categoriesApi.setDefault(ctx.id);
+        }
         fetchValues(catId);
       }},
       { label: "Umbenennen (F2)", action: () => {
-        const val = (values[ctx.catId!] ?? []).find((v) => v.id === ctx.id);
-        if (val) startEditVal(ctx.catId!, ctx.id, val.value);
+        if (currentVal) startEditVal(ctx.catId!, ctx.id, currentVal.value);
       }},
       { label: "Löschen", danger: true, action: () => {
         if (confirm("Wert löschen?"))

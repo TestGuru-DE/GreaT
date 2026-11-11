@@ -278,6 +278,19 @@ def set_default_value(vid: int, db: Session = Depends(get_db)):
     return val
 
 
+# REQ-3008: Default-Wert entfernen
+@router.patch("/values/{vid}/unset-default", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
+def unset_default_value(vid: int, db: Session = Depends(get_db)):
+    """REQ-3008: Entfernt die Default-Markierung von einem Wert."""
+    val = db.get(models.Value, vid)
+    if not val:
+        raise HTTPException(status_code=404, detail="Value not found.")
+    val.is_default = False
+    db.commit()
+    db.refresh(val)
+    return val
+
+
 # ---------------------------------------------------------------------------
 # Regeln (REST)
 # ---------------------------------------------------------------------------

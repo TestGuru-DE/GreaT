@@ -53,6 +53,8 @@ export const categoriesApi = {
     api.patch<Value>("/values/" + valueId + "/properties", props).then((r) => r.data),
   setDefault: (valueId: number) =>
     api.patch<Value>("/values/" + valueId + "/set-default").then((r) => r.data),
+  unsetDefault: (valueId: number) =>
+    api.patch<Value>("/values/" + valueId + "/unset-default").then((r) => r.data),
 };
 
 // --- Werte ---
