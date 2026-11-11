@@ -198,11 +198,18 @@ export default function RuleVisualization({ projectId }: Props) {
   );
 
   // Berechne Linien für jede Regel
-  const ruleLines = rules.map((rule) => {
+  const ruleLines: { rule: RuleWithInfo; path: string; midX: number; midY: number; color: typeof TYPE_COLORS[string]; isHovered: boolean; toValue?: string }[] = [];
+  
+  for (const rule of rules) {
     const fromPos = valuePosMap[`${rule.if_category_id}-${rule.if_value}`];
-    const toPos = valuePosMap[`${rule.then_category_id}-${rule.then_value}`];
+    if (!fromPos) continue;
     
-    if (!fromPos || !toPos) return null;
+    // Combine-Regeln haben mehrere Zielwerte in then_values_json
+    const targetValues = rule.type === 'combine' && rule.then_values_json
+      ? JSON.parse(rule.then_values_json) as string[]
+      : [rule.then_value].filter(Boolean);
+    
+    if (targetValues.length === 0) continue;
     
     // Finde parallele Linien zwischen denselben Kategorien
     const parallelCount = rules.filter(r => 
@@ -211,29 +218,36 @@ export default function RuleVisualization({ projectId }: Props) {
       r.id <= rule.id
     ).length;
     
-    const offset = (parallelCount - 1) * LINE_GAP;
-    
     const typeColor = TYPE_COLORS[rule.type] || TYPE_COLORS.exclude;
     
-    // Berechne Start- und Endpunkte
-    const startX = fromPos.x + fromPos.width;
-    const startY = fromPos.y + fromPos.height / 2 + offset;
-    const endX = toPos.x;
-    const endY = toPos.y + toPos.height / 2 + offset;
-    
-    // Kurve erstellen
-    const midX = (startX + endX) / 2;
-    const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
-    
-    return {
-      rule,
-      path,
-      midX,
-      midY: (startY + endY) / 2,
-      color: typeColor,
-      isHovered: hoveredRule?.id === rule.id,
-    };
-  }).filter(Boolean);
+    // Für jeden Zielwert eine Linie erstellen (combine: mehrere, andere: einer)
+    for (const targetVal of targetValues) {
+      const toPos = valuePosMap[`${rule.then_category_id}-${targetVal}`];
+      if (!toPos) continue;
+      
+      const offset = (parallelCount - 1) * LINE_GAP;
+      
+      // Berechne Start- und Endpunkte
+      const startX = fromPos.x + fromPos.width;
+      const startY = fromPos.y + fromPos.height / 2 + offset;
+      const endX = toPos.x;
+      const endY = toPos.y + toPos.height / 2 + offset;
+      
+      // Kurve erstellen
+      const midX = (startX + endX) / 2;
+      const path = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+      
+      ruleLines.push({
+        rule,
+        path,
+        midX,
+        midY: (startY + endY) / 2,
+        color: typeColor,
+        isHovered: hoveredRule?.id === rule.id,
+        toValue: targetVal,
+      });
+    }
+  }
 
   return (
     <div className="flex flex-col h-full">
