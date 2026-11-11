@@ -217,7 +217,7 @@ export default function CategoryTree({ projectId }: Props) {
       ];
     }
     return [
-      { label: "? Als Default markieren", action: async () => {
+      { label: "★ Als Default markieren", action: async () => {
         const catId = ctx.catId!;
         await categoriesApi.setDefault(ctx.id);
         fetchValues(catId);
@@ -335,9 +335,18 @@ export default function CategoryTree({ projectId }: Props) {
                   {cat.is_result && (
                     <span className="ml-1 flex-shrink-0 text-xs bg-purple-100 text-purple-700 rounded-full px-1.5 py-0.5" title="Ergebnis">E</span>
                   )}
-                  {/* Werte-Zaehler Badge */}
-                  <span className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal">
-                    {(values[cat.id] ?? []).length}
+                  {/* Werte-Zaehler Badge (Bugfix: '-' wenn noch nicht geladen) */}
+                  <span
+                    onClick={() => {
+                      if (!values[cat.id]) {
+                        fetchValues(cat.id);
+                        setExpanded((s) => ({ ...s, [cat.id]: true }));
+                      }
+                    }}
+                    className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal cursor-pointer hover:bg-slate-300 transition-colors"
+                    title={values[cat.id] ? `${(values[cat.id]).length} Werte` : "Werte laden (klick)"}
+                  >
+                    {values[cat.id] ? (values[cat.id]).length : "…"}
                   </span>
                 </span>
                 <span className="flex items-center gap-2 ml-2 flex-shrink-0">
@@ -384,7 +393,7 @@ export default function CategoryTree({ projectId }: Props) {
                                 onDoubleClick={() => startEditVal(cat.id, v.id, v.value)}
                                 className={"text-slate-700 flex-1 truncate " +
                                   (v.risk_weight > 2 ? "text-orange-700 font-medium" : "")}>
-                                {v.is_default && <span className="mr-1 text-amber-400" title="Default-Wert">?</span>}
+                                {v.is_default && <span className="mr-1 text-amber-500 font-bold" title="Default-Wert (Lineare Expansion)">★</span>}
                                 {v.value}
                                 {v.risk_weight > 2 && (
                                   <span className="ml-1 text-xs bg-orange-100 text-orange-600 rounded px-1">
@@ -392,7 +401,7 @@ export default function CategoryTree({ projectId }: Props) {
                                   </span>
                                 )}
                                 {v.allowed === false && (
-                                  <span className="ml-1 text-xs bg-red-100 text-red-500 rounded px-1" title="Fehlerwert">?</span>
+                                  <span className="ml-1 text-xs bg-red-100 text-red-600 rounded px-1 font-bold" title="Fehlerwert (nicht erlaubt)">✕</span>
                                 )}
                               </span>
                               <div className="flex items-center gap-1 transition-opacity">
