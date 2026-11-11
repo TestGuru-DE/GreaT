@@ -19,6 +19,13 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Anpassbare Hoehe**: Resize-Handle zum Anpassen des Sichtbereichs (250-800px)
 - **Responsive**: Mittlere Spalte wird auf kleinen Screens ausgeblendet
 
+### 🔧 Release v1.8.0 – Default-Management & Bugfixes
+- **Default-Wert setzen/entfernen**: Kontextmenü (rechte Maustaste) auf Wert zeigt "★ Als Default markieren" oder "✕ Default entfernen" je nach Status
+- **Backend**: Neuer Endpoint `PATCH /values/{vid}/unset-default` zum Entfernen der Default-Markierung
+- **Symbole verbessert**: Default-Wert = **★** (Stern, amber), Fehlerwert = **✕** (Kreuz, rot) – beide eindeutig erkennbar
+- **Werte-Zaehler Bugfix**: Zeigt jetzt "…" statt "0" wenn Werte noch nicht geladen; klickbar zum Laden
+- **Combine-Regeln Bugfix**: Regelvisualisierung zeigt jetzt alle erlaubten Zielwerte als separate Linien
+
 ### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
 - **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
 - **Authentifizierung & Multi-User (REQ-4006-4020)**: JWT-Auth, Login-Seite, User-Management, Rollen (Admin/Editor/Viewer), Passwort-Policy, Rate Limiting, Projekt-Freigabe
