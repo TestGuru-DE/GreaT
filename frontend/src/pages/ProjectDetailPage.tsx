@@ -1,4 +1,4 @@
-// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – zweispaltige Ansicht
+// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";
@@ -9,6 +9,7 @@ import GenerationsPanel from "../components/GenerationsPanel";
 import StaleDataWarning from "../components/StaleDataWarning";
 import DecisionTable from "../components/DecisionTable";
 import CauseEffectGraph from "../components/CauseEffectGraph";
+import RuleVisualization from "../components/RuleVisualization";
 import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
 
@@ -123,14 +124,24 @@ export default function ProjectDetailPage() {
         )}
       </header>
 
-      {/* Zweispaltige Ansicht */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 p-4 min-h-0">
+      {/* Dreispaltige Ansicht: Kategorien + Regeln-Visualisierung + Tabs */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_280px_1fr] gap-4 p-4 min-h-0">
         {/* Linke Spalte: Kategorienbaum */}
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-4 overflow-auto">
           <h2 className="text-base font-semibold text-theme-text mb-3">
             Kategorien &amp; Werte
           </h2>
           <CategoryTree projectId={projectId} />
+        </div>
+
+        {/* Mittlere Spalte: Regeln-Visualisierung (REQ-NEU) */}
+        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm overflow-hidden flex flex-col min-h-0 hidden lg:flex">
+          <h2 className="text-xs font-semibold text-theme-text-secondary uppercase tracking-wide px-3 pt-3 mb-1">
+            Regel-Verbindungen
+          </h2>
+          <div className="flex-1 overflow-hidden px-1 pb-1">
+            <RuleVisualization projectId={projectId} />
+          </div>
         </div>
 
         {/* Rechte Spalte: Tabs */}

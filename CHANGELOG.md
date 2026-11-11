@@ -11,6 +11,14 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts. Risikoakzeptanz durch Projektinhaber (RISK-S-016, Score 20, gemildert durch REQ-4028).
 - **REQ-4028**: Pflicht-Passwortwechsel nach Erstanmeldung fuer Default-Admin. Selbst-Passwortwechsel fuer alle Benutzerrollen (Admin/Editor/Viewer).
 
+### 🔧 Release v1.7.0 – Regel-Visualisierung
+- **Grafische Regeldarstellung (RuleVisualization)**: Neue mittlere Spalte in der Projektansicht zeigt SVG-basierte Visualisierung der Regeln als farbige Verbindungslinien zwischen Werten verschiedener Kategorien
+- **Regeltypen farbcodiert**: Rot = Verboten (✕, gestrichelt), Violett = Abhängig (→, durchgehend), Grün = Kombinieren (⊂, punktiert)
+- **Interaktive Hover-Tooltips**: Mauszeiger ueber Linie zeigt "Wenn Kategorie = Wert → Dann Kategorie = Wert"
+- **Manuelles Refresh**: ↻-Button zum manuellen Aktualisieren der Visualisierung
+- **Anpassbare Hoehe**: Resize-Handle zum Anpassen des Sichtbereichs (250-800px)
+- **Responsive**: Mittlere Spalte wird auf kleinen Screens ausgeblendet
+
 ### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
 - **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
 - **Authentifizierung & Multi-User (REQ-4006-4020)**: JWT-Auth, Login-Seite, User-Management, Rollen (Admin/Editor/Viewer), Passwort-Policy, Rate Limiting, Projekt-Freigabe
