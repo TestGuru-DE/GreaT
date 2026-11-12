@@ -27,7 +27,7 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Combine-Regeln Bugfix**: Regelvisualisierung zeigt jetzt alle erlaubten Zielwerte als separate Linien
 - **Theme-Fix (REQ-3045 + REQ-3062)**: "Normal" und "System (OS)" sind jetzt klar getrennt: "Normal" = HSV-Farben (dunkelblau/weiss/rot) als `:root` Default, "System (OS)" = neue `.theme-light` (hell) oder `.theme-dark` (dunkel) je nach OS-Einstellung
 - **Risikoabdeckung Bugfix (REQ-3051)**: Berechnung zeigt jetzt korrekte Werte <= 100% bei "All Combinations" — Ergebnis-Kategorien werden vom Maximum ausgeschlossen (konsistent mit Generierung)
-- **In-App-Hilfe**: Neues "/help" mit Markdown-Handbuch, Sidebar-Navigation, "?"-Button in TopNav, F1-Shortcut
+- **In-App-Hilfe**: Neues "/help" mit Markdown-Handbuch, 18 Screenshots, Sidebar-Navigation, "?"-Button in TopNav, F1-Shortcut, INFO-Section (Lizenz MIT, Haftungsausschluss, KI-Hinweis, GitHub-Link)
 
 ### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
 - **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
