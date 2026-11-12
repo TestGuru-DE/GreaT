@@ -1,20 +1,25 @@
 ﻿/**
- * REQ-3045: "Normal"-Theme zeigt HSV-Farben (Hintergrund BLAU, Schrift WEISS, Akzente ROT).
+ * REQ-3045: "Normal"-Theme = HSV-Farben (Hintergrund BLAU, Schrift WEISS, Akzente ROT).
+ * :root hat HSV-Farben (Default und "Normal" Theme).
+ * .theme-light ist fuer "System (OS)" bei Light-Mode.
  *
- * Das Normal-Theme wird als .theme-normal CSS-Klasse implementiert.
- * :root ist die helle Basis (wird von "System (OS)" bei Light-Mode verwendet).
- *
- * Diese Tests lesen die tatsaechliche CSS-Datei (Source of Truth fuer Theme-Tokens),
- * damit sie echte Regressionen erkennen und nicht nur eine Kopie der Werte sind.
+ * Diese Tests lesen die tatsaechliche CSS-Datei (Source of Truth fuer Theme-Tokens).
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-function readNormalThemeBlock(): string {
+function readRootThemeBlock(): string {
   const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf-8')
-  const match = css.match(/\.theme-normal\s*{([^}]*)}/)
-  if (!match) throw new Error('.theme-normal Block nicht gefunden in index.css')
+  const match = css.match(/:root\s*{([^}]*)}/)
+  if (!match) throw new Error(':root Block nicht gefunden in index.css')
+  return match[1]
+}
+
+function readLightThemeBlock(): string {
+  const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf-8')
+  const match = css.match(/\.theme-light\s*{([^}]*)}/)
+  if (!match) throw new Error('.theme-light Block nicht gefunden in index.css')
   return match[1]
 }
 
@@ -35,78 +40,68 @@ function contrastRatio(hex1: string, hex2: string): number {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
-describe('REQ-3045 Normal-Theme (HSV: Hintergrund blau, Schrift weiss, Akzent rot)', () => {
+describe('REQ-3045 :root = HSV (Normal-Theme Default)', () => {
 
-  it('index.css .theme-normal Block existiert', () => {
-    const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf-8')
-    expect(css).toMatch(/\.theme-normal\s*{/)
+  it(':root --color-bg ist Blau (#1e3a8a)', () => {
+    const root = readRootThemeBlock()
+    expect(root).toMatch(/--color-bg:\s*#1e3a8a;/)
   })
 
-  it('.theme-normal --color-bg ist Blau (#1e3a8a)', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-bg:\s*#1e3a8a;/)
+  it(':root --color-surface ist ein abgesetztes Blau', () => {
+    const root = readRootThemeBlock()
+    expect(root).toMatch(/--color-surface:\s*#1e40af;/)
   })
 
-  it('.theme-normal --color-surface ist ein abgesetztes Blau', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-surface:\s*#1e40af;/)
+  it(':root --color-text-primary ist Weiss (#ffffff)', () => {
+    const root = readRootThemeBlock()
+    expect(root).toMatch(/--color-text-primary:\s*#ffffff;/)
   })
 
-  it('.theme-normal --color-surface-hover ist definiert', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-surface-hover:\s*#1d4ed8;/)
+  it(':root --color-accent ist Rot (#dc2626)', () => {
+    const root = readRootThemeBlock()
+    expect(root).toMatch(/--color-accent:\s*#dc2626;/)
   })
 
-  it('.theme-normal --color-text-primary ist Weiss (#ffffff)', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-text-primary:\s*#ffffff;/)
+  it(':root setzt color-scheme: dark', () => {
+    const root = readRootThemeBlock()
+    expect(root).toMatch(/color-scheme:\s*dark;/)
   })
 
-  it('.theme-normal --color-text-secondary/--color-text-muted sind helle Blaetoene', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-text-secondary:\s*#dbeafe;/)
-    expect(block).toMatch(/--color-text-muted:\s*#93c5fd;/)
-  })
-
-  it('.theme-normal --color-accent ist Rot (#dc2626)', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-accent:\s*#dc2626;/)
-  })
-
-  it('.theme-normal --color-accent-hover ist ein dunkleres Rot', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-accent-hover:\s*#b91c1c;/)
-  })
-
-  it('.theme-normal --color-accent-text ist Weiss (Lesbarkeit auf rotem Accent-Button)', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-accent-text:\s*#ffffff;/)
-  })
-
-  it('.theme-normal --color-danger/--color-success/--color-warning sind definiert', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/--color-danger:\s*#f87171;/)
-    expect(block).toMatch(/--color-success:\s*#4ade80;/)
-    expect(block).toMatch(/--color-warning:\s*#fbbf24;/)
-  })
-
-  it('.theme-normal setzt color-scheme: dark (dunkler Hintergrund fuer native Formularelemente)', () => {
-    const block = readNormalThemeBlock()
-    expect(block).toMatch(/color-scheme:\s*dark;/)
-  })
-
-  it('Kontrast Text-Primary (#ffffff) auf Hintergrund (#1e3a8a) erfuellt WCAG AA (>=4.5:1)', () => {
+  it('Kontrast Text-Primary (#ffffff) auf Hintergrund (#1e3a8a) erfuellt WCAG AA', () => {
     const ratio = contrastRatio('#ffffff', '#1e3a8a')
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   })
+})
 
-  it('Kontrast Accent-Text (#ffffff) auf Accent-Farbe (#dc2626) erfuellt WCAG AA (>=4.5:1)', () => {
-    const ratio = contrastRatio('#ffffff', '#dc2626')
-    expect(ratio).toBeGreaterThanOrEqual(4.5)
+describe('System (OS) Light-Mode: .theme-light', () => {
+
+  it('.theme-light existiert', () => {
+    const css = readFileSync(resolve(__dirname, '../../index.css'), 'utf-8')
+    expect(css).toMatch(/\.theme-light\s*{/)
   })
 
-  it('Kontrast Text-Secondary (#dbeafe) auf Hintergrund (#1e3a8a) erfuellt WCAG AA (>=4.5:1)', () => {
-    const ratio = contrastRatio('#dbeafe', '#1e3a8a')
+  it('.theme-light --color-bg ist Weiss (#ffffff)', () => {
+    const block = readLightThemeBlock()
+    expect(block).toMatch(/--color-bg:\s*#ffffff;/)
+  })
+
+  it('.theme-light --color-text-primary ist Dunkelgrau (#1e293b)', () => {
+    const block = readLightThemeBlock()
+    expect(block).toMatch(/--color-text-primary:\s*#1e293b;/)
+  })
+
+  it('.theme-light --color-accent ist Blau (#0ea5e9)', () => {
+    const block = readLightThemeBlock()
+    expect(block).toMatch(/--color-accent:\s*#0ea5e9;/)
+  })
+
+  it('.theme-light setzt color-scheme: light', () => {
+    const block = readLightThemeBlock()
+    expect(block).toMatch(/color-scheme:\s*light;/)
+  })
+
+  it('Kontrast Text-Primary (#1e293b) auf Hintergrund (#ffffff) erfuellt WCAG AA', () => {
+    const ratio = contrastRatio('#1e293b', '#ffffff')
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   })
 })

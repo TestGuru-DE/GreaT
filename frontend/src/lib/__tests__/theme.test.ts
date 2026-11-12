@@ -52,28 +52,30 @@ describe('Theme System', () => {
     expect(getTheme()).toBe('normal')
   })
 
-  it('setTheme with "normal" applies theme-normal class (HSV colors)', () => {
+  it('setTheme with "normal" removes all theme classes (uses :root HSV)', () => {
     setTheme('dark')
     setTheme('normal')
     expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
-    expect(document.documentElement.classList.contains('theme-normal')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
+    // :root has HSV colors, no class needed
   })
 
-  it('setTheme with "system" and OS=light applies no class (uses :root)', () => {
+  it('setTheme with "system" and OS=light applies theme-light class', () => {
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: false,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }))
     setTheme('system')
-    expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(true)
     expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
     expect(localStorage.getItem('great-theme')).toBe('system')
   })
 
-  it('setTheme switches from normal to system (OS=light) and removes theme-normal', () => {
+  it('setTheme switches from normal to system (OS=light) and adds theme-light', () => {
     setTheme('normal')
-    expect(document.documentElement.classList.contains('theme-normal')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(false)
 
     window.matchMedia = vi.fn().mockImplementation(() => ({
       matches: false,
@@ -81,7 +83,7 @@ describe('Theme System', () => {
       removeEventListener: vi.fn(),
     }))
     setTheme('system')
-    expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-light')).toBe(true)
     expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
   })
 })
@@ -104,15 +106,15 @@ describe('System Theme', () => {
     expect(getEffectiveTheme('system')).toBe('dark')
   })
 
-  it('getEffectiveTheme returns normal when OS prefers light', () => {
+  it('getEffectiveTheme returns light when OS prefers light', () => {
     // Mock matchMedia to return light preference
     window.matchMedia = vi.fn().mockImplementation(query => ({
       matches: false,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
     }))
-    
-    expect(getEffectiveTheme('system')).toBe('normal')
+
+    expect(getEffectiveTheme('system')).toBe('light')
   })
 
   it('getEffectiveTheme returns same theme for non-system themes', () => {

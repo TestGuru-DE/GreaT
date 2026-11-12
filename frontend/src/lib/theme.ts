@@ -1,6 +1,9 @@
 export const THEMES = ['normal', 'dark', 'steampunk', 'rainbow', 'heavy-metal', 'system'] as const
 export type ThemeName = typeof THEMES[number]
 
+// Interne Theme-Klassen (nicht direkt waehlbar)
+const INTERNAL_THEMES = ['light'] as const
+
 const STORAGE_KEY = 'great-theme'
 const THEME_PREFIX = 'theme-'
 
@@ -14,20 +17,26 @@ export function setTheme(theme: ThemeName): void {
   // REQ-3062: Resolve 'system' to effective theme
   const effectiveTheme = getEffectiveTheme(theme)
 
-  // Alle alten Theme-Klassen entfernen (inklusive theme-normal)
+  // Alle alten Theme-Klassen entfernen (inklusive interne)
   THEMES.forEach(t => {
+    document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
+  })
+  INTERNAL_THEMES.forEach(t => {
     document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
   })
 
   // Neue Theme-Klasse setzen
-  if (effectiveTheme !== 'normal') {
+  if (effectiveTheme !== 'normal' && effectiveTheme !== 'light') {
     // dark, steampunk, rainbow, heavy-metal
     document.documentElement.classList.add(`${THEME_PREFIX}${effectiveTheme}`)
   } else if (theme === 'normal') {
-    // REQ-3045: Explizites "Normal" -> HSV-Farben (.theme-normal Klasse)
-    document.documentElement.classList.add(`${THEME_PREFIX}normal`)
+    // REQ-3045: Explizites "Normal" -> HSV-Farben (:root, keine Klasse benoetigt)
+    // Keine Klasse setzen — :root hat HSV-Farben
+  } else if (theme === 'system' && effectiveTheme === 'light') {
+    // System=Light -> .theme-light Klasse
+    document.documentElement.classList.add(`${THEME_PREFIX}light`)
   }
-  // else: effectiveTheme='normal' UND theme='system' -> keine Klasse, nutzt :root (hell)
+  // else: system=dark -> .theme-dark (wird durch effectiveTheme='dark' oben gesetzt)
 
   localStorage.setItem(STORAGE_KEY, theme)
 }
@@ -38,10 +47,11 @@ export function initTheme(): void {
 
 /**
  * REQ-3062: Resolve 'system' theme to actual OS preference
+ * Returns 'light' (internal) for light mode, 'dark' for dark mode
  */
-export function getEffectiveTheme(theme: ThemeName): Exclude<ThemeName, 'system'> {
-  if (theme !== 'system') return theme as Exclude<ThemeName, 'system'>
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'normal'
+export function getEffectiveTheme(theme: ThemeName): ThemeName | 'light' {
+  if (theme !== 'system') return theme
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 /**

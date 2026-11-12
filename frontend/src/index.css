@@ -3,10 +3,27 @@
 @tailwind utilities;
 
 /* Theme-System – CSS Custom Properties */
-/* :root = helle Basis (wird von "System (OS)" bei Light-Mode verwendet) */
-/* REQ-3045: "Normal"-Theme = HSV-Farben (dunkelblau, weiss, rot) als .theme-normal Klasse */
-/* "System (OS)" nutzt prefers-color-scheme: Light -> :root, Dark -> .theme-dark */
+/* REQ-3045: :root = HSV-Farben (dunkelblau, weiss, rot) — Default und "Normal" */
+/* "System (OS)" nutzt prefers-color-scheme: Light -> .theme-light, Dark -> .theme-dark */
 :root {
+  --color-bg: #1e3a8a;
+  --color-surface: #1e40af;
+  --color-surface-hover: #1d4ed8;
+  --color-border: #3b82f6;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #dbeafe;
+  --color-text-muted: #93c5fd;
+  --color-accent: #dc2626;
+  --color-accent-hover: #b91c1c;
+  --color-accent-text: #ffffff;
+  --color-danger: #f87171;
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  color-scheme: dark;
+}
+
+/* System (OS) = Light Mode: helle Farben */
+.theme-light {
   --color-bg: #ffffff;
   --color-surface: #f8fafc;
   --color-surface-hover: #f1f5f9;
@@ -23,22 +40,9 @@
   color-scheme: light;
 }
 
-/* REQ-3045: Normal-Theme (HSV-Farben: dunkelblau, weiss, rot) */
+/* REQ-3045: Normal-Theme = HSV (identisch zu :root) */
 .theme-normal {
-  --color-bg: #1e3a8a;
-  --color-surface: #1e40af;
-  --color-surface-hover: #1d4ed8;
-  --color-border: #3b82f6;
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #dbeafe;
-  --color-text-muted: #93c5fd;
-  --color-accent: #dc2626;
-  --color-accent-hover: #b91c1c;
-  --color-accent-text: #ffffff;
-  --color-danger: #f87171;
-  --color-success: #4ade80;
-  --color-warning: #fbbf24;
-  color-scheme: dark;
+  /* :root Werte werden vererbt — keine Aenderung notwendig */
 }
 
 /* Dark Theme */
