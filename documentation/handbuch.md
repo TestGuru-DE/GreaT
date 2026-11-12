@@ -1,6 +1,6 @@
 # G.R.E.A.T. — Benutzerhandbuch
 
-**Georg Radikal Einfacher Automatisierter TestcaseDesigner**
+**Georgs Radikal Einfacher Automatisierter TestcaseDesigner**
 
 *Version 1.8.0 | Stand November 2026*
 
@@ -91,7 +91,7 @@
 
 ### 1.1 Anmeldung
 
-![Login-Seite](./screenshots/01-login.png)
+![Login-Seite](/docs/screenshots/01-login.png)
 
 G.R.E.A.T. startet mit einer Login-Seite. Geben Sie Ihren Benutzernamen und Ihr Passwort ein.
 
@@ -114,7 +114,7 @@ Beim allerersten Start des Systems zeigt die Login-Seite das **Standardpasswort*
 
 ### 1.3 Passwort wechseln
 
-![Passwortwechsel](./screenshots/02-passwortwechsel.png)
+![Passwortwechsel](/docs/screenshots/02-passwortwechsel.png)
 
 Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Auch spaeter koennen Sie Ihr Passwort ueber die Top-Navigation unter **"Passwort aendern"** wechseln.
 
@@ -134,7 +134,7 @@ Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weiterge
 
 Nach erfolgreicher Anmeldung gelangen Sie zur **Projektuebersicht**. Hier sehen Sie alle Projekte, auf die Sie Zugriff haben:
 
-![Projektuebersicht](./screenshots/03-projektuebersicht.png)
+![Projektuebersicht](/docs/screenshots/03-projektuebersicht.png)
 
 | Aktion | Beschreibung |
 |--------|-------------|
@@ -171,7 +171,7 @@ Kategorien sind die Grundbausteine eines Testprojekts. Jede Kategorie entspricht
 
 ### 3.1 Kategorien anlegen
 
-![Kategorie anlegen](./screenshots/03-01-kategorie-anlegen.png)
+![Kategorie anlegen](/docs/screenshots/03-01-kategorie-anlegen.png)
 
 1. Oeffnen Sie ein Projekt
 2. Im linken Bereich (Kategoriebaum) erscheint ein Eingabefeld **"Neue Kategorie"**
@@ -206,7 +206,7 @@ Kategorien sind die Grundbausteine eines Testprojekts. Jede Kategorie entspricht
 
 Jede Kategorie kann beliebig viele Werte enthalten. Werte代表 die moeglichen Eingabewerte fuer einen Testparameter.
 
-![Werte verwalten](./screenshots/03-04-werte-verwalten.png)
+![Werte verwalten](/docs/screenshots/03-04-werte-verwalten.png)
 
 | Aktion | Wie |
 |--------|-----|
@@ -221,7 +221,7 @@ Jede Kategorie kann beliebig viele Werte enthalten. Werte代表 die moeglichen E
 
 Fehlerwerte (auch "Ungueltige Werte" genannt) sind Eingaben, die **nicht erlaubt** sind und die das System ablehnen soll. Sie sind wichtig fuer negative Tests.
 
-![Fehlerwert markieren](./screenshots/03-05-fehlerwert.png)
+![Fehlerwert markieren](/docs/screenshots/03-05-fehlerwert.png)
 
 **Markierung als Fehlerwert:**
 1. Rechtsklick auf den Wert
@@ -237,7 +237,7 @@ Fehlerwerte (auch "Ungueltige Werte" genannt) sind Eingaben, die **nicht erlaubt
 
 Die Strategie **"Lineare Expansion"** benoetigt pro Kategorie einen **Default-Wert**. Dieser Wert wird in allen Testfaellen verwendet, ausser in dem Testfall, der den aktuellen Wert testet.
 
-![Default-Wert](./screenshots/03-06-default-wert.png)
+![Default-Wert](/docs/screenshots/03-06-default-wert.png)
 
 **Default-Wert setzen:**
 1. Rechtsklick auf den Wert
@@ -262,7 +262,7 @@ Die Strategie **"Lineare Expansion"** benoetigt pro Kategorie einen **Default-We
 
 Jeder Wert kann ein **Risiko-Gewicht** (1–10) erhalten. Hoehere Gewichte bedeuten hoeheres Risiko und werden bei risikobasierten Strategien priorisiert.
 
-![Risiko-Gewichtung](./screenshots/03-07-risiko.png)
+![Risiko-Gewichtung](/docs/screenshots/03-07-risiko.png)
 
 **Einstellung:**
 - Im Wertelistenbereich erscheint ein kleines Eingabefeld (Default: 1)
@@ -282,7 +282,7 @@ Die Sortierung bestimmt die Reihenfolge in generierten Testfaellen und Exporten.
 
 **Boundary Value Analysis (BVA)** generiert automatisch Testwerte an den Grenzen von Wertebereichen. Sie ist direkt in der Kategorieverwaltung integriert.
 
-![BVA-Dialog](./screenshots/03-09-bva.png)
+![BVA-Dialog](/docs/screenshots/03-09-bva.png)
 
 **Einstieg:**
 1. Rechtsklick auf eine Kategorie oder Klick auf das **BVA-Symbol** (↗↘) neben der Kategorie
@@ -331,7 +331,7 @@ Die **Entscheidungstabelle** (Cause-Effect-Table) ist eine systematische Testdes
 
 ### 4.1 Ueberblick & Einstieg
 
-![Entscheidungstabelle Ueberblick](./screenshots/04-01-uebersicht.png)
+![Entscheidungstabelle Ueberblick](/docs/screenshots/04-01-uebersicht.png)
 
 **Einstieg:**
 1. Oeffnen Sie ein Projekt
@@ -363,7 +363,7 @@ Die Entscheidungstabelle unterscheidet zwei Kategorie-Typen:
 
 ### 4.3 Entscheidungstabelle-Ansicht
 
-![Entscheidungstabelle Ansicht](./screenshots/04-03-tabelle.png)
+![Entscheidungstabelle Ansicht](/docs/screenshots/04-03-tabelle.png)
 
 Die Tabelle besteht aus drei Bereichen:
 
@@ -421,7 +421,7 @@ Bei Aktivierung der Entscheidungstabelle generiert G.R.E.A.T. **automatisch** al
 
 ### 4.6 Constraint-Dialog
 
-![Constraint-Dialog](./screenshots/04-06-constraint-dialog.png)
+![Constraint-Dialog](/docs/screenshots/04-06-constraint-dialog.png)
 
 **Oeffnen:**
 1. Rechtsklick auf eine Ursache in der Tabelle
@@ -582,7 +582,7 @@ Die **Vollstaendigkeitspruefung** identifiziert **fehlende Kombinationen** der U
 
 Der **Cause-Effect-Graph** visualisiert die logischen Zusammenhaenge zwischen Ursachen, Constraints und Wirkungen als Graph/Diagramm.
 
-![Cause-Effect-Graph](./screenshots/04-14-graph.png)
+![Cause-Effect-Graph](/docs/screenshots/04-14-graph.png)
 
 **Elemente:**
 | Symbol | Bedeutung |
@@ -641,7 +641,7 @@ Regeln definieren Zusammenhaenge zwischen Werten verschiedener Kategorien. Sie r
 
 Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nicht** den Wert Y haben."
 
-![Forbidden-Regel](./screenshots/05-02-forbidden.png)
+![Forbidden-Regel](/docs/screenshots/05-02-forbidden.png)
 
 **Beispiel:**
 - Wenn **Browser = Internet Explorer**, dann **CSS-Feature != Grid Layout**
@@ -657,7 +657,7 @@ Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategori
 
 Eine Abhaengigkeit sagt: "Wenn Kategorie A den Wert X hat, **muss** Kategorie B den Wert Y haben."
 
-![Dependency-Regel](./screenshots/05-03-dependency.png)
+![Dependency-Regel](/docs/screenshots/05-03-dependency.png)
 
 **Beispiel:**
 - Wenn **Datenbank = Oracle**, dann **Treiber = JDBC**
@@ -667,7 +667,7 @@ Eine Abhaengigkeit sagt: "Wenn Kategorie A den Wert X hat, **muss** Kategorie B 
 
 Eine Combine-Regel sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nur** einen der Werte aus der Liste [Y, Z, ...] haben."
 
-![Combine-Regel](./screenshots/05-04-combine.png)
+![Combine-Regel](/docs/screenshots/05-04-combine.png)
 
 **Beispiel:**
 - Wenn **Betriebssystem = Linux**, dann **Webserver in [Apache, Nginx]**
@@ -675,7 +675,7 @@ Eine Combine-Regel sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nu
 
 ### 5.5 Regelvisualisierung
 
-![Regelvisualisierung](./screenshots/05-05-visualisierung.png)
+![Regelvisualisierung](/docs/screenshots/05-05-visualisierung.png)
 
 G.R.E.A.T. zeigt Regeln als **SVG-basierte Verbindungslinien** zwischen den Werten verschiedener Kategorien:
 
@@ -931,7 +931,7 @@ Beim Anlegen einer Kategorie koennen Sie eine bestehende Datenklasse als Vorlage
 
 ### 10.1 Erscheinungsbild (Themes)
 
-![Theme-Auswahl](./screenshots/09-01-themes.png)
+![Theme-Auswahl](/docs/screenshots/09-01-themes.png)
 
 G.R.E.A.T. unterstuetzt mehrere Themes:
 
