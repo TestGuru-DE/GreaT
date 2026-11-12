@@ -9,6 +9,7 @@ import GenerationsPage from "./pages/GenerationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
+import HelpPage from "./pages/HelpPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import TopNav from "./components/TopNav";
 import { ToastContainer } from "./components/Toast";
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="/dataclasses" element={<DataClassesPage />} />
             <Route path="/generations" element={<GenerationsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/help" element={<HelpPage />} />
           </Route>
         </Routes>
       </div>

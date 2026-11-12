@@ -1,5 +1,6 @@
 // REQ-3001: Einheitliche Top-Navigation in jeder Ansicht
 // REQ-4028 AK-3: "Passwort aendern" fuer alle Rollen
+import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 
@@ -16,6 +17,18 @@ export default function TopNav() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+
+  // F1-Shortcut: Oeffnet Hilfe
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F1') {
+        e.preventDefault();
+        navigate('/help');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   const handleLogout = async () => {
     await logout();
@@ -45,11 +58,19 @@ export default function TopNav() {
           </NavLink>
         ))}
       </nav>
+      {/* Hilfe-Button (?) */}
+      <button
+        onClick={() => navigate('/help')}
+        className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-2"
+        title="Hilfe (F1)"
+      >
+        ?
+      </button>
       <a
         href="/docs"
         target="_blank"
         rel="noopener noreferrer"
-        className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-2"
+        className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-1"
       >
         API-Docs
       </a>
