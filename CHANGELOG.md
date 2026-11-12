@@ -27,6 +27,7 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Risikoabdeckung Bugfix (REQ-3051)**: Berechnung zeigt korrekte Werte ≤ 100% bei "All Combinations" — Ergebnis-Kategorien werden vom Maximum ausgeschlossen
 - **Name korrigiert**: "Georg" → "Georgs" (README, Handbuch)
 - **Screenshots sichtbar**: Bilder als ES-Module importiert, im Build korrekt resolved
+- **Handbuch Kapitel 15**: API-Einbindung fuer Entwickler (alle REST-Endpoints, Auth, Beispiel-Workflow)
 
 ### 🔧 Technical
 - **Dependencies**: `react-markdown`, `remark-gfm` hinzugefuegt
