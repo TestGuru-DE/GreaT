@@ -26,48 +26,64 @@
    - 3.6 Default-Wert (Lineare Expansion)
    - 3.7 Risiko-Gewichtung
    - 3.8 Drag & Drop Sortierung
-4. [Regeln](#4-regeln)
-   - 4.1 Regeltypen ueberblick
-   - 4.2 Verbotene Kombinationen (Forbidden)
-   - 4.3 Abhaengigkeiten (Dependency)
-   - 4.4 Kombinieren (Combine)
-   - 4.5 Regelvisualisierung
-   - 4.6 Regelwidersprueche erkennen
-5. [Testfall-Generierung](#5-testfall-generierung)
-   - 5.1 Generierungsstrategien ueberblick
-   - 5.2 All Combinations
-   - 5.3 Pairwise / Orthogonal
-   - 5.4 Each Choice
-   - 5.5 Lineare Expansion
-   - 5.6 T-Wise
-   - 5.7 MC/DC
-   - 5.8 Risk-Based
-   - 5.9 BVA (Boundary Value Analysis)
-   - 5.10 Regeln bei Generierung anwenden
-6. [Risikoabdeckung](#6-risikoabdeckung)
-   - 6.1 Risikoabdeckung pro Testfall
-   - 6.2 Risikoabdeckungs-Prozentsatz
-   - 6.3 Risiko-Zusammenfassung
-7. [Export](#7-export)
-   - 7.1 CSV-Export
-   - 7.2 JSON-Export
-   - 7.3 Excel-Export
-   - 7.4 Fehlerwert-Kennzeichnung im Export
-8. [Datenklassen](#8-datenklassen)
-   - 8.1 System-Datenklassen
-   - 8.2 Eigene Datenklassen
-   - 8.3 Datenklassen in Projekten verwenden
-9. [Einstellungen](#9-einstellungen)
-   - 9.1 Erscheinungsbild (Themes)
-   - 9.2 Maximale Anzahl Testfaelle
-   - 9.3 Datensicherung
-10. [Benutzer & Rollen](#10-benutzer--rollen)
-   - 10.1 Rollen: Admin, Editor, Viewer
-   - 10.2 Projekt-Freigabe
-   - 10.3 Benutzer verwalten
-11. [Tastaturnavigation & Shortcuts](#11-tastaturnavigation--shortcuts)
-12. [Glossar](#12-glossar)
-13. [Haeufige Fragen (FAQ)](#13-haeufige-fragen-faq)
+   - 3.9 BVA (Grenzwertanalyse)
+4. [Entscheidungstabelle](#4-entscheidungstabelle)
+   - 4.1 Ueberblick & Einstieg
+   - 4.2 Ursache- und Wirkungskategorien
+   - 4.3 Entscheidungstabelle-Ansicht
+   - 4.4 Automatische Regelgenerierung
+   - 4.5 Constraints (E, O, I, R, M)
+   - 4.6 Constraint-Dialog
+   - 4.7 Collapsing (automatische Reduktion)
+   - 4.8 Don't Care (—)
+   - 4.9 Extended Entry (multiple Werte pro Ursache)
+   - 4.10 Wirkungen als Text
+   - 4.11 Checksum-Validierung
+   - 4.12 Widerspruchserkennung
+   - 4.13 Vollstaendigkeitspruefung (Luecken)
+   - 4.14 Cause-Effect-Graph
+   - 4.15 Generierung aus Entscheidungstabelle
+5. [Regeln (klassisch)](#5-regeln-klassisch)
+   - 5.1 Regeltypen ueberblick
+   - 5.2 Verbotene Kombinationen (Forbidden)
+   - 5.3 Abhaengigkeiten (Dependency)
+   - 5.4 Kombinieren (Combine)
+   - 5.5 Regelvisualisierung
+   - 5.6 Regelwidersprueche erkennen
+6. [Testfall-Generierung](#6-testfall-generierung)
+   - 6.1 Generierungsstrategien ueberblick
+   - 6.2 All Combinations
+   - 6.3 Pairwise / Orthogonal
+   - 6.4 Each Choice
+   - 6.5 Lineare Expansion
+   - 6.6 T-Wise
+   - 6.7 MC/DC
+   - 6.8 Risk-Based
+   - 6.9 Regeln bei Generierung anwenden
+7. [Risikoabdeckung](#7-risikoabdeckung)
+   - 7.1 Risikoabdeckung pro Testfall
+   - 7.2 Risikoabdeckungs-Prozentsatz
+   - 7.3 Risiko-Zusammenfassung
+8. [Export](#8-export)
+   - 8.1 CSV-Export
+   - 8.2 JSON-Export
+   - 8.3 Excel-Export
+   - 8.4 Fehlerwert-Kennzeichnung im Export
+9. [Datenklassen](#9-datenklassen)
+   - 9.1 System-Datenklassen
+   - 9.2 Eigene Datenklassen
+   - 9.3 Datenklassen in Projekten verwenden
+10. [Einstellungen](#10-einstellungen)
+   - 10.1 Erscheinungsbild (Themes)
+   - 10.2 Maximale Anzahl Testfaelle
+   - 10.3 Datensicherung
+11. [Benutzer & Rollen](#11-benutzer--rollen)
+   - 11.1 Rollen: Admin, Editor, Viewer
+   - 11.2 Projekt-Freigabe
+   - 11.3 Benutzer verwalten
+12. [Tastaturnavigation & Shortcuts](#12-tastaturnavigation--shortcuts)
+13. [Glossar](#13-glossar)
+14. [Haeufige Fragen (FAQ)](#14-haeufige-fragen-faq)
 
 ---
 
@@ -262,13 +278,358 @@ Kategorien und Werte koennen per **Drag & Drop** sortiert werden:
 
 Die Sortierung bestimmt die Reihenfolge in generierten Testfaellen und Exporten.
 
+### 3.9 BVA (Grenzwertanalyse)
+
+**Boundary Value Analysis (BVA)** generiert automatisch Testwerte an den Grenzen von Wertebereichen. Sie ist direkt in der Kategorieverwaltung integriert.
+
+![BVA-Dialog](./screenshots/03-09-bva.png)
+
+**Einstieg:**
+1. Rechtsklick auf eine Kategorie oder Klick auf das **BVA-Symbol** (↗↘) neben der Kategorie
+2. Der BVA-Dialog oeffnet sich
+
+**Einfache BVA (ein Bereich):**
+| Feld | Beschreibung |
+|------|-------------|
+| **Minimum** | Untere Grenze des erlaubten Bereichs |
+| **Maximum** | Obere Grenze des erlaubten Bereichs |
+| **Punkte pro Grenze** | 2, 3 oder 4 Werte pro Grenze |
+
+**Punkte pro Grenze:**
+| Punkte | Generierte Werte pro Grenze |
+|--------|----------------------------|
+| 2 | Grenze, Grenze+1 |
+| 3 | Grenze-1, Grenze, Grenze+1 |
+| 4 | Grenze-2, Grenze-1, Grenze, Grenze+1 |
+
+**Beispiel (Minimum=10, Maximum=100, 3 Punkte):**
+| Position | Wert | Typ |
+|----------|-----|-----|
+| Unterhalb | 9 | Fehlerwert (✕) |
+| Untere Grenze | 10 | Gueltig |
+| Innerhalb | 11 | Gueltig |
+| Innerhalb | 99 | Gueltig |
+| Obere Grenze | 100 | Gueltig |
+| Oberhalb | 101 | Fehlerwert (✕) |
+
+**Multi-Range BVA (mehrere Bereiche):**
+Fuer komplexe Szenarien mit mehreren erlaubten/verbotenen Bereichen:
+1. Im BVA-Dialog auf **"Mehrere Bereiche"** umschalten
+2. Pro Bereich Minimum, Maximum und erlaubten/verbotenen Status definieren
+3. BVA generiert Werte an allen Grenzen aller Bereiche
+
+**Ergebnis:**
+- Gueltige Werte werden als normale Werte angelegt
+- Ungueltige Werte (außerhalb der Bereiche) werden automatisch als **Fehlerwerte** (✕) markiert
+- Die Werte erscheinen in der Kategorie und koennen sofort fuer die Generierung verwendet werden
+
 ---
 
-## 4. Regeln
+## 4. Entscheidungstabelle
+
+Die **Entscheidungstabelle** (Cause-Effect-Table) ist eine systematische Testdesign-Technik nach ISTQB. Sie modelliert die logischen Zusammenhaenge zwischen **Ursachen** (Eingaben) und **Wirkungen** (Ergebnisse) und generiert daraus minimale, vollstaendige Testsaetze.
+
+### 4.1 Ueberblick & Einstieg
+
+![Entscheidungstabelle Ueberblick](./screenshots/04-01-uebersicht.png)
+
+**Einstieg:**
+1. Oeffnen Sie ein Projekt
+2. Klicken Sie auf den **"Entscheidungstabelle"** Button im Bereich "Kategorien & Werte"
+3. Die Entscheidungstabelle-Ansicht oeffnet sich in einem neuen Karteireiter
+
+**Wichtige Regel:**
+- Sobald die Entscheidungstabelle aktiv ist, werden die klassischen Kombinatorik-Strategien (All Combinations, Pairwise, etc.) **ausgegraut**
+- Die Generierung erfolgt ausschliesslich ueber die Entscheidungstabelle
+
+### 4.2 Ursache- und Wirkungskategorien
+
+Die Entscheidungstabelle unterscheidet zwei Kategorie-Typen:
+
+| Typ | Symbol | Rolle | Position in Tabelle |
+|-----|--------|-------|---------------------|
+| **Ursache** | U | Eingabe/Condition | Obere Halfte der Tabelle |
+| **Wirkung** | W | Ergebnis/Effect | Untere Halfte der Tabelle |
+
+**Kategorie-Typ zuweisen:**
+1. Rechtsklick auf Kategorie im Baum
+2. **"Typ: Ursache"** oder **"Typ: Wirkung"** auswahlen
+3. Der Typ wird durch das entsprechende Badge (U/W) im Baum angezeigt
+
+**Anforderungen:**
+- Mindestens **eine Ursache** und **eine Wirkung** ist erforderlich
+- Normal-Kategorien und Ergebnis-Kategorien werden in der Entscheidungstabelle nicht verwendet
+- Der Typ kann jederzeit nachtraeglich geaendert werden
+
+### 4.3 Entscheidungstabelle-Ansicht
+
+![Entscheidungstabelle Ansicht](./screenshots/04-03-tabelle.png)
+
+Die Tabelle besteht aus drei Bereichen:
+
+**Obere Halfte — Ursachen (Conditions):**
+| Spalte | Bedeutung |
+|--------|-----------|
+| Ursache-Name | Kategoriename der Ursache |
+| Ja/Nein/— | Wertzuordnung fuer diese Regel (Spalte) |
+
+**Trennlinie:** Visuelle Trennung zwischen Ursachen und Wirkungen
+
+**Untere Halfte — Wirkungen (Effects):**
+| Spalte | Bedeutung |
+|--------|-----------|
+| Wirkung-Name | Kategoriename der Wirkung |
+| Ja/Nein/Text/— | Ergebnis fuer diese Regel (Spalte) |
+
+**Rechte Spalte — Constraints:**
+- Constraints pro Ursache (E, O, I, R, M, siehe 4.5)
+
+**Jede vertikale Spalte** repraesentiert eine **Regel** (ein Testfall).
+
+### 4.4 Automatische Regelgenerierung
+
+Bei Aktivierung der Entscheidungstabelle generiert G.R.E.A.T. **automatisch** alle gueltigen Kombinationen der Ursachen:
+
+- Bei 2 Ursachen: 2 × 2 = **4 Regeln** (Ja/Ja, Ja/Nein, Nein/Ja, Nein/Nein)
+- Bei 3 Ursachen: 2 × 2 × 2 = **8 Regeln**
+- Bei n Ursachen: **2^n Regeln**
+
+**Ablauf:**
+1. Tabelle wird mit allen Ursache-Kombinationen befuellt
+2. Wirkungen sind initial leer (—)
+3. Sie fueullen die Wirkungen manuell oder halb-automatisch
+4. G.R.E.A.T. wendet automatisch **Collapsing** an (siehe 4.7)
+
+> **Hinweis:** Die Anzahl der Regeln wird durch die Maximale-Testfaelle-Einstellung begrenzt (Default 1000).
+
+### 4.5 Constraints (E, O, I, R, M)
+
+**Constraints** (Einschraenkungen) definieren logische Zusammenhaenge zwischen Ursachen. Sie reduzieren die Anzahl der gueltigen Kombinationen und damit der Testfaelle.
+
+| Constraint | Abkuerzung | Bedeutung | Beispiel |
+|------------|-----------|-----------|----------|
+| **Exclusive** | E | Maximal eine Ursache kann "Ja" sein | Nur ein Format kann ausgewaehlt sein |
+| **One-and-Only-One** | O | Genau eine Ursache muss "Ja" sein | Genau eine Zahlungsart muss gewaehlt werden |
+| **Inclusive** | I | Mindestens eine Ursache muss "Ja" sein | Mindestens eine Kontaktmoeglichkeit muss angegeben werden |
+| **Requires** | R | Wenn A="Ja", dann B="Ja" | Wenn "Premium", dann "Login erforderlich" |
+| **Mask** | M | Wenn A="Ja", dann B="Nein" | Wenn "Gratis", dann "Premium=Nein" |
+
+**Anwendung:**
+- Constraints werden pro Ursache definiert
+- Mehrere Ursachen koennen zum gleichen Constraint gehoeren (Gruppe)
+- Bei Regelgenerierung werden ungueltige Kombinationen automatisch entfernt
+
+### 4.6 Constraint-Dialog
+
+![Constraint-Dialog](./screenshots/04-06-constraint-dialog.png)
+
+**Oeffnen:**
+1. Rechtsklick auf eine Ursache in der Tabelle
+2. **"Constraint setzen"** auswahlen
+3. Constraint-Dialog oeffnet sich
+
+**Im Dialog:**
+1. **Constraint-Typ** auswahlen (E, O, I, R, M)
+2. **Betroffene Ursachen** markieren (mehrere auswahlbar)
+3. Bei **Requires (R)**: Ursache A (Trigger) und Ursache B (Anforderung) zuordnen
+4. Bei **Mask (M)**: Ursache A (Trigger) und Ursache B (Blockierung) zuordnen
+5. **"Anwenden"** → Constraint wird gespeichert und in der Tabelle angezeigt
+
+**Anzeige in der Tabelle:**
+- Constraints erscheinen als Badge neben der Ursache (z. B. "E" in rot)
+- Hover ueber Badge zeigt Details (beteiligte Ursachen)
+
+### 4.7 Collapsing (automatische Reduktion)
+
+**Collapsing** reduziert die Anzahl der Regeln, indem Regeln mit identischem Wirkungsverhalten zusammengefasst werden.
+
+**Prinzip:**
+- Wenn zwei Regeln dieselben Wirkungen haben, werden sie zu einer Regel zusammengefasst
+- Die Ursache, die in beiden Regeln unterschiedlich ist, wird zu **"—" (Don't Care)**
+
+**Beispiel (vor Collapsing):**
+
+| | Regel 1 | Regel 2 |
+|---|---------|---------|
+| Ursache A | Ja | Nein |
+| Ursache B | Ja | Ja |
+| Wirkung X | Ja | Ja |
+
+**Nach Collapsing:**
+
+| | Regel 1+2 |
+|---|---------|
+| Ursache A | — (Don't Care) |
+| Ursache B | Ja |
+| Wirkung X | Ja |
+
+**Ergebnis:**
+- Die Anzahl der Regeln (Testfaelle) wird reduziert
+- Die Vollstaendigkeit bleibt gewaehrleistet
+- Collapsing wird automatisch nach jeder Aenderung angewendet
+
+### 4.8 Don't Care (—)
+
+**"—" (Don't Care / Irrelevant)** bedeutet: "Der Wert dieser Ursache ist fuer diese Regel unerheblich."
+
+**Entsteht durch:**
+- Collapsing (automatisch, siehe 4.7)
+- Manuelle Eingabe (Rechtsklick auf Zelle → "Don't Care setzen")
+
+**Bei der Generierung:**
+- Don't Care bedeutet: "Beide Werte (Ja und Nein) sind moeglich"
+- Daraus werden **zwei Testfaelle** generiert (einer mit Ja, einer mit Nein)
+- Dies gewaehrleistet, dass keine Kombination uebersehen wird
+
+**Beispiel:**
+| Ursache A | Ursache B | Wirkung |
+|-----------|-----------|---------|
+| — | Ja | X=Ja |
+
+→ Generiert: (A=Ja, B=Ja → X=Ja) **und** (A=Nein, B=Ja → X=Ja)
+
+### 4.9 Extended Entry (multiple Werte pro Ursache)
+
+Klassische Entscheidungstabellen verwenden nur **Ja/Nein** (binar). G.R.E.A.T. unterstuetzt **Extended Entry**: multiple Werte pro Ursache in einer Regel.
+
+**Anwendung:**
+- Rechtsklick auf Zelle → Wert aus der Werteliste auswahlen
+- Nicht auf Ja/Nein beschrankt — alle Werte der Kategorie sind verwendbar
+
+**Vorteil:**
+- Realistischere Modellierung (nicht alles ist binar)
+- Weniger Regeln bei komplexen Szenarien
+
+**Beispiel:**
+| Browser | OS | Wirkung |
+|---------|-----|---------|
+| Chrome | Windows | Kompatibel |
+| Firefox | Linux | Kompatibel |
+| IE | — | Inkompatibel |
+
+### 4.10 Wirkungen als Text
+
+Neben binaren Wirkungen (Ja/Nein) koennen Wirkungen als **freier Text** definiert werden.
+
+**Einstellung:**
+- Rechtsklick auf Wirkungskategorie → **"Wirkungen als Text"** aktivieren
+- Ab jetzt koennen in der Tabelle beliebige Textwerte eingetragen werden
+
+**Beispiel:**
+| Ursache: Login | Wirkung: Nachricht |
+|---------------|-------------------|
+| Ja | "Willkommen" |
+| Nein | "Bitte melden Sie sich an" |
+
+**Vorteil:**
+- Direkt die erwarteten Testergebnisse als Text
+- Bessere Nachvollziehbarkeit der Testfaelle
+
+### 4.11 Checksum-Validierung
+
+Die **Checksum-Validierung** prueft, ob die Tabelle konsistent ist:
+
+**Pruefung:**
+- Jede Regel hat eine eindeutige Kombination von Ursache-Werten
+- Keine zwei Regeln haben identische Ursache-Werte (Duplikat)
+- Alle Wirkungen sind fuer jede Regel definiert (oder explizit Don't Care)
+
+**Anzeige:**
+- **Gruen:** Tabelle ist konsistent ✓
+- **Rot:** Widerspruch oder Luecke erkannt ✕
+- Hover zeigt Details zur Fehlermeldung
+
+**Aktivierung:**
+- In der Tabelle-Toolbar auf **"Checksum pruefen"** klicken
+
+### 4.12 Widerspruchserkennung
+
+G.R.E.A.T. erkennt automatisch **Widersprueche** in der Entscheidungstabelle:
+
+| Typ | Beschreibung | Beispiel |
+|-----|-------------|----------|
+| **Duplikat** | Zwei Regeln mit gleichen Ursachen | Regel 1 und 3 haben beide A=Ja, B=Ja |
+| **Konflikt** | Gleiche Ursachen, unterschiedliche Wirkungen | Regel 1: A=Ja → X=Ja; Regel 2: A=Ja → X=Nein |
+| **Unmoeglich** | Constraint wird verletzt | E-Constraint, aber zwei Ursachen sind "Ja" |
+
+**Anzeige:**
+- Betroffene Zellen/Regeln werden **rot markiert**
+- Toast-Nachricht mit Beschreibung des Widerspruchs
+- **"Widersprueche anzeigen"** Button in der Toolbar
+
+### 4.13 Vollstaendigkeitspruefung (Luecken)
+
+Die **Vollstaendigkeitspruefung** identifiziert **fehlende Kombinationen** der Ursachen:
+
+**Prinzip:**
+- Alle moeglichen Ursache-Kombinationen werden mit der Tabelle verglichen
+- Fehlende Kombinationen werden als **Luecken** markiert
+
+**Anzeige:**
+- **Vollstaendig:** Alle Kombinationen abgedeckt ✓
+- **Luecken:** n Kombinationen nicht abgedeckt (Details aufklappbar)
+
+**Beispiel:**
+- 2 Ursachen (A, B) → 4 moegliche Kombinationen
+- Tabelle hat nur 3 Regeln → 1 Luecke
+- Luecke: "A=Nein, B=Nein" ist nicht in der Tabelle
+
+**Aktion:**
+- **"Luecken auffuellen"** → fehlende Regeln werden automatisch hinzugefuegt
+- Oder manuell: neue Regel mit den fehlenden Werten hinzufuegen
+
+### 4.14 Cause-Effect-Graph
+
+Der **Cause-Effect-Graph** visualisiert die logischen Zusammenhaenge zwischen Ursachen, Constraints und Wirkungen als Graph/Diagramm.
+
+![Cause-Effect-Graph](./screenshots/04-14-graph.png)
+
+**Elemente:**
+| Symbol | Bedeutung |
+|--------|-----------|
+| Rechteck | Ursache oder Wirkung |
+| Pfeil | Logische Abhaengigkeit |
+| AND/OR/NOT | Logische Operatoren |
+| Constraint-Symbole | E, O, I, R, M |
+
+**Navigation:**
+- **Zoom:** Mausrad
+- **Verschieben:** Klick und Ziehen
+- **Details:** Hover ueber Knoten zeigt Beschreibung
+
+**Aktivierung:**
+- In der Tabelle-Toolbar auf **"Graph anzeigen"** klicken
+- Graph oeffnet sich in separater Ansicht neben der Tabelle
+
+### 4.15 Generierung aus Entscheidungstabelle
+
+Nachdem die Tabellevollstaendig und widerspruchsfrei ist, koennen Testfaelle generiert werden:
+
+**Ablauf:**
+1. Auf **"Generieren"** Button klicken
+2. G.R.E.A.T. erzeugt pro Regel einen oder mehrere Testfaelle:
+   - Don't Care (—) → zwei Testfaelle (Ja und Nein)
+   - Extended Entry → ein Testfall pro Wertkombination
+3. Testfaelle werden in der Generierungsansicht angezeigt
+4. Export wie ueblich (CSV, JSON, Excel)
+
+**Besonderheiten:**
+- Constraints werden bei der Generierung beruecksichtigt
+- Widersprueche blockieren die Generierung (zuerst beheben)
+- Luecken koennen zur Generierung gefuehrt haben (Warnung)
+
+**Ergebnis:**
+- Minimaler, vollstaendiger Testsatz
+- Jede Regel ist abgedeckt
+- Constraints sind gewaehrleistet
+
+---
+
+## 5. Regeln (klassisch)
 
 Regeln definieren Zusammenhaenge zwischen Werten verschiedener Kategorien. Sie reduzieren den Testraum auf relevante Kombinationen.
 
-### 4.1 Regeltypen ueberblick
+### 5.1 Regeltypen ueberblick
 
 | Typ | Symbol | Bedeutung | Farbe |
 |-----|--------|-----------|-------|
@@ -276,11 +637,11 @@ Regeln definieren Zusammenhaenge zwischen Werten verschiedener Kategorien. Sie r
 | **Abhaengig** (Dependency) | → | Wenn A=X, dann B=Y | Violett |
 | **Kombinieren** (Combine) | ⊂ | Wenn A=X, dann B in [Y,Z,...] | Gruen |
 
-### 4.2 Verbotene Kombinationen (Forbidden)
+### 5.2 Verbotene Kombinationen (Forbidden)
 
 Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nicht** den Wert Y haben."
 
-![Forbidden-Regel](./screenshots/04-02-forbidden.png)
+![Forbidden-Regel](./screenshots/05-02-forbidden.png)
 
 **Beispiel:**
 - Wenn **Browser = Internet Explorer**, dann **CSS-Feature != Grid Layout**
@@ -292,29 +653,29 @@ Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategori
 3. Dann-Kategorie und Dann-Wert auswahlen
 4. Regel wird sofort gespeichert
 
-### 4.3 Abhaengigkeiten (Dependency)
+### 5.3 Abhaengigkeiten (Dependency)
 
 Eine Abhaengigkeit sagt: "Wenn Kategorie A den Wert X hat, **muss** Kategorie B den Wert Y haben."
 
-![Dependency-Regel](./screenshots/04-03-dependency.png)
+![Dependency-Regel](./screenshots/05-03-dependency.png)
 
 **Beispiel:**
 - Wenn **Datenbank = Oracle**, dann **Treiber = JDBC**
 - Diese Kombination wird erzwungen
 
-### 4.4 Kombinieren (Combine)
+### 5.4 Kombinieren (Combine)
 
 Eine Combine-Regel sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nur** einen der Werte aus der Liste [Y, Z, ...] haben."
 
-![Combine-Regel](./screenshots/04-04-combine.png)
+![Combine-Regel](./screenshots/05-04-combine.png)
 
 **Beispiel:**
 - Wenn **Betriebssystem = Linux**, dann **Webserver in [Apache, Nginx]**
 - Andere Webserver (IIS, Tomcat) werden fuer Linux ausgeschlossen
 
-### 4.5 Regelvisualisierung
+### 5.5 Regelvisualisierung
 
-![Regelvisualisierung](./screenshots/04-05-visualisierung.png)
+![Regelvisualisierung](./screenshots/05-05-visualisierung.png)
 
 G.R.E.A.T. zeigt Regeln als **SVG-basierte Verbindungslinien** zwischen den Werten verschiedener Kategorien:
 
@@ -329,7 +690,7 @@ G.R.E.A.T. zeigt Regeln als **SVG-basierte Verbindungslinien** zwischen den Wert
 - **Refresh:** ↻-Button aktualisiert die Visualisierung
 - **Hoehe anpassen:** Resize-Handle zum Vergrößern/Verkleinern
 
-### 4.6 Regelwidersprueche erkennen
+### 5.6 Regelwidersprueche erkennen
 
 G.R.E.A.T. prueft automatisch auf Widersprueche zwischen Regeln:
 
@@ -341,9 +702,9 @@ Warnungen erscheinen als Toast-Nachrichten bei Regelanlage.
 
 ---
 
-## 5. Testfall-Generierung
+## 6. Testfall-Generierung
 
-### 5.1 Generierungsstrategien ueberblick
+### 6.1 Generierungsstrategien ueberblick
 
 | Strategie | Abkuerzung | Beschreibung | Wann verwenden |
 |-----------|-----------|-------------|----------------|
@@ -357,7 +718,7 @@ Warnungen erscheinen als Toast-Nachrichten bei Regelanlage.
 | **Risk-Based** | Risk | Risikogewichtete Auswahl | Risikofokus |
 | **BVA** | BVA | Boundary Value Analysis | Numerische Bereiche |
 
-### 5.2 All Combinations
+### 6.2 All Combinations
 
 Generiert **alle moeglichen Kombinationen** aller Werte aller Kategorien.
 
@@ -372,7 +733,7 @@ Generiert **alle moeglichen Kombinationen** aller Werte aller Kategorien.
 - Theoretisches Maximum fuer Risikoabdeckung
 - Gut als Referenz fuer andere Strategien
 
-### 5.3 Pairwise / Orthogonal
+### 6.3 Pairwise / Orthogonal
 
 **Pairwise (All Pairs):** Testet jede **Paar-Kombination** von Werten mindestens einmal. Bei 3 Kategorien mit je 3 Werten: statt 27 nur ca. 9 Testfaelle.
 
@@ -382,7 +743,7 @@ Generiert **alle moeglichen Kombinationen** aller Werte aller Kategorien.
 - Paarweise Fehler sind am haeufigsten (Studien: 95%+ der Fehler entstehen durch Interaktionen von 1–2 Parametern)
 - Gutes Verhaeltnis von Abdeckung zu Aufwand
 
-### 5.4 Each Choice
+### 6.4 Each Choice
 
 Stellt sicher, dass **jeder Wert** in mindestens einem Testfall vorkommt. Liefert den **minimal moeglichen** Testsatz.
 
@@ -393,7 +754,7 @@ Stellt sicher, dass **jeder Wert** in mindestens einem Testfall vorkommt. Liefer
 - Sehr grosse Testraeme
 - Kombination mit anderen Strategien
 
-### 5.5 Lineare Expansion
+### 6.5 Lineare Expansion
 
 Pro Kategorie wird **ein Testfall** erzeugt, in dem der Wert der aktuellen Kategorie variiert und alle anderen Kategorien ihren **Default-Wert** haben.
 
@@ -406,7 +767,7 @@ Pro Kategorie wird **ein Testfall** erzeugt, in dem der Wert der aktuellen Kateg
 - Smoke Tests
 - Schnelle Regression
 
-### 5.6 T-Wise
+### 6.6 T-Wise
 
 Verallgemeinerung von Pairwise: Testet alle **T-fachen Kombinationen**. Standard: t=2 (identisch mit Pairwise). Konfigurierbar bis t=5.
 
@@ -414,7 +775,7 @@ Verallgemeinerung von Pairwise: Testet alle **T-fachen Kombinationen**. Standard
 
 **Einstellung:** In der Generierungs-UI waehlen Sie die T-Staerke (2–5).
 
-### 5.7 MC/DC
+### 6.7 MC/DC
 
 **Modified Condition/Decision Coverage** ist ein Testkriterium aus der Luft- und Raumfahrt (DO-178C). Es stellt sicher, dass jede Bedingung in einer booleschen Formel unabhaengig von den anderen Bedingungen den Ausgang beeinflusst.
 
@@ -422,7 +783,7 @@ Verallgemeinerung von Pairwise: Testet alle **T-fachen Kombinationen**. Standard
 - Sicherheitskritische Software (Avionics, Medizintechnik, Automotive)
 - Zertifizierungsanforderungen (DO-178C, ISO 26262)
 
-### 5.8 Risk-Based
+### 6.8 Risk-Based
 
 Generiert Testfaelle basierend auf den **Risiko-Gewichten** der Werte. Hoeher gewichtete Werte erscheinen haeufiger.
 
@@ -432,19 +793,7 @@ Generiert Testfaelle basierend auf den **Risiko-Gewichten** der Werte. Hoeher ge
 - Fokus auf hochriskante Bereiche
 - Begrenter Testzeitrahmen
 
-### 5.9 BVA (Boundary Value Analysis)
-
-**Boundary Value Analysis** testet die Grenzen von Wertebereichen. Fuer einen Bereich [1; 100] werden typischerweise getestet:
-- Unterhalb der Grenze: 0
-- Untere Grenze: 1
-- Oberhalb der unteren Grenze: 2
-- Unterhalb der oberen Grenze: 99
-- Obere Grenze: 100
-- Oberhalb der oberen Grenze: 101
-
-**Multi-Range BVA:** G.R.E.A.T. unterstuetzt mehrere erlaubte/verbotene Bereiche pro Kategorie.
-
-### 5.10 Regeln bei Generierung anwenden
+### 6.9 Regeln bei Generierung anwenden
 
 In der Generierungs-UI finden Sie die Option **"Regeln anwenden"** (Checkbox). Wenn aktiviert:
 
@@ -458,9 +807,9 @@ In der Generierungs-UI finden Sie die Option **"Regeln anwenden"** (Checkbox). W
 
 ---
 
-## 6. Risikoabdeckung
+## 7. Risikoabdeckung
 
-### 6.1 Risikoabdeckung pro Testfall
+### 7.1 Risikoabdeckung pro Testfall
 
 Jeder Testfall erhaelt einen **risk_coverage**-Wert: die **Summe der Risiko-Gewichte** aller zugewiesenen Werte.
 
@@ -472,7 +821,7 @@ Jeder Testfall erhaelt einen **risk_coverage**-Wert: die **Summe der Risiko-Gewi
 
 Testfaelle werden **absteigend nach risk_coverage** sortiert (hohe Risiken zuerst). Testfaelle mit Fehlerwerten kommen trotzdem ans Ende.
 
-### 6.2 Risikoabdeckungs-Prozentsatz
+### 7.2 Risikoabdeckungs-Prozentsatz
 
 Der **risk_coverage_percent** gibt an, wie gross der Anteil der erfassten Risiken am theoretischen Maximum (All Combinations) ist:
 
@@ -489,7 +838,7 @@ Prozent = (Summe aller risk_coverage / Maximum bei All Combinations) × 100
 
 > **Hinweis:** Ein niedriger Prozentsatz bedeutet nicht schlechte Qualität — er zeigt nur, dass weniger Kombinationen getestet werden. Pairwise deckt z. B. 95%+ der paarenweise Fehler ab bei nur 30–50% Risikoabdeckung.
 
-### 6.3 Risiko-Zusammenfassung
+### 7.3 Risiko-Zusammenfassung
 
 Nach der Generierung zeigt G.R.E.A.T. eine **Risiko-Zusammenfassung**:
 
@@ -502,9 +851,9 @@ Nach der Generierung zeigt G.R.E.A.T. eine **Risiko-Zusammenfassung**:
 
 ---
 
-## 7. Export
+## 8. Export
 
-### 7.1 CSV-Export
+### 8.1 CSV-Export
 
 Exportiert Testfaelle als CSV-Datei (semikolon-getrennt, UTF-8 mit BOM fuer Excel-Kompatibilitaet).
 
@@ -522,7 +871,7 @@ Exportiert Testfaelle als CSV-Datei (semikolon-getrennt, UTF-8 mit BOM fuer Exce
 | `bom` | auto | BOM ein/aus |
 | `status` | `false` | Regel-Status-Spalte hinzufuegen |
 
-### 7.2 JSON-Export
+### 8.2 JSON-Export
 
 Exportiert Testfaelle als strukturiertes JSON mit Projekt-, Kategorie- und Testfall-Hierarchie.
 
@@ -543,19 +892,19 @@ Exportiert Testfaelle als strukturiertes JSON mit Projekt-, Kategorie- und Testf
 }
 ```
 
-### 7.3 Excel-Export
+### 8.3 Excel-Export
 
 Exportiert Testfaelle als `.xlsx`-Datei (openpyxl). Gleiche Spalten wie CSV, aber als native Excel-Tabelle mit fettgedruckten Ueberschriften.
 
-### 7.4 Fehlerwert-Kennzeichnung im Export
+### 8.4 Fehlerwert-Kennzeichnung im Export
 
 Alle Export-Formate enthalten eine Spalte/Field `Fehlerwert` (bzw. `has_error_value`), die **JA/NEIN** (bzw. `true/false`) angibt, ob der Testfall mindestens einen Fehlerwert enthaelt.
 
 ---
 
-## 8. Datenklassen
+## 9. Datenklassen
 
-### 8.1 System-Datenklassen
+### 9.1 System-Datenklassen
 
 G.R.E.A.T. liefert vordefinierte Datenklassen (Aequivalenzklassen) fuer haeufige Testparameter:
 
@@ -568,19 +917,19 @@ G.R.E.A.T. liefert vordefinierte Datenklassen (Aequivalenzklassen) fuer haeufige
 | **Aufloesung** | 800×600, 1024×768, 1920×1080, 2560×1440 |
 | **Sprache** | Deutsch, Englisch, Franzoesisch, Spanisch |
 
-### 8.2 Eigene Datenklassen
+### 9.2 Eigene Datenklassen
 
 Erstellen Sie eigene Datenklassen in der **Datenklassen-Ansicht** (`/dataclasses`). Eine Datenklasse ist eine benannte Menge von Werten, die in mehreren Projekten wiederverwendbar ist.
 
-### 8.3 Datenklassen in Projekten verwenden
+### 9.3 Datenklassen in Projekten verwenden
 
 Beim Anlegen einer Kategorie koennen Sie eine bestehende Datenklasse als Vorlage verwenden. Alle Werte der Datenklasse werden automatisch als Werte der Kategorie angelegt.
 
 ---
 
-## 9. Einstellungen
+## 10. Einstellungen
 
-### 9.1 Erscheinungsbild (Themes)
+### 10.1 Erscheinungsbild (Themes)
 
 ![Theme-Auswahl](./screenshots/09-01-themes.png)
 
@@ -599,7 +948,7 @@ Die Auswahl wird automatisch im Browser gespeichert (localStorage).
 
 **System (OS):** Nutzt `prefers-color-scheme` des Browsers/Betriebssystems. Aendert sich die Systemeinstellung, passt sich G.R.E.A.T. automatisch an.
 
-### 9.2 Maximale Anzahl Testfaelle
+### 10.2 Maximale Anzahl Testfaelle
 
 Standardmaessig werden maximal **1000 Testfaelle** pro Generierung erzeugt. Dies verhindert unbeabsichtigte Ressourcen-Explosion bei grossen Testraemen.
 
@@ -608,7 +957,7 @@ Standardmaessig werden maximal **1000 Testfaelle** pro Generierung erzeugt. Dies
 - Backend: Umgebungsvariable `GREAT_MAX_TESTCASES`
 - Ein expliziter `limit`-Parameter in der Generierungsanfrage ueberschreibt diesen Wert
 
-### 9.3 Datensicherung
+### 10.3 Datensicherung
 
 In den Einstellungen finden Sie die Option zur **Datenbank-Sicherung**. Dies erstellt einen JSON-Export aller Projekte, Kategorien, Werte, Regeln und Testfaelle.
 
@@ -616,9 +965,9 @@ In den Einstellungen finden Sie die Option zur **Datenbank-Sicherung**. Dies ers
 
 ---
 
-## 10. Benutzer & Rollen
+## 11. Benutzer & Rollen
 
-### 10.1 Rollen
+### 11.1 Rollen
 
 | Rolle | Berechtigungen |
 |-------|---------------|
@@ -626,17 +975,17 @@ In den Einstellungen finden Sie die Option zur **Datenbank-Sicherung**. Dies ers
 | **Editor** | Projekte bearbeiten, Kategorien/Werte/Regeln anlegen, generieren, exportieren |
 | **Viewer** | Nur lesen: Projekte ansehen, Testfaelle exportieren |
 
-### 10.2 Projekt-Freigabe
+### 11.2 Projekt-Freigabe
 
 Admins und Projektbesitzer koennen Projekte an andere Benutzer freigeben. Der freigegebene Benutzer erhaelt Zugriff entsprechend seiner Rolle.
 
-### 10.3 Benutzer verwalten
+### 11.3 Benutzer verwalten
 
 Admins koennen ueber die Einstellungen neue Benutzer anlegen, Rollen zuweisen und bestehende Benutzer bearbeiten oder deaktivieren.
 
 ---
 
-## 11. Tastaturnavigation & Shortcuts
+## 12. Tastaturnavigation & Shortcuts
 
 | Tastenkombination | Aktion |
 |------------------|--------|
@@ -650,7 +999,7 @@ Admins koennen ueber die Einstellungen neue Benutzer anlegen, Rollen zuweisen un
 
 ---
 
-## 12. Glossar
+## 13. Glossar
 
 | Begriff | Definition |
 |---------|-----------|
@@ -673,7 +1022,7 @@ Admins koennen ueber die Einstellungen neue Benutzer anlegen, Rollen zuweisen un
 
 ---
 
-## 13. Haeufige Fragen (FAQ)
+## 14. Haeufige Fragen (FAQ)
 
 **Warum erscheinen bei All Combinations mehr als 1000 Testfaelle nicht?**
 Standardmaessig greift ein Limit von 1000 Testfaellen pro Generierung. Aendern Sie dies in den Einstellungen oder uebergeben Sie einen expliziten `limit`-Parameter.
