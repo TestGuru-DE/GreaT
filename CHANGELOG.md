@@ -25,6 +25,7 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Symbole verbessert**: Default-Wert = **★** (Stern, amber), Fehlerwert = **✕** (Kreuz, rot) – beide eindeutig erkennbar
 - **Werte-Zaehler Bugfix**: Zeigt jetzt "…" statt "0" wenn Werte noch nicht geladen; klickbar zum Laden
 - **Combine-Regeln Bugfix**: Regelvisualisierung zeigt jetzt alle erlaubten Zielwerte als separate Linien
+- **Theme-Fix (REQ-3045 + REQ-3062)**: "Normal" und "System (OS)" sind jetzt klar getrennt: "Normal" zeigt HSV-Farben (dunkelblau/weiss/rot), "System (OS)" nutzt die OS-Einstellung (hell bei Light-Mode, dunkel bei Dark-Mode)
 
 ### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
 - **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
