@@ -1,6 +1,6 @@
 // REQ-1204 + REQ-2003 + REQ-3001: Routing + Toast-Container + Top-Navigation
 // REQ-3062: System theme sync
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
@@ -9,7 +9,8 @@ import GenerationsPage from "./pages/GenerationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
-import HelpPage from "./pages/HelpPage";
+// Lazy-Load: HelpPage inkl. react-markdown + Handbuch nur bei Bedarf laden
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 import ProtectedRoute from "./components/ProtectedRoute";
 import TopNav from "./components/TopNav";
 import { ToastContainer } from "./components/Toast";
@@ -43,7 +44,18 @@ export default function App() {
             <Route path="/dataclasses" element={<DataClassesPage />} />
             <Route path="/generations" element={<GenerationsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/help" element={<HelpPage />} />
+            <Route
+              path="/help"
+              element={
+                <Suspense fallback={
+                  <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+                    <span className="text-theme-text-secondary text-sm">Hilfe wird geladen...</span>
+                  </div>
+                }>
+                  <HelpPage />
+                </Suspense>
+              }
+            />
           </Route>
         </Routes>
       </div>
