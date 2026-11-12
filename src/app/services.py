@@ -178,10 +178,15 @@ def sort_testcases_error_last(testcases: List[Dict[str, str]], error_values: set
 
 
 def load_categories_values_weighted(db: Session, project_id: int) -> dict:
-    """Gibt {Kategoriename: [(Wert, risk_weight), ...]} für die risikogewichtete Generierung zurück."""
+    """Gibt {Kategoriename: [(Wert, risk_weight), ...]} für die risikogewichtete Generierung zurück.
+
+    REQ-4016: is_result=True Kategorien werden AUSGESCHLOSSEN (konsistent mit load_categories_values).
+    Sonst kommt es bei der Risikoabdeckungs-Berechnung zu Werten > 100%, weil das Maximum
+    mit mehr Kategorien berechnet wird als tatsaechlich in den Testfaehlen vorkommen.
+    """
     cats = (
         db.query(models.Category)
-        .filter(models.Category.project_id == project_id)
+        .filter(models.Category.project_id == project_id, models.Category.is_result == False)
         .order_by(models.Category.order_index, models.Category.id)
         .all()
     )
