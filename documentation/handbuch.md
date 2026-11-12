@@ -84,6 +84,7 @@
 12. [Tastaturnavigation & Shortcuts](#12-tastaturnavigation--shortcuts)
 13. [Glossar](#13-glossar)
 14. [Haeufige Fragen (FAQ)](#14-haeufige-fragen-faq)
+ 15. [API-Einbindung](#15-api-einbindung-fuer-entwickler)
 
 ---
 
@@ -91,7 +92,7 @@
 
 ### 1.1 Anmeldung
 
-![Login-Seite](/docs/screenshots/01-login.png)
+![Login-Seite](./screenshots/01-login.png)
 
 G.R.E.A.T. startet mit einer Login-Seite. Geben Sie Ihren Benutzernamen und Ihr Passwort ein.
 
@@ -114,7 +115,7 @@ Beim allerersten Start des Systems zeigt die Login-Seite das **Standardpasswort*
 
 ### 1.3 Passwort wechseln
 
-![Passwortwechsel](/docs/screenshots/02-passwortwechsel.png)
+![Passwortwechsel](./screenshots/02-passwortwechsel.png)
 
 Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Auch spaeter koennen Sie Ihr Passwort ueber die Top-Navigation unter **"Passwort aendern"** wechseln.
 
@@ -134,7 +135,7 @@ Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weiterge
 
 Nach erfolgreicher Anmeldung gelangen Sie zur **Projektuebersicht**. Hier sehen Sie alle Projekte, auf die Sie Zugriff haben:
 
-![Projektuebersicht](/docs/screenshots/03-projektuebersicht.png)
+![Projektuebersicht](./screenshots/03-projektuebersicht.png)
 
 | Aktion | Beschreibung |
 |--------|-------------|
@@ -171,7 +172,7 @@ Kategorien sind die Grundbausteine eines Testprojekts. Jede Kategorie entspricht
 
 ### 3.1 Kategorien anlegen
 
-![Kategorie anlegen](/docs/screenshots/03-01-kategorie-anlegen.png)
+![Kategorie anlegen](./screenshots/03-01-kategorie-anlegen.png)
 
 1. Oeffnen Sie ein Projekt
 2. Im linken Bereich (Kategoriebaum) erscheint ein Eingabefeld **"Neue Kategorie"**
@@ -206,7 +207,7 @@ Kategorien sind die Grundbausteine eines Testprojekts. Jede Kategorie entspricht
 
 Jede Kategorie kann beliebig viele Werte enthalten. Werte代表 die moeglichen Eingabewerte fuer einen Testparameter.
 
-![Werte verwalten](/docs/screenshots/03-04-werte-verwalten.png)
+![Werte verwalten](./screenshots/03-04-werte-verwalten.png)
 
 | Aktion | Wie |
 |--------|-----|
@@ -221,7 +222,7 @@ Jede Kategorie kann beliebig viele Werte enthalten. Werte代表 die moeglichen E
 
 Fehlerwerte (auch "Ungueltige Werte" genannt) sind Eingaben, die **nicht erlaubt** sind und die das System ablehnen soll. Sie sind wichtig fuer negative Tests.
 
-![Fehlerwert markieren](/docs/screenshots/03-05-fehlerwert.png)
+![Fehlerwert markieren](./screenshots/03-05-fehlerwert.png)
 
 **Markierung als Fehlerwert:**
 1. Rechtsklick auf den Wert
@@ -237,7 +238,7 @@ Fehlerwerte (auch "Ungueltige Werte" genannt) sind Eingaben, die **nicht erlaubt
 
 Die Strategie **"Lineare Expansion"** benoetigt pro Kategorie einen **Default-Wert**. Dieser Wert wird in allen Testfaellen verwendet, ausser in dem Testfall, der den aktuellen Wert testet.
 
-![Default-Wert](/docs/screenshots/03-06-default-wert.png)
+![Default-Wert](./screenshots/03-06-default-wert.png)
 
 **Default-Wert setzen:**
 1. Rechtsklick auf den Wert
@@ -262,7 +263,7 @@ Die Strategie **"Lineare Expansion"** benoetigt pro Kategorie einen **Default-We
 
 Jeder Wert kann ein **Risiko-Gewicht** (1–10) erhalten. Hoehere Gewichte bedeuten hoeheres Risiko und werden bei risikobasierten Strategien priorisiert.
 
-![Risiko-Gewichtung](/docs/screenshots/03-07-risiko.png)
+![Risiko-Gewichtung](./screenshots/03-07-risiko.png)
 
 **Einstellung:**
 - Im Wertelistenbereich erscheint ein kleines Eingabefeld (Default: 1)
@@ -282,7 +283,7 @@ Die Sortierung bestimmt die Reihenfolge in generierten Testfaellen und Exporten.
 
 **Boundary Value Analysis (BVA)** generiert automatisch Testwerte an den Grenzen von Wertebereichen. Sie ist direkt in der Kategorieverwaltung integriert.
 
-![BVA-Dialog](/docs/screenshots/03-09-bva.png)
+![BVA-Dialog](./screenshots/03-09-bva.png)
 
 **Einstieg:**
 1. Rechtsklick auf eine Kategorie oder Klick auf das **BVA-Symbol** (↗↘) neben der Kategorie
@@ -331,7 +332,7 @@ Die **Entscheidungstabelle** (Cause-Effect-Table) ist eine systematische Testdes
 
 ### 4.1 Ueberblick & Einstieg
 
-![Entscheidungstabelle Ueberblick](/docs/screenshots/04-01-uebersicht.png)
+![Entscheidungstabelle Ueberblick](./screenshots/04-01-uebersicht.png)
 
 **Einstieg:**
 1. Oeffnen Sie ein Projekt
@@ -363,7 +364,7 @@ Die Entscheidungstabelle unterscheidet zwei Kategorie-Typen:
 
 ### 4.3 Entscheidungstabelle-Ansicht
 
-![Entscheidungstabelle Ansicht](/docs/screenshots/04-03-tabelle.png)
+![Entscheidungstabelle Ansicht](./screenshots/04-03-tabelle.png)
 
 Die Tabelle besteht aus drei Bereichen:
 
@@ -421,7 +422,7 @@ Bei Aktivierung der Entscheidungstabelle generiert G.R.E.A.T. **automatisch** al
 
 ### 4.6 Constraint-Dialog
 
-![Constraint-Dialog](/docs/screenshots/04-06-constraint-dialog.png)
+![Constraint-Dialog](./screenshots/04-06-constraint-dialog.png)
 
 **Oeffnen:**
 1. Rechtsklick auf eine Ursache in der Tabelle
@@ -582,7 +583,7 @@ Die **Vollstaendigkeitspruefung** identifiziert **fehlende Kombinationen** der U
 
 Der **Cause-Effect-Graph** visualisiert die logischen Zusammenhaenge zwischen Ursachen, Constraints und Wirkungen als Graph/Diagramm.
 
-![Cause-Effect-Graph](/docs/screenshots/04-14-graph.png)
+![Cause-Effect-Graph](./screenshots/04-14-graph.png)
 
 **Elemente:**
 | Symbol | Bedeutung |
@@ -641,7 +642,7 @@ Regeln definieren Zusammenhaenge zwischen Werten verschiedener Kategorien. Sie r
 
 Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nicht** den Wert Y haben."
 
-![Forbidden-Regel](/docs/screenshots/05-02-forbidden.png)
+![Forbidden-Regel](./screenshots/05-02-forbidden.png)
 
 **Beispiel:**
 - Wenn **Browser = Internet Explorer**, dann **CSS-Feature != Grid Layout**
@@ -657,7 +658,7 @@ Eine verbotene Kombination sagt: "Wenn Kategorie A den Wert X hat, darf Kategori
 
 Eine Abhaengigkeit sagt: "Wenn Kategorie A den Wert X hat, **muss** Kategorie B den Wert Y haben."
 
-![Dependency-Regel](/docs/screenshots/05-03-dependency.png)
+![Dependency-Regel](./screenshots/05-03-dependency.png)
 
 **Beispiel:**
 - Wenn **Datenbank = Oracle**, dann **Treiber = JDBC**
@@ -667,7 +668,7 @@ Eine Abhaengigkeit sagt: "Wenn Kategorie A den Wert X hat, **muss** Kategorie B 
 
 Eine Combine-Regel sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nur** einen der Werte aus der Liste [Y, Z, ...] haben."
 
-![Combine-Regel](/docs/screenshots/05-04-combine.png)
+![Combine-Regel](./screenshots/05-04-combine.png)
 
 **Beispiel:**
 - Wenn **Betriebssystem = Linux**, dann **Webserver in [Apache, Nginx]**
@@ -675,7 +676,7 @@ Eine Combine-Regel sagt: "Wenn Kategorie A den Wert X hat, darf Kategorie B **nu
 
 ### 5.5 Regelvisualisierung
 
-![Regelvisualisierung](/docs/screenshots/05-05-visualisierung.png)
+![Regelvisualisierung](./screenshots/05-05-visualisierung.png)
 
 G.R.E.A.T. zeigt Regeln als **SVG-basierte Verbindungslinien** zwischen den Werten verschiedener Kategorien:
 
@@ -931,7 +932,7 @@ Beim Anlegen einer Kategorie koennen Sie eine bestehende Datenklasse als Vorlage
 
 ### 10.1 Erscheinungsbild (Themes)
 
-![Theme-Auswahl](/docs/screenshots/09-01-themes.png)
+![Theme-Auswahl](./screenshots/09-01-themes.png)
 
 G.R.E.A.T. unterstuetzt mehrere Themes:
 
@@ -1044,6 +1045,289 @@ Ergebnis-Kategorien (`is_result=True`) sind nicht an der automatischen Generieru
 
 **Wie wechsle ich vom Standardpasswort?**
 Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Spaeter: Top-Navigation → "Passwort aendern".
+
+---
+
+## 15. API-Einbindung (fuer Entwickler)
+
+G.R.E.A.T. bietet eine **RESTful API** mit OpenAPI-Dokumentation, die es ermoelicht, das Programm in andere Werkzeuge und Prozesse zu integrieren (z. B. CI/CD-Pipelines, Testmanagement-Systeme, eigene Skripte).
+
+### 15.1 Grundlegendes
+
+| Eigenschaft | Wert |
+|-------------|------|
+| **Basis-URL** | `http://localhost:8000` (Standard) |
+| **OpenAPI-Docs** | `http://localhost:8000/docs` (Swagger UI) |
+| **ReDoc** | `http://localhost:8000/redoc` |
+| **Authentifizierung** | JWT (Access + Refresh Token in httpOnly Cookies) |
+| **Content-Type** | `application/json` |
+
+### 15.2 Authentifizierung
+
+Alle geschuetzten Endpoints erfordern eine Authentifizierung. Der Access-Token wird automatisch im Cookie `access_token` gespeichert.
+
+**Login:**
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -d "username=admin&password=changeme123!" \
+  -c cookies.txt
+```
+
+**Mit Cookie weiterarbeiten:**
+```bash
+curl -b cookies.txt http://localhost:8000/auth/me
+```
+
+**Logout:**
+```bash
+curl -X POST http://localhost:8000/auth/logout -b cookies.txt
+```
+
+**Token erneuern (automatisch):**
+```bash
+curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
+```
+
+> **Hinweis:** Tokens werden in httpOnly Cookies gespeichert. Fuer Programmatic Access (z. B. Skripte) koennen Sie auch den Token aus dem Cookie extrahieren und als `Authorization: Bearer <token>` Header verwenden.
+
+### 15.3 API-Endpunkte nach Kategorien
+
+#### Authentifizierung (`/auth/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/auth/login` | Login mit Username/Password | — |
+| `POST` | `/auth/logout` | Logout, Tokens invalidate | — |
+| `POST` | `/auth/refresh` | Access-Token erneuern | — |
+| `GET` | `/auth/me` | Eigene Benutzerinfo | Alle |
+| `POST` | `/auth/change-password` | Passwort aendern | Alle |
+| `GET` | `/auth/first-start-hint` | Erststart-Hinweis anzeigen | — |
+
+#### Projekte (`/projects/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/projects` | Alle Projekte listen | Alle |
+| `POST` | `/projects` | Neues Projekt anlegen | Writer |
+| `GET` | `/projects/{pid}/categories` | Kategorien eines Projekts | Alle |
+| `POST` | `/projects/{pid}/categories` | Kategorie anlegen | Writer |
+| `DELETE` | `/categories/{cid}` | Kategorie loeschen | Writer |
+| `PATCH` | `/categories/{cid}/rename` | Kategorie umbenennen | Writer |
+| `PATCH` | `/categories/{cid}/properties` | Kategorie-Eigenschaften aendern | Writer |
+| `PATCH` | `/projects/{pid}/categories/reorder` | Kategorien sortieren | Writer |
+| `DELETE` | `/projects/{pid}` | Projekt loeschen | Writer |
+| `PUT` | `/projects/{pid}` | Projekt aktualisieren | Writer |
+| `POST` | `/projects/bulk-delete` | Mehrere Projekte loeschen | Writer |
+
+#### Werte (`/categories/{cid}/values/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/categories/{cid}/values` | Werte einer Kategorie | Alle |
+| `POST` | `/categories/{cid}/values` | Wert anlegen | Writer |
+| `DELETE` | `/values/{vid}` | Wert loeschen | Writer |
+| `PATCH` | `/values/{vid}/rename` | Wert umbenennen | Writer |
+| `PATCH` | `/values/{vid}/properties` | Wert-Eigenschaften aendern | Writer |
+| `PATCH` | `/values/{vid}/set-default` | Als Default-Wert markieren | Writer |
+| `PATCH` | `/values/{vid}/unset-default` | Default-Markierung entfernen | Writer |
+| `POST` | `/categories/{cid}/bva` | BVA fuer Kategorie (Grenzwertanalyse) | Writer |
+| `POST` | `/categories/{cid}/bva/ranges` | BVA mit mehreren Bereichen | Writer |
+
+#### Regeln (`/projects/{pid}/rules/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/projects/{pid}/rules` | Alle Regeln eines Projekts | Alle |
+| `POST` | `/projects/{pid}/rules` | Neue Regel anlegen | Writer |
+| `DELETE` | `/projects/{pid}/rules/{rid}` | Regel loeschen | Writer |
+
+**Regeltypen:** `forbidden`, `dependency`, `combine`
+
+#### Generierung (`/projects/{pid}/generate`, `/generations/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/projects/{pid}/generate` | Testfaelle generieren | Writer |
+| `GET` | `/projects/{pid}/generations` | Alle Generierungen eines Projekts | Alle |
+| `GET` | `/generations/{gid}/testcases` | Testfaelle einer Generierung | Alle |
+| `PATCH` | `/testcases/{tcid}/assignments` | Testfall-Assignments aendern | Writer |
+| `DELETE` | `/generations/{gid}` | Generierung loeschen | Writer |
+| `PATCH` | `/generations/{gid}/rename` | Generierung umbenennen | Writer |
+
+**Generierungsstrategien:**
+```json
+{
+  "strategy": "pairwise",
+  "strength": 2,
+  "limit": 1000
+}
+```
+
+| Strategie | Beschreibung |
+|-----------|-------------|
+| `all` | Vollstaendige kartesische Produkt |
+| `pairwise` | Pairwise Testing (T=2) |
+| `t_wise` | T-fache Kombinationen |
+| `each` | Each Choice |
+| `linear` | Lineare Expansion |
+| `mcdc` | Modified Condition/Decision Coverage |
+| `risk_based` | Risk-Based Testing |
+
+#### Export (`/generations/{gid}/export/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/generations/{gid}/export/csv` | CSV-Export | Alle |
+| `GET` | `/generations/{gid}/export/json` | JSON-Export | Alle |
+| `GET` | `/generations/{gid}/export/xlsx` | Excel-Export | Alle |
+
+#### Entscheidungstabelle (`/decision-table/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/decision-table/generate` | Regeln aus Entscheidungstabelle generieren | Writer |
+| `GET` | `/decision-table/categories/{project_id}` | Kategorien fuer Entscheidungstabelle | Alle |
+| `GET` | `/decision-table/graph/{project_id}` | Cause-Effect-Graph | Alle |
+| `GET` | `/decision-table/constraints/{project_id}` | Constraints listen | Alle |
+| `POST` | `/decision-table/constraints` | Constraint anlegen | Writer |
+| `DELETE` | `/decision-table/constraints/{id}` | Constraint loeschen | Writer |
+| `POST` | `/decision-table/collapse` | Collapsing (Reduktion) | Writer |
+| `POST` | `/decision-table/validate` | Validierung (Checksum, Luecken) | Writer |
+
+#### Datenklassen (`/dataclasses/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/dataclasses` | Alle Datenklassen | Alle |
+| `POST` | `/dataclasses` | Neue Datenklasse | Writer |
+| `DELETE` | `/dataclasses/{dcid}` | Datenklasse loeschen | Writer |
+| `PUT` | `/dataclasses/{dcid}` | Datenklasse aktualisieren | Writer |
+| `GET` | `/dataclasses/{dcid}/values` | Werte einer Datenklasse | Alle |
+| `POST` | `/dataclasses/{dcid}/values` | Wert anlegen | Writer |
+| `DELETE` | `/dataclasses/values/{vid}` | Wert loeschen | Writer |
+| `PUT` | `/dataclasses/{dcid}/values/reorder` | Werte sortieren | Writer |
+| `POST` | `/categories/{cid}/apply-dataclass` | Datenklasse auf Kategorie anwenden | Writer |
+| `GET` | `/dataclasses/export-user` | Datenklassen exportieren | Alle |
+| `POST` | `/dataclasses/import-user` | Datenklassen importieren | Writer |
+
+#### Benutzer & Freigabe (`/users/*`, `/project/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/users/` | Alle Benutzer | Admin |
+| `POST` | `/users/` | Benutzer anlegen | Admin |
+| `PUT` | `/users/{user_id}` | Benutzer aktualisieren | Admin |
+| `DELETE` | `/users/{user_id}` | Benutzer loeschen | Admin |
+| `GET` | `/project/{project_id}/members` | Projektmitglieder | Alle |
+| `POST` | `/project/{project_id}/members` | Mitglied hinzufuegen | Admin/Owner |
+
+#### Sonstiges
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/health` | Health-Check | — |
+| `GET` | `/strategies` | Verfuegbare Generierungsstrategien | — |
+| `GET` | `/docs` | OpenAPI-Dokumentation (Swagger) | Admin/Editor |
+| `GET` | `/redoc` | ReDoc-Dokumentation | Admin/Editor |
+
+### 15.4 Rollen und Berechtigungen
+
+| Rolle | API-Zugriff |
+|-------|------------|
+| **Admin** | Vollstaendiger Zugriff auf alle Endpoints |
+| **Editor** | Lese- und Schreibzugriff auf Projekte, Kategorien, Werte, Regeln, Generierung |
+| **Viewer** | Nur Lesezugriff (GET-Requests), Export |
+| **api_user** | Spezielle Rolle fuer API-only-Zugriff (keine UI) |
+
+**Writer = Admin + Editor** (alle Endpoints, die `require_writer` als Dependency haben)
+
+### 15.5 Beispiel: Kompletter Workflow per API
+
+Dieses Beispiel zeigt, wie man ein Projekt anlegt, Kategorien hinzufuegt, Testfaelle generiert und das Ergebnis exportiert:
+
+```bash
+# 1. Login
+curl -X POST http://localhost:8000/auth/login \
+  -d "username=admin&password=changeme123!" \
+  -c cookies.txt
+
+# 2. Projekt anlegen
+curl -X POST http://localhost:8000/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Mein Projekt","description":"API-Test"}' \
+  -b cookies.txt -c cookies.txt
+
+# 3. Kategorie anlegen (Antwort enthaelt category_id)
+curl -X POST http://localhost:8000/projects/1/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Browser","category_type":"cause"}' \
+  -b cookies.txt -c cookies.txt
+
+# 4. Werte hinzufuegen
+curl -X POST http://localhost:8000/categories/1/values \
+  -H "Content-Type: application/json" \
+  -d '{"value":"Chrome"}' \
+  -b cookies.txt -c cookies.txt
+
+curl -X POST http://localhost:8000/categories/1/values \
+  -H "Content-Type: application/json" \
+  -d '{"value":"Firefox"}' \
+  -b cookies.txt -c cookies.txt
+
+# 5. Testfaelle generieren
+curl -X POST http://localhost:8000/projects/1/generate \
+  -H "Content-Type: application/json" \
+  -d '{"strategy":"pairwise","strength":2}' \
+  -b cookies.txt -c cookies.txt
+
+# 6. Ergebnis als CSV exportieren
+curl -b cookies.txt \
+  http://localhost:8000/generations/1/export/csv \
+  -o testfaelle.csv
+```
+
+### 15.6 Fehlerbehandlung
+
+Die API verwendet standardmaessige HTTP-Statuscodes:
+
+| Code | Bedeutung |
+|------|----------|
+| `200` | Erfolg |
+| `201` | Erzeugt |
+| `400` | Ungueltige Anfrage (z. B. fehlendes Feld) |
+| `401` | Nicht authentifiziert |
+| `403` | Keine Berechtigung |
+| `404` | Nicht gefunden |
+| `409` | Konflikt (z. B. doppelter Name) |
+| `422` | Validierungsfehler |
+| `429` | Zu viele Anfragen (Rate Limiting) |
+| `500` | Interner Serverfehler |
+
+Fehlerantworten enthalten ein `detail`-Feld mit Beschreibung:
+```json
+{"detail": "Ungultige Anmeldedaten"}
+```
+
+### 15.7 Rate Limiting
+
+| Endpoint | Limit |
+|----------|-------|
+| `/auth/login` | 10 Versuche/Minute/IP |
+| `/auth/change-password` | 10 Versuche/Minute/Konto |
+| `/auth/first-start-hint` | 10 Requests/Minute/IP |
+
+Bei Uberschreitung: HTTP 429 mit `Retry-After` Header.
+
+### 15.8 OpenAPI-Spezifikation
+
+Die vollstaendige OpenAPI-Spezifikation (Swagger) ist unter `http://localhost:8000/docs` verfuegbar (Authentifizierung erforderlich). Dort koennen Sie:
+
+- Alle Endpunkte durchsuchen
+- Requests direkt im Browser testen
+- Request/Response-Schemas einsehen
+- Die OpenAPI-Spezifikation als JSON/YAML herunterladen (`/openapi.json`)
+
+> **Tipp fuer CI/CD:** Laden Sie `/openapi.json` herunter und verwenden Sie Tools wie `openapi-generator`, um Client-Bibliotheken in verschiedenen Programmiersprachen zu generieren.
 
 ---
 

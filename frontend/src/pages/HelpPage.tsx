@@ -64,6 +64,7 @@ const CHAPTERS = [
   { id: '12-tastaturnavigation--shortcuts', label: '12. Tastaturnavigation' },
   { id: '13-glossar', label: '13. Glossar' },
   { id: '14-haeufige-fragen-faq', label: '14. FAQ' },
+  { id: '15-api-einbindung-fuer-entwickler', label: '15. API-Einbindung' },
 ];
 
 // INFO-Section als Markdown

@@ -84,6 +84,7 @@
 12. [Tastaturnavigation & Shortcuts](#12-tastaturnavigation--shortcuts)
 13. [Glossar](#13-glossar)
 14. [Haeufige Fragen (FAQ)](#14-haeufige-fragen-faq)
+ 15. [API-Einbindung](#15-api-einbindung-fuer-entwickler)
 
 ---
 
@@ -1044,6 +1045,289 @@ Ergebnis-Kategorien (`is_result=True`) sind nicht an der automatischen Generieru
 
 **Wie wechsle ich vom Standardpasswort?**
 Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Spaeter: Top-Navigation → "Passwort aendern".
+
+---
+
+## 15. API-Einbindung (fuer Entwickler)
+
+G.R.E.A.T. bietet eine **RESTful API** mit OpenAPI-Dokumentation, die es ermoelicht, das Programm in andere Werkzeuge und Prozesse zu integrieren (z. B. CI/CD-Pipelines, Testmanagement-Systeme, eigene Skripte).
+
+### 15.1 Grundlegendes
+
+| Eigenschaft | Wert |
+|-------------|------|
+| **Basis-URL** | `http://localhost:8000` (Standard) |
+| **OpenAPI-Docs** | `http://localhost:8000/docs` (Swagger UI) |
+| **ReDoc** | `http://localhost:8000/redoc` |
+| **Authentifizierung** | JWT (Access + Refresh Token in httpOnly Cookies) |
+| **Content-Type** | `application/json` |
+
+### 15.2 Authentifizierung
+
+Alle geschuetzten Endpoints erfordern eine Authentifizierung. Der Access-Token wird automatisch im Cookie `access_token` gespeichert.
+
+**Login:**
+```bash
+curl -X POST http://localhost:8000/auth/login \
+  -d "username=admin&password=changeme123!" \
+  -c cookies.txt
+```
+
+**Mit Cookie weiterarbeiten:**
+```bash
+curl -b cookies.txt http://localhost:8000/auth/me
+```
+
+**Logout:**
+```bash
+curl -X POST http://localhost:8000/auth/logout -b cookies.txt
+```
+
+**Token erneuern (automatisch):**
+```bash
+curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
+```
+
+> **Hinweis:** Tokens werden in httpOnly Cookies gespeichert. Fuer Programmatic Access (z. B. Skripte) koennen Sie auch den Token aus dem Cookie extrahieren und als `Authorization: Bearer <token>` Header verwenden.
+
+### 15.3 API-Endpunkte nach Kategorien
+
+#### Authentifizierung (`/auth/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/auth/login` | Login mit Username/Password | — |
+| `POST` | `/auth/logout` | Logout, Tokens invalidate | — |
+| `POST` | `/auth/refresh` | Access-Token erneuern | — |
+| `GET` | `/auth/me` | Eigene Benutzerinfo | Alle |
+| `POST` | `/auth/change-password` | Passwort aendern | Alle |
+| `GET` | `/auth/first-start-hint` | Erststart-Hinweis anzeigen | — |
+
+#### Projekte (`/projects/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/projects` | Alle Projekte listen | Alle |
+| `POST` | `/projects` | Neues Projekt anlegen | Writer |
+| `GET` | `/projects/{pid}/categories` | Kategorien eines Projekts | Alle |
+| `POST` | `/projects/{pid}/categories` | Kategorie anlegen | Writer |
+| `DELETE` | `/categories/{cid}` | Kategorie loeschen | Writer |
+| `PATCH` | `/categories/{cid}/rename` | Kategorie umbenennen | Writer |
+| `PATCH` | `/categories/{cid}/properties` | Kategorie-Eigenschaften aendern | Writer |
+| `PATCH` | `/projects/{pid}/categories/reorder` | Kategorien sortieren | Writer |
+| `DELETE` | `/projects/{pid}` | Projekt loeschen | Writer |
+| `PUT` | `/projects/{pid}` | Projekt aktualisieren | Writer |
+| `POST` | `/projects/bulk-delete` | Mehrere Projekte loeschen | Writer |
+
+#### Werte (`/categories/{cid}/values/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/categories/{cid}/values` | Werte einer Kategorie | Alle |
+| `POST` | `/categories/{cid}/values` | Wert anlegen | Writer |
+| `DELETE` | `/values/{vid}` | Wert loeschen | Writer |
+| `PATCH` | `/values/{vid}/rename` | Wert umbenennen | Writer |
+| `PATCH` | `/values/{vid}/properties` | Wert-Eigenschaften aendern | Writer |
+| `PATCH` | `/values/{vid}/set-default` | Als Default-Wert markieren | Writer |
+| `PATCH` | `/values/{vid}/unset-default` | Default-Markierung entfernen | Writer |
+| `POST` | `/categories/{cid}/bva` | BVA fuer Kategorie (Grenzwertanalyse) | Writer |
+| `POST` | `/categories/{cid}/bva/ranges` | BVA mit mehreren Bereichen | Writer |
+
+#### Regeln (`/projects/{pid}/rules/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/projects/{pid}/rules` | Alle Regeln eines Projekts | Alle |
+| `POST` | `/projects/{pid}/rules` | Neue Regel anlegen | Writer |
+| `DELETE` | `/projects/{pid}/rules/{rid}` | Regel loeschen | Writer |
+
+**Regeltypen:** `forbidden`, `dependency`, `combine`
+
+#### Generierung (`/projects/{pid}/generate`, `/generations/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/projects/{pid}/generate` | Testfaelle generieren | Writer |
+| `GET` | `/projects/{pid}/generations` | Alle Generierungen eines Projekts | Alle |
+| `GET` | `/generations/{gid}/testcases` | Testfaelle einer Generierung | Alle |
+| `PATCH` | `/testcases/{tcid}/assignments` | Testfall-Assignments aendern | Writer |
+| `DELETE` | `/generations/{gid}` | Generierung loeschen | Writer |
+| `PATCH` | `/generations/{gid}/rename` | Generierung umbenennen | Writer |
+
+**Generierungsstrategien:**
+```json
+{
+  "strategy": "pairwise",
+  "strength": 2,
+  "limit": 1000
+}
+```
+
+| Strategie | Beschreibung |
+|-----------|-------------|
+| `all` | Vollstaendige kartesische Produkt |
+| `pairwise` | Pairwise Testing (T=2) |
+| `t_wise` | T-fache Kombinationen |
+| `each` | Each Choice |
+| `linear` | Lineare Expansion |
+| `mcdc` | Modified Condition/Decision Coverage |
+| `risk_based` | Risk-Based Testing |
+
+#### Export (`/generations/{gid}/export/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/generations/{gid}/export/csv` | CSV-Export | Alle |
+| `GET` | `/generations/{gid}/export/json` | JSON-Export | Alle |
+| `GET` | `/generations/{gid}/export/xlsx` | Excel-Export | Alle |
+
+#### Entscheidungstabelle (`/decision-table/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `POST` | `/decision-table/generate` | Regeln aus Entscheidungstabelle generieren | Writer |
+| `GET` | `/decision-table/categories/{project_id}` | Kategorien fuer Entscheidungstabelle | Alle |
+| `GET` | `/decision-table/graph/{project_id}` | Cause-Effect-Graph | Alle |
+| `GET` | `/decision-table/constraints/{project_id}` | Constraints listen | Alle |
+| `POST` | `/decision-table/constraints` | Constraint anlegen | Writer |
+| `DELETE` | `/decision-table/constraints/{id}` | Constraint loeschen | Writer |
+| `POST` | `/decision-table/collapse` | Collapsing (Reduktion) | Writer |
+| `POST` | `/decision-table/validate` | Validierung (Checksum, Luecken) | Writer |
+
+#### Datenklassen (`/dataclasses/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/dataclasses` | Alle Datenklassen | Alle |
+| `POST` | `/dataclasses` | Neue Datenklasse | Writer |
+| `DELETE` | `/dataclasses/{dcid}` | Datenklasse loeschen | Writer |
+| `PUT` | `/dataclasses/{dcid}` | Datenklasse aktualisieren | Writer |
+| `GET` | `/dataclasses/{dcid}/values` | Werte einer Datenklasse | Alle |
+| `POST` | `/dataclasses/{dcid}/values` | Wert anlegen | Writer |
+| `DELETE` | `/dataclasses/values/{vid}` | Wert loeschen | Writer |
+| `PUT` | `/dataclasses/{dcid}/values/reorder` | Werte sortieren | Writer |
+| `POST` | `/categories/{cid}/apply-dataclass` | Datenklasse auf Kategorie anwenden | Writer |
+| `GET` | `/dataclasses/export-user` | Datenklassen exportieren | Alle |
+| `POST` | `/dataclasses/import-user` | Datenklassen importieren | Writer |
+
+#### Benutzer & Freigabe (`/users/*`, `/project/*`)
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/users/` | Alle Benutzer | Admin |
+| `POST` | `/users/` | Benutzer anlegen | Admin |
+| `PUT` | `/users/{user_id}` | Benutzer aktualisieren | Admin |
+| `DELETE` | `/users/{user_id}` | Benutzer loeschen | Admin |
+| `GET` | `/project/{project_id}/members` | Projektmitglieder | Alle |
+| `POST` | `/project/{project_id}/members` | Mitglied hinzufuegen | Admin/Owner |
+
+#### Sonstiges
+
+| Methode | Endpoint | Beschreibung | Rolle |
+|---------|----------|-------------|-------|
+| `GET` | `/health` | Health-Check | — |
+| `GET` | `/strategies` | Verfuegbare Generierungsstrategien | — |
+| `GET` | `/docs` | OpenAPI-Dokumentation (Swagger) | Admin/Editor |
+| `GET` | `/redoc` | ReDoc-Dokumentation | Admin/Editor |
+
+### 15.4 Rollen und Berechtigungen
+
+| Rolle | API-Zugriff |
+|-------|------------|
+| **Admin** | Vollstaendiger Zugriff auf alle Endpoints |
+| **Editor** | Lese- und Schreibzugriff auf Projekte, Kategorien, Werte, Regeln, Generierung |
+| **Viewer** | Nur Lesezugriff (GET-Requests), Export |
+| **api_user** | Spezielle Rolle fuer API-only-Zugriff (keine UI) |
+
+**Writer = Admin + Editor** (alle Endpoints, die `require_writer` als Dependency haben)
+
+### 15.5 Beispiel: Kompletter Workflow per API
+
+Dieses Beispiel zeigt, wie man ein Projekt anlegt, Kategorien hinzufuegt, Testfaelle generiert und das Ergebnis exportiert:
+
+```bash
+# 1. Login
+curl -X POST http://localhost:8000/auth/login \
+  -d "username=admin&password=changeme123!" \
+  -c cookies.txt
+
+# 2. Projekt anlegen
+curl -X POST http://localhost:8000/projects \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Mein Projekt","description":"API-Test"}' \
+  -b cookies.txt -c cookies.txt
+
+# 3. Kategorie anlegen (Antwort enthaelt category_id)
+curl -X POST http://localhost:8000/projects/1/categories \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Browser","category_type":"cause"}' \
+  -b cookies.txt -c cookies.txt
+
+# 4. Werte hinzufuegen
+curl -X POST http://localhost:8000/categories/1/values \
+  -H "Content-Type: application/json" \
+  -d '{"value":"Chrome"}' \
+  -b cookies.txt -c cookies.txt
+
+curl -X POST http://localhost:8000/categories/1/values \
+  -H "Content-Type: application/json" \
+  -d '{"value":"Firefox"}' \
+  -b cookies.txt -c cookies.txt
+
+# 5. Testfaelle generieren
+curl -X POST http://localhost:8000/projects/1/generate \
+  -H "Content-Type: application/json" \
+  -d '{"strategy":"pairwise","strength":2}' \
+  -b cookies.txt -c cookies.txt
+
+# 6. Ergebnis als CSV exportieren
+curl -b cookies.txt \
+  http://localhost:8000/generations/1/export/csv \
+  -o testfaelle.csv
+```
+
+### 15.6 Fehlerbehandlung
+
+Die API verwendet standardmaessige HTTP-Statuscodes:
+
+| Code | Bedeutung |
+|------|----------|
+| `200` | Erfolg |
+| `201` | Erzeugt |
+| `400` | Ungueltige Anfrage (z. B. fehlendes Feld) |
+| `401` | Nicht authentifiziert |
+| `403` | Keine Berechtigung |
+| `404` | Nicht gefunden |
+| `409` | Konflikt (z. B. doppelter Name) |
+| `422` | Validierungsfehler |
+| `429` | Zu viele Anfragen (Rate Limiting) |
+| `500` | Interner Serverfehler |
+
+Fehlerantworten enthalten ein `detail`-Feld mit Beschreibung:
+```json
+{"detail": "Ungultige Anmeldedaten"}
+```
+
+### 15.7 Rate Limiting
+
+| Endpoint | Limit |
+|----------|-------|
+| `/auth/login` | 10 Versuche/Minute/IP |
+| `/auth/change-password` | 10 Versuche/Minute/Konto |
+| `/auth/first-start-hint` | 10 Requests/Minute/IP |
+
+Bei Uberschreitung: HTTP 429 mit `Retry-After` Header.
+
+### 15.8 OpenAPI-Spezifikation
+
+Die vollstaendige OpenAPI-Spezifikation (Swagger) ist unter `http://localhost:8000/docs` verfuegbar (Authentifizierung erforderlich). Dort koennen Sie:
+
+- Alle Endpunkte durchsuchen
+- Requests direkt im Browser testen
+- Request/Response-Schemas einsehen
+- Die OpenAPI-Spezifikation als JSON/YAML herunterladen (`/openapi.json`)
+
+> **Tipp fuer CI/CD:** Laden Sie `/openapi.json` herunter und verwenden Sie Tools wie `openapi-generator`, um Client-Bibliotheken in verschiedenen Programmiersprachen zu generieren.
 
 ---
 
