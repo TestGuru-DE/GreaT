@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import handbookContent from '../../docs/handbuch.md?raw';
+import handbookContent from '../docs/handbuch.md?raw';
 
 // Kapitel-Liste fuer Sidebar-Navigation
 const CHAPTERS = [
