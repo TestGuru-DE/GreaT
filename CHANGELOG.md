@@ -11,23 +11,27 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts. Risikoakzeptanz durch Projektinhaber (RISK-S-016, Score 20, gemildert durch REQ-4028).
 - **REQ-4028**: Pflicht-Passwortwechsel nach Erstanmeldung fuer Default-Admin. Selbst-Passwortwechsel fuer alle Benutzerrollen (Admin/Editor/Viewer).
 
-### 🔧 Release v1.7.0 – Regel-Visualisierung
-- **Grafische Regeldarstellung (RuleVisualization)**: Neue mittlere Spalte in der Projektansicht zeigt SVG-basierte Visualisierung der Regeln als farbige Verbindungslinien zwischen Werten verschiedener Kategorien
-- **Regeltypen farbcodiert**: Rot = Verboten (✕, gestrichelt), Violett = Abhängig (→, durchgehend), Grün = Kombinieren (⊂, punktiert)
-- **Interaktive Hover-Tooltips**: Mauszeiger ueber Linie zeigt "Wenn Kategorie = Wert → Dann Kategorie = Wert"
-- **Manuelles Refresh**: ↻-Button zum manuellen Aktualisieren der Visualisierung
-- **Anpassbare Hoehe**: Resize-Handle zum Anpassen des Sichtbereichs (250-800px)
-- **Responsive**: Mittlere Spalte wird auf kleinen Screens ausgeblendet
+---
 
-### 🔧 Release v1.8.0 – Default-Management & Bugfixes
-- **Default-Wert setzen/entfernen**: Kontextmenü (rechte Maustaste) auf Wert zeigt "★ Als Default markieren" oder "✕ Default entfernen" je nach Status
-- **Backend**: Neuer Endpoint `PATCH /values/{vid}/unset-default` zum Entfernen der Default-Markierung
-- **Symbole verbessert**: Default-Wert = **★** (Stern, amber), Fehlerwert = **✕** (Kreuz, rot) – beide eindeutig erkennbar
-- **Werte-Zaehler Bugfix**: Zeigt jetzt "…" statt "0" wenn Werte noch nicht geladen; klickbar zum Laden
-- **Combine-Regeln Bugfix**: Regelvisualisierung zeigt jetzt alle erlaubten Zielwerte als separate Linien
-- **Theme-Fix (REQ-3045 + REQ-3062)**: "Normal" und "System (OS)" sind jetzt klar getrennt: "Normal" = HSV-Farben (dunkelblau/weiss/rot) als `:root` Default, "System (OS)" = neue `.theme-light` (hell) oder `.theme-dark` (dunkel) je nach OS-Einstellung
-- **Risikoabdeckung Bugfix (REQ-3051)**: Berechnung zeigt jetzt korrekte Werte <= 100% bei "All Combinations" — Ergebnis-Kategorien werden vom Maximum ausgeschlossen (konsistent mit Generierung)
-- **In-App-Hilfe**: Neues "/help" mit Markdown-Handbuch, 18 Screenshots, Sidebar-Navigation, "?"-Button in TopNav, F1-Shortcut, INFO-Section (Lizenz MIT, Haftungsausschluss, KI-Hinweis, GitHub-Link)
+## ✅ Release v1.8.0 – In-App-Hilfe & Bugfixes (2026-11-12)
+
+### ✨ Neue Features
+- **In-App-Hilfe (`/help`)**: Markdown-Handbuch mit 14 Kapiteln, 18 Screenshots, Sidebar-Navigation
+- **TopNav "?"-Button**: Hover "Hilfe (F1)", Klick öffnet Hilfe
+- **F1-Shortcut**: Global in der App — öffnet sofort die Hilfe
+- **INFO-Section**: Lizenz (MIT), Haftungsausschluss, KI-Hinweis, GitHub-Projekt-Link
+- **Lazy-Loading**: HelpPage wird nur bei Bedarf geladen (Chunk-Size 620 → 410 kB)
+
+### 🐛 Bugfixes
+- **Theme-Fix (REQ-3045 + REQ-3062)**: "Normal" und "System (OS)" klar getrennt: "Normal" = HSV-Farben (dunkelblau/weiss/rot) als `:root` Default, "System (OS)" = `.theme-light` (hell) oder `.theme-dark` (dunkel) je nach OS-Einstellung
+- **Risikoabdeckung Bugfix (REQ-3051)**: Berechnung zeigt korrekte Werte ≤ 100% bei "All Combinations" — Ergebnis-Kategorien werden vom Maximum ausgeschlossen
+- **Name korrigiert**: "Georg" → "Georgs" (README, Handbuch)
+- **Screenshots sichtbar**: Bilder als ES-Module importiert, im Build korrekt resolved
+
+### 🔧 Technical
+- **Dependencies**: `react-markdown`, `remark-gfm` hinzugefuegt
+- **Vite**: Screenshots von `public/` nach `src/docs/screenshots/` verschoben (korrektes URL-Resolving)
+- **TypeScript**: `*.png` Import-Deklarationen in `vite-env.d.ts`
 
 ### 🔧 Release v1.6.0 – Entscheidungstabelle & Multi-User
 - **Entscheidungstabelle (REQ-5000-5021)**: Vollstaendige Ursache-Wirkung-Entscheidungstabelle mit Kategorie-Typen (Ursache/Wirkung/Ergebnis), Regelgenerierung, Constraints (E/O/I/R/M), Collapsing, Validierung (Checksum, Widersprueche, Luecken), Priorisierung mit Override-Modus
