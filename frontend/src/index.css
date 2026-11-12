@@ -3,14 +3,28 @@
 @tailwind utilities;
 
 /* Theme-System – CSS Custom Properties */
-/* REQ-3045 (Sofort-Fix, Nutzerbeschwerde): "Normal"-Theme zeigt Hintergrund BLAU,
-   Schrift WEISS und Akzente ROT. Ersetzt die vorherige Hell-Palette (weisser
-   Hintergrund/dunkle Schrift/blauer Akzent) aus der Erstumsetzung sowie die
-   Sprint-11-Zwischenentscheidung "Normal (HSV)" (Akzent blau/weiss, Hintergrund
-   blieb weiss) - siehe decision-log.md fuer Historie. Ausserdem wurden zuvor
-   fehlende Tokens (surface-hover, text-muted, danger, success, warning) ergaenzt,
-   die es bei den anderen Themes bereits gab, bei "Normal" aber fehlten. */
+/* :root = helle Basis (wird von "System (OS)" bei Light-Mode verwendet) */
+/* REQ-3045: "Normal"-Theme = HSV-Farben (dunkelblau, weiss, rot) als .theme-normal Klasse */
+/* "System (OS)" nutzt prefers-color-scheme: Light -> :root, Dark -> .theme-dark */
 :root {
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text-primary: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-accent: #0ea5e9;
+  --color-accent-hover: #0284c7;
+  --color-accent-text: #ffffff;
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  color-scheme: light;
+}
+
+/* REQ-3045: Normal-Theme (HSV-Farben: dunkelblau, weiss, rot) */
+.theme-normal {
   --color-bg: #1e3a8a;
   --color-surface: #1e40af;
   --color-surface-hover: #1d4ed8;

@@ -13,19 +13,22 @@ export function getTheme(): ThemeName {
 export function setTheme(theme: ThemeName): void {
   // REQ-3062: Resolve 'system' to effective theme
   const effectiveTheme = getEffectiveTheme(theme)
-  
-  // Alle alten Theme-Klassen entfernen
+
+  // Alle alten Theme-Klassen entfernen (inklusive theme-normal)
   THEMES.forEach(t => {
-    if (t !== 'normal' && t !== 'system') {
-      document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
-    }
+    document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
   })
-  
-  // Neue Theme-Klasse setzen (normal braucht keine extra Klasse)
+
+  // Neue Theme-Klasse setzen
   if (effectiveTheme !== 'normal') {
+    // dark, steampunk, rainbow, heavy-metal
     document.documentElement.classList.add(`${THEME_PREFIX}${effectiveTheme}`)
+  } else if (theme === 'normal') {
+    // REQ-3045: Explizites "Normal" -> HSV-Farben (.theme-normal Klasse)
+    document.documentElement.classList.add(`${THEME_PREFIX}normal`)
   }
-  
+  // else: effectiveTheme='normal' UND theme='system' -> keine Klasse, nutzt :root (hell)
+
   localStorage.setItem(STORAGE_KEY, theme)
 }
 

@@ -33,12 +33,13 @@ describe('Theme System', () => {
     expect(getTheme()).toBe('rainbow')
   })
 
-  it('THEMES contains all 5 themes', () => {
+  it('THEMES contains all 6 themes', () => {
     expect(THEMES).toContain('normal')
     expect(THEMES).toContain('dark')
     expect(THEMES).toContain('steampunk')
     expect(THEMES).toContain('rainbow')
     expect(THEMES).toContain('heavy-metal')
+    expect(THEMES).toContain('system')
   })
 
   // REQ-3062: System theme tests
@@ -51,11 +52,37 @@ describe('Theme System', () => {
     expect(getTheme()).toBe('normal')
   })
 
-  it('setTheme with "normal" removes all theme classes', () => {
+  it('setTheme with "normal" applies theme-normal class (HSV colors)', () => {
     setTheme('dark')
     setTheme('normal')
     expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-normal')).toBe(true)
+  })
+
+  it('setTheme with "system" and OS=light applies no class (uses :root)', () => {
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    setTheme('system')
     expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
+    expect(localStorage.getItem('great-theme')).toBe('system')
+  })
+
+  it('setTheme switches from normal to system (OS=light) and removes theme-normal', () => {
+    setTheme('normal')
+    expect(document.documentElement.classList.contains('theme-normal')).toBe(true)
+
+    window.matchMedia = vi.fn().mockImplementation(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }))
+    setTheme('system')
+    expect(document.documentElement.classList.contains('theme-normal')).toBe(false)
+    expect(document.documentElement.classList.contains('theme-dark')).toBe(false)
   })
 })
 
