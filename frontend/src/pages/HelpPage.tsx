@@ -1,6 +1,6 @@
 // In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
 // Erreichbar via: TopNav "?"-Button oder F1-Taste
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import handbookContent from '../docs/handbuch.md?raw';
@@ -48,11 +48,12 @@ const SCREENSHOT_MAP: Record<string, string> = {
 };
 
 // Kapitel-Liste fuer Sidebar-Navigation
+// IDs MUESSEN mit extractId(Heading-Text) uebereinstimmen!
 const CHAPTERS = [
   { id: 'info', label: 'Info & Lizenz' },
   { id: '1-erste-schritte', label: '1. Erste Schritte' },
   { id: '2-projekte-verwalten', label: '2. Projekte verwalten' },
-  { id: '3-kategorien--werte', label: '3. Kategorien & Werte' },
+  { id: '3-kategorien-werte', label: '3. Kategorien & Werte' },
   { id: '4-entscheidungstabelle', label: '4. Entscheidungstabelle' },
   { id: '5-regeln-klassisch', label: '5. Regeln (klassisch)' },
   { id: '6-testfall-generierung', label: '6. Testfall-Generierung' },
@@ -60,8 +61,8 @@ const CHAPTERS = [
   { id: '8-export', label: '8. Export' },
   { id: '9-datenklassen', label: '9. Datenklassen' },
   { id: '10-einstellungen', label: '10. Einstellungen' },
-  { id: '11-benutzer--rollen', label: '11. Benutzer & Rollen' },
-  { id: '12-tastaturnavigation--shortcuts', label: '12. Tastaturnavigation' },
+  { id: '11-benutzer-rollen', label: '11. Benutzer & Rollen' },
+  { id: '12-tastaturnavigation-shortcuts', label: '12. Tastaturnavigation' },
   { id: '13-glossar', label: '13. Glossar' },
   { id: '14-haeufige-fragen-faq', label: '14. FAQ' },
   { id: '15-api-einbindung-fuer-entwickler', label: '15. API-Einbindung' },
@@ -99,19 +100,87 @@ Das vollständige Quellcode-Projekt findest du unter:
 Dort findest du Issue-Tracking, Dokumentation und die Möglichkeit, zum Projekt beizutragen.
 `;
 
+// Helper: Extrahiert Text aus React-Children (kann string | ReactNode[] sein)
+function extractText(children: React.ReactNode): string {
+  if (typeof children === 'string') return children;
+  if (Array.isArray(children)) return children.map(extractText).join('');
+  if (children && typeof children === 'object' && 'props' in children) {
+    return extractText((children as any).props?.children ?? '');
+  }
+  return String(children ?? '');
+}
+
+// Helper: Erzeugt eine ID aus dem Heading-Text
+// Muss mit den IDs in CHAPTERS uebereinstimmen!
+function extractId(children: React.ReactNode): string {
+  const text = extractText(children);
+  return text
+    .toLowerCase()
+    // Behalte nur a-z, 0-9, Umlaute (\u00c0-\u017f), Leerzeichen, Bindestriche
+    .replace(/[^a-z0-9\u00c0-\u017f\s-]/gi, '')
+    // Mehrere Leerzeichen -> ein Bindestrich
+    .replace(/[\s]+/g, '-')
+    // Fuerende Bindestriche entfernen
+    .replace(/-+$/, '')
+    // Deutsche Sonderzeichen uebersetzen (nach Leerzeichen->Bindestrich)
+    .replace(/[^a-z0-9-]/g, (c: string) => {
+      const map: Record<string, string> = {
+        '\u00e4': 'a', // ä
+        '\u00f6': 'o', // ö
+        '\u00fc': 'u', // ü
+        '\u00df': 'ss', // ß
+        '\u00c4': 'a', // Ä
+        '\u00d6': 'o', // Ö
+        '\u00dc': 'u', // Ü
+      };
+      return map[c] || '';
+    })
+    // Doppelte Bindestriche ausgleichen (z.B. wenn Umlaut zwischen Wörtern war)
+    .replace(/-{2,}/g, '-')
+    // Restliche Sonderzeichen entfernen (sollte nicht mehr vorkommen)
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 export default function HelpPage() {
   const [activeChapter, setActiveChapter] = useState('info');
+  const mainRef = useRef<HTMLDivElement>(null);
 
-  // Smooth scrolling zu Ankern
+  // Scroll to target section when activeChapter changes
+  useEffect(() => {
+    // Give React time to render the new content
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (activeChapter === 'info') {
+          // Scroll to top for INFO section
+          mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          // Find the target element by ID and scroll to it
+          const target = document.getElementById(activeChapter);
+          if (target && mainRef.current) {
+            // Scroll within the main container
+            const container = mainRef.current;
+            const targetTop = target.offsetTop - 20; // small offset for readability
+            container.scrollTo({ top: targetTop, behavior: 'smooth' });
+          }
+        }
+      });
+    });
+  }, [activeChapter]);
+
+  // Handle anchor link clicks within the handbook (TOC links in the markdown)
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === 'A' && target.getAttribute('href')?.startsWith('#')) {
+      // Walk up to find the <a> element (user might click on text inside <a>)
+      const anchor = target.tagName === 'A' ? target : target.closest('a');
+      if (anchor && anchor.getAttribute('href')?.startsWith('#')) {
         e.preventDefault();
-        const id = target.getAttribute('href')!.slice(1);
+        const id = anchor.getAttribute('href')!.slice(1);
         const element = document.getElementById(id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+        if (element && mainRef.current) {
+          const container = mainRef.current;
+          const targetTop = element.offsetTop - 20;
+          container.scrollTo({ top: targetTop, behavior: 'smooth' });
           setActiveChapter(id);
         }
       }
@@ -147,12 +216,12 @@ export default function HelpPage() {
       </aside>
 
       {/* Hauptinhalt */}
-      <main className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-80px)]">
+      <main ref={mainRef} className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-80px)]">
         <div className="max-w-3xl mx-auto">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-            h1: ({ children }) => <h1 id={extractId(children as string)} className="text-2xl font-bold text-theme-text mb-4 pb-2 border-b border-theme-border">{children}</h1>,
-            h2: ({ children }) => <h2 id={extractId(children as string)} className="text-xl font-semibold text-theme-text mt-8 mb-3">{children}</h2>,
-            h3: ({ children }) => <h3 id={extractId(children as string)} className="text-lg font-medium text-theme-text mt-6 mb-2">{children}</h3>,
+            h1: ({ children }) => <h1 id={extractId(children)} className="text-2xl font-bold text-theme-text mb-4 pb-2 border-b border-theme-border">{children}</h1>,
+            h2: ({ children }) => <h2 id={extractId(children)} className="text-xl font-semibold text-theme-text mt-8 mb-3">{children}</h2>,
+            h3: ({ children }) => <h3 id={extractId(children)} className="text-lg font-medium text-theme-text mt-6 mb-2">{children}</h3>,
             p: ({ children }) => <p className="text-sm text-theme-text-secondary mb-4 leading-relaxed">{children}</p>,
             ul: ({ children }) => <ul className="list-disc list-inside text-sm text-theme-text-secondary mb-4 space-y-1">{children}</ul>,
             ol: ({ children }) => <ol className="list-decimal list-inside text-sm text-theme-text-secondary mb-4 space-y-1">{children}</ol>,
@@ -177,21 +246,4 @@ export default function HelpPage() {
       </main>
     </div>
   );
-}
-
-// Helper: Erzeugt eine ID aus dem Heading-Text
-function extractId(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u00c0-\u017f\s-]/gi, '')
-    .replace(/[\s]+/g, '-')
-    .replace(/-+$/, '')
-    .replace(/[^a-z0-9-]/g, c => {
-      // Uebersetze deutsche Sonderzeichen
-      const map: Record<string, string> = {
-        'a': 'a', 'e': 'e', 'i': 'i', 'o': 'o', 'u': 'u', 's': 'ss',
-        'A': 'a', 'E': 'e', 'I': 'i', 'O': 'o', 'U': 'u', 'S': 'ss',
-      };
-      return map[c] || '';
-    });
 }
