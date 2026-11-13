@@ -2,45 +2,57 @@
 tests/test_api_rename_reorder.py
 REQ-1213: Rename-Endpunkte fuer Kategorien und Werte
 REQ-1209: Reorder-Endpunkt fuer Kategorien
+
+REQ-1300: Verwendet die gemeinsame Test-DB aus conftest.py,
+nicht eine separate Datei im Projektverzeichnis.
 """
+import uuid
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+
 from app.main import app
-from app.database import Base, get_db
+from app.database import Base, get_db, SessionLocal
 
-TEST_DB = "sqlite:///./test_rename_reorder.db"
-engine = create_engine(TEST_DB, connect_args={"check_same_thread": False})
-TestingSession = sessionmaker(bind=engine)
 
-def override_get_db():
-    db = TestingSession()
+def _override_get_db():
+    """Override fuer get_db – verwendet die gemeinsame Test-DB aus conftest."""
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
+
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
-    app.dependency_overrides[get_db] = override_get_db
+    """Stellt sicher, dass die Test-DB-Schema vorhanden ist und ueberschreibt get_db.
+
+    REQ-1300: Verwendet die gemeinsame Test-DB (keine separate Datei).
+    Kein drop_all im Teardown, da die DB geteilt ist und andere Tests
+    auf demselben Schema arbeiten.
+    """
+    Base.metadata.create_all(bind=SessionLocal().get_bind())
+    app.dependency_overrides[get_db] = _override_get_db
     yield
-    Base.metadata.drop_all(bind=engine)
     app.dependency_overrides.clear()
 
+
 @pytest.fixture
-def client(): return TestClient(app)
+def client(auth_client):
+    return auth_client
+
 
 @pytest.fixture
 def project(client):
-    r = client.post("/api/projects", json={"name": "Rename-Test"})
+    r = client.post("/api/projects", json={"name": f"Rename-Test-{uuid.uuid4().hex[:8]}"})
     return r.json()
+
 
 @pytest.fixture
 def category(client, project):
     r = client.post(f"/api/projects/{project['id']}/categories", json={"name": "KAT-A"})
     return r.json()
+
 
 @pytest.fixture
 def value(client, category):

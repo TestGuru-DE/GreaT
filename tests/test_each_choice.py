@@ -4,6 +4,7 @@
 # Each Choice: jeder Wert jeder Kategorie erscheint mindestens einmal.
 
 from combinatorics import each_choice
+from core.rules.rule_engine import DependencyRule, ForbiddenRule, RuleEngine
 
 
 def test_each_choice_leer():
@@ -71,3 +72,28 @@ def test_each_choice_ergebnis_sind_dicts():
     result = each_choice.generate(cats)
     for tc in result:
         assert set(tc.keys()) == set(cats.keys())
+
+
+
+def test_each_choice_req_0801_first_value_survives_exclude_via_rule_interaction():
+    """# REQ-0801: Erlaubte Auspraegung muss trotz Exclude in finalen gueltigen Faellen vorkommen."""
+    cats = {
+        "Kunden": ["Neukunden", "Bestandskunden", "VIP"],
+        "Seminare": ["SK", "T&Q", "PM"],
+        "Trainer": ["A", "B", "C"],
+    }
+    engine = RuleEngine([
+        ForbiddenRule("Seminare", "SK", "Kunden", "Neukunden"),
+        DependencyRule("Kunden", "Neukunden", "Seminare", "SK"),
+        DependencyRule("Trainer", "C", "Kunden", "Neukunden"),
+        DependencyRule("Kunden", "Bestandskunden", "Trainer", "C"),
+    ])
+
+    result = each_choice.generate(cats, engine)
+
+    assert all(engine.is_combination_valid(tc) for tc in result), result
+    assert any(tc["Kunden"] == "Neukunden" for tc in result), result
+    assert any(
+        tc["Kunden"] == "Neukunden" and tc["Seminare"] == "T&Q" and tc["Trainer"] == "C"
+        for tc in result
+    ), result

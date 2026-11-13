@@ -10,6 +10,7 @@ Zwei Ebenen werden abgedeckt:
    mitgeschickt wird. Ein expliziter, kleinerer `limit` bleibt unangetastet.
 """
 import os
+import time
 
 from app.config import get_max_testcases, GREAT_MAX_TESTCASES_DEFAULT
 
@@ -43,6 +44,11 @@ def test_invalid_max_testcases_env_falls_back_to_default(monkeypatch):
     assert get_max_testcases() == GREAT_MAX_TESTCASES_DEFAULT
 
 
+def _unique_suffix():
+    """Erzeugt einen eindeutigen Suffix fuer Test-Projekt-Namen."""
+    return f"{int(time.time() * 1000)}"
+
+
 def _create_category_with_values(client, project_id: int, name: str, values: list[str]) -> int:
     category = client.post(
         f"/api/projects/{project_id}/categories",
@@ -63,7 +69,10 @@ def _build_project_with_many_combinations(client) -> int:
     """Legt ein Projekt an, dessen Vollkombinatorik (Strategie 'all') die
     Default-Obergrenze von 1000 Testfaellen deutlich ueberschreitet
     (6^4 = 1296 Kombinationen)."""
-    project = client.post("/api/projects", json={"name": "REQ4018-MaxTestcases"})
+    project = client.post(
+        "/api/projects",
+        json={"name": f"REQ4018-MaxTestcases-{_unique_suffix()}"},
+    )
     assert project.status_code == 200, project.text
     project_id = project.json()["id"]
 
@@ -75,14 +84,14 @@ def _build_project_with_many_combinations(client) -> int:
 
 
 # REQ-4018
-def test_generate_respects_default_max_testcases_without_explicit_limit(client, monkeypatch):
+def test_generate_respects_default_max_testcases_without_explicit_limit(auth_client, monkeypatch):
     """Ohne expliziten 'limit' im Request darf die Generierung nicht mehr
     Testfaelle erzeugen als das Default-Setting (1000) erlaubt."""
     monkeypatch.setenv("GREAT_MAX_TESTCASES", "1000")
 
-    project_id = _build_project_with_many_combinations(client)
+    project_id = _build_project_with_many_combinations(auth_client)
 
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all"},
     )
@@ -90,20 +99,20 @@ def test_generate_respects_default_max_testcases_without_explicit_limit(client, 
     body = response.json()
     assert body["count"] == 1000
 
-    testcases = client.get(f"/api/generations/{body['generation_id']}/testcases")
+    testcases = auth_client.get(f"/api/generations/{body['generation_id']}/testcases")
     assert testcases.status_code == 200, testcases.text
     assert len(testcases.json()["testcases"]) == 1000
 
 
 # REQ-4018
-def test_generate_respects_custom_max_testcases_setting_via_env(client, monkeypatch):
+def test_generate_respects_custom_max_testcases_setting_via_env(auth_client, monkeypatch):
     """Ein per Env-Variable abgesenktes Setting muss respektiert werden
     (Simuliert eine geaenderte Einstellung ueber das konfigurierbare Setting)."""
     monkeypatch.setenv("GREAT_MAX_TESTCASES", "42")
 
-    project_id = _build_project_with_many_combinations(client)
+    project_id = _build_project_with_many_combinations(auth_client)
 
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all"},
     )
@@ -112,14 +121,14 @@ def test_generate_respects_custom_max_testcases_setting_via_env(client, monkeypa
 
 
 # REQ-4018
-def test_generate_explicit_limit_still_honored_within_default(client, monkeypatch):
+def test_generate_explicit_limit_still_honored_within_default(auth_client, monkeypatch):
     """Ein expliziter, kleinerer 'limit'-Wert bleibt unveraendert respektiert
     (bestehendes Verhalten darf nicht brechen)."""
     monkeypatch.setenv("GREAT_MAX_TESTCASES", "1000")
 
-    project_id = _build_project_with_many_combinations(client)
+    project_id = _build_project_with_many_combinations(auth_client)
 
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all", "limit": 5},
     )
@@ -128,15 +137,18 @@ def test_generate_explicit_limit_still_honored_within_default(client, monkeypatc
 
 
 # REQ-4018
-def test_generate_limit_still_rejects_non_positive_values(client):
+def test_generate_limit_still_rejects_non_positive_values(auth_client):
     """Regressionsschutz: Die bestehende Validierung (limit muss positiv sein)
     bleibt unveraendert erhalten."""
-    project = client.post("/api/projects", json={"name": "REQ4018-InvalidLimit"})
+    project = auth_client.post(
+        "/api/projects",
+        json={"name": f"REQ4018-InvalidLimit-{_unique_suffix()}"},
+    )
     assert project.status_code == 200, project.text
     project_id = project.json()["id"]
-    _create_category_with_values(client, project_id, "Browser", ["Chrome", "Firefox"])
+    _create_category_with_values(auth_client, project_id, "Browser", ["Chrome", "Firefox"])
 
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "each", "limit": 0},
     )

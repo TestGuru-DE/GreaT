@@ -1,15 +1,11 @@
 ﻿"""REQ-4006: Multi-User / Concurrent Access Tests."""
 import threading
 import pytest
-from fastapi.testclient import TestClient
 from app.main import app
 from app.models import Project, Category, Value
 from app.config import DATABASE_URL
 from app.database import engine
 from sqlalchemy import inspect
-
-
-client = TestClient(app)
 
 
 class TestDatabaseConfiguration:
@@ -25,14 +21,19 @@ class TestDatabaseConfiguration:
 
 
 class TestConcurrentReads:
-    """Concurrent reads - prüft nur dass keine Fehler auftreten."""
+    """Concurrent reads - prueft nur dass keine Fehler auftreten."""
 
-    def test_concurrent_project_reads(self):
+    def test_concurrent_project_reads(self, auth_client):
         errors = []
 
         def read_projects():
             try:
-                r = client.get("/api/projects")
+                # Each thread needs its own client
+                from fastapi.testclient import TestClient
+                tc = TestClient(app)
+                for name, value in auth_client.cookies.items():
+                    tc.cookies.set(name, value)
+                r = tc.get("/api/projects")
                 assert r.status_code == 200
             except Exception as e:
                 errors.append(str(e))
@@ -44,12 +45,16 @@ class TestConcurrentReads:
             t.join()
         assert len(errors) == 0, f"Concurrent errors: {errors}"
 
-    def test_concurrent_category_reads(self, client):
+    def test_concurrent_category_reads(self, auth_client):
         errors = []
 
         def read():
             try:
-                r = client.get("/api/projects")
+                from fastapi.testclient import TestClient
+                tc = TestClient(app)
+                for name, value in auth_client.cookies.items():
+                    tc.cookies.set(name, value)
+                r = tc.get("/api/projects")
                 assert r.status_code == 200
             except Exception as e:
                 errors.append(str(e))
@@ -61,12 +66,16 @@ class TestConcurrentReads:
             t.join()
         assert len(errors) == 0
 
-    def test_concurrent_value_reads(self, client):
+    def test_concurrent_value_reads(self, auth_client):
         errors = []
 
         def read():
             try:
-                r = client.get("/api/projects")
+                from fastapi.testclient import TestClient
+                tc = TestClient(app)
+                for name, value in auth_client.cookies.items():
+                    tc.cookies.set(name, value)
+                r = tc.get("/api/projects")
                 assert r.status_code == 200
             except Exception as e:
                 errors.append(str(e))
@@ -85,10 +94,12 @@ class TestUpdatedAtTimestamps:
         columns = [c["name"] for c in inspector.get_columns("projects")]
         assert "updated_at" in columns
 
-    def test_updated_at_changes_on_update(self, client):
+    def test_updated_at_changes_on_update(self, auth_client):
         # PATCH not implemented yet - test CREATE only
-        r = client.post('/api/projects', json={'name': 'TS_multiuser_unique_99'})
+        r = auth_client.post('/api/projects', json={'name': 'TS_multiuser_unique_99'})
         assert r.status_code in (200, 201)
+
+
 class TestModelMigration:
     def test_project_updated_at_in_schema(self):
         inspector = inspect(engine)

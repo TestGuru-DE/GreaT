@@ -10,45 +10,45 @@ um Integrationstests auf API-Ebene:
   den Vertrag fuer den Gesamtprozentsatz dokumentiert.
 """
 import pytest
-from fastapi.testclient import TestClient
-from src.app.main import app
+from app.main import app
 from app.database import SessionLocal, engine, Base
-
-client = TestClient(app)
 
 
 @pytest.fixture(scope="function")
 def clean_db():
-    Base.metadata.drop_all(bind=engine)
+    """Stellt sicher, dass das Test-DB-Schema vorhanden ist.
+
+    REQ-1300: Verwendet die gemeinsame Test-DB aus conftest.
+    Kein drop_all, da die DB geteilt ist. create_all ist idempotent.
+    """
     Base.metadata.create_all(bind=engine)
     yield
-    Base.metadata.drop_all(bind=engine)
 
 
-def _setup_generation(strategy: str = "all") -> int:
-    resp = client.post("/api/projects", json={"name": "RiskSummaryProject"})
+def _setup_generation(auth_client, strategy: str = "all") -> int:
+    resp = auth_client.post("/api/projects", json={"name": "RiskSummaryProject"})
     pid = resp.json()["id"]
 
-    resp = client.post(f"/api/projects/{pid}/categories", json={"name": "Browser"})
+    resp = auth_client.post(f"/api/projects/{pid}/categories", json={"name": "Browser"})
     cat1_id = resp.json()["id"]
-    client.post(f"/api/categories/{cat1_id}/values", json={"value": "Chrome", "risk_weight": 5})
-    client.post(f"/api/categories/{cat1_id}/values", json={"value": "Firefox", "risk_weight": 1})
+    auth_client.post(f"/api/categories/{cat1_id}/values", json={"value": "Chrome", "risk_weight": 5})
+    auth_client.post(f"/api/categories/{cat1_id}/values", json={"value": "Firefox", "risk_weight": 1})
 
-    resp = client.post(f"/api/projects/{pid}/categories", json={"name": "OS"})
+    resp = auth_client.post(f"/api/projects/{pid}/categories", json={"name": "OS"})
     cat2_id = resp.json()["id"]
-    client.post(f"/api/categories/{cat2_id}/values", json={"value": "Windows", "risk_weight": 2})
-    client.post(f"/api/categories/{cat2_id}/values", json={"value": "Linux", "risk_weight": 1})
+    auth_client.post(f"/api/categories/{cat2_id}/values", json={"value": "Windows", "risk_weight": 2})
+    auth_client.post(f"/api/categories/{cat2_id}/values", json={"value": "Linux", "risk_weight": 1})
 
-    resp = client.post(f"/api/projects/{pid}/generate", json={"strategy": strategy})
+    resp = auth_client.post(f"/api/projects/{pid}/generate", json={"strategy": strategy})
     assert resp.status_code == 200
     return resp.json()["generation_id"]
 
 
-def test_risk_summary_present_in_testcases_response(clean_db):
+def test_risk_summary_present_in_testcases_response(auth_client, clean_db):
     """REQ-3051: Response von GET .../testcases enthaelt risk_summary mit Gesamtprozentsatz."""
-    gen_id = _setup_generation(strategy="all")
+    gen_id = _setup_generation(auth_client, strategy="all")
 
-    resp = client.get(f"/api/generations/{gen_id}/testcases")
+    resp = auth_client.get(f"/api/generations/{gen_id}/testcases")
     assert resp.status_code == 200
     data = resp.json()
 
@@ -62,11 +62,11 @@ def test_risk_summary_present_in_testcases_response(clean_db):
     assert summary["testcase_count"] == len(data["testcases"])
 
 
-def test_risk_summary_percent_matches_manual_calculation(clean_db):
+def test_risk_summary_percent_matches_manual_calculation(auth_client, clean_db):
     """REQ-3051: Prozentsatz = Summe risk_coverage / All-Combinations-Maximum * 100."""
-    gen_id = _setup_generation(strategy="each")
+    gen_id = _setup_generation(auth_client, strategy="each")
 
-    resp = client.get(f"/api/generations/{gen_id}/testcases")
+    resp = auth_client.get(f"/api/generations/{gen_id}/testcases")
     data = resp.json()
     summary = data["risk_summary"]
     testcases = data["testcases"]
@@ -78,7 +78,7 @@ def test_risk_summary_percent_matches_manual_calculation(clean_db):
     assert summary["risk_coverage_percent"] == expected_percent
 
 
-def test_testcases_endpoint_documents_risk_summary_in_openapi(clean_db):
+def test_testcases_endpoint_documents_risk_summary_in_openapi(auth_client, clean_db):
     """REQ-3051: Endpunkt nutzt response_model, damit RiskSummary im OpenAPI-Schema
     dokumentiert ist (bestehendes Muster: alle anderen Endpunkte deklarieren response_model)."""
     schema = app.openapi()

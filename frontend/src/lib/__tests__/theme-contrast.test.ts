@@ -58,10 +58,10 @@ describe('Theme Contrast WCAG AA (≥4.5:1)', () => {
     console.log(`Heavy Metal text-muted-bg: ${ratio.toFixed(2)}:1`)
   })
 
-  test('Light: Text (#1e293b) auf Hintergrund (#ffffff)', () => {
-    const ratio = contrastRatio('#1e293b', '#ffffff')
+  test('Normal (Sofort-Fix REQ-3045): Text (#ffffff) auf Hintergrund (#1e3a8a)', () => {
+    const ratio = contrastRatio('#ffffff', '#1e3a8a')
     expect(ratio).toBeGreaterThanOrEqual(4.5)
-    console.log(`Light text-bg: ${ratio.toFixed(2)}:1`)
+    console.log(`Normal text-bg: ${ratio.toFixed(2)}:1`)
   })
 
   test('Rainbow: Text (#1e003d) auf Hintergrund (#fff5fe)', () => {

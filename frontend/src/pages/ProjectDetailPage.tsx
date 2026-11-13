@@ -88,7 +88,7 @@ export default function ProjectDetailPage() {
       />
       {/* Breadcrumb-Header */}
       <header className="bg-theme-surface border-b border-theme-border px-6 py-3 flex items-center gap-4">
-        <button onClick={() => navigate("/")}
+        <button onClick={() => navigate("/projects")}
           className="text-theme-text-secondary hover:text-theme-text text-sm flex items-center gap-1">
           &larr; Projekte
         </button>

@@ -3,24 +3,21 @@ tests/test_api_delete_endpoints.py
 REQ-1206: DELETE-Endpunkte fuer Projekte, Kategorien und Werte
 
 TDD: Tests werden zuerst geschrieben (RED), dann implementiert (GREEN).
+
+REQ-1300: Verwendet die gemeinsame Test-DB aus conftest.py,
+nicht eine separate Datei im Projektverzeichnis.
 """
+import uuid
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from app.main import app
-from app.database import Base, get_db
-from app import models
-
-# --- Isolierte Test-DB ---
-TEST_DB = "sqlite:///./test_delete_endpoints.db"
-engine = create_engine(TEST_DB, connect_args={"check_same_thread": False})
-TestingSession = sessionmaker(bind=engine)
+from app.database import Base, get_db, SessionLocal
 
 
-def override_get_db():
-    db = TestingSession()
+def _override_get_db():
+    """Override fuer get_db – verwendet die gemeinsame Test-DB aus conftest."""
+    db = SessionLocal()
     try:
         yield db
     finally:
@@ -29,21 +26,26 @@ def override_get_db():
 
 @pytest.fixture(autouse=True)
 def setup_db():
-    Base.metadata.create_all(bind=engine)
-    app.dependency_overrides[get_db] = override_get_db
+    """Stellt sicher, dass die Test-DB-Schema vorhanden ist und ueberschreibt get_db.
+
+    REQ-1300: Verwendet die gemeinsame Test-DB (keine separate Datei).
+    Kein drop_all im Teardown, da die DB geteilt ist und andere Tests
+    auf demselben Schema arbeiten.
+    """
+    Base.metadata.create_all(bind=SessionLocal().get_bind())
+    app.dependency_overrides[get_db] = _override_get_db
     yield
-    Base.metadata.drop_all(bind=engine)
     app.dependency_overrides.clear()
 
 
 @pytest.fixture
-def client():
-    return TestClient(app)
+def client(auth_client):
+    return auth_client
 
 
 @pytest.fixture
 def project(client):
-    r = client.post("/api/projects", json={"name": "DEL-Testprojekt"})
+    r = client.post("/api/projects", json={"name": f"DEL-Testprojekt-{uuid.uuid4().hex[:8]}"})
     assert r.status_code == 200
     return r.json()
 
@@ -120,4 +122,3 @@ class TestDeleteValue:
         """REQ-1206: Loeschen eines nicht vorhandenen Werts -> 404."""
         r = client.delete("/api/values/99999")
         assert r.status_code == 404
-

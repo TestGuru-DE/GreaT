@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "great-orchestrator",
+  "agents": {
+    "great-orchestrator": {
+      "description": "Zentrale Eingangsstelle fuer G.R.E.A.T. Koordiniert fachliche User-Anfragen mit Subagents, waehlt passende Skills, verhindert Direktimplementierung ohne TDD/Quality Gate.",
+      "mode": "primary",
+      "permission": {
+        "read": "allow",
+        "edit": "allow",
+        "bash": {
+          "*": "ask",
+          "git status*": "allow",
+          "git log*": "allow",
+          "git diff*": "allow",
+          "git branch*": "allow",
+          "pytest*": "allow",
+          "python -m pytest*": "allow",
+          "npm test*": "allow",
+          "npm run*": "allow",
+          "coverage*": "allow"
+        },
+        "task": "allow",
+        "webfetch": "allow",
+        "websearch": "allow",
+        "skill": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "question": "allow",
+        "todowrite": "allow"
+      }
+    }
+  }
+}

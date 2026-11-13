@@ -1,6 +1,6 @@
 """REQ-4015: BVA is_valid und Fehlerwert."""
 import pytest
-from src.combinatorics.boundary_value import BVARange, generate_multi_range_bva
+from combinatorics.boundary_value import BVARange, generate_multi_range_bva
 
 
 def test_bva_range_has_is_valid():

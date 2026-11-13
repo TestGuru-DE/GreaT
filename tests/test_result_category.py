@@ -6,122 +6,138 @@ und dienen als separate Spalten für manuelle Test-Ergebnis-Angaben.
 """
 
 import pytest
+import time
 
 
-def test_category_has_is_result_field(client, db_session):
+def _unique_suffix():
+    """Erzeugt einen eindeutigen Suffix fuer Test-Namen."""
+    return f"{int(time.time() * 1000)}"
+
+
+def test_category_has_is_result_field(auth_client, db_session):
     """is_result Feld in Category-Schema vorhanden."""
+    suffix = _unique_suffix()
     # Create project
-    resp = client.post("/api/projects", json={"name": "TestProjectIsResult"})
+    resp = auth_client.post("/api/projects", json={"name": f"TestProjectIsResult{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
+
     # Create normal category
-    cat = client.post(
+    cat = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Normal", "order_index": 0, "is_result": False}
     ).json()
-    
+
     assert cat["id"]
     assert cat["name"] == "Normal"
     assert cat["is_result"] is False
 
 
-def test_category_is_result_true(client):
+def test_category_is_result_true(auth_client):
     """is_result kann auf True gesetzt werden."""
-    resp = client.post("/api/projects", json={"name": "TestProjectResult"})
+    suffix = _unique_suffix()
+    resp = auth_client.post("/api/projects", json={"name": f"TestProjectResult{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
-    cat = client.post(
+
+    cat = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Expected Result", "order_index": 1, "is_result": True}
     ).json()
-    
+
     assert cat["is_result"] is True
 
 
-def test_category_is_result_default_false(client):
+def test_category_is_result_default_false(auth_client):
     """is_result Default ist False."""
-    resp = client.post("/api/projects", json={"name": "TestProjectDefault"})
+    suffix = _unique_suffix()
+    resp = auth_client.post("/api/projects", json={"name": f"TestProjectDefault{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
-    cat = client.post(
+
+    cat = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "NoResult", "order_index": 0}
     ).json()
-    
+
     assert cat.get("is_result", False) is False
 
 
-def test_update_category_is_result(client):
+def test_update_category_is_result(auth_client):
     """is_result via PATCH aktualisierbar."""
-    resp = client.post("/api/projects", json={"name": "TestProjectUpdate"})
+    suffix = _unique_suffix()
+    resp = auth_client.post("/api/projects", json={"name": f"TestProjectUpdate{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
+
     # Create normal
-    cat = client.post(
+    cat = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "TestCat", "order_index": 0, "is_result": False}
     ).json()
     cat_id = cat["id"]
-    
+
     # Update to is_result
-    updated = client.patch(
+    updated = auth_client.patch(
         f"/api/categories/{cat_id}/properties",
         json={"is_result": True}
     ).json()
-    
+
     assert updated["is_result"] is True
 
 
-def test_is_result_excluded_from_combinatorics(client):
+def test_is_result_excluded_from_combinatorics(auth_client):
     """is_result=True Kategorien werden aus Kombinatorik ausgeschlossen.
-    
+
     Sie erscheinen aber in der API mit leeren Werten.
     """
-    resp = client.post("/api/projects", json={"name": "CombinatoricsTest"})
+    suffix = _unique_suffix()
+    resp = auth_client.post("/api/projects", json={"name": f"CombinatoricsTest{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
+
     # Create normal category with values
-    cat1 = client.post(
+    cat1 = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Feature", "order_index": 0, "is_result": False}
     ).json()
-    
-    client.post(
+
+    auth_client.post(
         f"/api/categories/{cat1['id']}/values",
         json={"value": "A", "risk_weight": 1}
     )
-    client.post(
+    auth_client.post(
         f"/api/categories/{cat1['id']}/values",
         json={"value": "B", "risk_weight": 1}
     )
-    
+
     # Create result category with values
-    cat2 = client.post(
+    cat2 = auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Result", "order_index": 1, "is_result": True}
     ).json()
-    
-    client.post(
+
+    auth_client.post(
         f"/api/categories/{cat2['id']}/values",
         json={"value": "Pass", "risk_weight": 1}
     )
-    client.post(
+    auth_client.post(
         f"/api/categories/{cat2['id']}/values",
         json={"value": "Fail", "risk_weight": 1}
     )
-    
+
     # Generate testcases
-    gen = client.post(
+    gen = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all"}
     ).json()
-    
+
     # Get testcases
-    tcs_raw = client.get(f"/api/generations/{gen['generation_id']}/testcases").json()
-    
+    tcs_raw = auth_client.get(f"/api/generations/{gen['generation_id']}/testcases").json()
+
     # tcs_raw ist bereits ein Array von TestCase-Objekten
     tcs = tcs_raw if isinstance(tcs_raw, list) else tcs_raw.get("testcases", [])
-    
+
     # Testcases sollten Feature-Werte haben (aus Kombinatorik)
     # UND Result-Spalte mit leerem Wert (nicht in Kombinatorik, sondern manuell befüllbar)
     assert len(tcs) == 2  # A und B = 2 Kombinationen
@@ -135,26 +151,28 @@ def test_is_result_excluded_from_combinatorics(client):
         assert assignments["Result"] == ""  # Leer!
 
 
-def test_result_categories_in_api_list(client):
+def test_result_categories_in_api_list(auth_client):
     """is_result Kategorien sind in der Kategorieliste sichtbar."""
-    resp = client.post("/api/projects", json={"name": "ListTest"})
+    suffix = _unique_suffix()
+    resp = auth_client.post("/api/projects", json={"name": f"ListTest{suffix}"})
+    assert resp.status_code == 200, resp.text
     project_id = resp.json()["id"]
-    
+
     # Create normal
-    client.post(
+    auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Normal", "order_index": 0, "is_result": False}
     )
-    
+
     # Create result
-    client.post(
+    auth_client.post(
         f"/api/projects/{project_id}/categories",
         json={"name": "Result", "order_index": 1, "is_result": True}
     )
-    
+
     # List all
-    cats = client.get(f"/api/projects/{project_id}/categories").json()
-    
+    cats = auth_client.get(f"/api/projects/{project_id}/categories").json()
+
     assert len(cats) == 2
     assert any(c["name"] == "Normal" and not c["is_result"] for c in cats)
     assert any(c["name"] == "Result" and c["is_result"] for c in cats)

@@ -1,4 +1,4 @@
-﻿// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
+// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import RulesPanel from "../RulesPanel";
@@ -67,6 +67,50 @@ describe("RulesPanel - REQ-3003 Regeleditor (Formular + direktes Speichern)", ()
     const heading = screen.getByText("Neue Regel anlegen");
     const rulesHeading = await screen.findByText("0 Regeln");
     expect(heading.compareDocumentPosition(rulesHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it.each([
+    ["Normal", ""],
+    ["Dark", "theme-dark"],
+    ["Heavy Metal", "theme-heavy-metal"],
+  ])("zeigt in Theme %s schwarze Feldtexte fuer alle Regel-Selects (REQ-3045)", async (_themeName, themeClass) => {
+    document.documentElement.className = themeClass;
+    render(<RulesPanel projectId={1} />);
+
+    await screen.findByText("Neue Regel anlegen");
+    const [typeSelect, ifCatSelect, ifValSelect, thenCatSelect, thenValSelect] = comboboxes();
+
+    expect(typeSelect).toHaveClass("text-black");
+    expect(ifCatSelect).toHaveClass("text-black");
+    expect(ifValSelect).toHaveClass("text-black");
+    expect(thenCatSelect).toHaveClass("text-black");
+    expect(thenValSelect).toHaveClass("text-black");
+  });
+
+  it.each([
+    ["Normal", ""],
+    ["Dark", "theme-dark"],
+    ["Heavy Metal", "theme-heavy-metal"],
+  ])("zeigt in Theme %s schwarze Textfarbe in der Regelauflistung", async (_themeName, themeClass) => {
+    vi.mocked(rulesApi.list).mockResolvedValue([
+      {
+        id: 12,
+        type: "dependency",
+        if_category_id: 1,
+        if_value: "rot",
+        then_category_id: 2,
+        then_value: "S",
+        then_values_json: null,
+      },
+    ] as never);
+
+    document.documentElement.className = themeClass;
+    render(<RulesPanel projectId={1} />);
+
+    const list = await screen.findByRole("list");
+    const ruleItem = within(list).getByText("rot").closest("li");
+    expect(ruleItem).not.toBeNull();
+    expect(ruleItem!).toHaveClass("text-black");
   });
 
   it("speichert eine neue Regel direkt ueber den Editor und zeigt sie danach in der Regelanzeige", async () => {

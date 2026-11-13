@@ -2,6 +2,7 @@
 // REQ-3062: System theme sync
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import DataClassesPage from "./pages/DataClassesPage";
@@ -37,9 +38,10 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             {/* REQ-4028 AK-1: Pflicht-Passwortwechsel (Ziel der Route-Sperre) */}
             <Route path="/account/password" element={<ChangePasswordPage />} />
-            <Route path="/" element={<ProjectsPage />} />
-            <Route path="/app" element={<ProjectsPage />} />
-            <Route path="/app/*" element={<ProjectsPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            <Route path="/app" element={<HomePage />} />
+            <Route path="/app/*" element={<HomePage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/dataclasses" element={<DataClassesPage />} />
             <Route path="/generations" element={<GenerationsPage />} />

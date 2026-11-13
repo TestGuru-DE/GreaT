@@ -9,9 +9,6 @@ from app import models
 from app.database import SessionLocal
 
 
-client = TestClient(app)
-
-
 @pytest.fixture(scope="function")
 def test_db():
     """Erzeugt Test-DB mit Projekt und Kategorien."""
@@ -50,11 +47,11 @@ def test_db():
         db.close()
 
 
-def test_api_accepts_t_wise_strategy(test_db):
+def test_api_accepts_t_wise_strategy(auth_client, test_db):
     """TEST-API-001: API akzeptiert strategy="t_wise" mit Default t=2."""
     pid = test_db
     
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise"}
     )
@@ -65,12 +62,12 @@ def test_api_accepts_t_wise_strategy(test_db):
     assert data["count"] > 0
 
 
-def test_api_accepts_t_strength_parameter(test_db):
+def test_api_accepts_t_strength_parameter(auth_client, test_db):
     """TEST-API-002: API akzeptiert t_strength Parameter."""
     pid = test_db
     
     # t=1
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise", "t_strength": 1}
     )
@@ -78,7 +75,7 @@ def test_api_accepts_t_strength_parameter(test_db):
     count_t1 = response.json()["count"]
     
     # t=2
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise", "t_strength": 2}
     )
@@ -86,7 +83,7 @@ def test_api_accepts_t_strength_parameter(test_db):
     count_t2 = response.json()["count"]
     
     # t=3 (Cartesian bei 2 Kategorien)
-    response = client.post(
+    response = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise", "t_strength": 3}
     )
@@ -98,19 +95,19 @@ def test_api_accepts_t_strength_parameter(test_db):
     assert count_t2 <= count_t3
 
 
-def test_api_t_wise_default_t_is_2(test_db):
+def test_api_t_wise_default_t_is_2(auth_client, test_db):
     """TEST-API-003: Default t_strength ist 2 (Pairwise)."""
     pid = test_db
     
     # Ohne t_strength
-    response1 = client.post(
+    response1 = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise"}
     )
     count1 = response1.json()["count"]
     
     # Mit explizitem t=2
-    response2 = client.post(
+    response2 = auth_client.post(
         f"/api/projects/{pid}/generate",
         json={"strategy": "t_wise", "t_strength": 2}
     )
@@ -118,4 +115,3 @@ def test_api_t_wise_default_t_is_2(test_db):
     
     # Sollten gleiche Anzahl erzeugen
     assert count1 == count2
-

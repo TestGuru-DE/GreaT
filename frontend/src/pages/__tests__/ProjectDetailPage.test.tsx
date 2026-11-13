@@ -25,6 +25,9 @@ vi.mock("../../components/RulesPanel", () => ({
 vi.mock("../../components/GenerationsPanel", () => ({
   default: () => <div data-testid="generations-panel-mock" />,
 }));
+vi.mock("../../components/RuleVisualization", () => ({
+  default: () => <div data-testid="rule-visualization-mock" />,
+}));
 
 describe("ProjectDetailPage - REQ-4019 Refresh bei Sichtenwechsel (Navigation)", () => {
   let fetchProjects: ReturnType<typeof vi.fn>;

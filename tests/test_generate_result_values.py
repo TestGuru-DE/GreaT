@@ -18,21 +18,21 @@ def _create_category_with_values(client, project_id: int, name: str, values: lis
 
 
 # REQ-4016
-def test_result_category_values_in_generated_testcases(client):
-    project = client.post("/api/projects", json={"name": "REQ4016-ResultValues"})
+def test_result_category_values_in_generated_testcases(auth_client):
+    project = auth_client.post("/api/projects", json={"name": "REQ4016-ResultValues"})
     assert project.status_code == 200, project.text
     project_id = project.json()["id"]
 
-    _create_category_with_values(client, project_id, "Browser", ["Chrome", "Firefox"])
-    _create_category_with_values(client, project_id, "Ergebnis 1", ["Pass", "Fail"], is_result=True)
+    _create_category_with_values(auth_client, project_id, "Browser", ["Chrome", "Firefox"])
+    _create_category_with_values(auth_client, project_id, "Ergebnis 1", ["Pass", "Fail"], is_result=True)
 
-    generation = client.post(
+    generation = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all"},
     )
     assert generation.status_code == 200, generation.text
 
-    response = client.get(f"/api/generations/{generation.json()['generation_id']}/testcases")
+    response = auth_client.get(f"/api/generations/{generation.json()['generation_id']}/testcases")
     assert response.status_code == 200, response.text
     payload = response.json()
 
@@ -56,15 +56,15 @@ def test_result_category_values_in_generated_testcases(client):
 
 
 # REQ-4016
-def test_rule_with_result_value_sets_cell(client):
-    project = client.post("/api/projects", json={"name": "REQ4016-RuleResult"})
+def test_rule_with_result_value_sets_cell(auth_client):
+    project = auth_client.post("/api/projects", json={"name": "REQ4016-RuleResult"})
     assert project.status_code == 200, project.text
     project_id = project.json()["id"]
 
-    browser_id = _create_category_with_values(client, project_id, "Browser", ["Chrome", "Firefox"])
-    result_id = _create_category_with_values(client, project_id, "Ergebnis 1", ["Pass", "Fail"], is_result=True)
+    browser_id = _create_category_with_values(auth_client, project_id, "Browser", ["Chrome", "Firefox"])
+    result_id = _create_category_with_values(auth_client, project_id, "Ergebnis 1", ["Pass", "Fail"], is_result=True)
 
-    rule = client.post(
+    rule = auth_client.post(
         f"/api/projects/{project_id}/rules",
         json={
             "type": "dependency",
@@ -76,13 +76,13 @@ def test_rule_with_result_value_sets_cell(client):
     )
     assert rule.status_code == 201, rule.text
 
-    generation = client.post(
+    generation = auth_client.post(
         f"/api/projects/{project_id}/generate",
         json={"strategy": "all", "apply_rules": True},
     )
     assert generation.status_code == 200, generation.text
 
-    response = client.get(f"/api/generations/{generation.json()['generation_id']}/testcases")
+    response = auth_client.get(f"/api/generations/{generation.json()['generation_id']}/testcases")
     assert response.status_code == 200, response.text
     testcases = response.json()["testcases"]
 

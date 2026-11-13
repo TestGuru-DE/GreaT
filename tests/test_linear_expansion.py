@@ -5,6 +5,7 @@
 #              je ein Testfall pro abweichendem Wert (genau ein Wert weicht ab).
 
 from combinatorics import linear_expansion
+from core.rules.rule_engine import ForbiddenRule, RuleEngine
 
 
 def test_linear_expansion_leer():
@@ -80,3 +81,23 @@ def test_linear_expansion_keine_doppelten_testfaelle():
     }
     result = linear_expansion.generate(cats)
     assert len(result) == len(set(frozenset(tc.items()) for tc in result))
+
+
+def test_linear_expansion_req_0801_final_allowed_value_survives_forbidden_pair():
+    """# REQ-0801: Jede final erlaubte Auspraegung muss in regelkonformem TF vorkommen."""
+    cats = {
+        "Kategorie1": ["Wert1", "WertX"],
+        "Kategorie2": ["Wert2", "WertY"],
+    }
+    engine = RuleEngine([
+        ForbiddenRule("Kategorie1", "Wert1", "Kategorie2", "Wert2"),
+    ])
+
+    result = linear_expansion.generate(cats, rule_engine=engine)
+
+    assert all(engine.is_combination_valid(tc) for tc in result), result
+    assert any(tc["Kategorie1"] == "Wert1" for tc in result), result
+    assert any(
+        tc["Kategorie1"] == "Wert1" and tc["Kategorie2"] == "WertY"
+        for tc in result
+    ), result
