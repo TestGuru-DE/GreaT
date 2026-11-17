@@ -1,5 +1,6 @@
 // REQ-1203: Typsicherer API-Client fuer alle FastAPI-Endpunkte
 // REQ-1209, REQ-1213: Rename + Reorder Endpunkte
+// B-43: Token-Refresh + ApiError-Interceptor
 import axios from "axios";
 import type {
   Project, ProjectCreate,
@@ -7,17 +8,61 @@ import type {
   Value, ValueCreate,
   GenerateRequest, GenerateResponse, TestCaseOut, RiskSummary, ResultCategory,
 } from "../types";
+import { ApiError } from './ApiError';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
 });
 
+let refreshPromise: Promise<void> | null = null;
+
+function isAuthRoute(url?: string): boolean {
+  if (!url) return true;
+  const u = url.toLowerCase();
+  return u.includes('/auth/login') || u.includes('/auth/refresh') || u.includes('/auth/logout');
+}
+
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    const msg = err.response?.data?.detail ?? err.message;
-    return Promise.reject(new Error(String(msg)));
+  async (error) => {
+    const originalRequest = error.config;
+
+    // B-43: 401 -> Token-Refresh + Retry (nur bei nicht-Auth-Routes)
+    if (error.response?.status === 401 && !isAuthRoute(originalRequest?.url)) {
+      if (refreshPromise) {
+        await refreshPromise;
+        return api(originalRequest);
+      }
+
+      refreshPromise = (async () => {
+        try {
+          await useAuthStore.getState().refresh();
+        } catch {
+          useAuthStore.getState().logout();
+          window.location.href = '/login?reason=session_expired';
+        } finally {
+          refreshPromise = null;
+        }
+      })();
+
+      await refreshPromise;
+      return api(originalRequest);
+    }
+
+    // B-42: 403 password_change_required -> Redirect (REQ-4028)
+    const detail = error.response?.data?.detail;
+    if (error.response?.status === 403 && detail === "password_change_required") {
+      window.location.href = "/account/password";
+      return Promise.reject(new Error("password_change_required_redirect"));
+    }
+
+    const apiError = new ApiError(
+      error.response?.status ?? 0,
+      error.response?.data?.detail ?? error.message
+    );
+    throw apiError;
   }
 );
 

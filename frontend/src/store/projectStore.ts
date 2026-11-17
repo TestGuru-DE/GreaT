@@ -1,6 +1,8 @@
 // REQ-1204 + REQ-2002: Zustand Store fuer Projektliste mit Bulk-Delete
 import { create } from "zustand";
 import { projectsApi } from "../api/client";
+import { ApiError } from "../api/ApiError";
+import { useToastStore } from "../components/Toast";
 import type { Project } from "../types";
 
 interface BulkDeleteResult { deleted: number; blocked: number[]; }
@@ -26,8 +28,10 @@ export const useProjectStore = create<ProjectStore>((set) => ({
     try {
       const projects = await projectsApi.list();
       set({ projects, loading: false });
-    } catch (e) {
-      set({ error: String(e), loading: false });
+    } catch (e: unknown) {
+      const msg = e instanceof ApiError ? e.message : String(e);
+      set({ error: msg, loading: false });
+      useToastStore.getState().add(msg, 'error');
     }
   },
 

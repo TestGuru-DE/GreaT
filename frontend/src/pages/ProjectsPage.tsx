@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";
 import { generateApi } from "../api/client";
+import { ApiError } from "../api/ApiError";
+import { useToastStore } from "../components/Toast";
 import type { Project } from "../types";
 import DeleteProjectDialog from "../components/DeleteProjectDialog";
 
@@ -40,6 +42,16 @@ export default function ProjectsPage() {
     try {
       await createProject(newName.trim());
       setNewName("");
+    } catch (e: unknown) {
+      if (e instanceof ApiError) {
+        if (e.status === 409) {
+          setMsg({ text: 'Ein Projekt mit diesem Namen existiert bereits.', ok: false });
+        } else {
+          useToastStore.getState().add(e.message, 'error');
+        }
+      } else {
+        useToastStore.getState().add(String(e), 'error');
+      }
     } finally {
       setCreating(false);
     }
@@ -88,7 +100,8 @@ export default function ProjectsPage() {
         });
       }
     } catch (e) {
-      setMsg({ text: String(e), ok: false });
+      const msg = e instanceof ApiError ? e.message : String(e);
+      useToastStore.getState().add(msg, 'error');
     } finally {
       setWorking(false);
     }
