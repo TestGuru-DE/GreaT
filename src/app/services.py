@@ -17,7 +17,7 @@ from . import models
 from .database import Base, engine
 from .seed_example import seed_example_project
 from .system_dataclasses import seed_system_dataclasses
-from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise, mcdc
+from combinatorics import all_combinations, each_choice, ipo, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
 from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAMultiRangeResult
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
@@ -307,6 +307,7 @@ def generate_cases(
     project_id: int = None,
     t_strength: int = 2,
     rule_engine=None,
+    deadline=None,
 ) -> List[Dict[str, str]]:
     """Ruft die gewuenschte Kombinatorik-Strategie auf."""
     if strategy == "all":
@@ -314,7 +315,7 @@ def generate_cases(
     if strategy == "each":
         return each_choice.generate(categories, rule_engine=rule_engine)
     if strategy in ("pairwise", "orthogonal"):
-        return orthogonal.generate(categories, rule_engine=rule_engine)
+        return ipo.generate(categories, rule_engine=rule_engine, deadline=deadline)
     if strategy == "linear":
         return linear_expansion.generate(categories, rule_engine=rule_engine)
     if strategy == "t_wise":

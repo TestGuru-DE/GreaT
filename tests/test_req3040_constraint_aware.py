@@ -8,7 +8,7 @@ statt nachträglich zu filtern. Coverage bleibt erhalten.
 import pytest
 import time
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
-from combinatorics import each_choice, linear_expansion, orthogonal
+from combinatorics import each_choice, linear_expansion, ipo
 
 
 # ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ class TestConstraintAwarePairwise:
         )
         engine = RuleEngine([regel])
 
-        result = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=engine)
+        result = ipo.generate(CATEGORIES_SIMPLE, rule_engine=engine)
 
         # Keine ungültige Kombination darf existieren
         for tc in result:
@@ -126,7 +126,7 @@ class TestConstraintAwarePairwise:
         )
         engine = RuleEngine([regel])
 
-        result = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=engine)
+        result = ipo.generate(CATEGORIES_SIMPLE, rule_engine=engine)
 
         for tc in result:
             if tc["Gewicht"] == "Groß":
@@ -142,7 +142,7 @@ class TestConstraintAwarePairwise:
         )
         engine = RuleEngine([regel])
 
-        result = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=engine)
+        result = ipo.generate(CATEGORIES_SIMPLE, rule_engine=engine)
 
         for tc in result:
             if tc["Versandart"] == "Overnight":
@@ -159,7 +159,7 @@ class TestConstraintAwarePairwise:
         )
         engine = RuleEngine([regel])
 
-        result = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=engine)
+        result = ipo.generate(CATEGORIES_SIMPLE, rule_engine=engine)
 
         # Test sollte nicht fehlschlagen, weil Coverage erreicht ist
         # (auch wenn (Overnight, Groß) nicht existiert)
@@ -176,7 +176,7 @@ class TestConstraintAwarePairwise:
         )
         engine = RuleEngine([regel])
 
-        result = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=engine)
+        result = ipo.generate(CATEGORIES_SIMPLE, rule_engine=engine)
 
         for tc in result:
             if tc["Versandart"] == "Overnight":
@@ -184,8 +184,8 @@ class TestConstraintAwarePairwise:
 
     def test_pairwise_without_rules_unchanged(self):
         """TEST-REQ-3040-009: Backward-Compat: ohne RuleEngine = alte Funktion."""
-        result_old = orthogonal.generate(CATEGORIES_SIMPLE)
-        result_new = orthogonal.generate(CATEGORIES_SIMPLE, rule_engine=None)
+        result_old = ipo.generate(CATEGORIES_SIMPLE)
+        result_new = ipo.generate(CATEGORIES_SIMPLE, rule_engine=None)
 
         assert result_old == result_new
 
@@ -340,13 +340,13 @@ class TestRuleEnginePerformance:
 
         # Ohne Regeln
         start = time.perf_counter()
-        result_baseline = orthogonal.generate(categories)
+        result_baseline = ipo.generate(categories)
         time_baseline = time.perf_counter() - start
 
         # Mit Regeln (leere Engine, minimaler Overhead)
         engine = RuleEngine([])
         start = time.perf_counter()
-        result_with_rules = orthogonal.generate(categories, rule_engine=engine)
+        result_with_rules = ipo.generate(categories, rule_engine=engine)
         time_with_rules = time.perf_counter() - start
 
         overhead = (time_with_rules - time_baseline) / time_baseline * 100

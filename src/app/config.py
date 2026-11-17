@@ -79,3 +79,42 @@ if not os.getenv("JWT_SECRET_KEY"):
     _jwt_log.warning("JWT_SECRET_KEY not set! Using random default. Set this in production via environment variable!")
 if not os.getenv("JWT_REFRESH_SECRET_KEY"):
     _jwt_log.warning("JWT_REFRESH_SECRET_KEY not set! Using random default. Set this in production via environment variable!")
+
+
+# ============================================================================
+# Kombinatorik-Optimierung – Generierungslimits
+# ============================================================================
+
+GREAT_MAX_COMBINATIONS_DEFAULT: int = 100000
+
+
+def get_max_combinations() -> int:
+    """Liefert die Obergrenze fuer kartesische Produktgroessen.
+
+    Schuetzt vor kombinatorischer Explosion bei 'all'-Strategie und
+    t_wise mit t >= Anzahl Kategorien. Nicht-positive Werte fallen
+    auf den Default (100000) zurueck.
+    """
+    raw = os.getenv("GREAT_MAX_COMBINATIONS", str(GREAT_MAX_COMBINATIONS_DEFAULT))
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return GREAT_MAX_COMBINATIONS_DEFAULT
+    return value if value > 0 else GREAT_MAX_COMBINATIONS_DEFAULT
+
+
+GREAT_GENERATION_TIMEOUT_S_DEFAULT: int = 60
+
+
+def get_generation_timeout() -> float:
+    """Liefert das Timeout in Sekunden fuer Generierungsalgorithmen.
+
+    Nicht-positive Werte fallen auf den Default (60s) zurueck.
+    Unterstuetzt auch Dezimalwerte (z. B. 0.1 fuer Tests).
+    """
+    raw = os.getenv("GREAT_GENERATION_TIMEOUT_S", str(GREAT_GENERATION_TIMEOUT_S_DEFAULT))
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return float(GREAT_GENERATION_TIMEOUT_S_DEFAULT)
+    return value if value > 0 else float(GREAT_GENERATION_TIMEOUT_S_DEFAULT)

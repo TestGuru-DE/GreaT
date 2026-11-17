@@ -18,6 +18,10 @@ def _make_project_with_generation(auth_client):
     c = auth_client.post(f"/api/projects/{pid}/categories", json={"name": "K", "order_index": 0}).json()
     auth_client.post(f"/api/categories/{c['id']}/values", json={"value": "V1"})
     auth_client.post(f"/api/categories/{c['id']}/values", json={"value": "V2"})
+    # Zweite Kategorie fuer pairwise-Generierung (t_strength=2 > cat_count=1 would fail)
+    c2 = auth_client.post(f"/api/projects/{pid}/categories", json={"name": "K2", "order_index": 1}).json()
+    auth_client.post(f"/api/categories/{c2['id']}/values", json={"value": "A"})
+    auth_client.post(f"/api/categories/{c2['id']}/values", json={"value": "B"})
     gen = auth_client.post(f"/api/projects/{pid}/generate", json={"strategy": "each"}).json()
     return pid, gen["generation_id"]
 

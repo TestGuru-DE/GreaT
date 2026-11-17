@@ -14,7 +14,8 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
-from ..config import get_max_testcases  # REQ-4018: konfigurierbare Obergrenze
+from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
+from combinatorics.utils import compute_cartesian_size
 from ..services import (
     load_categories_values,
     load_categories_values_weighted,
@@ -52,8 +53,9 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
 
 @router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer)])
 def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
-    if payload.limit is not None and payload.limit <= 0:
-        raise HTTPException(status_code=400, detail="limit must be positive")
+    import time as _time
+
+    # limit Validation via Pydantic (ge=1, le=100000) – kein manueller Check mehr
 
     # BUG B-04: Duplikate vor Generierung pruefen
     from collections import Counter
@@ -71,11 +73,52 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     if not catmap or any(len(v) == 0 for v in catmap.values()):
         raise HTTPException(status_code=400, detail="Project must have categories and values.")
 
+    # Groessenpruefung vor Generierung
+    cat_count = len(catmap)
+    total_possible = compute_cartesian_size(catmap)
+
+    # t_strength: field_validator konvertiert None->2, aber bei HTTP-Requests
+    # kann das nicht funktionieren; hier expliziter Fallback
+    t_strength = payload.t_strength if payload.t_strength is not None else 2
+
+    # Fuer 'all' oder t_wise mit t >= cat_count: kartesisches Produkt-Prüfung
+    effective_strategy = payload.strategy
+    # t_strength > cat_count gilt nur fuer pairwise/orthogonal (nicht fuer t_wise, da t>=cat_count -> cartesian)
+    if effective_strategy in ("pairwise", "orthogonal") and t_strength > cat_count:
+        raise HTTPException(
+            status_code=422,
+            detail=f"t_strength ({t_strength}) ueberschreitet Anzahl Kategorien ({cat_count}).",
+        )
+
+    if effective_strategy == "all" or (effective_strategy == "t_wise" and t_strength >= cat_count):
+        max_comb = get_max_combinations()
+        if total_possible > max_comb:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Kartesisches Produkt ({total_possible}) ueberschreitet GREAT_MAX_COMBINATIONS ({max_comb}). Strategie oder Kategorien reduzieren.",
+            )
+
+    # Timeout (deadline wird direkt an generate_cases() weitergegeben)
+    timeout = get_generation_timeout()
+    deadline = _time.time() + timeout
+
     # REQ-3005/REQ-3040: Regeln VOR der Generierung an die Strategien uebergeben
     rule_engine = None
     if payload.apply_rules:
         rule_engine = _build_rule_engine(db, pid)
-    cases = generate_cases(catmap, payload.strategy, db=db, project_id=pid, t_strength=payload.t_strength, rule_engine=rule_engine)
+
+    cases = generate_cases(
+        catmap, payload.strategy, db=db, project_id=pid,
+        t_strength=t_strength, rule_engine=rule_engine, deadline=deadline,
+    )
+
+    # Nach Generierung pruefen, ob Timeout erreicht wurde
+    if _time.time() > deadline:
+        raise HTTPException(
+            status_code=408,
+            detail=f"Generierung hat Timeout von {timeout}s ueberschritten.",
+        )
+
     if rule_engine is not None:
         cases = rule_engine.apply(cases)
 
@@ -83,15 +126,13 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     category_risk_map = load_categories_values_weighted(db, pid)
     cases = sort_by_risk_descending(cases, category_risk_map)
 
-    # BUG-5/REQ-3018: Fehlerwert-Testfaelle ans Ende sortieren (hat Vorrang vor Risiko-Sortierung)
+    # BUG-5/REQ-3018: Fehlerwert-Testfaelle ans Ende sortieren
     error_values = load_error_values(db, pid)
     cases = sort_testcases_error_last(cases, error_values)
 
     # REQ-4018: Maximale Anzahl Testfaelle respektieren.
-    # Ein expliziter, positiver 'limit' im Request bleibt wie bisher massgeblich.
-    # Wird kein 'limit' mitgeschickt, greift die konfigurierbare Obergrenze
-    # (Default 1000), damit die Generierung nicht unbegrenzt explodieren kann.
     effective_limit = payload.limit if payload.limit is not None else get_max_testcases()
+    truncated = len(cases) > effective_limit
     cases = cases[:effective_limit]
 
     gen = models.Generation(project_id=pid, strategy=payload.strategy)
@@ -127,7 +168,12 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
             )
 
     db.commit()
-    return schemas.GenerateResponse(generation_id=gen.id, count=len(cases))
+    return schemas.GenerateResponse(
+        generation_id=gen.id,
+        count=len(cases),
+        total_possible=total_possible,
+        truncated=truncated,
+    )
 
 
 @router.get("/generations/{gid}/testcases", response_model=schemas.TestcasesResponse)

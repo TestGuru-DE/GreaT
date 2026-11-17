@@ -117,13 +117,23 @@ class ValuePropertiesUpdate(BaseModel):
 
 class GenerateRequest(BaseModel):
     strategy: str  # "all" | "each" | "pairwise" | "t_wise"
-    limit: Optional[int] = None
+    limit: Optional[int] = Field(default=None, ge=1, le=100000)
     apply_rules: bool = False  # REQ-3005
-    t_strength: Optional[int] = 2  # REQ-3039: T-Wise Parameter (Default: 2 = Pairwise)
+    t_strength: Optional[int] = Field(default=None, ge=1, le=10)
+
+    @field_validator("t_strength", mode="before")
+    @classmethod
+    def resolve_t_strength(cls, v):
+        if v is None:
+            return 2
+        return v
+
 
 class GenerateResponse(BaseModel):
     generation_id: int
     count: int
+    total_possible: Optional[int] = None
+    truncated: bool = False
 
 class TestCaseOut(BaseModel):
     id: int

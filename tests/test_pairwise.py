@@ -1,12 +1,12 @@
-from combinatorics import all_combinations, each_choice, orthogonal
+from combinatorics import all_combinations, each_choice, ipo
 
-def test_orthogonal_pairwise_covers_all_pairs_small():
+def test_ipo_pairwise_covers_all_pairs_small():
     cats = {
         "Gewicht": ["500g", "1000g"],
         "Größe": ["Klein", "Mittel", "Groß"],
         "Farbe": ["Rot", "Blau"],
     }
-    suite = orthogonal.generate(cats)
+    suite = ipo.generate(cats)
 
     keys = list(cats.keys())
     required_pairs = set()

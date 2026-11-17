@@ -206,3 +206,14 @@ Zusaetzlich `opencode.json` angelegt mit `default_agent: "great-orchestrator"`.
 |---|---|---|---|---|
 | 2026-11-08 | src/app/models.py | archive/2026-11-08/models.py | Vom Paket src/app/models/ ueberdeckt (Python laedt das Paket). Veralteter Stand ohne is_result, category_type, DataNode, Versionsfelder. Entscheidung des Nutzers. | GREAT Senior Developer |
 
+
+## 2026-11-17 – Kombinatorik-Optimierung (IPOG-A)
+
+**Grund**: IPOG-A-Algorithmus ersetzt die alte Greedy-Heuristik in orthogonal.py.
+IPOG-A liefert deterministische, ressourcensparende Pairwise-Generierung mit Timeout-Schutz
+und kartesischer Groessenpruefung.
+
+| Datum | Quelle | Ziel | Begruendung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/combinatorics/orthogonal.py | archive/2026-11-17/orthogonal.py | Ersetzt durch IPOG-A (src/combinatorics/ipo.py). Alte Greedy-Heuristik mit kartesischer Enumeration zu langsam bei grossen Kategorien. | GREAT Senior Developer |
+
