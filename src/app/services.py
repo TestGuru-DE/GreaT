@@ -446,6 +446,22 @@ def force_delete_project(db: Session, pid: int) -> None:
     db.query(models.Project).filter(models.Project.id == pid).delete(synchronize_session=False)
 
 
+def delete_project(db: Session, pid: int, force: bool = False) -> None:
+    """Ein Projekt loeschen. Ohne force: 409 bei Generierungen. Immer: alle Abhaengigkeiten entfernen."""
+    from fastapi import HTTPException
+    
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    
+    if not force and project_has_generations(db, pid):
+        raise HTTPException(status_code=409, detail="Project has generations. Use force=true to delete.")
+    
+    # Alle abhaengigen Daten loeschen (wie force_delete_project)
+    force_delete_project(db, pid)
+    db.commit()
+
+
 def force_delete_category(db: Session, cid: int) -> int:
     cat = db.get(models.Category, cid)
     if not cat:

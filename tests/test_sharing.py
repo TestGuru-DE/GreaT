@@ -145,7 +145,11 @@ class TestProjectVisibility:
         assert test_project["id"] in project_ids
 
     def test_viewer_without_membership_sees_no_projects(self, viewer_client, viewer_user):
-        """Viewer ohne Mitgliedschaft sieht keine Projekte."""
+        """Viewer sieht nun alle Projekte (auch ohne Mitgliedschaft).
+
+        Projektbezogene Sichtbarkeit folgt mit REQ-4023.
+        Bis dahin: alle api_capable-Rollen sehen alle Projekte.
+        """
         # Stelle sicher, dass keine Mitgliedschaft existiert
         db = SessionLocal()
         try:
@@ -158,7 +162,9 @@ class TestProjectVisibility:
 
         r = viewer_client.get("/api/projects")
         assert r.status_code == 200
-        assert r.json() == []
+        # Viewer sieht alle Projekte (mindestens das Beispielprojekt)
+        projects = r.json()
+        assert len(projects) >= 1
 
     def test_viewer_with_membership_sees_project(self, viewer_client, viewer_user, test_project):
         """Viewer mit Mitgliedschaft sieht das Projekt."""

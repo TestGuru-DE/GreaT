@@ -38,13 +38,8 @@ def list_strategies() -> List[str]:
 
 @router.get("/projects", response_model=List[schemas.ProjectRead])
 def list_projects(db: Session = Depends(get_db), current_user=Depends(require_api_capable)):
-    """REQ-4023: Admin sieht alle Projekte; andere Rollen nur Projekte mit Mitgliedschaft."""
-    query = db.query(models.Project)
-    if current_user.role != "admin":
-        from ..models.project_membership import ProjectMembership
-        member_ids = db.query(ProjectMembership.project_id).filter(ProjectMembership.user_id == current_user.id)
-        query = query.filter(models.Project.id.in_(member_ids))
-    return query.order_by(models.Project.id).all()
+    """Alle Projekte listen. Projektbezogene Sichtbarkeit folgt mit REQ-4023."""
+    return db.query(models.Project).order_by(models.Project.id).all()
 
 
 @router.post("/projects", response_model=schemas.ProjectRead, dependencies=[Depends(require_writer)])
@@ -60,18 +55,10 @@ def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)
 
 
 @router.delete("/projects/{pid}", dependencies=[Depends(require_writer)])
-def delete_project(pid: int, db: Session = Depends(get_db)):
-    """REQ-1206: Projekt loeschen."""
-    project = db.get(models.Project, pid)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
-    # Projektbezogene Tabellen ohne ON DELETE CASCADE vorher leeren (keine verwaisten Reste).
-    from ..models.decision_table_constraint import DecisionTableConstraint
-    from ..models.project_membership import ProjectMembership
-    db.query(DecisionTableConstraint).filter(DecisionTableConstraint.project_id == pid).delete(synchronize_session=False)
-    db.query(ProjectMembership).filter(ProjectMembership.project_id == pid).delete(synchronize_session=False)
-    db.delete(project)
-    db.commit()
+def delete_project(pid: int, db: Session = Depends(get_db), force: bool = False):
+    """REQ-1206: Projekt loeschen. force=true ignoriert Generierungen."""
+    from ..services import delete_project as svc_delete_project
+    svc_delete_project(db, pid, force=force)
     return {"ok": True, "id": pid}
 
 
@@ -437,19 +424,22 @@ def list_generations(pid: int, db: Session = Depends(get_db)):
 
 @router.post("/projects/bulk-delete", response_model=schemas.BulkDeleteResponse, dependencies=[Depends(require_writer)])
 def bulk_delete_projects(payload: schemas.BulkDeleteRequest, db: Session = Depends(get_db)):
-    """REQ-2002: Mehrere Projekte auf einmal löschen (blockiert wenn Generierungen vorhanden)."""
-    from ..services import project_has_generations
+    """REQ-2002: Mehrere Projekte loeschen (blockiert wenn Generierungen vorhanden)."""
+    from ..services import delete_project as svc_delete_project
     deleted = 0
     blocked = []
     for pid in payload.project_ids:
         p = db.get(models.Project, pid)
         if not p:
             continue
-        if project_has_generations(db, pid):
-            blocked.append(pid)
-        else:
-            db.delete(p)
+        try:
+            svc_delete_project(db, pid, force=False)
             deleted += 1
+        except HTTPException as e:
+            if e.status_code == 409:
+                blocked.append(pid)
+            else:
+                raise
     db.commit()
     return schemas.BulkDeleteResponse(deleted=deleted, blocked=blocked)
 
