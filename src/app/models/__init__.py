@@ -100,7 +100,8 @@ class TestCaseValue(Base):
     __tablename__ = "testcase_values"
     id = Column(Integer, primary_key=True)
     testcase_id = Column(Integer, ForeignKey("testcases.id", ondelete="CASCADE"), nullable=False)
-    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), nullable=True)
+    category_name = Column(String(300), nullable=True)  # B-18: Schnappschuss des Kategorienamens
     value = Column(String(500), nullable=False)
     version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     # REQ-4024: Audit-Trail

@@ -495,7 +495,13 @@ def force_delete_category(db: Session, cid: int) -> int:
     if not cat:
         return 0
     pid = cat.project_id
-    db.query(models.TestCaseValue).filter(models.TestCaseValue.category_id == cid).delete(synchronize_session=False)
+    # B-18: TestCaseValue-Referenzen auf NULL setzen (nicht loeschen)
+    db.query(models.TestCaseValue).filter(
+        models.TestCaseValue.category_id == cid
+    ).update(
+        {models.TestCaseValue.category_id: None},
+        synchronize_session=False
+    )
     db.query(models.Value).filter(models.Value.category_id == cid).delete(synchronize_session=False)
     db.delete(cat)
     return pid
@@ -519,13 +525,20 @@ def force_delete_value(db: Session, vid: int) -> int:
 # ---------------------------------------------------------------------------
 
 def assignment_from_testcase(db: Session, tc_id: int) -> Dict[str, str]:
+    from sqlalchemy import outerjoin
     rows = (
         db.query(models.TestCaseValue, models.Category.name)
-        .join(models.Category, models.Category.id == models.TestCaseValue.category_id)
+        .outerjoin(models.Category, models.Category.id == models.TestCaseValue.category_id)
         .filter(models.TestCaseValue.testcase_id == tc_id)
         .all()
     )
-    return {cat_name: tcv.value for tcv, cat_name in rows}
+    result = {}
+    for tcv, cat_name in rows:
+        # B-18: Falls Kategorie geloescht (cat_name=None), verwende gespeicherten category_name
+        if cat_name is None:
+            cat_name = tcv.category_name or f"cat#{tcv.category_id}"
+        result[cat_name] = tcv.value
+    return result
 
 
 def status_for_assignment(pid: int, a: Dict[str, str], db: Session) -> str:

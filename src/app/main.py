@@ -181,6 +181,17 @@ def _migrate_db() -> None:
         # REQ-3008: Default-Wert pro Kategorie
         if "is_default" not in have:
             conn.exec_driver_sql("ALTER TABLE 'values' ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0")
+        # B-18: category_name Spalte zu testcase_values hinzufuegen (idempotent)
+        tcv_cols = conn.exec_driver_sql("PRAGMA table_info('testcase_values')").fetchall()
+        tcv_have = {c[1] for c in tcv_cols}
+        if "category_name" not in tcv_have:
+            conn.exec_driver_sql("ALTER TABLE testcase_values ADD COLUMN category_name VARCHAR(300)")
+            # Backfill: category_name aus category.name befuellen
+            conn.exec_driver_sql("""
+                UPDATE testcase_values
+                SET category_name = (SELECT name FROM categories WHERE categories.id = testcase_values.category_id)
+                WHERE category_name IS NULL AND category_id IS NOT NULL
+            """)
 
 
 # ---------------------------------------------------------------------------

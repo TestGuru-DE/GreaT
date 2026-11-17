@@ -183,6 +183,7 @@ def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(
                 models.TestCaseValue(
                     testcase_id=tc.id,
                     category_id=cat.id,
+                    category_name=cat.name,  # B-18: Schnappschuss
                     value=persisted_assignment[cat.name],
                 )
             )
@@ -245,8 +246,22 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             .all()
         )
         assignments = {category.name: "" for category in categories}
+        # B-18: Sammle auch category_name-Werte aus TestCaseValue fuer geloeschte Kategorien
+        all_cat_names = set()
         for value_row in vals:
-            assignments[name_by_id.get(value_row.category_id, f"cat#{value_row.category_id}")] = value_row.value
+            if value_row.category_name and value_row.category_name not in name_by_id.values():
+                all_cat_names.add(value_row.category_name)
+        for cat_name in all_cat_names:
+            if cat_name not in assignments:
+                assignments[cat_name] = ""
+
+        for value_row in vals:
+            cat_name = name_by_id.get(value_row.category_id)
+            if cat_name is None and value_row.category_name:
+                cat_name = value_row.category_name  # B-18: geloeschte Kategorie -> gespeicherter Name
+            elif cat_name is None:
+                cat_name = f"cat#{value_row.category_id}"  # Fallback wenn beides NULL
+            assignments[cat_name] = value_row.value
         has_error = any(v in error_values for v in assignments.values() if v)  # REQ-4016: Ignoriere leere Werte
         
         # REQ-3050: Risikoabdeckung berechnen (Summe der risk_weight, leere Werte = 0)
@@ -343,11 +358,15 @@ def update_testcase_assignment(
         testcase_value = models.TestCaseValue(
             testcase_id=tcid,
             category_id=category.id,
+            category_name=category.name,  # B-18: Schnappschuss
             value=payload.value,
         )
         db.add(testcase_value)
     else:
         testcase_value.value = payload.value
+        # B-18: category_name aktualisieren falls Kategorie umbenannt wurde
+        if testcase_value.category_name != category.name:
+            testcase_value.category_name = category.name
 
     db.commit()
 
@@ -384,6 +403,19 @@ def export_generation_csv(
         .all()
     )
     cat_headers: List[str] = [c.name for c in cats]
+
+    # B-18: Sammle alle Kategorienamen (einschliesslich geloeschter) aus historischen TestCaseValue
+    tcv_rows = (
+        db.query(models.TestCaseValue.category_name)
+        .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
+        .filter(models.TestCase.generation_id == gen_id)
+        .distinct()
+        .all()
+    )
+    historical_cat_names = {row[0] for row in tcv_rows if row[0]}
+    existing_names = {c.name for c in cats}
+    for hname in sorted(historical_cat_names - existing_names):
+        cat_headers.append(hname)
 
     # REQ-3063: Fehlerwert-Spalte im Export
     error_values = load_error_values(db, gen.project_id)
@@ -495,10 +527,14 @@ def export_generation_json(gen_id: DbId, db: Session = Depends(get_db)):
             .order_by(models.TestCaseValue.id)
             .all()
         )
-        assignments = {
-            name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value
-            for v in vals
-        }
+        assignments = {}
+        for v in vals:
+            cat_name = name_by_id.get(v.category_id)
+            if cat_name is None and v.category_name:
+                cat_name = v.category_name  # B-18
+            elif cat_name is None:
+                cat_name = f"cat#{v.category_id}"
+            assignments[cat_name] = v.value
         # REQ-3063: Fehlerwert markieren
         has_error = any(val in error_values for val in assignments.values() if val)
         testcases_out.append({
@@ -551,6 +587,19 @@ def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
     cat_headers: List[str] = [c.name for c in categories]
     name_by_id = {c.id: c.name for c in categories}
 
+    # B-18: Sammle alle Kategorienamen (einschliesslich geloeschter) aus historischen TestCaseValue
+    tcv_rows_xlsx = (
+        db.query(models.TestCaseValue.category_name)
+        .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
+        .filter(models.TestCase.generation_id == gen_id)
+        .distinct()
+        .all()
+    )
+    historical_cat_names_xlsx = {row[0] for row in tcv_rows_xlsx if row[0]}
+    existing_names_xlsx = {c.name for c in categories}
+    for hname in sorted(historical_cat_names_xlsx - existing_names_xlsx):
+        cat_headers.append(hname)
+
     testcases_db = (
         db.query(models.TestCase)
         .filter(models.TestCase.generation_id == gen_id)
@@ -580,10 +629,14 @@ def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
             .order_by(models.TestCaseValue.id)
             .all()
         )
-        assignments = {
-            name_by_id.get(v.category_id, f"cat#{v.category_id}"): v.value
-            for v in vals
-        }
+        assignments = {}
+        for v in vals:
+            cat_name = name_by_id.get(v.category_id)
+            if cat_name is None and v.category_name:
+                cat_name = v.category_name  # B-18
+            elif cat_name is None:
+                cat_name = f"cat#{v.category_id}"
+            assignments[cat_name] = v.value
         row_data = [assignments.get(h, "") for h in cat_headers]
         row_data += [tc.id, gen.id, gen.strategy]
         # REQ-3063: Fehlerwert markieren

@@ -113,6 +113,13 @@ def delete_category(cid: DbId, db: Session = Depends(get_db)):
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    # B-18: TestCaseValue-Referenzen auf NULL setzen (nicht CASCADE-Loeschen)
+    db.query(models.TestCaseValue).filter(
+        models.TestCaseValue.category_id == cid
+    ).update(
+        {models.TestCaseValue.category_id: None},
+        synchronize_session=False
+    )
     db.delete(cat)
     db.commit()
     return {"ok": True, "id": cid}
