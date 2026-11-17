@@ -35,7 +35,6 @@ hiddenimports = [
     "fastapi",
     "fastapi.staticfiles",
     "sqlalchemy",
-    "jinja2",
     "alembic",
     "structlog",
     "dotenv",

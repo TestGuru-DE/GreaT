@@ -17,11 +17,12 @@ MAX_PASSWORD_LENGTH = 128
 MIN_PASSWORD_VARIETY = 4
 
 # REQ-4028 AK-5 Startliste (Projektinhaber bestaetigt; Erweiterung nur per Entscheidung).
+# Eintraege < 12 Zeichen (MIN_PASSWORD_LENGTH) sind wirkungslos, da validate_new_password
+# sie vorher aufgrund der Mindestlaenge ablehnt. Sie wurden daher entfernt.
+# DEFAULT_ADMIN_PASSWORD bleibt explizit: es ist das Default-Admin-Passwort und muss immer
+# blockiert werden, solange default_password_active=True.
 KNOWN_DEFAULT_PASSWORDS = (
     DEFAULT_ADMIN_PASSWORD,
-    LEGACY_DEFAULT_ADMIN_PASSWORD,
-    "admin",
-    "password",
 )
 
 # Stabile Fehlercodes (Frontend-Vertrag)

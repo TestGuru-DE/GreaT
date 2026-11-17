@@ -238,3 +238,16 @@ vollstaendig durch Web-Anwendung (FastAPI + React) ersetzt. ADR-004 umgesetzt.
 | 2026-11-17 | tests/test_csv_handler_names.py | archive/2026-11-17/tests/test_csv_handler_names.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
 | 2026-11-17 | tests/test_csv_handler_roundtrip.py | archive/2026-11-17/tests/test_csv_handler_roundtrip.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
 
+---
+
+## 2026-11-17 – Backend Totcode und Doppelungen bereinigt
+
+**Grund:** Unbenutzte Dateien, doppelte Code-Stellen und veraltete Abhaengigkeiten entfernen. Reines Refactoring ohne Verhaltensaenderung.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/app/routers/ui_generate.py | archive/2026-11-17/empty-routers/ui_generate.py | 0 Byte, ungenutzt, kein Import | GREAT Senior Developer |
+| 2026-11-17 | src/app/routers/ui_projects.py | archive/2026-11-17/empty-routers/ui_projects.py | 0 Byte, ungenutzt, kein Import | GREAT Senior Developer |
+| 2026-11-17 | src/app/templates_config.py | archive/2026-11-17/htmx-legacy/templates_config.py | Jinja2-Templates-Singleton, ungenutzt (kein Import) | GREAT Senior Developer |
+| 2026-11-17 | src/app/templates/*.html | archive/2026-11-17/htmx-legacy/templates/ | HTMX/Jinja2 HTML-Templates, durch React ersetzt | GREAT Senior Developer |
+

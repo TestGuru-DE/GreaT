@@ -185,3 +185,43 @@ def _purge_datanodes_per_test():
     finally:
         db.close()
     yield
+
+
+# ---------------------------------------------------------------------------
+# T-6: Test-Router fuer Debug-Auth-Endpunkte (nur in Tests)
+# ---------------------------------------------------------------------------
+
+def _setup_test_auth_endpoints():
+    """Fuegt Test-Endpunkte fuer Role-Checks zur App hinzu (nur in Tests).
+
+    Diese Endpunkte wurden aus dem Produktivcode entfernt (T-6) und stehen
+    hier fuer Tests zur Verfuegung.
+    """
+    from app.main import app
+    from app.auth_deps import require_admin, require_editor_or_admin, require_writer, require_api_capable
+    from app.models.auth import User
+    from fastapi import Depends, APIRouter
+
+    test_router = APIRouter(prefix="/auth", tags=["auth-test"])
+
+    @test_router.get("/admin-only")
+    def admin_only(current_user: User = Depends(require_admin)):
+        return {"message": "Zugriff als Admin gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/editor-or-admin")
+    def editor_or_admin(current_user: User = Depends(require_editor_or_admin)):
+        return {"message": "Zugriff als Editor/Admin gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/writer-only")
+    def writer_only(current_user: User = Depends(require_writer)):
+        return {"message": "Zugriff als Writer gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/api-capable")
+    def api_capable(current_user: User = Depends(require_api_capable)):
+        return {"message": "Zugriff als API-Capable gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    app.include_router(test_router)
+
+
+# Setup test endpoints on first import
+_setup_test_auth_endpoints()

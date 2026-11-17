@@ -44,17 +44,6 @@ class CategoryCreate(BaseModel):
             raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
         return v
 
-class CategoryUpdate(BaseModel):
-    # REQ-5002: optional; None = unveraendert
-    category_type: Optional[str] = None
-
-    @field_validator("category_type")
-    @classmethod
-    def validate_category_type(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in VALID_CATEGORY_TYPES:
-            raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
-        return v
-
 class CategoryRead(BaseModel):
     id: int
     name: str

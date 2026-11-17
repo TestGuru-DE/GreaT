@@ -91,6 +91,7 @@ def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(
     # Fuer 'all' oder t_wise mit t >= cat_count: kartesisches Produkt-Prüfung
     effective_strategy = payload.strategy
     # t_strength > cat_count gilt nur fuer pairwise/orthogonal (nicht fuer t_wise, da t>=cat_count -> cartesian)
+    # "orthogonal": veralteter Alias fuer pairwise, nicht entfernen
     if effective_strategy in ("pairwise", "orthogonal") and t_strength > cat_count:
         raise HTTPException(
             status_code=422,

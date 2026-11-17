@@ -5,6 +5,7 @@ REQ-4020: Rollen-Pruefung Dependencies
 REQ-4025: Neue Rollen-Dependencies fuer api_user-Einfuehrung
 REQ-4028: Serverseitige Sperre bei gesetztem Flag default_password_active
 """
+from typing import Tuple
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 import jwt
@@ -17,33 +18,64 @@ from .models.auth import User
 PASSWORD_CHANGE_REQUIRED = "password_change_required"
 
 
-def _load_authenticated_user(request: Request, db: Session) -> User:
-    """Liest und validiert das Access-Token. Prueft NICHT die Passwort-Sperre."""
-    token = request.cookies.get("access_token")
+def _validate_token_and_load_user(
+    token: str,
+    db: Session,
+) -> Tuple[User | None, str | None]:
+    """Core token validation shared by auth_deps and docs_auth middleware.
+
+    Decodes the access token, loads the user, checks is_active and token_version.
+
+    Returns:
+        (user, None) on success
+        (None, error_detail) on any failure
+    """
     if not token:
-        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
+        return None, "no_token"
 
     try:
         payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
         user_id = int(payload.get("sub"))
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token abgelaufen")
+        return None, "token_expired"
     except (jwt.InvalidTokenError, ValueError, TypeError):
-        raise HTTPException(status_code=401, detail="Ungultiges Token")
+        return None, "invalid_token"
 
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=401, detail="Nutzer nicht gefunden")
+        return None, "user_not_found"
 
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
+        return None, "account_deactivated"
 
     # B-06: Token-Version pruefen – Sitzungs-Invalidierung
     token_tv = payload.get("tv", 0)
     if token_tv != user.token_version:
-        raise HTTPException(status_code=401, detail="Sitzung abgelaufen, bitte neu anmelden")
+        return None, "session_expired"
 
-    return user
+    return user, None
+
+
+# Mapping from internal error codes to HTTP detail messages
+_ERROR_DETAILS = {
+    "no_token": "Nicht authentifiziert",
+    "token_expired": "Token abgelaufen",
+    "invalid_token": "Ungultiges Token",
+    "user_not_found": "Nutzer nicht gefunden",
+    "account_deactivated": "Konto ist deaktiviert",
+    "session_expired": "Sitzung abgelaufen, bitte neu anmelden",
+}
+
+
+def _load_authenticated_user(request: Request, db: Session) -> User:
+    """Liest und validiert das Access-Token. Prueft NICHT die Passwort-Sperre."""
+    token = request.cookies.get("access_token")
+    user, error = _validate_token_and_load_user(token, db)
+    if user is not None:
+        return user
+    detail = _ERROR_DETAILS.get(error, "Ungultiges Token")
+    status = 403 if error == "account_deactivated" else 401
+    raise HTTPException(status_code=status, detail=detail)
 
 
 def get_current_user_unrestricted(request: Request, db: Session = Depends(get_db)) -> User:
@@ -110,19 +142,16 @@ def require_role(*allowed_roles: str):
 # Pre-built dependencies for common role checks
 # ---------------------------------------------------------------------------
 
-# Legacy: Nur admin, editor, viewer (ohne api_user) – fuer UI-Endpunkte
-require_any_authenticated_user = require_role("admin", "editor", "viewer")
-
 # admin only
 require_admin = require_role("admin")
-
-# editor + admin (legacy alias, bleibt erhalten)
-require_editor_or_admin = require_role("editor", "admin")
 
 # REQ-4025: require_writer – fuer alle Schreib-Operationen (POST/PUT/PATCH/DELETE)
 # Erlaubt: admin, editor
 # Blockiert: viewer, api_user
 require_writer = require_role("admin", "editor")
+
+# Deprecated alias for backward compatibility – use require_writer instead
+require_editor_or_admin = require_writer
 
 # REQ-4025: require_api_capable – fuer alle Lese-Operationen (GET)
 # Erlaubt: admin, editor, viewer, api_user

@@ -11,8 +11,8 @@ import jwt
 
 from ..database import get_db
 from ..models.auth import User, RefreshToken
-from ..auth_utils import create_access_token, create_refresh_token, decode_token
-from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_editor_or_admin, require_writer, require_api_capable
+from ..auth_utils import create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
+from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_writer, require_api_capable
 from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS, GREAT_COOKIE_SECURE
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
 from ..config import GREAT_TRUST_PROXY_HEADERS
@@ -168,7 +168,7 @@ def refresh_token_endpoint(
 
     # Decode and validate
     try:
-        payload = decode_token(refresh_token_str)
+        payload = decode_refresh_token(refresh_token_str)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh-Token abgelaufen")
     except jwt.InvalidTokenError:
@@ -190,7 +190,7 @@ def refresh_token_endpoint(
     access_token_str = request.cookies.get("access_token")
     if access_token_str:
         try:
-            access_payload = decode_token(access_token_str)
+            access_payload = decode_access_token(access_token_str)
             if access_payload.get("type") == "access":
                 token_tv = access_payload.get("tv", 0)
                 if token_tv != user.token_version:
@@ -310,44 +310,4 @@ def get_me(current_user: User = Depends(get_current_user_unrestricted)):
         "role": current_user.role,
         "is_active": current_user.is_active,
         "password_change_required": bool(current_user.default_password_active),
-    }
-
-
-@router.get("/admin-only")
-def admin_only(current_user: User = Depends(require_admin)):
-    """Admin-only endpoint. Used for testing require_role dependency."""
-    return {
-        "message": "Zugriff als Admin gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/editor-or-admin")
-def editor_or_admin(current_user: User = Depends(require_editor_or_admin)):
-    """Editor-or-admin endpoint. Used for testing require_role dependency."""
-    return {
-        "message": "Zugriff als Editor/Admin gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/writer-only")
-def writer_only(current_user: User = Depends(require_writer)):
-    """Writer-only endpoint (admin, editor). Used for testing require_writer dependency."""
-    return {
-        "message": "Zugriff als Writer gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/api-capable")
-def api_capable(current_user: User = Depends(require_api_capable)):
-    """API-capable endpoint (admin, editor, viewer, api_user). Used for testing require_api_capable dependency."""
-    return {
-        "message": "Zugriff als API-Capable gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
     }

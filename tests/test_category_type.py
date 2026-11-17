@@ -146,27 +146,6 @@ class TestCategoryTypeSchema:
         with pytest.raises(Exception):  # Pydantic ValidationError
             CategoryCreate(name="Test", category_type="invalid_type")
 
-    def test_invalid_category_type_update_rejected(self):
-        """Ungueltiger Typ in Update wird abgelehnt."""
-        from app.schemas import CategoryUpdate
-
-        with pytest.raises(Exception):  # Pydantic ValidationError
-            CategoryUpdate(category_type="invalid_type")
-
-    def test_category_update_allows_none(self):
-        """CategoryUpdate erlaubt None fuer category_type."""
-        from app.schemas import CategoryUpdate
-
-        schema = CategoryUpdate(category_type=None)
-        assert schema.category_type is None
-
-    def test_category_update_valid_type(self):
-        """CategoryUpdate akzeptiert gueltige Typen."""
-        from app.schemas import CategoryUpdate
-
-        schema = CategoryUpdate(category_type="cause")
-        assert schema.category_type == "cause"
-
 
 class TestCategoryTypeAPI:
     """API-Tests fuer category_type via REST-Endpunkte."""

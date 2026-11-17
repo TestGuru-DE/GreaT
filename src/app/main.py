@@ -1,4 +1,4 @@
-﻿# src/app/main.py - G.R.E.A.T. Application Entry Point
+# src/app/main.py - G.R.E.A.T. Application Entry Point
 # DEBT-002 behoben: on_event(startup) -> Lifespan Context Manager
 # REQ-1202: React-Frontend wird als StaticFiles ausgeliefert (Production Build)
 # REQ-4007: GREAT_PORT Umgebungsvariable für portierbare Konfiguration
@@ -164,9 +164,7 @@ def _migrate_db() -> None:
         rules_have = {c[1] for c in cols_rules}
         if "then_values_json" not in rules_have:
             conn.exec_driver_sql("ALTER TABLE 'rules' ADD COLUMN then_values_json TEXT")
-        cols_vals = conn.exec_driver_sql("PRAGMA table_info('values')").fetchall()
-        vals_have = {c[1] for c in cols_vals}
-        if "order_index" not in vals_have:
+        if "order_index" not in have:
             conn.exec_driver_sql("ALTER TABLE 'values' ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0")
         # REQ-2005: is_system Flag fuer Datenklassen
         dc_cols = conn.exec_driver_sql("PRAGMA table_info('dataclasses')").fetchall()

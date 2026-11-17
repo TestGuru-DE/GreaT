@@ -314,7 +314,7 @@ def generate_cases(
         return all_combinations.generate(categories)
     if strategy == "each":
         return each_choice.generate(categories, rule_engine=rule_engine)
-    if strategy in ("pairwise", "orthogonal"):
+    if strategy in ("pairwise", "orthogonal"):  # "orthogonal": veralteter Alias fuer pairwise, nicht entfernen
         return ipo.generate(categories, rule_engine=rule_engine, deadline=deadline)
     if strategy == "linear":
         return linear_expansion.generate(categories, rule_engine=rule_engine)

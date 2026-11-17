@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from ..auth_deps import get_current_user, require_editor_or_admin, require_api_capable
+from ..auth_deps import get_current_user, require_writer, require_api_capable
 from ..database import get_db
 from ..api_types import DbId
 from ..models import Category, Project
@@ -63,7 +63,7 @@ class ConstraintCreateRequest(BaseModel):
 def generate_decision_table_endpoint(
     payload: DecisionTableGenerateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_editor_or_admin),
+    current_user: User = Depends(require_writer),
 ) -> Dict[str, Any]:
     """Generiert eine Entscheidungstabelle fuer ein Projekt.
 
@@ -227,7 +227,7 @@ def get_constraints(
 def create_constraint(
     payload: ConstraintCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_editor_or_admin),
+    current_user: User = Depends(require_writer),
 ) -> Dict[str, Any]:
     """REQ-5012: Neuen Constraint erstellen."""
     # Pruefe ob Projekt existiert
@@ -283,7 +283,7 @@ def create_constraint(
 def delete_constraint(
     constraint_id: DbId,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_editor_or_admin),
+    current_user: User = Depends(require_writer),
 ) -> Dict[str, str]:
     """REQ-5012: Constraint loeschen."""
     constraint = db.get(DecisionTableConstraint, constraint_id)
@@ -314,7 +314,7 @@ class ValidateRequest(BaseModel):
 def collapse_decision_table_endpoint(
     payload: CollapseRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_editor_or_admin),
+    current_user: User = Depends(require_writer),
 ) -> Dict[str, Any]:
     """REQ-5013: Collapsing anwenden.
 
@@ -343,7 +343,7 @@ def collapse_decision_table_endpoint(
 def validate_decision_table_endpoint(
     payload: ValidateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_editor_or_admin),
+    current_user: User = Depends(require_writer),
 ) -> Dict[str, Any]:
     """REQ-5014/5019/5020: Checksum + Widerspruch + Luecken.
 

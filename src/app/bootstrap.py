@@ -4,9 +4,13 @@ REQ-4020: Erste registrierte Person wird automatisch Admin.
 REQ-4027: Standardpasswort-Konstante (einzige Definition) und Flag default_password_active.
 REQ-4028: Flag steuert die serverseitige Passwortwechsel-Sperre.
 """
+import logging
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from .models.auth import User
+
+log = logging.getLogger(__name__)
 
 # REQ-4027 AK-1: einzige Definition des Standardpassworts (CR-4026-01).
 DEFAULT_ADMIN_USERNAME = "admin"
@@ -15,7 +19,7 @@ DEFAULT_ADMIN_PASSWORD = "changeme123!"
 LEGACY_DEFAULT_ADMIN_PASSWORD = "admin123"
 
 
-def ensure_first_admin(db: Session) -> User:
+def ensure_first_admin(db: Session) -> Optional[User]:
     """Create first admin user if no users exist.
 
     REQ-4020: Erste registrierte Person wird automatisch Admin.
@@ -25,11 +29,13 @@ def ensure_first_admin(db: Session) -> User:
     admin (username DEFAULT_ADMIN_USERNAME, password DEFAULT_ADMIN_PASSWORD).
     The password MUST be changed (REQ-4028 erzwingt dies serverseitig).
 
+    Returns None if users exist but no admin was found (unusual state).
+
     Args:
         db: SQLAlchemy database session
 
     Returns:
-        The first admin user (existing or newly created)
+        The first admin user (existing or newly created), or None
     """
     # Check if any users exist
     first_user = db.query(User).first()
@@ -38,9 +44,9 @@ def ensure_first_admin(db: Session) -> User:
         admin = db.query(User).filter(User.role == "admin").first()
         if admin:
             return admin
-        # No admin exists but other users do - this shouldn't happen in normal flow
-        # but we return None to signal the issue
-        return None  # type: ignore
+        # No admin exists but other users do - log warning
+        log.warning("Users exist but no admin user found in database")
+        return None
 
     # Create default admin
     admin = User(

@@ -15,9 +15,10 @@ from sqlalchemy.orm import Session
 import httpx
 
 from ..database import get_db
-from ..auth_deps import require_api_capable, require_writer
+from ..auth_deps import require_api_capable, require_writer, require_admin
 from ..api_types import DbId
 from .. import models, schemas
+from ..models.auth import User
 from ..dataclass_validator import validate_value, DATACLASS_TYPES
 
 router = APIRouter(tags=["Datenklassen"], dependencies=[Depends(require_api_capable)])
@@ -247,22 +248,34 @@ async def import_user_dataclasses(file: UploadFile = File(...), db: Session = De
     return {"status": "ok", "imported": imported}
 
 
-# REQ-4012: BugMagnet-Import Endpoints
+# REQ-4012: BugMagnet-Import Endpoints (deprecated – use /api/datanodes/bugmagnet-* instead)
 
-@router.get("/dataclasses/bugmagnet-status")
-def bugmagnet_status(db: Session = Depends(get_db)):
-    """REQ-4012: Prüft ob BugMagnet bereits importiert wurde."""
+@router.get("/dataclasses/bugmagnet-status", deprecated=True)
+def bugmagnet_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
+    """REQ-4012: [DEPRECATED] Prueft ob BugMagnet bereits importiert wurde.
+
+    .. deprecated:: Use /api/datanodes/bugmagnet-status instead.
+    """
     has_bugmagnet = db.query(models.DataClass).filter(
         models.DataClass.is_system == True
     ).first() is not None
     return {"imported": has_bugmagnet}
 
 
-@router.post("/dataclasses/bugmagnet-import", dependencies=[Depends(require_writer)])
-async def import_bugmagnet(db: Session = Depends(get_db)):
-    """
-    REQ-4012: Importiert BugMagnet-Datenklassen von GitHub.
-    Löscht bestehende is_system=True Klassen, legt neue an.
+@router.post("/dataclasses/bugmagnet-import", deprecated=True)
+async def import_bugmagnet(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """REQ-4012: [DEPRECATED] Importiert BugMagnet-Datenklassen von GitHub.
+
+    Loescht bestehende is_system=True Klassen, legt neue an.
+    Nur Admin darf BugMagnet importieren.
+
+    .. deprecated:: Use /api/datanodes/bugmagnet-import instead.
     """
     # 1. JSON von GitHub laden
     try:

@@ -11,14 +11,13 @@ weil Starlette-Middleware LIFO (Last-In-First-Out) ausgefuehrt wird.
 So laeuft sie als ERSTE Middleware im Request-Flow.
 """
 import os
-import jwt
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, JSONResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN, HTTP_302_FOUND
 
-from ..config import JWT_SECRET_KEY, JWT_ALGORITHM
 from ..database import SessionLocal
+from ..auth_deps import _validate_token_and_load_user
 from ..models.auth import User
 
 
@@ -35,32 +34,11 @@ DOCS_AUTH_ENABLED = os.getenv("GREAT_DOCS_AUTH", "true").lower() not in ("false"
 def _get_user_from_token(token: str, db) -> User | None:
     """Extract user from JWT access token cookie.
 
+    Uses the shared _validate_token_and_load_user from auth_deps.
     Returns the User object if valid, None otherwise.
     Never raises exceptions — all errors result in None.
     """
-    if not token:
-        return None
-
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, ValueError, TypeError):
-        return None
-
-    if payload.get("type") != "access":
-        return None
-
-    user_id = payload.get("sub")
-    if not user_id:
-        return None
-
-    try:
-        user = db.query(User).filter(User.id == int(user_id)).first()
-    except (ValueError, TypeError):
-        return None
-
-    if not user or not user.is_active:
-        return None
-
+    user, _ = _validate_token_and_load_user(token, db)
     return user
 
 

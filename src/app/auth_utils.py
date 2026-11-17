@@ -60,10 +60,10 @@ def create_refresh_token(user_id: int) -> str:
     return jwt.encode(payload, JWT_REFRESH_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-def decode_token(token: str) -> dict:
-    """Decode and validate JWT token.
+def decode_access_token(token: str) -> dict:
+    """Decode and validate JWT access token.
 
-    Tries access token secret first, then refresh token secret.
+    Uses only the access token secret key.
 
     Args:
         token: JWT token string
@@ -74,6 +74,39 @@ def decode_token(token: str) -> dict:
     Raises:
         jwt.ExpiredSignatureError: If token has expired
         jwt.InvalidTokenError: If token is invalid or tampered
+    """
+    if not token:
+        raise jwt.InvalidTokenError("Empty token")
+    return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+
+
+def decode_refresh_token(token: str) -> dict:
+    """Decode and validate JWT refresh token.
+
+    Uses only the refresh token secret key.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Decoded payload dict
+
+    Raises:
+        jwt.ExpiredSignatureError: If token has expired
+        jwt.InvalidTokenError: If token is invalid or tampered
+    """
+    if not token:
+        raise jwt.InvalidTokenError("Empty token")
+    return jwt.decode(token, JWT_REFRESH_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+
+
+# Deprecated: tries both secrets – insecure. Use decode_access_token or decode_refresh_token.
+def decode_token(token: str) -> dict:
+    """Decode and validate JWT token.
+
+    .. deprecated:: Use decode_access_token() or decode_refresh_token() instead.
+
+    Tries access token secret first, then refresh token secret.
     """
     if not token:
         raise jwt.InvalidTokenError("Empty token")
