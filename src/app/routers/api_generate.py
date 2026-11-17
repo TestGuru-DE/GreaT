@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
+from ..api_types import DbId
 from .. import models, schemas
 from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
 from ..export_utils import escape_spreadsheet_value  # B-05: Formel-Injection verhindern
@@ -53,8 +54,12 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
     return RuleEngine(engine_rules)
 
 @router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer)])
-def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
+def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
     import time as _time
+
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
     # limit Validation via Pydantic (ge=1, le=100000) – kein manueller Check mehr
 
@@ -72,7 +77,7 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
 
     catmap = load_categories_values(db, pid)
     if not catmap or any(len(v) == 0 for v in catmap.values()):
-        raise HTTPException(status_code=400, detail="Project must have categories and values.")
+        raise HTTPException(status_code=400, detail="Projekt muss Kategorien und Werte enthalten.")
 
     # Groessenpruefung vor Generierung
     cat_count = len(catmap)
@@ -182,7 +187,7 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
     """REQ-3050 + REQ-3051: Testfälle mit risk_coverage + risk_summary."""
     gen = db.get(models.Generation, gid)
     if gen is None:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
 
     categories = (
         db.query(models.Category)
@@ -285,17 +290,17 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
 
 @router.patch("/testcases/{tcid}/assignments", response_model=schemas.TestCaseAssignmentUpdateResponse, dependencies=[Depends(require_writer)])
 def update_testcase_assignment(
-    tcid: int,
+    tcid: DbId,
     payload: schemas.TestCaseAssignmentUpdate,
     db: Session = Depends(get_db),
 ):
     testcase = db.get(models.TestCase, tcid)
     if testcase is None:
-        raise HTTPException(status_code=404, detail="Testcase not found.")
+        raise HTTPException(status_code=404, detail="Testfall nicht gefunden")
 
     generation = db.get(models.Generation, testcase.generation_id)
     if generation is None:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
 
     category = (
         db.query(models.Category)
@@ -306,7 +311,7 @@ def update_testcase_assignment(
         .first()
     )
     if category is None:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
 
     testcase_value = (
         db.query(models.TestCaseValue)
@@ -337,7 +342,7 @@ def update_testcase_assignment(
 
 @router.get("/generations/{gen_id}/export/csv")
 def export_generation_csv(
-    gen_id: int,
+    gen_id: DbId,
     include_status: bool = Query(False, alias="status"),
     encoding: str = Query("utf-8-sig", description="z. B. utf-8-sig, utf-8, cp1252, iso-8859-1, utf-16le, utf-16be, utf-16"),
     excel: bool = Query(True, description="Wenn True: erste Zeile 'sep=;' für Excel"),
@@ -346,7 +351,7 @@ def export_generation_csv(
 ):
     gen = db.get(models.Generation, gen_id)
     if not gen:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
 
     tcs = (
         db.query(models.TestCase)
@@ -437,14 +442,14 @@ def export_generation_csv(
 # ---------------------------------------------------------------------------
 
 @router.get("/generations/{gen_id}/export/json")
-def export_generation_json(gen_id: int, db: Session = Depends(get_db)):
+def export_generation_json(gen_id: DbId, db: Session = Depends(get_db)):
     """Exportiert alle Testfälle einer Generation als strukturiertes JSON.
 
     REQ-1001: JSON Export mit project/categories/testcases-Hierarchie.
     """
     gen = db.get(models.Generation, gen_id)
     if not gen:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
 
     categories = (
         db.query(models.Category)
@@ -504,7 +509,7 @@ def export_generation_json(gen_id: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.get("/generations/{gen_id}/export/xlsx")
-def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
+def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
     """Exportiert alle Testfälle einer Generation als Excel-Datei (.xlsx).
 
     REQ-1002: Excel Export mit openpyxl – Kategorien als Spaltenüberschriften.
@@ -517,7 +522,7 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
 
     gen = db.get(models.Generation, gen_id)
     if not gen:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
 
     categories = (
         db.query(models.Category)

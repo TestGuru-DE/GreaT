@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..api_types import DbId
 from ..models.project_membership import ProjectMembership
 from ..models.auth import User
 from ..auth_deps import get_current_user, require_editor_or_admin, require_admin, require_api_capable
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/api/sharing", tags=["sharing"])
 
 @router.get("/project/{project_id}/members", response_model=list[ProjectMemberRead])
 def get_project_members(
-    project_id: int,
+    project_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ):
@@ -34,7 +35,7 @@ def get_project_members(
 
 @router.post("/project/{project_id}/members", status_code=201, response_model=ProjectMemberRead)
 def add_project_member(
-    project_id: int,
+    project_id: DbId,
     payload: AddProjectMemberRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_editor_or_admin),
@@ -81,8 +82,8 @@ def add_project_member(
 
 @router.delete("/project/{project_id}/members/{user_id}")
 def remove_project_member(
-    project_id: int,
-    user_id: int,
+    project_id: DbId,
+    user_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_editor_or_admin),
 ):

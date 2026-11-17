@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from ..auth_deps import get_current_user, require_editor_or_admin, require_api_capable
 from ..database import get_db
+from ..api_types import DbId
 from ..models import Category, Project
 from ..models.decision_table_constraint import DecisionTableConstraint
 from ..models.auth import User
@@ -30,7 +31,7 @@ router = APIRouter(prefix="/api/decision-table", tags=["decision-table"])
 class DecisionTableGenerateRequest(BaseModel):
     """Request-Payload fuer die Entscheidungstabelle-Generierung."""
 
-    project_id: int
+    project_id: DbId
     constraints: Optional[List[Dict[str, Any]]] = Field(
         default=None,
         description="Optionale Constraints (REQ-5007-5011)",
@@ -52,7 +53,7 @@ class DecisionTableGenerateRequest(BaseModel):
 class ConstraintCreateRequest(BaseModel):
     """REQ-5012: Request-Payload fuer Constraint-Erstellung."""
 
-    project_id: int
+    project_id: DbId
     constraint_type: str
     targets: Any  # list fuer E/O/I, dict fuer R/M
     description: Optional[str] = None
@@ -137,7 +138,7 @@ def generate_decision_table_endpoint(
 
 @router.get("/categories/{project_id}")
 def get_decision_table_categories(
-    project_id: int,
+    project_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ) -> Dict[str, Any]:
@@ -179,7 +180,7 @@ def get_decision_table_categories(
 
 @router.get("/graph/{project_id}")
 def get_cause_effect_graph_endpoint(
-    project_id: int,
+    project_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ) -> Dict[str, Any]:
@@ -197,7 +198,7 @@ def get_cause_effect_graph_endpoint(
 
 @router.get("/constraints/{project_id}")
 def get_constraints(
-    project_id: int,
+    project_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ) -> List[Dict[str, Any]]:
@@ -280,7 +281,7 @@ def create_constraint(
 
 @router.delete("/constraints/{constraint_id}")
 def delete_constraint(
-    constraint_id: int,
+    constraint_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_editor_or_admin),
 ) -> Dict[str, str]:
@@ -301,12 +302,12 @@ def delete_constraint(
 
 class CollapseRequest(BaseModel):
     """Request-Payload fuer Collapsing."""
-    project_id: int
+    project_id: DbId
 
 
 class ValidateRequest(BaseModel):
     """Request-Payload fuer Validierung."""
-    project_id: int
+    project_id: DbId
 
 
 @router.post("/collapse")

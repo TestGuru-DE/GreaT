@@ -52,7 +52,7 @@ def login(
     # Find user
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not user.check_password(form_data.password):
-        raise HTTPException(status_code=401, detail="Ungultige Anmeldedaten")
+        raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
@@ -144,7 +144,7 @@ def refresh_token_endpoint(
         RefreshToken.is_revoked == False,
     ).first()
     if not rt:
-        raise HTTPException(status_code=401, detail="Ungultiger Refresh-Token")
+        raise HTTPException(status_code=401, detail="Ungültiger Refresh-Token")
 
     # Decode and validate
     try:
@@ -152,10 +152,10 @@ def refresh_token_endpoint(
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh-Token abgelaufen")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Ungultiger Refresh-Token")
+        raise HTTPException(status_code=401, detail="Ungültiger Refresh-Token")
 
     if payload.get("type") != "refresh":
-        raise HTTPException(status_code=401, detail="Ungultiger Token-Typ")
+        raise HTTPException(status_code=401, detail="Ungültiger Token-Typ")
 
     # Get user
     user = db.query(User).filter(User.id == int(payload["sub"])).first()

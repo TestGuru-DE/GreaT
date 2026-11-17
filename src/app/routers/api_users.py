@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..api_types import DbId
 from ..models.auth import User, RefreshToken
 from ..models.project_membership import ProjectMembership
 from ..auth_deps import get_current_user, require_admin, require_writer
@@ -61,7 +62,7 @@ def create_user(
 
 @router.put("/{user_id}", response_model=UserRead)
 def update_user(
-    user_id: int,
+    user_id: DbId,
     payload: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -104,7 +105,7 @@ def update_user(
 
 @router.delete("/{user_id}")
 def delete_user(
-    user_id: int,
+    user_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
@@ -154,7 +155,7 @@ password_router = APIRouter(
 
 @password_router.put("/{user_id}/password")
 def change_password(
-    user_id: int,
+    user_id: DbId,
     payload: UserPasswordChange,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),

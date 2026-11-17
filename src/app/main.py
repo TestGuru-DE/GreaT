@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST, CORS_ORIGINS
@@ -68,6 +68,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="G.R.E.A.T. API", version=__version__, lifespan=lifespan)
 
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc: Exception):
+    """Globaler Exception-Handler: loggt mit Stacktrace, liefert JSON 500."""
+    log.exception("unhandled_exception", path=request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Interner Serverfehler", "code": "internal_error"}
+    )
+
 # REQ-4xxx (EPIC-18 / ADR-015): CORS-Whitelist aus Config (kein Wildcard)
 app.add_middleware(
     CORSMiddleware,
@@ -103,7 +113,11 @@ async def log_requests(request, call_next):
             duration_ms=duration,
             error=str(exc),
         )
-        raise
+        # NICHT raise – JSON 500, damit Verbindung intakt bleibt
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Interner Serverfehler", "code": "internal_error"}
+        )
 
 
 # RISK-S-006/007: Docs-Auth-Middleware muss ZULETZT registriert werden (LIFO -> aeusserste Schicht)

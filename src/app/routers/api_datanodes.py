@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 import httpx
 
 from ..database import get_db
+from ..api_types import DbId
 from .. import models, schemas
 from ..auth_deps import require_writer, require_api_capable, require_admin, get_current_user
 from ..models.auth import User
@@ -124,7 +125,7 @@ def get_full_tree(
 
 @router.get("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
 def get_node(
-    node_id: int,
+    node_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ):
@@ -160,7 +161,7 @@ def create_node(
 
 @router.put("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
 def update_node(
-    node_id: int,
+    node_id: DbId,
     data: schemas.DataNodeUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
@@ -185,7 +186,7 @@ def update_node(
 
 @router.delete("/datanodes/{node_id}")
 def delete_node(
-    node_id: int,
+    node_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
 ):
@@ -200,7 +201,7 @@ def delete_node(
 
 @router.post("/datanodes/{node_id}/values", response_model=schemas.DataNodeValueRead)
 def add_value(
-    node_id: int,
+    node_id: DbId,
     data: schemas.DataNodeValueCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
@@ -218,8 +219,8 @@ def add_value(
 
 @router.delete("/datanodes/{node_id}/values/{value_id}")
 def delete_value(
-    node_id: int,
-    value_id: int,
+    node_id: DbId,
+    value_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
 ):
