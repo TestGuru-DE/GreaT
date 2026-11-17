@@ -3,7 +3,6 @@ source = src
 branch = True
 omit =
     src/app/templates/*
-    src/backend/*
     src/__pycache__/*
     */__pycache__/*
 

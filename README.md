@@ -92,6 +92,8 @@ Für produktive Multi-User-Installationen mit vielen gleichzeitigen Nutzern:
 pip install -r requirements-postgres.txt
 
 # 5. Migrationen ausführen (falls vorhanden):
+# Hinweis: Alembic ist konfiguriert, wird aber derzeit nicht aktiv genutzt.
+# Der massgebliche Migrationsweg ist _migrate_db() in src/app/main.py.
 python -m alembic upgrade head
 
 # 6. System starten

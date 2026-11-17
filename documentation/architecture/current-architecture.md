@@ -32,7 +32,7 @@ Erstellt von: Chief Architect Agent
            │        │  - orthogonal (pairwise)     │
 ┌──────────▼───┐    └──────────────────────────────┘
 │ SQLite DB    │    ┌──────────────────────────────┐
-│ tanos.db     │    │  IO-Handler                  │
+│ great.db     │    │  IO-Handler                  │
 └──────────────┘    │  src/io_handlers/csv_handler │
                     └──────────────────────────────┘
 ```
@@ -201,7 +201,7 @@ projects
 | DEBT-001 | main.py aufteilen in Router-Module | Hoch | M |
 | DEBT-002 | Alembic Migration einführen | Hoch | S |
 | DEBT-003 | Service-Layer einführen | Hoch | L |
-| DEBT-004 | src/backend/ archivieren | Mittel | XS |
+| DEBT-004 | src/backend/ archivieren | ~~Mittel~~ | ~~XS~~ | *(erledigt 2026-11-17)*
 | DEBT-005 | Error Handling standardisieren | Hoch | M |
 | DEBT-006 | Fehlende Kombinatorik (5 Strategien) | Hoch | XL |
 | DEBT-007 | Fehlende IO-Handler (JSON/Excel/XML) | Mittel | M |

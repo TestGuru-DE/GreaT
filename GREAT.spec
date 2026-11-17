@@ -17,8 +17,7 @@ if frontend_dist.exists():
 else:
     print("WARNUNG: frontend/dist existiert nicht. Fuehre zuerst 'npm run build' aus.")
 
-# PySide6-Plugins fuer portables EXE (QT-Bildschirm, Platform-Plugins)
-# Diese werden in _MEIxxxxx extrahiert und von PySide6 automatisch gefunden
+# Hidden imports fuer uvicorn/FastAPI (portable EXE)
 hiddenimports = [
     "uvicorn",
     "uvicorn.main",

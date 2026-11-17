@@ -124,7 +124,7 @@ Entscheidung durch Projektinhaber: React/TypeScript sofort, kein HTMX-Übergang.
 ## ADR-004 – Archivierung: src/backend/ deaktivieren
 
 **Datum:** 2026-06-10
-**Status:** Accepted
+**Status:** ✅ **Umgesetzt** (2026-11-17)
 
 **Kontext:**
 `src/backend/` ist ein paralleler Prototyp (GeTeCaDe) mit eigener DB, eigenem Backend und eigenen
@@ -140,6 +140,12 @@ Services. Er wird von der Haupt-App nicht verwendet und verursacht Verwirrung.
 **Konsequenzen:**
 - archive-log.md aktualisieren
 - Keine Funktionalität geht verloren
+
+**Umsetzung (2026-11-17):**
+- `src/backend/` nach `archive/2026-11-17/backend-getecade/` verschoben
+- Zusätzlich archiviert: Desktop-Altcode "TaNoS v5.4" (PySide6) nach `archive/2026-11-17/desktop-tanos/`
+- Alte CSV-Handler-Tests nach `archive/2026-11-17/tests/` verschoben
+- Neue Tests: `test_req1000_csv_export_web.py` gegen Web-API
 
 **Entscheider:** Legacy Code Auditor Agent
 
@@ -1856,3 +1862,22 @@ Konkret:
 
 **Entscheider:** GREAT Chief Architect Agent
 **Abhaengigkeiten:** B-18 (Bugfix-Scope), ADR-001 (Python/FastAPI), ADR-002 (Alembic/Migration)
+
+
+---
+
+## ADR-016 – Alembic-Migrationsstatus (2026-11-17)
+
+**Status:** Dokumentiert
+
+**Kontext:**
+Alembic wurde laut ADR-002 als Migrations-Framework eingefuehrt. In der Praxis erfolgt
+die Datenbank-Migration jedoch ausschliesslich ueber `_migrate_db()` in `src/app/main.py`
+(idempotente ALTER TABLE Statements). Alembic wird derzeit nicht im produktiven
+Migrationsweg eingesetzt.
+
+**Konsequenzen:**
+- `alembic.ini` Default auf `sqlite:///./great.db` korrigiert (statt `tanos.db`)
+- `src/db/migrations/env.py` verwendet `DATABASE_URL` aus `app.config`
+- Massgeblicher Migrationsweg bleibt `_migrate_db()` in `main.py`
+- Alembic bleibt als Option fuer zukuenftige Migrationen erhalten

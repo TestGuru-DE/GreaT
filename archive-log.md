@@ -217,3 +217,24 @@ und kartesischer Groessenpruefung.
 |---|---|---|---|---|
 | 2026-11-17 | src/combinatorics/orthogonal.py | archive/2026-11-17/orthogonal.py | Ersetzt durch IPOG-A (src/combinatorics/ipo.py). Alte Greedy-Heuristik mit kartesischer Enumeration zu langsam bei grossen Kategorien. | GREAT Senior Developer |
 
+---
+
+## 2026-11-17 – Desktop-Altcode "TaNoS" und Alt-Backend archiviert
+
+**Grund**: Desktop-Anwendung "TaNoS v5.4" (PySide6) und paralleler GeTeCaDe-Backend-Prototyp
+vollstaendig durch Web-Anwendung (FastAPI + React) ersetzt. ADR-004 umgesetzt.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/main.py | archive/2026-11-17/desktop-tanos/src/main.py | PySide6 Desktop-App "TaNoS v5.4", durch Web-App ersetzt | GREAT Legacy Auditor |
+| 2026-11-17 | src/tree_view.py | archive/2026-11-17/desktop-tanos/src/tree_view.py | PySide6 TreeView-Logik, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/project_handler.py | archive/2026-11-17/desktop-tanos/src/project_handler.py | PySide6 Projekt-Handler, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/api_client.py | archive/2026-11-17/desktop-tanos/src/api_client.py | requests-basierter API-Client fuer Desktop-App | GREAT Legacy Auditor |
+| 2026-11-17 | src/rules/ (4 Dateien) | archive/2026-11-17/desktop-tanos/src/rules/ | PySide6 Regel-Dialoge und -Klassen, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/io_handlers/ | archive/2026-11-17/desktop-tanos/src/io_handlers/ | CSV-Handler fuer Desktop-App, durch Web-API ersetzt | GREAT Legacy Auditor |
+| 2026-11-17 | src/__init__.py | archive/2026-11-17/desktop-tanos/src/__init__.py | Namespace-Package-Marker, nicht mehr noetig (implicit namespace package) | GREAT Legacy Auditor |
+| 2026-11-17 | src/backend/ | archive/2026-11-17/backend-getecade/ | Paralleler GeTeCaDe-Prototyp (ADR-004), nicht integriert | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler.py | archive/2026-11-17/tests/test_csv_handler.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler_names.py | archive/2026-11-17/tests/test_csv_handler_names.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler_roundtrip.py | archive/2026-11-17/tests/test_csv_handler_roundtrip.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+

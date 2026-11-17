@@ -80,14 +80,23 @@ Projektnamen „TaNoS" (TestcaseNoSense → abgelöst durch G.R.E.A.T.).
 
 ---
 
-## 3. Desktopkomponenten
+## 3. Desktopkomponenten (archiviert 2026-11-17)
 
-Keine eigenständige Desktopanwendung vorhanden. Die Anwendung läuft im Browser (localhost).
-Ein `Start.bat` startet den uvicorn-Server.
+**Status:** Archiviert nach `archive/2026-11-17/desktop-tanos/`.
+Die PySide6-Desktopanwendung "TaNoS v5.4" wurde durch die Web-Anwendung (FastAPI + React)
+vollstaendig ersetzt. Alle Dateien sind im Archiv erhaeltlich.
 
 | Datei | Beschreibung | Klassifizierung |
 |---|---|---|
-| `Start.bat` | Windows-Startskript für uvicorn | **Reuse** | Einfacher Launcher, für Endbenutzer ausreichend |
+| `archive/2026-11-17/desktop-tanos/src/main.py` | PySide6 Desktop-App "TaNoS v5.4" | **Archive** |
+| `archive/2026-11-17/desktop-tanos/src/tree_view.py` | PySide6 TreeView-Logik | **Archive** |
+| `archive/2026-11-17/desktop-tanos/src/project_handler.py` | PySide6 Projekt-Handler | **Archive** |
+| `archive/2026-11-17/desktop-tanos/src/api_client.py` | requests-basierter API-Client | **Archive** |
+| `archive/2026-11-17/desktop-tanos/src/rules/` | PySide6 Regel-Dialoge und -Klassen | **Archive** |
+| `archive/2026-11-17/desktop-tanos/src/io_handlers/` | CSV-Handler fuer Desktop-App | **Archive** |
+
+Keine eigenständige Desktopanwendung vorhanden. Die Anwendung läuft im Browser (localhost).
+Ein `Start.bat` startet den uvicorn-Server.
 
 ---
 
