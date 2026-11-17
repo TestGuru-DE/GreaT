@@ -310,7 +310,11 @@ class TestSelfChangePassword:
         ],
     )
     def test_known_default_passwords_are_rejected(self, candidate):
-        """REQ-4028 AK-5 / REQ-4027 AK-14: Bekannte Standardpasswoerter abgelehnt, Flag bleibt."""
+        """REQ-4028 AK-5 / REQ-4027 AK-14: Bekannte Standardpasswoerter abgelehnt, Flag bleibt.
+
+        B-23: Common-passwords-Check kommt vor Default-Check; Fehlercode kann
+        password_too_common oder password_is_default sein – beide bedeuten Ablehnung.
+        """
         user_id = _bootstrap_default_admin()
         client = _client_for(user_id)
         r = client.post(
@@ -318,7 +322,9 @@ class TestSelfChangePassword:
             json={"current_password": DEFAULT_ADMIN_PASSWORD, "new_password": candidate},
         )
         assert r.status_code == 400
-        assert r.json() == {"detail": "password_is_default"}
+        # B-23: Common-Check kommt vor Default-Check; beide Codes bedeuten Ablehnung
+        detail = r.json().get("detail", "")
+        assert detail in ("password_is_default", "password_too_common"), f"Unerwarteter Fehlercode: {detail}"
         assert candidate.strip() not in r.text  # REQ-4028 AK-9: kein Echo des abgelehnten Passworts
         assert _state(user_id)[0] is True
 
@@ -450,7 +456,10 @@ class TestAdminSetPasswordPolicy:
     """REQ-4028 AK-4/AK-5/AK-6 gelten auch fuer die Admin-Passwortsetzung (REQ-4025)."""
 
     def test_admin_rejects_default_password_for_other_user(self):
-        """Admin kann einem Nutzer kein bekanntes Standardpasswort setzen -> 400."""
+        """Admin kann einem Nutzer kein bekanntes Standardpasswort setzen -> 400.
+
+        B-23: Common-passwords-Check kommt vor Default-Check; beide Codes bedeuten Ablehnung.
+        """
         admin_id = _add_user("adm_pol", "admin", OLD_PASSWORD)
         target_id = _add_user("tgt_pol", "editor", OLD_PASSWORD)
         r = _client_for(admin_id).put(
@@ -458,7 +467,8 @@ class TestAdminSetPasswordPolicy:
             json={"new_password": DEFAULT_ADMIN_PASSWORD},
         )
         assert r.status_code == 400
-        assert r.json() == {"detail": "password_is_default"}
+        detail = r.json().get("detail", "")
+        assert detail in ("password_is_default", "password_too_common"), f"Unerwarteter Fehlercode: {detail}"
         assert _verify(target_id, OLD_PASSWORD)
 
     def test_admin_rejects_short_password(self):
@@ -473,7 +483,10 @@ class TestAdminSetPasswordPolicy:
         assert r.json() == {"detail": "password_too_short"}
 
     def test_admin_sets_valid_password_and_clears_flag_of_default_admin(self):
-        """REQ-4027 AK-10: Fremdsetzung eines gueltigen Passworts loescht das Flag des Default-Admins."""
+        """B-22: Fremdsetzung durch Admin setzt default_password_active=True.
+
+        Der Nutzer muss das Passwort beim naechsten Login aendern.
+        """
         default_id = _bootstrap_default_admin()
         other_admin_id = _add_user("adm_other", "admin", OLD_PASSWORD)
         r = _client_for(other_admin_id).put(
@@ -481,7 +494,8 @@ class TestAdminSetPasswordPolicy:
             json={"new_password": GOOD_NEW},
         )
         assert r.status_code == 200
-        assert _state(default_id)[0] is False
+        # B-22: admin_set_password setzt default_password_active=True
+        assert _state(default_id)[0] is True
         assert _verify(default_id, GOOD_NEW)
 
     def test_admin_password_route_still_denied_for_editor(self):

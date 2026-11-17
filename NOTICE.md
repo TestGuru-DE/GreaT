@@ -106,6 +106,20 @@ Beiträge zum Projekt sind willkommen. Mit einem Beitrag erklärt sich die/der B
 | SaaS-Anbieter | Kostenpflichtiges G.R.E.A.T.-Hosting für Dritte | Genehmigungspflichtig | Vertrag + Umsatzbeteiligung |
 
 ---
+
+## Verwendete Third-Party-Daten
+
+### SecLists – Common Passwords (MIT)
+
+Die Datei `src/app/data/common_passwords.txt` enthält eine Teilmenge der
+häufigsten Passwörter aus dem [SecLists](https://github.com/danielmiessler/SecLists)
+Projekt von Daniel Miessler / Beyond Security.
+
+- **Lizenz:** MIT License
+- **Quelle:** https://github.com/danielmiessler/SecLists
+- **Nutzung:** Serverseitige Passwort-Policy-Validierung (Ablehnung gebräuchlicher Passwörter)
+
+---
 ---
 
 # ENGLISH VERSION

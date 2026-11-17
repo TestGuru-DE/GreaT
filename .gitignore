@@ -41,6 +41,9 @@ secrets/
 *.key
 *.pfx
 
+# B-25: Persistierte JWT-Secrets (NIE ins Repo)
+jwt_secrets.json
+
 # Logs
 *.log
 log.txt

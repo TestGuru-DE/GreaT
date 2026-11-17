@@ -152,7 +152,14 @@ def create_node(
                 detail="Elternknoten nicht gefunden",
             )
 
-    node = models.DataNode(**data.model_dump())
+    # B-24: Client darf is_system und source nicht setzen
+    node = models.DataNode(
+        name=data.name,
+        parent_id=data.parent_id,
+        sort_order=data.sort_order,
+        is_system=False,
+        source=None,
+    )
     db.add(node)
     db.commit()
     db.refresh(node)

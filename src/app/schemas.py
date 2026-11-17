@@ -1,6 +1,9 @@
 # src/app/schemas.py
+import re
 from typing import List, Optional, Dict
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._@-]{3,50}$")
 
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
@@ -323,8 +326,6 @@ DataNodeRead.model_rebuild()
 class DataNodeCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
-    is_system: bool = False
-    source: Optional[str] = None
     sort_order: int = 0
 
 class DataNodeValueCreate(BaseModel):
@@ -350,6 +351,24 @@ class UserCreate(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=1, max_length=200)
     role: str = "viewer"
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        trimmed = v.strip()
+        if not USERNAME_PATTERN.match(trimmed):
+            raise ValueError("Benutzername muss 3-50 Zeichen aus A-Z a-z 0-9 . _ - @ enthalten.")
+        return trimmed
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        from .password_policy import validate_new_password, PasswordError
+        try:
+            validate_new_password(v)
+        except PasswordError as e:
+            raise ValueError(e.code)
+        return v
 
     @field_validator("role")
     @classmethod

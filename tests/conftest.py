@@ -103,6 +103,12 @@ def auth_client():
 
 
 @pytest.fixture
+def editor_client():
+    """Angemeldeter Editor (alias fuer auth_client; explizit benannt)."""
+    return _make_token_client("editortest", "editor")
+
+
+@pytest.fixture
 def admin_client():
     """Angemeldeter Admin."""
     return _make_token_client("testadmin", "admin")

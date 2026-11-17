@@ -5,6 +5,7 @@ REQ-4001: Login, Logout, Refresh-Token
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 import jwt
 
@@ -12,7 +13,7 @@ from ..database import get_db
 from ..models.auth import User, RefreshToken
 from ..auth_utils import create_access_token, create_refresh_token, decode_token
 from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_editor_or_admin, require_writer, require_api_capable
-from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS
+from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS, GREAT_COOKIE_SECURE
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
 from ..config import GREAT_TRUST_PROXY_HEADERS
 from ..schemas import PasswordChangeRequest
@@ -20,6 +21,26 @@ from ..password_policy import PasswordError
 from ..auth_service import change_own_password, is_first_start_hint_active
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# B-26: Hilfsfunktionen fuer Cookie-Secure-Flag
+def _set_auth_cookie(response: Response, name: str, value: str, max_age: int) -> None:
+    response.set_cookie(
+        key=name,
+        value=value,
+        httponly=True,
+        secure=GREAT_COOKIE_SECURE,
+        samesite="strict",
+        max_age=max_age,
+    )
+
+
+def _delete_auth_cookie(response: Response, name: str) -> None:
+    response.delete_cookie(
+        key=name,
+        secure=GREAT_COOKIE_SECURE,
+        samesite="strict",
+    )
 
 
 @router.post("/login")
@@ -49,8 +70,10 @@ def login(
             headers={"Retry-After": str(retry_after)},
         )
 
-    # Find user
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # B-22: Case-insensitive user lookup
+    user = db.query(User).filter(
+        func.lower(User.username) == form_data.username.lower()
+    ).first()
     if not user or not user.check_password(form_data.password):
         raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
 
@@ -73,22 +96,18 @@ def login(
     db.add(rt)
     db.commit()
 
-    # Set httpOnly cookies
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # True in Production (HTTPS)
-        samesite="strict",
-        max_age=JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    # B-26: Set httpOnly cookies via helper
+    _set_auth_cookie(
+        response,
+        "access_token",
+        access_token,
+        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    _set_auth_cookie(
+        response,
+        "refresh_token",
+        refresh_token,
+        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
     return {
@@ -117,8 +136,9 @@ def logout(
             rt.is_revoked = True
             db.commit()
 
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    # B-26: Delete cookies via helper
+    _delete_auth_cookie(response, "access_token")
+    _delete_auth_cookie(response, "refresh_token")
 
     return {"message": "Logout erfolgreich"}
 
@@ -197,22 +217,18 @@ def refresh_token_endpoint(
     db.add(new_rt)
     db.commit()
 
-    # Set new httpOnly cookies (BOTH access AND refresh)
-    response.set_cookie(
-        key="access_token",
-        value=new_access_token,
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    # B-26: Set new httpOnly cookies via helper
+    _set_auth_cookie(
+        response,
+        "access_token",
+        new_access_token,
+        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    response.set_cookie(
-        key="refresh_token",
-        value=new_refresh_token,  # B2: NEUER Token!
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    _set_auth_cookie(
+        response,
+        "refresh_token",
+        new_refresh_token,  # B2: NEUER Token!
+        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
     return {"message": "Token erneuert"}

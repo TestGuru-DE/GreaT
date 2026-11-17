@@ -4,6 +4,7 @@ Admin kann Nutzer verwalten (CRUD), Passwort aendern.
 Alle Endpunkte erfordern Admin-Rolle (außer Passwort-aendern fuer sich selbst).
 """
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -40,8 +41,10 @@ def create_user(
     current_user: User = Depends(require_admin),
 ):
     """REQ-4025: Erstellt einen neuen Nutzer (Admin nur)."""
-    # Pruefe auf Duplikat
-    existing = db.query(User).filter(User.username == payload.username).first()
+    # B-22: Case-insensitive Duplikat-Prüfung
+    existing = db.query(User).filter(
+        func.lower(User.username) == payload.username.lower()
+    ).first()
     if existing:
         raise HTTPException(
             status_code=409,
@@ -52,6 +55,8 @@ def create_user(
         username=payload.username,
         role=payload.role,
         is_active=True,
+        # B-22: Admin-created users must change password on first login
+        default_password_active=True,
     )
     new_user.set_password(payload.password)
     db.add(new_user)

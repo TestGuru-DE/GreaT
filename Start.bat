@@ -37,4 +37,4 @@ popd
 
 echo [2/2] Starte FastAPI Backend...
 set PYTHONPATH=src
-python -m uvicorn src.app.main:app --host 0.0.0.0 --port %GREAT_PORT% --reload
+python -m uvicorn src.app.main:app --host 0.0.0.0 --port %GREAT_PORT%

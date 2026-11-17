@@ -36,8 +36,11 @@ def admin_set_password(db: Session, target: User, new_password: str) -> None:
     """REQ-4025 / REQ-4028 AK-4/AK-5: Admin setzt das Passwort eines Nutzers.
 
     B-06: Invalidiert alle Sitzungen des Ziel-Nutzers nach Passwortwechsel.
+    B-22: Setzt default_password_active=True, damit der Nutzer das Passwort
+    beim ersten Login aendern muss.
     """
     apply_new_password(target, new_password)
+    target.default_password_active = True
     increment_token_version(db, target)
 
 

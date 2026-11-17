@@ -50,5 +50,5 @@ echo "║  API-Doku: http://localhost:$GREAT_PORT/docs    ║"
 echo "╚══════════════════════════════════════════╝"
 echo ""
 
-GREAT_PORT=$GREAT_PORT uvicorn app.main:app --reload --app-dir src --reload-dir src --port $GREAT_PORT
+GREAT_PORT=$GREAT_PORT uvicorn app.main:app --app-dir src --port $GREAT_PORT
 

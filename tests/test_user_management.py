@@ -137,7 +137,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen (12+ chars, 4+ variety)
                 "role": "editor",
             },
         )
@@ -154,7 +154,7 @@ class TestCreateUser:
             assert user is not None
             assert user.role == "editor"
             assert user.is_active is True
-            assert user.check_password("newpass123")
+            assert user.check_password("Newpass12345!")
         finally:
             db.close()
 
@@ -165,7 +165,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "admin_user",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "editor",
             },
         )
@@ -178,7 +178,7 @@ class TestCreateUser:
             cookies=editor_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "editor",
             },
         )
@@ -191,7 +191,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "superadmin",
             },
         )
@@ -368,7 +368,7 @@ class TestChangePassword:
         response = client.put(
             f"/api/users/{editor.id}/password",
             cookies=admin_cookies,
-            json={"new_password": "neweditor123"},
+            json={"new_password": "Neweditor123!"},  # B-23: Muss Policy erfuellen
         )
         assert response.status_code == 200
 
@@ -376,7 +376,7 @@ class TestChangePassword:
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.id == editor.id).first()
-            assert user.check_password("neweditor123")
+            assert user.check_password("Neweditor123!")
             assert not user.check_password("editor123")
         finally:
             db.close()

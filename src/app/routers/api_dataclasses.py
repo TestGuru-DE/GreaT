@@ -322,6 +322,15 @@ def update_dataclass(
 ):
     """REQ-4021: Datenklasse aktualisieren; Version-Konflikt -> 409."""
     from ..concurrency import update_with_version
+
+    # B-24: System-Datenklassen duerfen nur von Admins geaendert werden
+    dc = db.get(models.DataClass, dcid)
+    if dc and dc.is_system and current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="System-Datenklassen koennen nur von Admins geaendert werden.",
+        )
+
     update_data = payload.model_dump(exclude={"version"}, exclude_unset=True)
     return update_with_version(
         db=db,
