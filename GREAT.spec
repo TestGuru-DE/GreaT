@@ -40,6 +40,17 @@ hiddenimports = [
     "alembic",
     "structlog",
     "dotenv",
+    "jwt",
+    "argon2",
+    "argon2.cffi",
+    "cryptography",
+    "cryptography.hazmat",
+    "cryptography.hazmat.primitives",
+    "cryptography.hazmat.primitives.hashes",
+    "cryptography.hazmat.primitives.kdf.pbkdf2",
+    "cryptography.fernet",
+    "httpx",
+    "openpyxl",
 ]
 
 a = Analysis(

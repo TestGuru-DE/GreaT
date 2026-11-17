@@ -127,17 +127,42 @@ def _detail(response):
 
 
 def _uses_locked_dependency(dependant) -> bool:
-    if dependant.call is get_current_user:
+    # Prueft, ob die Abhaengigkeit (rekursiv) get_current_user verwendet.
+    # Verwendet Modul- und Funktionsnamens-Vergleich statt "is", um
+    # Identity-Probleme bei verschiedenen FastAPI-Versionen zu vermeiden.
+    call = dependant.call
+    if call and getattr(call, "__module__", None) == "app.auth_deps" and getattr(call, "__name__", None) == "get_current_user":
         return True
     return any(_uses_locked_dependency(sub) for sub in dependant.dependencies)
 
 
+def _collect_routes(routes):
+    """Rekursiv alle APIRoute-Objekte aus einer Routenliste extrahieren.
+
+    Durchlaeuft auch Unterrouter (z. B. _IncludedRouter in FastAPI >= 0.137),
+    die ihre eigenen routes-Listen enthalten. Mit FastAPI <0.137 sind alle
+    Routen direkt auf app.routes und diese Funktion ist ein No-Op.
+    """
+    result = []
+    for route in routes:
+        if isinstance(route, APIRoute):
+            result.append(route)
+        elif type(route).__name__ == "_IncludedRouter":
+            if hasattr(route, "original_router") and hasattr(route.original_router, "routes"):
+                result.extend(_collect_routes(route.original_router.routes))
+        elif hasattr(route, "routes") and route.routes:
+            result.extend(_collect_routes(route.routes))
+    return result
+
+
 def _protected_route_calls():
-    """Alle Routen, die ueber get_current_user (gesperrt) laufen: (Methode, konkreter Pfad, Vorlage)."""
+    """Alle Routen, die ueber get_current_user (gesperrt) laufen: (Methode, konkreter Pfad, Vorlage).
+
+    Verwendet _collect_routes() fuer Rekursion durch _IncludedRouter-Objekte
+    (FastAPI >= 0.137). Mit FastAPI <0.137 sind alle Routen direkt auf app.routes.
+    """
     calls = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
+    for route in _collect_routes(app.routes):
         if not _uses_locked_dependency(route.dependant):
             continue
         concrete = re.sub(r"\{[^}]+\}", "1", route.path)

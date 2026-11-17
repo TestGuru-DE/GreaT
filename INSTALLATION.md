@@ -32,8 +32,22 @@ Oder als ZIP: Grünen Button **"Code" → "Download ZIP"** auf GitHub klicken, e
 
 ## Schritt 2 – Python-Abhaengigkeiten installieren
 
+### Laufzeit-Abhaengigkeiten (alle Nutzer)
+
 ```cmd
 pip install -r requirements.txt
+```
+
+### Entwicklungs-Abhaengigkeiten (optional, fuer Tests)
+
+```cmd
+pip install -r requirements-dev.txt
+```
+
+### PostgreSQL-Treiber (optional, fuer Multi-User-Betrieb)
+
+```cmd
+pip install -r requirements-postgres.txt
 ```
 
 > Empfehlung: Virtuelle Umgebung verwenden (optional, aber sauber):
@@ -75,3 +89,14 @@ cd ..
 ## Installation abgeschlossen
 
 Weiter zur **QUICKSTART.md** fuer Startanleitung.
+
+---
+
+## Uebersicht der Requirements-Dateien
+
+| Datei | Inhalt | Verwendung |
+|---|---|---|
+| `requirements.txt` | Laufzeit-Abhaengigkeiten der Web-Anwendung | `pip install -r requirements.txt` |
+| `requirements-dev.txt` | Laufzeit + Testwerkzeuge (pytest, pytest-cov, pytest-playwright) | `pip install -r requirements-dev.txt` |
+| `requirements-postgres.txt` | PostgreSQL-Treiber (psycopg2-binary, optional) | `pip install -r requirements-postgres.txt` |
+| `requirements-rpi.txt` | Alias fuer requirements.txt (Raspberry Pi / Linux) | `pip install -r requirements-rpi.txt` |

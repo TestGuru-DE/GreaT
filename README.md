@@ -88,8 +88,8 @@ Für produktive Multi-User-Installationen mit vielen gleichzeitigen Nutzern:
 # 3. .env anlegen mit PostgreSQL-Connection:
 #    DATABASE_URL=postgresql://great_user:password@localhost:5432/great_db
 
-# 4. Abhängigkeiten installieren:
-pip install psycopg2-binary
+# 4. PostgreSQL-Treiber installieren:
+pip install -r requirements-postgres.txt
 
 # 5. Migrationen ausführen (falls vorhanden):
 python -m alembic upgrade head
@@ -139,6 +139,12 @@ Alle kritischen Tabellen haben `updated_at`-Timestamps für optimistisches Sperr
 
 ## Tests ausfuehren
 
+Zunaechst die Entwicklungs-Abhaengigkeiten installieren:
+```cmd
+pip install -r requirements-dev.txt
+```
+
+Dann Tests ausfuehren:
 ```cmd
 set PYTHONPATH=src
 python -m pytest tests/ --ignore=tests/e2e -q

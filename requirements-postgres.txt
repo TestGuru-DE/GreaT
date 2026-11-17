@@ -1,0 +1,6 @@
+# G.R.E.A.T. – PostgreSQL-Treiber (optional)
+# Nur erforderlich fuer Multi-User-Betrieb mit PostgreSQL.
+# Installation: pip install -r requirements-postgres.txt
+#
+# REQ-4006: PostgreSQL Support (optional, fuer Multi-User-Betrieb)
+psycopg2-binary>=2.9.0
