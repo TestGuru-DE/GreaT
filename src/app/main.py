@@ -211,28 +211,7 @@ app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
 
 # ---------------------------------------------------------------------------
-# React-Frontend (Production Build) - REQ-1202
-# ---------------------------------------------------------------------------
-
-if FRONTEND_DIST.exists():
-    # Statische Assets (JS, CSS, Icons)
-    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
-
-    @app.get("/app", include_in_schema=False)
-    @app.get("/app/{path:path}", include_in_schema=False)
-    @app.get("/dataclasses", include_in_schema=False)
-    @app.get("/login", include_in_schema=False)  # REQ-4001: SPA-Route
-    @app.get("/account/password", include_in_schema=False)  # REQ-4028: Pflicht-Passwortwechsel
-    @app.get("/projects/{path:path}", include_in_schema=False)
-    @app.get("/generations", include_in_schema=False)
-    @app.get("/settings", include_in_schema=False)
-    def serve_react(path: str = ""):
-        response = FileResponse(str(FRONTEND_DIST / "index.html"))
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
-        return response
-
-# ---------------------------------------------------------------------------
-# Komfort-Redirects
+# Komfort-Redirects (muessen VOR dem SPA-Fallback definiert werden)
 # ---------------------------------------------------------------------------
 
 @app.get("/", include_in_schema=False)
@@ -255,6 +234,28 @@ def ui_root():
         status_code=503,
         content={"detail": "Frontend ist nicht gebaut. Bitte 'npm run build' im Ordner frontend ausfuehren."}
     )
+
+# ---------------------------------------------------------------------------
+# React-Frontend (Production Build) - REQ-1202
+# ---------------------------------------------------------------------------
+
+if FRONTEND_DIST.exists():
+    # Statische Assets (JS, CSS, Icons)
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+    @app.get("/app", include_in_schema=False)
+    @app.get("/app/{path:path}", include_in_schema=False)
+    @app.get("/dataclasses", include_in_schema=False)
+    @app.get("/login", include_in_schema=False)
+    @app.get("/account/password", include_in_schema=False)
+    @app.get("/projects/{path:path}", include_in_schema=False)
+    @app.get("/generations", include_in_schema=False)
+    @app.get("/settings", include_in_schema=False)
+    @app.get("/help", include_in_schema=False)  # B-28: /help fuer SPA
+    def serve_react(path: str = ""):
+        response = FileResponse(str(FRONTEND_DIST / "index.html"))
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        return response
 
 
 if __name__ == "__main__":

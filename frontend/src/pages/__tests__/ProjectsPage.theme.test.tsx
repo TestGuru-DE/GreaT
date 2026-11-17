@@ -43,20 +43,16 @@ describe("ProjectsPage - REQ-3045 Theme-Tokens statt hartkodierter Light-Farben"
     expect(root.className).toMatch(/\bbg-theme-bg\b/);
   });
 
-  it("Header nutzt Theme-Token statt hartkodiertem bg-white", () => {
+  it("Header entfernt (B-33: kein redundanter Header mehr)", () => {
     const { container } = render(<ProjectsPage />);
     const header = container.querySelector("header");
-    expect(header).not.toBeNull();
-    expect(header!.className).not.toMatch(/\bbg-white\b/);
-    expect(header!.className).toMatch(/\bbg-theme-(bg|surface)\b/);
+    expect(header).toBeNull();
   });
 
-  it("Ueberschrift nutzt Theme-Text-Token statt hartkodiertem text-slate-800", () => {
+  it("Kein h1 mehr (B-33: TopNav zeigt aktiven Kontext)", () => {
     const { container } = render(<ProjectsPage />);
     const heading = container.querySelector("h1");
-    expect(heading).not.toBeNull();
-    expect(heading!.className).not.toMatch(/\btext-slate-800\b/);
-    expect(heading!.className).toMatch(/\btext-theme-text\b/);
+    expect(heading).toBeNull();
   });
 
   it("Karten-Container (Projekte-Panel) nutzt Theme-Surface-Token statt bg-white", () => {

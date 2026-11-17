@@ -2,7 +2,7 @@
 // REQ-3062: System theme sync
 // B-45: ErrorBoundary um alle Routes
 import { useEffect, useState, lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
@@ -21,6 +21,8 @@ import { setupSystemThemeSync } from "./lib/theme";
 
 export default function App() {
   const [, setThemeUpdate] = useState(0);
+  const location = useLocation();
+  const isPublicPage = location.pathname === "/login";
 
   useEffect(() => {
     // REQ-3062: Listen for OS theme changes
@@ -32,7 +34,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col">
-      <TopNav />
+      {!isPublicPage && <TopNav />}
       <ErrorBoundary>
         <div className="flex-1">
           <Routes>
