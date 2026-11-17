@@ -1,4 +1,4 @@
-// REQ-1210: Keyboard-Shortcuts Hook
+﻿// REQ-1210: Keyboard-Shortcuts Hook
 import { useEffect } from "react";
 
 interface ShortcutMap {

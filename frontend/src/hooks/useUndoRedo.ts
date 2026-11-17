@@ -1,4 +1,4 @@
-// REQ-3053: Undo/Redo Hook für Testfall-Konfiguration
+﻿// REQ-3053: Undo/Redo Hook für Testfall-Konfiguration
 import { useState, useCallback } from 'react'
 
 interface UndoRedoState<T> {

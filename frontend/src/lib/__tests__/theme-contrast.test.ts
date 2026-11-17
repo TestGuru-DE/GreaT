@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Theme-Kontrast-Tests (REQ-3046 Dark, REQ-3047 Steampunk, REQ-3049 Heavy Metal)
  * WCAG AA: Kontrast ≥ 4.5:1 für Normal-Text
  */

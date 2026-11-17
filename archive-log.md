@@ -251,3 +251,46 @@ vollstaendig durch Web-Anwendung (FastAPI + React) ersetzt. ADR-004 umgesetzt.
 | 2026-11-17 | src/app/templates_config.py | archive/2026-11-17/htmx-legacy/templates_config.py | Jinja2-Templates-Singleton, ungenutzt (kein Import) | GREAT Senior Developer |
 | 2026-11-17 | src/app/templates/*.html | archive/2026-11-17/htmx-legacy/templates/ | HTMX/Jinja2 HTML-Templates, durch React ersetzt | GREAT Senior Developer |
 
+---
+
+## 2026-11-17 – Frontend Totcode archivieren, HTTP-Schicht vereinheitlichen
+
+**Grund:** Drei parallele HTTP-Pfade (axios, fetch-Wrapper, rohes fetch) durch eine einzige axios-Schicht ersetzt. Totcode und Doppelungen entfernt.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | frontend/src/components/DataNodePicker.tsx | archive/2026-11-17/frontend/DataNodePicker.tsx | Nirgends importiert, Totcode | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/components/ResultCellEditor.tsx | archive/2026-11-17/frontend/ResultCellEditor.tsx | Nirgends importiert, Totcode | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/api/handlers.ts | archive/2026-11-17/frontend/handlers.ts | extractConflict/handleConflictResponse durch ApiError ersetzt | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/api/handlers.test.ts | archive/2026-11-17/frontend/handlers.test.ts | Test zu archiviertem handlers.ts | GREAT Senior Developer |
+| 2026-11-17 | documentation/screenshots/ | archive/2026-11-17/frontend-docs/screenshots/ | Duplikat von frontend/src/docs/screenshots/ | GREAT Senior Developer |
+| 2026-11-17 | documentation/handbuch.md | archive/2026-11-17/frontend-docs/handbuch.md | Duplikat von frontend/src/docs/handbuch.md | GREAT Senior Developer |
+
+**Entfernte API-Exporte (client.ts):**
+- `dataclassApi` samt Typen `DataClass`, `DataClassValue` – nirgends importiert
+- `categoriesApi.getValues` – Duplikat von `valuesApi.list`
+- `categoryPropertiesApi.updateIsResult` – nur in Test-Mocks genutzt
+- `projectsApi.bulkDelete` – nur `bulkDeleteForce` wird genutzt
+- `datanodesApi.get`, `datanodesApi.update` – nirgends genutzt
+
+**Entfernte Store-Methoden:**
+- `projectStore.bulkDelete` – nur `bulkDeleteForce` wird genutzt
+- `authStore.clearError` – nur in Test-Mocks genutzt
+
+**Entfernte Typen:**
+- `ChangePasswordRequest` (usersApi.ts) – nicht mehr noetig
+
+**Neue API-Module (client.ts):**
+- `decisionTableApi` – aus decisionTableStore.ts ausgelagert
+- `constraintsApi` – aus ConstraintDialog.tsx ausgelagert
+- `backupApi` – aus SettingsPage.tsx ausgelagert
+- `datanodesApi.importUser` – aus DataClassesPage.tsx ausgelagert
+
+**Weitere Aenderungen:**
+- `authApi.ts`, `usersApi.ts`, `sharingApi.ts` auf axios umgestellt
+- `usersApi.changePassword` in `usersApi.adminSetPassword` umbenannt
+- Doppelte Default-Exporte in `MaxTestCasesSettingsCard.tsx`, `PortSettingsCard.tsx` entfernt
+- `GenerationsPage.tsx` widersprechende CSS-Klassen bereinigt
+- `e2e/dataclasses-export.spec.ts` console.log entfernt
+- `documentation/handbuch-verweis.md` erstellt
+

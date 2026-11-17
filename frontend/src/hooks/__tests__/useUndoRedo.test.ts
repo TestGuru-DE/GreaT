@@ -1,4 +1,4 @@
-// REQ-3053: Tests für useUndoRedo Hook
+﻿// REQ-3053: Tests für useUndoRedo Hook
 import { renderHook, act } from '@testing-library/react'
 import { useUndoRedo } from '../useUndoRedo'
 

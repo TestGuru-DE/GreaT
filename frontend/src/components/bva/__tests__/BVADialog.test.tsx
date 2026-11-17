@@ -1,4 +1,4 @@
-// REQ-3041: Tests fuer BVADialog-Komponente
+﻿// REQ-3041: Tests fuer BVADialog-Komponente
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

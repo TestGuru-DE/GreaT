@@ -1,4 +1,4 @@
-// REQ-4027 / RISK-S-016: Standard-Credentials fuer Erststart-Hinweis
+﻿// REQ-4027 / RISK-S-016: Standard-Credentials fuer Erststart-Hinweis
 // Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03).
 // Der Security Architect hat die Anzeige des Standardpassworts im Klartext
 // als Risiko abgelehnt. Der Projektinhaber akzeptiert das Risiko bewusst.

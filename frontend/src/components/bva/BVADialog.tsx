@@ -1,4 +1,4 @@
-// REQ-3041: BVADialog – Modal-Container fuer Grenzwertanalyse
+﻿// REQ-3041: BVADialog – Modal-Container fuer Grenzwertanalyse
 import { useEffect, useState, useRef } from "react";
 import { BVAInputPanel } from "./BVAInputPanel";
 import { PreviewTable } from "./PreviewTable";

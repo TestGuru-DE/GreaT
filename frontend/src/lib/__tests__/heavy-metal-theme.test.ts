@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { THEMES, setTheme, getTheme } from '../theme'
 
 describe('Heavy Metal Theme', () => {

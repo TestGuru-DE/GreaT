@@ -1,4 +1,4 @@
-// REQ-1208 + REQ-2001: Zustand Store fuer Testfall-Generierung mit History
+﻿// REQ-1208 + REQ-2001: Zustand Store fuer Testfall-Generierung mit History
 import { create } from "zustand";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";

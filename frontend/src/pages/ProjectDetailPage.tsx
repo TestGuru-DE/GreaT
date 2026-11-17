@@ -1,4 +1,4 @@
-// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
+﻿// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";

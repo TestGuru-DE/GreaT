@@ -1,4 +1,4 @@
-// REQ-1203: Unit-Tests fuer API-Client
+﻿// REQ-1203: Unit-Tests fuer API-Client
 import { describe, it, expect } from "vitest";
 import { projectsApi, renameApi, reorderApi } from "../api/client";
 

@@ -1,4 +1,4 @@
-// REQ-3041, REQ-4015: NumberlineVisualization – SVG-Zahlenstrahl mit Markierungen und Fehlerwert-Kennzeichnung
+﻿// REQ-3041, REQ-4015: NumberlineVisualization – SVG-Zahlenstrahl mit Markierungen und Fehlerwert-Kennzeichnung
 import type { BVAPoint } from "../../lib/bva-calc";
 import Decimal from "decimal.js";
 

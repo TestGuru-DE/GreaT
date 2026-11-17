@@ -1,4 +1,4 @@
-// REQ-2002: Dialog fuer Loeschen von Projekten mit verknuepften Generierungen
+﻿// REQ-2002: Dialog fuer Loeschen von Projekten mit verknuepften Generierungen
 import type { Project } from "../types";
 
 interface Props {

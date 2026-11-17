@@ -1,4 +1,4 @@
-// REQ-4001: Login-Seite fuer JWT-basierte Authentifizierung
+﻿// REQ-4001: Login-Seite fuer JWT-basierte Authentifizierung
 // REQ-4027: Erststart-Hinweis (Standardbenutzer/Standardpasswort)
 import { useState, FormEvent, useEffect } from "react";
 import { useAuthStore } from "../store/authStore";

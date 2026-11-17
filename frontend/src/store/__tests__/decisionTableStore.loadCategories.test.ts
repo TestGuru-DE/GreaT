@@ -2,36 +2,37 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useDecisionTableStore } from "../decisionTableStore";
 
+vi.mock("../../api/client", () => ({
+  decisionTableApi: {
+    loadCategories: vi.fn(),
+  },
+}));
+
+import { decisionTableApi } from "../../api/client";
+
 describe("decisionTableStore.loadCategories", () => {
-  const original = globalThis.fetch;
   beforeEach(() => {
     useDecisionTableStore.setState({ causes: [], effects: [], loading: false, error: null });
   });
   afterEach(() => {
-    globalThis.fetch = original;
+    vi.restoreAllMocks();
   });
 
-  it("setzt causes und effects aus GET /api/decision-table/categories/{pid}", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        causes: [{ id: 1, name: "Farbe" }],
-        effects: [{ id: 2, name: "Ergebnis" }],
-      }),
-    }) as unknown as typeof fetch;
+  it("setzt causes und effects aus GET /decision-table/categories/{pid}", async () => {
+    (decisionTableApi.loadCategories as any).mockResolvedValue({
+      causes: [{ id: 1, name: "Farbe" }],
+      effects: [{ id: 2, name: "Ergebnis" }],
+    });
 
     await useDecisionTableStore.getState().loadCategories(7);
 
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      "/api/decision-table/categories/7",
-      expect.objectContaining({ credentials: "include" }),
-    );
+    expect(decisionTableApi.loadCategories).toHaveBeenCalledWith(7);
     expect(useDecisionTableStore.getState().causes).toEqual([{ id: 1, name: "Farbe" }]);
     expect(useDecisionTableStore.getState().effects).toEqual([{ id: 2, name: "Ergebnis" }]);
   });
 
   it("setzt error bei fehlgeschlagenem Laden", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ detail: "x" }) }) as unknown as typeof fetch;
+    (decisionTableApi.loadCategories as any).mockRejectedValue(new Error("x"));
     await useDecisionTableStore.getState().loadCategories(7);
     expect(useDecisionTableStore.getState().error).toBeTruthy();
   });

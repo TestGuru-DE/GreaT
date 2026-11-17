@@ -1,4 +1,4 @@
-// REQ-4028 AK-2: Tests fuer 403-Interceptor mit password_change_required
+﻿// REQ-4028 AK-2: Tests fuer 403-Interceptor mit password_change_required
 // B-43: Tests fuer Token-Refresh + ApiError
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import axios from "axios";

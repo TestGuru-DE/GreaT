@@ -1,4 +1,4 @@
-// B-43: Tests fuer Token-Refresh-Interceptor
+﻿// B-43: Tests fuer Token-Refresh-Interceptor
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
 import { ApiError } from '../ApiError';

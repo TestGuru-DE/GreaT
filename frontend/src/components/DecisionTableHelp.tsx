@@ -1,4 +1,4 @@
-/**
+﻿/**
  * REQ-5000: Entscheidungstabelle Hilfe-Dialog
  * Erklaert dem User schrittweise, wie die Entscheidungstabelle funktioniert.
  */

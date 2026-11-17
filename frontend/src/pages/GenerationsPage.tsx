@@ -1,4 +1,4 @@
-// REQ-3009: Globale Generierungsübersicht (alle Projekte)
+﻿// REQ-3009: Globale Generierungsübersicht (alle Projekte)
 import { useEffect, useState } from "react";
 import { generateApi, projectsApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
@@ -56,37 +56,37 @@ export default function GenerationsPage() {
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-8 bg-theme-bg min-h-screen">
-      <div className="bg-theme-surface rounded-2xl border border-slate-200 border-theme-border shadow-sm p-6 text-white text-theme-text">
-        <h2 className="text-lg font-semibold text-white text-theme-text mb-4">Alle Generierungen</h2>
+      <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 text-theme-text">
+        <h2 className="text-lg font-semibold text-theme-text mb-4">Alle Generierungen</h2>
 
         {msg && (
-          <div className="mb-4 px-4 py-2 bg-green-50 bg-theme-surface border border-green-200 border-theme-success rounded-lg text-green-700 text-theme-success text-sm">
+          <div className="mb-4 px-4 py-2 bg-theme-surface border border-theme-success rounded-lg text-theme-success text-sm">
             {msg}
           </div>
         )}
 
         {loading ? (
-          <p className="text-white text-theme-text-secondary text-sm">Lade Generierungen...</p>
+          <p className="text-theme-text-secondary text-sm">Lade Generierungen...</p>
         ) : items.length === 0 ? (
-          <div className="text-center py-12 text-white text-theme-text-muted">
+          <div className="text-center py-12 text-theme-text-muted">
             <p className="text-3xl mb-2">📋</p>
             <p>Noch keine Generierungen vorhanden.</p>
           </div>
         ) : (
-          <table className="w-full text-sm text-white text-theme-text">
+          <table className="w-full text-sm text-theme-text">
             <thead>
               <tr className="border-b-2 border-theme-border text-left">
-                <th className="px-3 py-2 text-white text-theme-text font-medium">Name</th>
-                <th className="px-3 py-2 text-white text-theme-text font-medium">Projekt</th>
-                <th className="px-3 py-2 text-black text-theme-text font-medium">Strategie</th>
-                <th className="px-3 py-2 text-white text-theme-text font-medium w-24">Testfälle</th>
-                <th className="px-3 py-2 text-white text-theme-text font-medium w-28">Datum</th>
-                <th className="px-3 py-2 text-white text-theme-text font-medium w-52">Aktionen</th>
+                <th className="px-3 py-2 text-theme-text font-medium">Name</th>
+                <th className="px-3 py-2 text-theme-text font-medium">Projekt</th>
+                <th className="px-3 py-2 text-theme-text font-medium">Strategie</th>
+                <th className="px-3 py-2 text-theme-text font-medium w-24">Testfälle</th>
+                <th className="px-3 py-2 text-theme-text font-medium w-28">Datum</th>
+                <th className="px-3 py-2 text-theme-text font-medium w-52">Aktionen</th>
               </tr>
             </thead>
             <tbody>
               {items.map((g) => (
-                <tr key={g.id} className="border-b border-theme-border hover:bg-theme-surface-hover hover:bg-slate-50/10">
+                <tr key={g.id} className="border-b border-theme-border hover:bg-theme-surface-hover">
                   <td className="px-3 py-2">
                     {editingId === g.id ? (
                       <input
@@ -97,11 +97,11 @@ export default function GenerationsPage() {
                           if (e.key === "Enter") saveEdit(g.id);
                           if (e.key === "Escape") setEditingId(null);
                         }}
-                        className="w-full px-2 py-0.5 text-sm text-white text-theme-text border border-sky-400 border-theme-border rounded focus:outline-none"
+                        className="w-full px-2 py-0.5 text-sm text-theme-text border border-theme-border rounded focus:outline-none"
                       />
                     ) : (
                       <span
-                        className="cursor-pointer text-white text-theme-text hover:text-sky-600 hover:text-theme-accent"
+                        className="cursor-pointer text-theme-text hover:text-theme-accent"
                         onDoubleClick={() => startEdit(g)}
                         title="Doppelklick zum Umbenennen"
                       >
@@ -109,21 +109,21 @@ export default function GenerationsPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-white text-theme-text">{g.projectName}</td>
+                  <td className="px-3 py-2 text-theme-text">{g.projectName}</td>
                   <td className="px-3 py-2">
-                    <span className="px-2 py-0.5 text-xs bg-slate-100 bg-theme-surface-hover rounded-full text-black text-theme-text">{g.strategy}</span>
+                    <span className="px-2 py-0.5 text-xs bg-theme-surface-hover rounded-full text-theme-text">{g.strategy}</span>
                   </td>
                   <td className="px-3 py-2 text-center text-theme-text">{g.testcase_count}</td>
-                  <td className="px-3 py-2 text-white text-theme-text text-xs">
+                  <td className="px-3 py-2 text-theme-text text-xs">
                     {new Date(g.created_at).toLocaleDateString("de-DE")}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">
-                      <button onClick={() => startEdit(g)} className="text-xs px-2 py-0.5 border border-slate-200 border-theme-border rounded hover:bg-slate-50 hover:bg-theme-surface-hover text-white text-theme-text">✏️</button>
-                      <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-0.5 border border-slate-200 border-theme-border rounded hover:bg-slate-50 hover:bg-theme-surface-hover text-white text-theme-text">JSON</button>
-                      <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-0.5 border border-slate-200 border-theme-border rounded hover:bg-slate-50 hover:bg-theme-surface-hover text-white text-theme-text">Excel</button>
-                      <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-0.5 border border-slate-200 border-theme-border rounded hover:bg-slate-50 hover:bg-theme-surface-hover text-white text-theme-text">CSV</button>
-                      <button onClick={() => handleDelete(g.id)} className="text-xs px-2 py-0.5 border border-red-200 border-theme-danger rounded hover:bg-red-50 hover:bg-theme-surface-hover text-white text-theme-text">🗑️</button>
+                      <button onClick={() => startEdit(g)} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">✏️</button>
+                      <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">JSON</button>
+                      <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">Excel</button>
+                      <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">CSV</button>
+                      <button onClick={() => handleDelete(g.id)} className="text-xs px-2 py-0.5 border border-theme-danger rounded hover:bg-theme-surface-hover text-theme-text">🗑️</button>
                     </div>
                   </td>
                 </tr>

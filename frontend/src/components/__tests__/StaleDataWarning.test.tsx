@@ -1,4 +1,4 @@
-// REQ-4022: Tests fuer StaleDataWarning-Banner
+﻿// REQ-4022: Tests fuer StaleDataWarning-Banner
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import StaleDataWarning from "../StaleDataWarning";

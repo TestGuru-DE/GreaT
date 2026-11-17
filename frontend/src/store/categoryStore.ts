@@ -1,4 +1,4 @@
-// REQ-1207 + REQ-3053: Zustand Store fuer Kategorien und Werte mit Undo/Redo
+﻿// REQ-1207 + REQ-3053: Zustand Store fuer Kategorien und Werte mit Undo/Redo
 // REQ-5002: Kategorie-Typ (Standard/Ursache/Wirkung)
 import { create } from "zustand";
 import { categoriesApi, valuesApi } from "../api/client";

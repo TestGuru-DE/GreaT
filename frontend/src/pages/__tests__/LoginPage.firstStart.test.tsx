@@ -1,4 +1,4 @@
-// REQ-4027: Tests fuer Erststart-Hinweis auf LoginPage
+﻿// REQ-4027: Tests fuer Erststart-Hinweis auf LoginPage
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -20,7 +20,15 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-// Mock fetch for getFirstStartHint
+// Mock authApi (including getFirstStartHint)
+vi.mock("../../api/authApi", async () => {
+  const actual = await vi.importActual("../../api/authApi");
+  return {
+    ...(actual as object),
+    getFirstStartHint: vi.fn(),
+  };
+});
+
 beforeEach(() => {
   vi.restoreAllMocks();
 });
@@ -43,7 +51,6 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
         login: mockLogin,
         logout: vi.fn(),
         loadUser: vi.fn(),
-        clearError: vi.fn(),
         refresh: vi.fn(),
         setPasswordChangeRequired: vi.fn(),
         changePassword: vi.fn(),
@@ -54,11 +61,7 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
   });
 
   it("zeigt Erststart-Hinweis bei show_hint: true (AK-2)", async () => {
-    const mockedFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ show_hint: true }),
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (authApi.getFirstStartHint as any).mockResolvedValue({ show_hint: true });
 
     render(
       <MemoryRouter>
@@ -77,11 +80,7 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
   });
 
   it("zeigt KEINEN Hinweis bei show_hint: false (AK-3)", async () => {
-    const mockedFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ show_hint: false }),
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (authApi.getFirstStartHint as any).mockResolvedValue({ show_hint: false });
 
     render(
       <MemoryRouter>
@@ -96,12 +95,7 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
   });
 
   it("zeigt KEINEN Hinweis bei Fehler/429 (AK-8)", async () => {
-    const mockedFetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 429,
-      json: () => Promise.resolve({ detail: "too_many_requests" }),
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (authApi.getFirstStartHint as any).mockRejectedValue(new Error("too_many_requests"));
 
     render(
       <MemoryRouter>
@@ -115,12 +109,7 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
   });
 
   it("Login-Formular bleibt bei Fehler voll nutzbar (AK-8)", async () => {
-    const mockedFetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: () => Promise.resolve({ detail: "internal_error" }),
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (authApi.getFirstStartHint as any).mockRejectedValue(new Error("internal_error"));
 
     render(
       <MemoryRouter>
@@ -135,11 +124,7 @@ describe("LoginPage - REQ-4027 Erststart-Hinweis", () => {
   });
 
   it("Hinweis-Texte stehen unter den richtigen Feldern (AK-2)", async () => {
-    const mockedFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ show_hint: true }),
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (authApi.getFirstStartHint as any).mockResolvedValue({ show_hint: true });
 
     render(
       <MemoryRouter>

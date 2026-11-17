@@ -26,10 +26,6 @@ test.describe("REQ-4013: Datenklassen Export", () => {
     expect(data).toHaveProperty("version");
     expect(data).toHaveProperty("datanodes");
     expect(Array.isArray(data.datanodes)).toBe(true);
-
-    console.log(
-      `Export OK: version=${data.version}, ${data.datanodes.length} Eintraege`
-    );
   });
 
   test("Export-Button laedt JSON herunter (UI)", async ({ page }) => {
@@ -65,9 +61,5 @@ test.describe("REQ-4013: Datenklassen Export", () => {
     expect(data).toHaveProperty("version");
     expect(data).toHaveProperty("datanodes");
     expect(Array.isArray(data.datanodes)).toBe(true);
-
-    console.log(
-      `UI Export OK: Datei="${download.suggestedFilename()}", version=${data.version}, ${data.datanodes.length} Eintraege`
-    );
   });
 });

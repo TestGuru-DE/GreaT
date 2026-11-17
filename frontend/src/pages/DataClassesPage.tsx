@@ -92,16 +92,11 @@ export default function DataClassesPage() {
   async function handleImportJSON(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const fd = new FormData();
-    fd.append('file', file);
     try {
-      const r = await fetch('/api/datanodes/import-user', { method: 'POST', body: fd });
-      const d = await r.json();
-      if (r.ok) {
+      const d = await datanodesApi.importUser(file);
+      if (d) {
         alert(`✅ ${d.imported} Klassen importiert`);
         reload();
-      } else {
-        alert(`❌ ${d.detail}`);
       }
     } catch (err) {
       alert('Fehler beim Import: ' + String(err));

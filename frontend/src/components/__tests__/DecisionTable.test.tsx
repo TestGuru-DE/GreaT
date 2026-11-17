@@ -1,4 +1,4 @@
-// REQ-5003 + REQ-5004 + REQ-5005: Tests fuer DecisionTable-Komponente
+﻿// REQ-5003 + REQ-5004 + REQ-5005: Tests fuer DecisionTable-Komponente
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import DecisionTable from "../DecisionTable";

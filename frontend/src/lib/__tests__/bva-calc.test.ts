@@ -1,4 +1,4 @@
-// REQ-3041, REQ-3042: Tests fuer Grenzwertanalyse-Berechnungen mit Decimal.js
+﻿// REQ-3041, REQ-3042: Tests fuer Grenzwertanalyse-Berechnungen mit Decimal.js
 // ISTQB-konform: 2-Wert = 4, 3-Wert = 6, 4-Wert = 8 Werte
 import { describe, it, expect } from "vitest";
 import {

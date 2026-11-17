@@ -1,4 +1,4 @@
-// REQ-3041, REQ-3042: Grenzwertanalyse-Berechnungen mit Decimal.js
+﻿// REQ-3041, REQ-3042: Grenzwertanalyse-Berechnungen mit Decimal.js
 // ISTQB-konform: 2-Wert = 4 Werte, 3-Wert = 6 Werte, 4-Wert = 8 Werte
 import Decimal from "decimal.js";
 

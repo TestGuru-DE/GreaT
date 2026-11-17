@@ -1,4 +1,4 @@
-// B-42: ApiError-Klasse fuer typsichere Fehlerbehandlung
+﻿// B-42: ApiError-Klasse fuer typsichere Fehlerbehandlung
 export class ApiError extends Error {
   public readonly status: number;
   public readonly code?: string;

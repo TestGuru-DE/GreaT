@@ -1,4 +1,4 @@
-/** B-32: Navigation nur nach Login sichtbar */
+﻿/** B-32: Navigation nur nach Login sichtbar */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";

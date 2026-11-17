@@ -1,4 +1,4 @@
-// REQ-4024: Tests fuer AuditTooltip
+﻿// REQ-4024: Tests fuer AuditTooltip
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import AuditTooltip from "../AuditTooltip";

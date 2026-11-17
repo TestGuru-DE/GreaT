@@ -1,8 +1,8 @@
-// REQ-NEU: Grafische Regeldarstellung als SVG-Visualisierung
+﻿// REQ-NEU: Grafische Regeldarstellung als SVG-Visualisierung
 // Zeigt Verbindungen zwischen Werten verschiedener Kategorien als farbige Linien
 // Regeltypen: exclude (rot/verboten), dependency (violett/abhängig), combine (grün/kombinieren)
 import { useEffect, useState, useRef, useCallback } from "react";
-import { rulesApi, categoriesApi } from "../api/client";
+import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
 import type { Category, Value } from "../types";
 
@@ -90,7 +90,7 @@ export default function RuleVisualization({ projectId }: Props) {
       // Werte für alle Kategorien laden
       const valMap: Record<number, Value[]> = {};
       await Promise.all(catList.map(async (c) => {
-        const vals = await categoriesApi.getValues(c.id);
+        const vals = await valuesApi.list(c.id);
         valMap[c.id] = vals;
       }));
       setCatValues(valMap);

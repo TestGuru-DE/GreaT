@@ -1,4 +1,4 @@
-// REQ-3054: Tests für useKeyboardNav Hook
+﻿// REQ-3054: Tests für useKeyboardNav Hook
 import { renderHook, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 import { useKeyboardNav, type NavigableItem } from "../useKeyboardNav";

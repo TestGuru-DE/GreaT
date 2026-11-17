@@ -1,4 +1,4 @@
-// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
+﻿// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";

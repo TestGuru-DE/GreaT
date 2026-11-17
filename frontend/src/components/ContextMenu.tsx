@@ -1,4 +1,4 @@
-// REQ-1211: Kontextmenue (Rechtsklick)
+﻿// REQ-1211: Kontextmenue (Rechtsklick)
 import { useEffect, useRef } from "react";
 
 export interface ContextMenuItem {

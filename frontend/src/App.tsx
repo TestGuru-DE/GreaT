@@ -1,4 +1,4 @@
-// REQ-1204 + REQ-2003 + REQ-3001: Routing + Toast-Container + Top-Navigation
+﻿// REQ-1204 + REQ-2003 + REQ-3001: Routing + Toast-Container + Top-Navigation
 // REQ-3062: System theme sync
 // B-45: ErrorBoundary um alle Routes
 import { useEffect, useState, lazy, Suspense } from "react";

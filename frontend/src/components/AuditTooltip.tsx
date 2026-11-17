@@ -1,4 +1,4 @@
-// REQ-4024: Audit-Trail-Tooltip (wer hat zuletzt geaendert)
+﻿// REQ-4024: Audit-Trail-Tooltip (wer hat zuletzt geaendert)
 // Teil von EPIC-18 (Multi-User) / Sprint 13
 //
 // Zeigt dezent ein Tooltip mit "Zuletzt geaendert von X am Y"

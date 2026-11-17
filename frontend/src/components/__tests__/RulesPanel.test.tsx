@@ -1,8 +1,8 @@
-// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
+﻿// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import RulesPanel from "../RulesPanel";
-import { rulesApi, categoriesApi } from "../../api/client";
+import { rulesApi, categoriesApi, valuesApi } from "../../api/client";
 
 vi.mock("../../api/client", () => ({
   rulesApi: {
@@ -12,7 +12,9 @@ vi.mock("../../api/client", () => ({
   },
   categoriesApi: {
     list: vi.fn(),
-    getValues: vi.fn(),
+  },
+  valuesApi: {
+    list: vi.fn(),
   },
 }));
 
@@ -34,7 +36,7 @@ describe("RulesPanel - REQ-3003 Regeleditor (Formular + direktes Speichern)", ()
   beforeEach(() => {
     vi.mocked(rulesApi.list).mockResolvedValue([]);
     vi.mocked(categoriesApi.list).mockResolvedValue(categories as never);
-    vi.mocked(categoriesApi.getValues).mockImplementation(
+    vi.mocked(valuesApi.list).mockImplementation(
       (catId: number) => Promise.resolve((valuesByCat[catId] ?? []) as never)
     );
   });
@@ -158,7 +160,7 @@ describe("RulesPanel - REQ-3004 Regelwiderspruch-Erkennung", () => {
   beforeEach(() => {
     vi.mocked(rulesApi.list).mockResolvedValue([]);
     vi.mocked(categoriesApi.list).mockResolvedValue(categories as never);
-    vi.mocked(categoriesApi.getValues).mockImplementation(
+    vi.mocked(valuesApi.list).mockImplementation(
       (catId: number) => Promise.resolve((valuesByCat[catId] ?? []) as never)
     );
   });

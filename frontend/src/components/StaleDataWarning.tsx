@@ -1,4 +1,4 @@
-// REQ-4022: StaleDataWarning-Banner bei 409-Conflict
+﻿// REQ-4022: StaleDataWarning-Banner bei 409-Conflict
 // Teil von EPIC-18 (Multi-User) / Sprint 12
 //
 // Zeigt ein deutliches Banner wenn Daten veraltet sind (Optimistic Concurrency Conflict).

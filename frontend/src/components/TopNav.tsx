@@ -1,4 +1,4 @@
-// REQ-3001: Einheitliche Top-Navigation in jeder Ansicht
+﻿// REQ-3001: Einheitliche Top-Navigation in jeder Ansicht
 // REQ-4028 AK-3: "Passwort aendern" fuer alle Rollen
 import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";

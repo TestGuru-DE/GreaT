@@ -1,12 +1,13 @@
-// REQ-5000 + REQ-5003 + REQ-5004 + REQ-5005: Zustand Store fuer Entscheidungstabelle
+﻿// REQ-5000 + REQ-5003 + REQ-5004 + REQ-5005: Zustand Store fuer Entscheidungstabelle
 // REQ-5021: Priorisierung von Wirkungen (Override)
+
 import { create } from "zustand";
+import { decisionTableApi } from "../api/client";
 import type {
-  DecisionTableRow,
   DecisionTableCause,
   DecisionTableEffect,
-  DecisionTableGenerateResponse,
-} from "../types";
+  DecisionTableRow,
+} from "../api/client";
 
 interface DecisionTableChecksum {
   checksum: number;
@@ -103,48 +104,13 @@ export const useDecisionTableStore = create<DecisionTableState>((set, get) => ({
     set({ loading: true, error: null });
     const state = get();
     try {
-      const response = await fetch("/api/decision-table/generate", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: projectId,
-          effect_mode: state.effectMode,
-          enable_override: state.enableOverride,
-          priorities: Object.keys(state.effectPriorities).length > 0
-            ? state.effectPriorities
-            : undefined,
-        }),
+      const data = await decisionTableApi.generate(projectId, {
+        effect_mode: state.effectMode,
+        enable_override: state.enableOverride,
+        priorities: Object.keys(state.effectPriorities).length > 0
+          ? state.effectPriorities
+          : undefined,
       });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ detail: "Generierung fehlgeschlagen" }));
-        // REQ-5000: Freundliche Fehlermeldung fuer den User
-        let message = "Generierung fehlgeschlagen";
-
-        if (response.status === 422) {
-          // FastAPI Validation Error – detail kann ein Array oder Objekt sein
-          if (Array.isArray(err.detail)) {
-            // Extrahiere die ersten Fehlermeldung
-            const firstErr = err.detail[0];
-            if (firstErr && firstErr.msg) {
-              message = firstErr.msg;
-            } else {
-              message = "Ungueltige Anfrage. Bitte pruefe, dass mindestens eine Ursache- und eine Wirkungskategorie existiert.";
-            }
-          } else if (typeof err.detail === "string") {
-            message = err.detail;
-          } else {
-            message = "Ungueltige Anfrage. Ursachen und Wirkungen muessen korrekt konfiguriert sein.";
-          }
-        } else if (typeof err.detail === "string") {
-          message = err.detail;
-        } else if (err.detail && typeof err.detail === "object") {
-          message = "Bitte pruefe deine Eingabe. Ursachen und Wirkungen muessen korrekt konfiguriert sein.";
-        }
-
-        throw new Error(message);
-      }
-      const data: DecisionTableGenerateResponse = await response.json();
       set({
         causes: data.causes,
         effects: data.effects,
@@ -188,19 +154,11 @@ export const useDecisionTableStore = create<DecisionTableState>((set, get) => ({
   runCollapse: async (projectId) => {
     set({ loading: true });
     try {
-      const response = await fetch("/api/decision-table/collapse", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId }),
+      const data = await decisionTableApi.collapse(projectId);
+      set({
+        rules: data.rules || [],
+        collapsedCount: data.collapsed_count || 0,
       });
-      if (response.ok) {
-        const data = await response.json();
-        set({
-          rules: data.rules || [],
-          collapsedCount: data.collapsed_count || 0,
-        });
-      }
     } finally {
       set({ loading: false });
     }
@@ -210,15 +168,7 @@ export const useDecisionTableStore = create<DecisionTableState>((set, get) => ({
   loadCategories: async (projectId) => {
     set({ loading: true, error: null });
     try {
-      const response = await fetch(`/api/decision-table/categories/${projectId}`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ detail: "Laden fehlgeschlagen" }));
-        set({ loading: false, error: typeof err.detail === "string" ? err.detail : "Kategorien konnten nicht geladen werden" });
-        return;
-      }
-      const data = await response.json();
+      const data = await decisionTableApi.loadCategories(projectId);
       set({ causes: data.causes ?? [], effects: data.effects ?? [], loading: false });
     } catch {
       set({ loading: false, error: "Kategorien konnten nicht geladen werden" });
@@ -228,21 +178,12 @@ export const useDecisionTableStore = create<DecisionTableState>((set, get) => ({
   runValidate: async (projectId) => {
     set({ loading: true });
     try {
-      const response = await fetch("/api/decision-table/validate", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: projectId }),
-      }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        set({
-          checksum: data.checksum || null,
-          contradictions: data.contradictions || [],
-          gaps: data.gaps || [],
-        });
-      }
+      const data = await decisionTableApi.validate(projectId);
+      set({
+        checksum: data.checksum || null,
+        contradictions: data.contradictions || [],
+        gaps: data.gaps || [],
+      });
     } finally {
       set({ loading: false });
     }

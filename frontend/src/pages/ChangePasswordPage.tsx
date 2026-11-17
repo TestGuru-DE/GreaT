@@ -1,4 +1,4 @@
-// REQ-4028 AK-3: Seite "Passwort aendern" fuer alle Rollen
+﻿// REQ-4028 AK-3: Seite "Passwort aendern" fuer alle Rollen
 import { useState, FormEvent } from "react";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";

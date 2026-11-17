@@ -1,4 +1,4 @@
-// Startseite mit Apple-Style Kacheln fuer Hauptaktivitaeten
+﻿// Startseite mit Apple-Style Kacheln fuer Hauptaktivitaeten
 // Erreichbar via: TopNav "Home"-Button oder Klick auf "G.R.E.A.T." Logo
 import { useNavigate } from 'react-router-dom';
 import {

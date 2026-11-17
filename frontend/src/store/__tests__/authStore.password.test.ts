@@ -1,9 +1,18 @@
-// REQ-4028 AK-1: Tests fuer passwordChangeRequired in authStore
+﻿// REQ-4028 AK-1: Tests fuer passwordChangeRequired in authStore
 import { renderHook, act } from "@testing-library/react";
 import { useAuthStore } from "../authStore";
-import * as authApi from "../../api/authApi";
+import * as authApiModule from "../../api/authApi";
 
 vi.mock("../../api/authApi", () => ({
+  authApi: {
+    login: vi.fn(),
+    logout: vi.fn(),
+    me: vi.fn(),
+    refresh: vi.fn(),
+    getFirstStartHint: vi.fn(),
+    changePassword: vi.fn(),
+  },
+  // Legacy exports for backwards compatibility
   login: vi.fn(),
   logout: vi.fn(),
   me: vi.fn(),
@@ -56,14 +65,14 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
 
   describe("login mit password_change_required", () => {
     it("setzt passwordChangeRequired=true wenn API es meldet", async () => {
-      vi.mocked(authApi.login).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.login).mockResolvedValue({
         user_id: 1,
         username: "admin",
         role: "admin",
         message: "Login erfolgreich",
         password_change_required: true,
       });
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -81,13 +90,13 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
     });
 
     it("setzt passwordChangeRequired=false wenn API es nicht meldet", async () => {
-      vi.mocked(authApi.login).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.login).mockResolvedValue({
         user_id: 1,
         username: "admin",
         role: "admin",
         message: "Login erfolgreich",
       });
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -106,7 +115,7 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
 
   describe("loadUser mit password_change_required", () => {
     it("setzt passwordChangeRequired=true wenn /auth/me es meldet", async () => {
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -124,7 +133,7 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
     });
 
     it("setzt passwordChangeRequired=false wenn /auth/me es nicht meldet", async () => {
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -143,7 +152,7 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
 
   describe("changePassword", () => {
     it("setzt passwordChangeRequired=false nach erfolgreichem Wechsel", async () => {
-      vi.mocked(authApi.changePassword).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.changePassword).mockResolvedValue({
         message: "Passwort wurde geaendert",
       });
 
@@ -161,7 +170,7 @@ describe("authStore - REQ-4028 passwordChangeRequired", () => {
     });
 
     it("wirft Error bei fehlgeschlagenem Wechsel und laesst Flag unveraendert", async () => {
-      vi.mocked(authApi.changePassword).mockRejectedValue(
+      vi.mocked(authApiModule.authApi.changePassword).mockRejectedValue(
         new Error("current_password_invalid")
       );
 

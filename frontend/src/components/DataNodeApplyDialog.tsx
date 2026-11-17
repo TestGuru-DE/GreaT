@@ -1,4 +1,4 @@
-// REQ-4018: Dialog "Datenklasse anwenden auf: <Kategorie>" (DataNode-Baum)
+﻿// REQ-4018: Dialog "Datenklasse anwenden auf: <Kategorie>" (DataNode-Baum)
 // Laedt den hierarchischen Datenklassen-Baum, der Nutzer waehlt Werte aus
 // und uebernimmt sie als Werte der Kategorie.
 import { useEffect, useState } from "react";

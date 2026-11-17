@@ -1,4 +1,4 @@
-// REQ-4018: Der GenerateStore soll die konfigurierte Obergrenze fuer Testfaelle
+﻿// REQ-4018: Der GenerateStore soll die konfigurierte Obergrenze fuer Testfaelle
 // respektieren, indem sie als 'limit' an das Backend mitgeschickt wird.
 import { renderHook, act } from '@testing-library/react';
 import { useGenerateStore } from '../generateStore';

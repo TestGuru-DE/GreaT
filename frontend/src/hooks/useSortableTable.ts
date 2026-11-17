@@ -1,4 +1,4 @@
-// REQ-1214: Testfalltabelle sortieren
+﻿// REQ-1214: Testfalltabelle sortieren
 import { useState, useMemo } from "react";
 
 type SortDir = "asc" | "desc" | null;

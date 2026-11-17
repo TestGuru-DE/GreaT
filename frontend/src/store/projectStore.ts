@@ -1,4 +1,4 @@
-// REQ-1204 + REQ-2002: Zustand Store fuer Projektliste mit Bulk-Delete
+﻿// REQ-1204 + REQ-2002: Zustand Store fuer Projektliste mit Bulk-Delete
 import { create } from "zustand";
 import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
@@ -14,7 +14,7 @@ interface ProjectStore {
   fetchProjects: () => Promise<void>;
   createProject: (name: string) => Promise<void>;
   deleteProject: (id: number) => Promise<void>;
-  bulkDelete: (ids: number[]) => Promise<BulkDeleteResult>;
+  
   bulkDeleteForce: (ids: number[]) => Promise<BulkDeleteResult>;
 }
 
@@ -43,12 +43,6 @@ export const useProjectStore = create<ProjectStore>((set) => ({
   deleteProject: async (id: number) => {
     await projectsApi.forceDelete(id);
     set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
-  },
-
-  bulkDelete: async (ids: number[]) => {
-    const res = await projectsApi.bulkDelete(ids);
-    set((s) => ({ projects: s.projects.filter((p) => !ids.includes(p.id) || (res.blocked ?? []).includes(p.id)) }));
-    return res;
   },
 
   bulkDeleteForce: async (ids: number[]) => {

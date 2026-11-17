@@ -1,4 +1,4 @@
-// BUGFIX: Error Boundary - verhindert schwarzen Bildschirm bei Render-Fehlern
+﻿// BUGFIX: Error Boundary - verhindert schwarzen Bildschirm bei Render-Fehlern
 // REQ-4001, REQ-1208, REQ-2001
 // B-45: Theme-Tokens statt hartkodierter Farben
 import { Component, ReactNode } from "react";

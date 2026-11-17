@@ -1,4 +1,4 @@
-// REQ-3045: Export-Buttons muessen in allen Kern-Themes schwarzen Text behalten
+﻿// REQ-3045: Export-Buttons muessen in allen Kern-Themes schwarzen Text behalten
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import GenerationsPanel from "../GenerationsPanel";

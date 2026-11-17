@@ -1,8 +1,8 @@
-// REQ-NEU: Tests fuer RuleVisualization (grafische Regeldarstellung)
+﻿// REQ-NEU: Tests fuer RuleVisualization (grafische Regeldarstellung)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import RuleVisualization from "../RuleVisualization";
-import { rulesApi, categoriesApi } from "../../api/client";
+import { rulesApi, categoriesApi, valuesApi } from "../../api/client";
 
 vi.mock("../../api/client", () => ({
   rulesApi: {
@@ -12,7 +12,9 @@ vi.mock("../../api/client", () => ({
   },
   categoriesApi: {
     list: vi.fn(),
-    getValues: vi.fn(),
+  },
+  valuesApi: {
+    list: vi.fn(),
   },
 }));
 
@@ -64,7 +66,7 @@ describe("RuleVisualization - grafische Regeldarstellung", () => {
     vi.clearAllMocks();
     vi.mocked(rulesApi.list).mockResolvedValue(mockRules as never);
     vi.mocked(categoriesApi.list).mockResolvedValue(categories as never);
-    vi.mocked(categoriesApi.getValues).mockImplementation(
+    vi.mocked(valuesApi.list).mockImplementation(
       (catId: number) => Promise.resolve((valuesByCat[catId] ?? []) as never)
     );
   });

@@ -1,4 +1,4 @@
-// REQ-1203: Typsicherer API-Client fuer alle FastAPI-Endpunkte
+﻿// REQ-1203: Typsicherer API-Client fuer alle FastAPI-Endpunkte
 // REQ-1209, REQ-1213: Rename + Reorder Endpunkte
 // B-43: Token-Refresh + ApiError-Interceptor
 import axios from "axios";
@@ -78,8 +78,7 @@ export const projectsApi = {
     api.put<Project>("/projects/" + id, data).then((r) => r.data),
   forceDelete: (id: number) =>
     api.delete<{ok: boolean}>("/projects/" + id + "/force").then((r) => r.data),
-  bulkDelete: (ids: number[]) =>
-    api.post<{deleted: number; blocked: number[]}>("/projects/bulk-delete", { project_ids: ids }).then((r) => r.data),
+  
   bulkDeleteForce: (ids: number[]) =>
     api.post<{deleted: number; blocked: number[]}>("/projects/bulk-delete-force", { project_ids: ids }).then((r) => r.data),
 };
@@ -92,8 +91,7 @@ export const categoriesApi = {
     api.post<Category>("/projects/" + projectId + "/categories", data).then((r) => r.data),
   delete: (categoryId: number) =>
     api.delete<{ok: boolean}>("/categories/" + categoryId).then((r) => r.data),
-  getValues: (categoryId: number) =>
-    api.get<Value[]>("/categories/" + categoryId + "/values").then((r) => r.data),
+  
   updateProperties: (valueId: number, props: { risk_weight?: number; vtype?: string; allowed?: boolean }) =>
     api.patch<Value>("/values/" + valueId + "/properties", props).then((r) => r.data),
   setDefault: (valueId: number) =>
@@ -155,9 +153,8 @@ export const renameApi = {
 };
 
 // --- Category Properties (REQ-4016) ---
+
 export const categoryPropertiesApi = {
-  updateIsResult: (categoryId: number, is_result: boolean) =>
-    api.patch<Category>("/categories/" + categoryId + "/properties", { is_result }).then((r) => r.data),
   // REQ-5002: Kategorie-Typ standard | cause | effect
   updateCategoryType: (categoryId: number, category_type: "standard" | "cause" | "effect") =>
     api.patch<Category>("/categories/" + categoryId + "/properties", { category_type }).then((r) => r.data),
@@ -171,37 +168,11 @@ export const reorderApi = {
 export default api;
 
 
-// --- Datenklassen (REQ-2003) ---
-export interface DataClass {
-  id: number;
-  name: string;
-  value_type: string;
-  description: string | null;
-  is_system?: boolean;
-}
 
-export interface DataClassValue {
-  id: number;
-  value: string;
-}
+// export interface DataClass { ... }
+// export interface DataClassValue { ... }
+// export const dataclassApi = { ... }
 
-export const dataclassApi = {
-  list: () => api.get<DataClass[]>("/dataclasses").then((r) => r.data),
-  create: (data: { name: string; value_type: string; description?: string }) =>
-    api.post<DataClass>("/dataclasses", data).then((r) => r.data),
-  delete: (id: number) =>
-    api.delete<{ok: boolean}>("/dataclasses/" + id).then((r) => r.data),
-  bulkDelete: (ids: number[]) =>
-    api.post<{deleted: number; blocked: number}>("/dataclasses/bulk-delete", { dataclass_ids: ids }).then((r) => r.data),
-  listValues: (dcId: number) =>
-    api.get<DataClassValue[]>("/dataclasses/" + dcId + "/values").then((r) => r.data),
-  addValue: (dcId: number, value: string) =>
-    api.post<DataClassValue>("/dataclasses/" + dcId + "/values", { value }).then((r) => r.data),
-  deleteValue: (vid: number) =>
-    api.delete<{ok: boolean}>("/dataclasses/values/" + vid).then((r) => r.data),
-  applyToCategory: (categoryId: number, dataclassId: number) =>
-    api.post<{added: number; dataclass_name: string}>("/categories/" + categoryId + "/apply-dataclass", { dataclass_id: dataclassId }).then((r) => r.data),
-};
 export interface Rule {
   id: number;
   type: string;
@@ -230,11 +201,8 @@ export const rulesApi = {
 // REQ-4018: Hierarchische Datenklassen (DataNodes)
 export const datanodesApi = {
   getTree: () => api.get<import("../types").DataNode[]>("/datanodes/tree").then((r) => r.data),
-  get: (nodeId: number) => api.get<import("../types").DataNode>("/datanodes/" + nodeId).then((r) => r.data),
   create: (data: Partial<import("../types").DataNode>) =>
     api.post<import("../types").DataNode>("/datanodes", data).then((r) => r.data),
-  update: (nodeId: number, data: Partial<import("../types").DataNode>) =>
-    api.put<import("../types").DataNode>("/datanodes/" + nodeId, data).then((r) => r.data),
   delete: (nodeId: number) => api.delete("/datanodes/" + nodeId).then((r) => r.data),
   addValue: (nodeId: number, value: string, sort_order?: number) =>
     api.post<import("../types").DataNodeValue>("/datanodes/" + nodeId + "/values", { value, sort_order: sort_order ?? 0 }).then((r) => r.data),
@@ -244,4 +212,140 @@ export const datanodesApi = {
     api.post<{ status: string; nodes_created: number }>("/datanodes/bugmagnet-import").then((r) => r.data),
   getBugMagnetStatus: () =>
     api.get<{ imported: boolean }>("/datanodes/bugmagnet-status").then((r) => r.data),
+  
+  importUser: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post<{ imported: number }>("/datanodes/import-user", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data);
+  },
+};
+
+// --- Entscheidungstabelle (aus decisionTableStore.ts ausgelagert) ---
+export interface DecisionTableCause {
+  id: number;
+  name: string;
+  values?: string[];
+}
+
+export interface DecisionTableEffect {
+  id: number;
+  name: string;
+  values?: string[];
+}
+
+export interface DecisionTableRow {
+  id: number;
+  causes: Record<string, string>;
+  effects: Record<string, string | null>;
+}
+
+export interface DecisionTableChecksum {
+  checksum: number;
+  expected: number;
+  status: string;
+  message: string;
+}
+
+export interface DecisionTableContradiction {
+  rule_a: number;
+  rule_b: number;
+  message: string;
+}
+
+export interface DecisionTableGap {
+  combination: Record<string, string>;
+  message: string;
+}
+
+export const decisionTableApi = {
+  generate: (projectId: number, data: {
+    effect_mode?: string;
+    enable_override?: boolean;
+    priorities?: Record<string, number>;
+  }) =>
+    api.post<{ causes: DecisionTableCause[]; effects: DecisionTableEffect[]; rules: DecisionTableRow[]; canGenerate: boolean }>(
+      "/decision-table/generate",
+      { project_id: projectId, ...data }
+    ).then((r) => r.data),
+
+  collapse: (projectId: number) =>
+    api.post<{ rules: DecisionTableRow[]; collapsed_count: number }>(
+      "/decision-table/collapse",
+      { project_id: projectId }
+    ).then((r) => r.data),
+
+  loadCategories: (projectId: number) =>
+    api.get<{ causes: DecisionTableCause[]; effects: DecisionTableEffect[] }>(
+      `/decision-table/categories/${projectId}`
+    ).then((r) => r.data),
+
+  validate: (projectId: number) =>
+    api.post<{
+      checksum: DecisionTableChecksum | null;
+      contradictions: DecisionTableContradiction[];
+      gaps: DecisionTableGap[];
+    }>(
+      "/decision-table/validate",
+      { project_id: projectId }
+    ).then((r) => r.data),
+
+  // REQ-5018: Cause-Effect-Graph
+  getGraph: (projectId: number) =>
+    api.get<{ causes: DecisionTableCause[]; effects: DecisionTableEffect[]; edges: { from: string; to: string; type: string; label: string }[] }>(
+      `/decision-table/graph/${projectId}`
+    ).then((r) => r.data),
+};
+
+// --- Constraints (aus ConstraintDialog.tsx ausgelagert) ---
+export interface Constraint {
+  id: number;
+  type: string;
+  targets: number[] | { from: number; to: number };
+  description?: string;
+}
+
+export const constraintsApi = {
+  list: (projectId: number) =>
+    api.get<Constraint[]>(`/decision-table/constraints/${projectId}`).then((r) => r.data),
+
+  create: (projectId: number, data: {
+    constraint_type: string;
+    targets: number[] | { from: number; to: number };
+    description?: string;
+  }) =>
+    api.post<Constraint>("/decision-table/constraints", {
+      project_id: projectId,
+      ...data,
+    }).then((r) => r.data),
+
+  delete: (id: number) =>
+    api.delete(`/decision-table/constraints/${id}`).then((r) => r.data),
+};
+
+// --- Backup / Reset (aus SettingsPage.tsx ausgelagert) ---
+export const backupApi = {
+  // Backup erstellen (optional mit Passwort)
+  create: (password?: string) => {
+    const config = { responseType: "blob" as const };
+    if (password) {
+      return api.post<Blob>("/backup", { password }, config).then((r) => r.data);
+    }
+    return api.get<Blob>("/backup", config).then((r) => r.data);
+  },
+
+  // Backup wiederherstellen
+  restore: (file: File, password?: string) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    if (password) fd.append("password", password);
+    return api.post<{ projects_restored: number }>("/backup/restore", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }).then((r) => r.data);
+  },
+
+  // Datenbank zuruecksetzen
+  reset: () =>
+    api.post<{ default_admin_created: boolean; default_admin_username?: string }>("/backup/reset").then((r) => r.data),
 };

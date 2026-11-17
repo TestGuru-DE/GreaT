@@ -1,4 +1,4 @@
-// REQ-3041: Tests fuer PreviewTable-Komponente
+﻿// REQ-3041: Tests fuer PreviewTable-Komponente
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PreviewTable } from "../PreviewTable";

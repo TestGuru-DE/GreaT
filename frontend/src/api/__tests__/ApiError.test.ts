@@ -1,4 +1,4 @@
-// B-42: Tests fuer ApiError-Klasse
+﻿// B-42: Tests fuer ApiError-Klasse
 import { describe, it, expect } from 'vitest';
 import { ApiError } from '../ApiError';
 

@@ -1,4 +1,4 @@
-// REQ-3052: Tests für Tabellensortierung
+﻿// REQ-3052: Tests für Tabellensortierung
 import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useSortableTable } from "../useSortableTable";

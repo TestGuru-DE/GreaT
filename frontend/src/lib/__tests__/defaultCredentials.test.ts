@@ -1,4 +1,4 @@
-// REQ-4027 AK-7: Tests fuer defaultCredentials
+﻿// REQ-4027 AK-7: Tests fuer defaultCredentials
 import { describe, it, expect } from "vitest";
 import { DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD } from "../defaultCredentials";
 

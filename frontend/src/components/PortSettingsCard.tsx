@@ -73,5 +73,3 @@ export function PortSettingsCard() {
   );
 }
 
-export default PortSettingsCard;
-

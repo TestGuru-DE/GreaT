@@ -1,4 +1,4 @@
-// REQ-3041: Tests fuer NumberlineVisualization-Komponente
+﻿// REQ-3041: Tests fuer NumberlineVisualization-Komponente
 import { describe, it, expect } from "vitest";
 import { render } from "@testing-library/react";
 import { NumberlineVisualization } from "../NumberlineVisualization";

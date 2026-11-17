@@ -1,4 +1,4 @@
-// REQ-4023: Projekt-Mitgliederverwaltung
+﻿// REQ-4023: Projekt-Mitgliederverwaltung
 // Teil von EPIC-18 (Multi-User) / Sprint 13
 //
 // Ermoglicht dem Projekt-Owner/Admin, Team-Mitglieder
