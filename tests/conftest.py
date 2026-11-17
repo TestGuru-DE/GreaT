@@ -62,10 +62,11 @@ def _make_token_client(username: str, role: str) -> TestClient:
         user.role = role
         user.is_active = True
         user.default_password_active = False
+        user.token_version = 0
         user.set_password(password)
         db.commit()
         db.refresh(user)
-        token = create_access_token(user.id, user.username, user.role)
+        token = create_access_token(user.id, user.username, user.role, user.token_version)
     finally:
         db.close()
     client = TestClient(app_instance())

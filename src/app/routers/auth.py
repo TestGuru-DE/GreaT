@@ -14,6 +14,7 @@ from ..auth_utils import create_access_token, create_refresh_token, decode_token
 from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_editor_or_admin, require_writer, require_api_capable
 from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
+from ..config import GREAT_TRUST_PROXY_HEADERS
 from ..schemas import PasswordChangeRequest
 from ..password_policy import PasswordError
 from ..auth_service import change_own_password, is_first_start_hint_active
@@ -31,10 +32,16 @@ def login(
     """Login with username/password, returns access + refresh tokens in httpOnly cookies.
 
     REQ-4001: POST /auth/login akzeptiert Benutzername/Passwort und liefert JWT Access-Token + Refresh-Token.
+    B-08: Rate-Limit pro IP|Username, Reset nach erfolgreichem Login.
     """
-    # Rate limiting
-    client_ip = request.client.host
-    is_limited, retry_after = login_rate_limiter.is_rate_limited(client_ip)
+    # B-08: Rate limiting pro IP|Username
+    client_ip = (
+        request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
+        if GREAT_TRUST_PROXY_HEADERS
+        else request.client.host
+    )
+    key = f"{client_ip}|{form_data.username.lower()}"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(key, is_failure=True)
     if is_limited:
         raise HTTPException(
             status_code=429,
@@ -50,8 +57,11 @@ def login(
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
 
-    # Create tokens
-    access_token = create_access_token(user.id, user.username, user.role)
+    # B-08: Reset rate-limiter nach erfolgreichem Login
+    login_rate_limiter.is_rate_limited(key, is_failure=False)
+
+    # B-06: Token mit token_version erzeugen
+    access_token = create_access_token(user.id, user.username, user.role, user.token_version)
     refresh_token = create_refresh_token(user.id)
 
     # Store refresh token in DB
@@ -152,12 +162,30 @@ def refresh_token_endpoint(
     if not user:
         raise HTTPException(status_code=401, detail="Nutzer nicht gefunden")
 
+    # B-06: Deaktivierte Nutzer koennen nicht refreshen
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
+
+    # B-06: Token-Version pruefen (Access-Token im Cookie)
+    access_token_str = request.cookies.get("access_token")
+    if access_token_str:
+        try:
+            access_payload = decode_token(access_token_str)
+            if access_payload.get("type") == "access":
+                token_tv = access_payload.get("tv", 0)
+                if token_tv != user.token_version:
+                    raise HTTPException(status_code=401, detail="Sitzung abgelaufen, bitte neu anmelden")
+        except jwt.ExpiredSignatureError:
+            pass  # Access-Token abgelaufen ist OK – das ist der Grund fuer den Refresh
+        except jwt.InvalidTokenError:
+            pass  # Ungueltiger Access-Token ist OK – Refresh soll neuen liefern
+
     # B2: REVOKE old refresh token (Rotation!)
     rt.is_revoked = True
     db.commit()
 
     # Create NEW tokens
-    new_access_token = create_access_token(user.id, user.username, user.role)
+    new_access_token = create_access_token(user.id, user.username, user.role, user.token_version)
     new_refresh_token = create_refresh_token(user.id)
 
     # Store new refresh token in DB

@@ -38,6 +38,11 @@ def _load_authenticated_user(request: Request, db: Session) -> User:
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
 
+    # B-06: Token-Version pruefen – Sitzungs-Invalidierung
+    token_tv = payload.get("tv", 0)
+    if token_tv != user.token_version:
+        raise HTTPException(status_code=401, detail="Sitzung abgelaufen, bitte neu anmelden")
+
     return user
 
 

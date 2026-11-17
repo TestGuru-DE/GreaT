@@ -74,6 +74,9 @@ JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
 JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
+# B-08: X-Forwarded-For nur vertrauenswürdiger Proxy
+GREAT_TRUST_PROXY_HEADERS: bool = os.getenv("GREAT_TRUST_PROXY_HEADERS", "false").lower() == "true"
+
 # Warnung wenn Default-Secrets verwendet werden (nicht in Production!)
 if not os.getenv("JWT_SECRET_KEY"):
     _jwt_log.warning("JWT_SECRET_KEY not set! Using random default. Set this in production via environment variable!")

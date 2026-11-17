@@ -64,6 +64,7 @@ Erstellt von: Program Manager Agent
 | RISK-S-004 | OWASP Top 10 nicht systematisch geprüft | 3 | 4 | 12 | 🔴 | Security Review durch Security Architect Agent vor Release |
 | RISK-S-005 | Keine Input-Validierung auf UI-Ebene (HTMX-Forms) | 3 | 3 | 9 | 🟡 | Pydantic-Validierung auf API-Ebene prüfen und erweitern |
 | RISK-S-016 | Default-Admin mit festem Passwort `changeme123!` (src/app/bootstrap.py); kein Zwang zum Passwortwechsel nach dem ersten Login; Passwort steht im Quellcode des Repositories | 4 | 5 | 20 | 🔴 | Hinweis auf Login-Seite (Risikoakzeptanz), Pflicht-Passwortwechsel (REQ-4028), Ablehnung bekannter Defaults, Rate-Limit 10/min/IP. **Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03). Hinweis zeigt Standardpasswort auf Login-Seite. Score bleibt 20 (Risiko nicht beseitigt, nur gemildert).** |
+| RISK-S-017 | Access-Token bleibt bis zu 15 min nach Logout/Passwortwechsel/Rollenaeanderung gueltig (JWT ist stateless; Server kann es nicht sofort revokieren). **Risikoakzeptanz: akzeptiertes Restrisiko, gemindert durch kurze TTL (15 min Default) und Token-Versionierung (B-06).** | 2 | 3 | 6 | 🟡 | |
 
 ## Kategorie: Betrieb
 

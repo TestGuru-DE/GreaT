@@ -16,13 +16,14 @@ from .config import (
 )
 
 
-def create_access_token(user_id: int, username: str, role: str) -> str:
+def create_access_token(user_id: int, username: str, role: str, token_version: int = 0) -> str:
     """Create JWT access token.
 
     Args:
         user_id: Database ID of the user
         username: Username for identification
         role: User role (admin, editor, viewer)
+        token_version: B-06 Token version for session invalidation
 
     Returns:
         Encoded JWT string
@@ -35,6 +36,7 @@ def create_access_token(user_id: int, username: str, role: str) -> str:
         "exp": expire,
         "type": "access",
         "jti": secrets.token_urlsafe(16),  # B2: Eindeutige Token-ID fuer Rotation
+        "tv": token_version,  # B-06: Token version for session invalidation
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 

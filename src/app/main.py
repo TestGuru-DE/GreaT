@@ -115,11 +115,22 @@ def _add_default_password_active_column(conn) -> None:
         )
 
 
+def _add_token_version_column(conn) -> None:
+    """B-06: Spalte users.token_version idempotent ergaenzen."""
+    cols = conn.exec_driver_sql("PRAGMA table_info('users')").fetchall()
+    if not cols:
+        return
+    have = {c[1] for c in cols}
+    if "token_version" not in have:
+        conn.exec_driver_sql("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
+
+
 def _migrate_db() -> None:
     if engine.url.get_backend_name() != "sqlite":
         return
     with engine.begin() as conn:
         _add_default_password_active_column(conn)
+        _add_token_version_column(conn)
         cols = conn.exec_driver_sql("PRAGMA table_info('values')").fetchall()
         have = {c[1] for c in cols}
         if "allowed" not in have:

@@ -64,7 +64,7 @@ class TestRequireWriter:
     def test_writer_allows_admin(self, _api_user_db):
         """require_writer mit Admin-User -> OK."""
         db, admin, _, _, _ = _api_user_db
-        token = create_access_token(admin.id, admin.username, admin.role)
+        token = create_access_token(admin.id, admin.username, admin.role, admin.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -76,7 +76,7 @@ class TestRequireWriter:
     def test_writer_allows_editor(self, _api_user_db):
         """require_writer mit Editor-User -> OK."""
         db, _, editor, _, _ = _api_user_db
-        token = create_access_token(editor.id, editor.username, editor.role)
+        token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -88,7 +88,7 @@ class TestRequireWriter:
     def test_writer_blocks_viewer(self, _api_user_db):
         """require_writer mit Viewer-User -> 403."""
         db, _, _, viewer, _ = _api_user_db
-        token = create_access_token(viewer.id, viewer.username, viewer.role)
+        token = create_access_token(viewer.id, viewer.username, viewer.role, viewer.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -100,7 +100,7 @@ class TestRequireWriter:
     def test_writer_blocks_api_user(self, _api_user_db):
         """require_writer mit api_user -> 403 (BLOCKER B1 fix)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -116,7 +116,7 @@ class TestRequireApiCapable:
     def test_api_capable_allows_admin(self, _api_user_db):
         """require_api_capable mit Admin-User -> OK."""
         db, admin, _, _, _ = _api_user_db
-        token = create_access_token(admin.id, admin.username, admin.role)
+        token = create_access_token(admin.id, admin.username, admin.role, admin.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -128,7 +128,7 @@ class TestRequireApiCapable:
     def test_api_capable_allows_editor(self, _api_user_db):
         """require_api_capable mit Editor-User -> OK."""
         db, _, editor, _, _ = _api_user_db
-        token = create_access_token(editor.id, editor.username, editor.role)
+        token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -140,7 +140,7 @@ class TestRequireApiCapable:
     def test_api_capable_allows_viewer(self, _api_user_db):
         """require_api_capable mit Viewer-User -> OK."""
         db, _, _, viewer, _ = _api_user_db
-        token = create_access_token(viewer.id, viewer.username, viewer.role)
+        token = create_access_token(viewer.id, viewer.username, viewer.role, viewer.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -152,7 +152,7 @@ class TestRequireApiCapable:
     def test_api_capable_allows_api_user(self, _api_user_db):
         """require_api_capable mit api_user -> OK (api_user darf lesen)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -168,7 +168,7 @@ class TestApiUserReadAccess:
     def test_api_user_can_list_projects(self, _api_user_db):
         """api_user kann Projekte auflisten (GET /api/projects)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.get(
@@ -181,7 +181,7 @@ class TestApiUserReadAccess:
     def test_api_user_cannot_create_project(self, _api_user_db):
         """api_user kann keine Projekte erstellen (POST /api/projects -> 403)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -194,7 +194,7 @@ class TestApiUserReadAccess:
     def test_api_user_cannot_delete_project(self, _api_user_db):
         """api_user kann keine Projekte loeschen (DELETE /api/projects/{pid} -> 403)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.delete(
@@ -210,7 +210,7 @@ class TestBackupBlockers:
     def test_backup_reset_blocks_editor(self, _api_user_db):
         """BLOCKER B2: Editor kann DB nicht zuruecksetzen."""
         db, _, editor, _, _ = _api_user_db
-        token = create_access_token(editor.id, editor.username, editor.role)
+        token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -222,7 +222,7 @@ class TestBackupBlockers:
     def test_backup_reset_blocks_viewer(self, _api_user_db):
         """BLOCKER B2: Viewer kann DB nicht zuruecksetzen."""
         db, _, _, viewer, _ = _api_user_db
-        token = create_access_token(viewer.id, viewer.username, viewer.role)
+        token = create_access_token(viewer.id, viewer.username, viewer.role, viewer.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -234,7 +234,7 @@ class TestBackupBlockers:
     def test_backup_reset_blocks_api_user(self, _api_user_db):
         """BLOCKER B2: api_user kann DB nicht zuruecksetzen."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -246,7 +246,7 @@ class TestBackupBlockers:
     def test_backup_reset_allows_admin(self, _api_user_db):
         """BLOCKER B2: Admin kann DB zuruecksetzen."""
         db, admin, _, _, _ = _api_user_db
-        token = create_access_token(admin.id, admin.username, admin.role)
+        token = create_access_token(admin.id, admin.username, admin.role, admin.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -259,7 +259,7 @@ class TestBackupBlockers:
     def test_backup_restore_blocks_editor(self, _api_user_db):
         """BLOCKER B3: Editor kann kein Backup wiederherstellen."""
         db, _, editor, _, _ = _api_user_db
-        token = create_access_token(editor.id, editor.username, editor.role)
+        token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -271,7 +271,7 @@ class TestBackupBlockers:
     def test_backup_restore_blocks_api_user(self, _api_user_db):
         """BLOCKER B3: api_user kann kein Backup wiederherstellen."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.post(
@@ -287,7 +287,7 @@ class TestPasswordChangeBlocksApiUser:
     def test_password_change_blocks_api_user(self, _api_user_db):
         """api_user kann kein Passwort aendern (PUT /api/users/{id}/password -> 403)."""
         db, _, _, _, api_user = _api_user_db
-        token = create_access_token(api_user.id, api_user.username, api_user.role)
+        token = create_access_token(api_user.id, api_user.username, api_user.role, api_user.token_version)
 
         client = TestClient(app)
         response = client.put(
@@ -298,14 +298,27 @@ class TestPasswordChangeBlocksApiUser:
         assert response.status_code == 403
 
     def test_password_change_allows_editor(self, _api_user_db):
-        """Editor kann eigenes Passwort aendern."""
+        """B-07: Editor kann eigenes Passwort nur ueber /auth/change-password aendern."""
         db, _, editor, _, _ = _api_user_db
-        token = create_access_token(editor.id, editor.username, editor.role)
+        token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
 
         client = TestClient(app)
+        # /api/users/{id}/password ist jetzt Admin-only (B-07)
         response = client.put(
             f"/api/users/{editor.id}/password",
-            json={"new_password": "newpass123456"},  # REQ-4028 AK-4: Mindestlaenge 12 (vorher 10 Zeichen)
+            json={"new_password": "newpass123456"},
             cookies={"access_token": token},
         )
-        assert response.status_code == 200
+        assert response.status_code == 403, "Editor darf nicht via /api/users Passwort aendern (B-07)"
+
+        # Editor nutzt /auth/change-password fuer Selbst-Wechsel
+        editor.set_password("currentpass123456")  # Set known password for verification
+        db.commit()
+        # Refresh token with new password hash
+        token2 = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
+        response2 = client.post(
+            "/auth/change-password",
+            json={"current_password": "currentpass123456", "new_password": "newpass1234567890"},
+            cookies={"access_token": token2},
+        )
+        assert response2.status_code == 200

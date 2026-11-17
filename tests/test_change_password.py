@@ -93,7 +93,7 @@ def _client_for(user_id) -> TestClient:
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
-        token = create_access_token(user.id, user.username, user.role)
+        token = create_access_token(user.id, user.username, user.role, user.token_version)
     finally:
         db.close()
     client = TestClient(app, raise_server_exceptions=False)
@@ -363,7 +363,11 @@ class TestSelfChangePassword:
         assert r.json() == {"detail": "password_too_long"}
 
     def test_success_clears_flag_and_unlocks_routes(self):
-        """REQ-4028 AK-6/AK-2: Erfolg -> Flag 0, gesperrte Route danach erreichbar."""
+        """REQ-4028 AK-6/AK-2: Erfolg -> Flag 0, gesperrte Route danach erreichbar.
+
+        B-06: Nach Passwortwechsel wird token_version erhoeht; alter Token ist ungültig.
+        Neuer Login ist erforderlich.
+        """
         user_id = _bootstrap_default_admin()
         client = _client_for(user_id)
         assert client.get("/api/users/").status_code == 403
@@ -378,8 +382,18 @@ class TestSelfChangePassword:
         flag, _ = _state(user_id)
         assert flag is False
         assert _verify(user_id, GOOD_NEW)
-        assert client.get("/api/users/").status_code == 200
-        assert client.get("/auth/me").json()["password_change_required"] is False
+
+        # B-06: Alter Token ist nach Passwortwechsel ungültig – neu anmelden
+        new_client = TestClient(app, raise_server_exceptions=False)
+        resp = new_client.post(
+            "/auth/login",
+            data={"username": "admin", "password": GOOD_NEW},
+        )
+        assert resp.status_code == 200
+        # Nach neuem Login sollte /api/users/ erreichbar sein
+        new_client.cookies.set("access_token", resp.cookies.get("access_token", ""))
+        assert new_client.get("/api/users/").status_code == 200
+        assert new_client.get("/auth/me").json()["password_change_required"] is False
 
     def test_success_response_and_errors_do_not_echo_passwords(self):
         """REQ-4028 AK-9: Weder Erfolg noch Fehler geben Passwoerter aus."""
