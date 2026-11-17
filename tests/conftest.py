@@ -164,3 +164,18 @@ def _purge_test_projects_per_test():
     finally:
         db.close()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _purge_datanodes_per_test():
+    """B-09: DataNodes und DataNodeValues je Test entfernen."""
+    from app.database import SessionLocal
+    from app.models import DataNode, DataNodeValue
+    db = SessionLocal()
+    try:
+        db.query(DataNodeValue).delete(synchronize_session=False)
+        db.query(DataNode).delete(synchronize_session=False)
+        db.commit()
+    finally:
+        db.close()
+    yield

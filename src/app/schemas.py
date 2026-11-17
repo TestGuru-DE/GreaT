@@ -308,6 +308,7 @@ class DataNodeRead(BaseModel):
     is_system: bool = False
     source: Optional[str] = None
     sort_order: int = 0
+    version: int = 0  # B-09: Fuer Concurrency-Control in PUT
     values: List[DataNodeValueRead] = []
     children: List["DataNodeRead"] = []  # Rekursiv
     

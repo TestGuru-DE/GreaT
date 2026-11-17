@@ -18,6 +18,7 @@ from .. import models, schemas
 from ..auth_deps import require_writer, require_api_capable, require_admin, get_current_user
 from ..models.auth import User
 from ..concurrency import update_with_version
+from ..datavalidation import validate_parent_id
 
 router = APIRouter(tags=["DataNodes"])
 
@@ -141,6 +142,15 @@ def create_node(
     current_user: User = Depends(require_writer),
 ):
     """REQ-4018: Neuen Knoten erstellen."""
+    # B-09: parent_id-Validierung vor dem Speichern
+    if data.parent_id is not None:
+        parent = db.get(models.DataNode, data.parent_id)
+        if not parent:
+            raise HTTPException(
+                status_code=404,
+                detail="Elternknoten nicht gefunden",
+            )
+
     node = models.DataNode(**data.model_dump())
     db.add(node)
     db.commit()
@@ -156,12 +166,18 @@ def update_node(
     current_user: User = Depends(require_writer),
 ):
     """REQ-4018: Knoten aktualisieren mit Concurrency-Support."""
+    update_data = data.model_dump(exclude={"version"}, exclude_unset=True)
+
+    # B-09: parent_id-Validierung VOR dem commit
+    if "parent_id" in update_data:
+        validate_parent_id(db, node_id, update_data["parent_id"])
+
     result = update_with_version(
         db=db,
         model=models.DataNode,
         entity_id=node_id,
         client_version=data.version,
-        update_data=data.model_dump(exclude={"version"}, exclude_unset=True),
+        update_data=update_data,
         current_user_id=current_user.id,
     )
     return result

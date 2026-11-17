@@ -31,6 +31,7 @@ from .routers import (
 from .system_dataclasses import seed_system_dataclasses
 from .seed_example import seed_example_project
 from .bootstrap import ensure_first_admin, backfill_default_password_flags
+from .datavalidation import repair_cycles_on_startup
 from .middleware.docs_auth import DocsAuthMiddleware
 from .logging_config import setup_logging, get_logger
 
@@ -54,6 +55,12 @@ async def lifespan(app: FastAPI):
         # REQ-4020/REQ-4027: Erst-Admin beim Start sicherstellen, Flag-Bestandsmigration
         ensure_first_admin(db)
         backfill_default_password_flags(db)
+        # B-09: Reparieren zyklischer parent_id-Referenzen in Bestandsdaten
+        repaired = repair_cycles_on_startup(db)
+        if repaired:
+            log.warning("Repaired %d cyclic datanode(s) on startup", repaired)
+    except Exception:  # noqa: BLE001
+        log.exception("Startup repair/seed failed")
     finally:
         db.close()
     yield
