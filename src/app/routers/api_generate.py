@@ -15,6 +15,7 @@ from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
+from ..export_utils import escape_spreadsheet_value  # B-05: Formel-Injection verhindern
 from combinatorics.utils import compute_cartesian_size
 from ..services import (
     load_categories_values,
@@ -370,7 +371,7 @@ def export_generation_csv(
     if excel:
         writer.writerow(["sep=;"])
 
-    headers = cat_headers + ["__TestCaseID", "__GenerationID", "__Strategy"]
+    headers = [escape_spreadsheet_value(h) for h in cat_headers] + ["__TestCaseID", "__GenerationID", "__Strategy"]  # B-05
     if include_status:
         headers.append("Status")
     headers.append("Fehlerwert")  # REQ-3063
@@ -378,7 +379,7 @@ def export_generation_csv(
 
     for tc in tcs:
         a = assignment_from_testcase(db, tc.id)
-        row = [a.get(h, "") for h in cat_headers]
+        row = [escape_spreadsheet_value(a.get(h, "")) for h in cat_headers]  # B-05
         row += [tc.id, gen.id, gen.strategy]
         if include_status:
             row.append(status_for_assignment(gen.project_id, a, db))
@@ -390,7 +391,7 @@ def export_generation_csv(
     csv_text: str = out.getvalue()
 
     enc_norm = encoding.lower().strip()
-    aliases = {"latin1": "iso-8859-1"}
+    aliases = {"latin1": "iso-8859-1", "latin-1": "iso-8859-1"}  # B-35
     enc = aliases.get(enc_norm, enc_norm)
 
     allowed = {"utf-8", "utf-8-sig", "cp1252", "iso-8859-1", "utf-16", "utf-16le", "utf-16be"}
@@ -541,13 +542,14 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
     ws = wb.active
     ws.title = f"Generation_{gen.id}"
 
-    # Header-Zeile (fett)
+    # Header-Zeile (fett) – B-05: Formel-Injection verhindern
     headers = cat_headers + ["TC-ID", "Generierungs-ID", "Strategie", "Fehlerwert"]
     for col_idx, header in enumerate(headers, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell = ws.cell(row=1, column=col_idx, value=escape_spreadsheet_value(header))
+        cell.data_type = "s"  # B-05: explizit als String
         cell.font = Font(bold=True)
 
-    # Datenzeilen
+    # Datenzeilen – B-05: Textwerte escapen, IDs als Zahl belassen
     for row_idx, tc in enumerate(testcases_db, start=2):
         vals = (
             db.query(models.TestCaseValue)
@@ -565,7 +567,13 @@ def export_generation_xlsx(gen_id: int, db: Session = Depends(get_db)):
         has_error = any(val in error_values for val in assignments.values() if val)
         row_data.append("JA" if has_error else "NEIN")
         for col_idx, value in enumerate(row_data, start=1):
-            ws.cell(row=row_idx, column=col_idx, value=value)
+            cell = ws.cell(row=row_idx, column=col_idx)
+            # B-05: TC-ID (col_idx=cat_count+1) und Generierungs-ID (col_idx=cat_count+2) als Zahl
+            if col_idx == len(cat_headers) + 1 or col_idx == len(cat_headers) + 2:
+                cell.value = value  # int, unveraendert
+            else:
+                cell.value = escape_spreadsheet_value(str(value) if not isinstance(value, str) else value)
+                cell.data_type = "s"  # B-05: explizit als String
 
     # In Bytes-Buffer schreiben
     buffer = io.BytesIO()

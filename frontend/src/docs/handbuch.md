@@ -867,10 +867,12 @@ Exportiert Testfaelle als CSV-Datei (semikolon-getrennt, UTF-8 mit BOM fuer Exce
 **URL-Parameter:**
 | Parameter | Standard | Beschreibung |
 |-----------|---------|-------------|
-| `encoding` | `utf-8-sig` | utf-8-sig, utf-8, cp1252, iso-8859-1, utf-16le, utf-16be |
+| `encoding` | `utf-8-sig` | utf-8-sig, utf-8, cp1252, iso-8859-1, latin-1, utf-16le, utf-16be |
 | `excel` | `true` | Fügt `sep=;` als erste Zeile hinzu |
 | `bom` | auto | BOM ein/aus |
 | `status` | `false` | Regel-Status-Spalte hinzufuegen |
+
+> **Sicherheit:** Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden beim CSV-Export mit einem Apostroph geschuetzt, damit Excel/LibreOffice sie nicht als Formel ausfuehrt (Formel-Injection-Schutz).
 
 ### 8.2 JSON-Export
 
@@ -896,6 +898,8 @@ Exportiert Testfaelle als strukturiertes JSON mit Projekt-, Kategorie- und Testf
 ### 8.3 Excel-Export
 
 Exportiert Testfaelle als `.xlsx`-Datei (openpyxl). Gleiche Spalten wie CSV, aber als native Excel-Tabelle mit fettgedruckten Ueberschriften.
+
+> **Sicherheit:** Alle Textzellen werden als String-Typ markiert, sodass Excel keine Werte als Formeln interpretiert (Formel-Injection-Schutz). Numerische IDs (TC-ID, Generierungs-ID) bleiben als Zahlen.
 
 ### 8.4 Fehlerwert-Kennzeichnung im Export
 
