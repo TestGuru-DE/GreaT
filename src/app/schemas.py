@@ -5,6 +5,13 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
 
+    @field_validator("name")
+    @classmethod
+    def name_not_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Projektname darf nicht leer oder nur Leerzeichen sein.")
+        return v.strip()
+
 class ProjectRead(BaseModel):
     id: int
     name: str
@@ -12,10 +19,20 @@ class ProjectRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=200)
     order_index: int = 0
     is_result: bool = False  # REQ-4016: Ergebnis-Kategorie
     category_type: str = "standard"  # REQ-5002: standard | cause | effect
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        trimmed = v.strip()
+        if not trimmed:
+            raise ValueError("Kategoriename darf nicht leer sein.")
+        if len(trimmed) > 200:
+            raise ValueError("Kategoriename darf maximal 200 Zeichen haben.")
+        return trimmed
 
     @field_validator("category_type")
     @classmethod
@@ -46,6 +63,22 @@ class CategoryRead(BaseModel):
 class ValueCreate(BaseModel):
     value: str
     risk_weight: int = 1
+
+    @field_validator("value")
+    @classmethod
+    def value_not_empty(cls, v: str) -> str:
+        if v == "":
+            raise ValueError("Wert darf nicht leer sein.")
+        if len(v) > 500:
+            raise ValueError("Wert darf maximal 500 Zeichen haben.")
+        return v  # NICHT trimmen!
+
+    @field_validator("risk_weight")
+    @classmethod
+    def validate_risk_weight(cls, v: int) -> int:
+        if not (1 <= v <= 10):
+            raise ValueError("risk_weight muss zwischen 1 und 10 liegen.")
+        return v
 
 VALID_VTYPES = {"string", "number", "date", "time", "boolean", "email", "text"}
 # REQ-5002: Kategorie-Typ (Ursache/Wirkung fuer Entscheidungstabelle)

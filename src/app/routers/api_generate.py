@@ -55,6 +55,18 @@ def generate(pid: int, payload: schemas.GenerateRequest, db: Session = Depends(g
     if payload.limit is not None and payload.limit <= 0:
         raise HTTPException(status_code=400, detail="limit must be positive")
 
+    # BUG B-04: Duplikate vor Generierung pruefen
+    from collections import Counter
+    all_cats = (
+        db.query(models.Category)
+        .filter(models.Category.project_id == pid)
+        .all()
+    )
+    cat_names = [c.name.casefold() for c in all_cats]
+    duplicates = [name for name, count in Counter(cat_names).items() if count > 1]
+    if duplicates:
+        raise HTTPException(status_code=409, detail=f"Doppelte Kategorienamen: {', '.join(duplicates)}. Bitte umbenennen.")
+
     catmap = load_categories_values(db, pid)
     if not catmap or any(len(v) == 0 for v in catmap.values()):
         raise HTTPException(status_code=400, detail="Project must have categories and values.")

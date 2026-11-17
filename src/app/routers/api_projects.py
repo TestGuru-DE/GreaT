@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field as PydanticField, field_validator
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -44,9 +45,11 @@ def list_projects(db: Session = Depends(get_db), current_user=Depends(require_ap
 
 @router.post("/projects", response_model=schemas.ProjectRead, dependencies=[Depends(require_writer)])
 def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    exists = db.query(models.Project).filter(models.Project.name == payload.name).first()
+    exists = db.query(models.Project).filter(
+        func.lower(models.Project.name) == payload.name.lower()
+    ).first()
     if exists:
-        raise HTTPException(status_code=409, detail="Project name already exists.")
+        raise HTTPException(status_code=409, detail=f"Ein Projekt mit dem Namen '{payload.name}' existiert bereits.")
     p = models.Project(name=payload.name)
     db.add(p)
     db.commit()
@@ -81,9 +84,15 @@ def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Dep
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found.")
+    exists = db.query(models.Category).filter(
+        models.Category.project_id == pid,
+        func.lower(models.Category.name) == payload.name.lower()
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Eine Kategorie mit dem Namen '{payload.name}' existiert in diesem Projekt bereits.")
     c = models.Category(
-        project_id=pid, 
-        name=payload.name, 
+        project_id=pid,
+        name=payload.name,
         order_index=payload.order_index,
         is_result=payload.is_result,  # REQ-4016
         category_type=payload.category_type,  # REQ-5002
@@ -139,6 +148,14 @@ def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found.")
+    # Duplikatpruefung (casefold, gleiche Kategorie ausschliessen)
+    exists = db.query(models.Category).filter(
+        models.Category.id != cid,
+        models.Category.project_id == cat.project_id,
+        func.lower(models.Category.name) == payload.name.lower()
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Eine Kategorie mit dem Namen '{payload.name}' existiert in diesem Projekt bereits.")
     cat.name = payload.name
     _stamp_audit(cat, current_user)
     db.commit()
@@ -186,6 +203,12 @@ def create_value(cid: int, payload: schemas.ValueCreate, db: Session = Depends(g
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Category not found.")
+    exists = db.query(models.Value).filter(
+        models.Value.category_id == cid,
+        models.Value.value == payload.value
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
     # REQ-3008: Erster Wert einer Kategorie ist automatisch Default
     existing_count = db.query(models.Value).filter(models.Value.category_id == cid).count()
     v = models.Value(
@@ -221,6 +244,13 @@ def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db), 
     val = db.get(models.Value, vid)
     if not val:
         raise HTTPException(status_code=404, detail="Value not found.")
+    exists = db.query(models.Value).filter(
+        models.Value.id != vid,
+        models.Value.category_id == val.category_id,
+        models.Value.value == payload.value
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
     val.value = payload.value
     _stamp_audit(val, current_user)
     db.commit()
