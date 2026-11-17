@@ -134,6 +134,9 @@ class GenerateResponse(BaseModel):
     count: int
     total_possible: Optional[int] = None
     truncated: bool = False
+    rules_applied: bool = False
+    rule_count: int = 0
+    warnings: List[str] = []
 
 class TestCaseOut(BaseModel):
     id: int

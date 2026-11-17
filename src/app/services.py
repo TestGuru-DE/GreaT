@@ -372,14 +372,29 @@ def load_rules_structured(db: Session, pid: int) -> Dict[str, list]:
     return out
 
 
+def find_unreachable_values(catmap: Dict[str, List[str]], result: List[Dict[str, str]]) -> List[str]:
+    """Finde Werte, die nach Regelanwendung in keinem Testfall vorkommen. B-20."""
+    warnings: List[str] = []
+    for cat_name, values in catmap.items():
+        for val in values:
+            if not any(tc.get(cat_name) == val for tc in result):
+                warnings.append(f"Wert '{val}' ({cat_name}) ist durch die Regeln in keinem Testfall erreichbar.")
+    return warnings
+
+
 def apply_business_rules(
     pid: int,
     assignments: List[Dict[str, str]],
     db: Session,
-) -> List[Dict[str, str]]:
+    catmap: Dict[str, List[str]] = None,
+) -> Tuple[List[Dict[str, str]], List[str]]:
     """
     Wendet alle Geschäftsregeln auf die Testfälle an.
     Reihenfolge: CombineRule → ForbiddenRule → DependencyRule
+    + finaler Validierungs-Filter + unreachable values (B-20)
+
+    Returns:
+        Tuple von (unique_testcases, warnings)
     """
     rules_raw = load_rules_structured(db, pid)
     id2name = cat_id_to_name_map(db, pid)
@@ -409,14 +424,26 @@ def apply_business_rules(
     engine = RuleEngine(rules=rules)
     result = engine.apply(list(assignments))
 
+    # B-20: Finaler Validierungs-Filter – entferne Testfälle die gegen Regeln verstoßen
+    final_result = []
+    for tc in result:
+        if engine.is_combination_valid(tc):
+            final_result.append(tc)
+
     seen: set = set()
     unique: List[Dict[str, str]] = []
-    for a in result:
+    for a in final_result:
         key = tuple(sorted(a.items()))
         if key not in seen:
             seen.add(key)
             unique.append(a)
-    return unique
+
+    # Unreachable values detection
+    warnings: List[str] = []
+    if catmap:
+        warnings = find_unreachable_values(catmap, unique)
+
+    return unique, warnings
 
 
 # ---------------------------------------------------------------------------

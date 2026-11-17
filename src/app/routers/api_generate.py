@@ -28,6 +28,7 @@ from ..services import (
     load_error_values,
     sort_testcases_error_last,
     calculate_generation_risk_summary,
+    apply_business_rules,  # B-20/B-21
 )
 from combinatorics.risk_based import sort_by_risk_descending
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
@@ -125,8 +126,21 @@ def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(
             detail=f"Generierung hat Timeout von {timeout}s ueberschritten.",
         )
 
-    if rule_engine is not None:
-        cases = rule_engine.apply(cases)
+    # B-20/B-21: Regeln anwenden (ersetzt rule_engine.apply mit apply_business_rules)
+    rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
+    warnings: list[str] = []
+
+    if payload.apply_rules:
+        cases, unreachable_warnings = apply_business_rules(pid, cases, db, catmap=catmap)
+        warnings.extend(unreachable_warnings)
+    elif rule_count > 0:
+        # B-21: Warnung wenn Regeln existieren aber nicht angewendet
+        rule_word = "Regeln" if rule_count > 1 else "Regel"
+        warnings.append(f"Das Projekt hat {rule_count} {rule_word}, sie wurden nicht angewendet (apply_rules=false).")
+    else:
+        # Fallback: existing behavior when no rules exist
+        if rule_engine is not None:
+            cases = rule_engine.apply(cases)
 
     # REQ-3034: Zuerst nach Risiko absteigend sortieren (von Generierung getrennt)
     category_risk_map = load_categories_values_weighted(db, pid)
@@ -174,11 +188,15 @@ def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(
             )
 
     db.commit()
+
     return schemas.GenerateResponse(
         generation_id=gen.id,
         count=len(cases),
         total_possible=total_possible,
         truncated=truncated,
+        rules_applied=payload.apply_rules,
+        rule_count=rule_count,
+        warnings=warnings,
     )
 
 

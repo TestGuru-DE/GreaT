@@ -232,10 +232,22 @@ def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(
 
 @router.delete("/values/{vid}", dependencies=[Depends(require_writer)])
 def delete_value(vid: int, db: Session = Depends(get_db)):
-    """REQ-1206: Wert loeschen."""
+    """REQ-1206: Wert loeschen. B-19: Regeln die diesen Wert referenzieren mitloeschen."""
     val = db.get(models.Value, vid)
     if not val:
         raise HTTPException(status_code=404, detail="Wert nicht gefunden")
+    cid = val.category_id
+    # B-19: Regeln die diesen Wert referenzieren (als if_value oder then_value) mitloeschen
+    rules_to_delete = db.query(models.Rule).filter(
+        models.Rule.project_id == val.category.project_id,
+        (
+            (models.Rule.if_category_id == cid) & (models.Rule.if_value == val.value)
+        ) | (
+            (models.Rule.then_category_id == cid) & (models.Rule.then_value == val.value)
+        )
+    ).all()
+    for r in rules_to_delete:
+        db.delete(r)
     db.delete(val)
     db.commit()
     return {"ok": True, "id": vid}
@@ -247,7 +259,7 @@ class RenameValue(BaseModel):
 
 @router.patch("/values/{vid}/rename", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
 def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db), current_user=Depends(require_writer)):
-    """REQ-1213: Wert umbenennen."""
+    """REQ-1213: Wert umbenennen. B-19: Regeln die diesen Wert referenzieren aktualisieren."""
     val = db.get(models.Value, vid)
     if not val:
         raise HTTPException(status_code=404, detail="Wert nicht gefunden")
@@ -258,8 +270,36 @@ def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db), 
     ).first()
     if exists:
         raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
+    cid = val.category_id
+    old_value = val.value
     val.value = payload.value
     _stamp_audit(val, current_user)
+    # B-19: Regeln die diesen Wert referenzieren aktualisieren
+    if old_value != payload.value:
+        # if_value aktualisieren
+        db.query(models.Rule).filter(
+            models.Rule.if_category_id == cid,
+            models.Rule.if_value == old_value
+        ).update({"if_value": payload.value}, synchronize_session=False)
+        # then_value aktualisieren
+        db.query(models.Rule).filter(
+            models.Rule.then_category_id == cid,
+            models.Rule.then_value == old_value
+        ).update({"then_value": payload.value}, synchronize_session=False)
+        # then_values_json aktualisieren (combine rules)
+        rules_with_json = db.query(models.Rule).filter(
+            models.Rule.then_category_id == cid,
+            models.Rule.then_values_json.isnot(None)
+        ).all()
+        for r in rules_with_json:
+            import json as _json
+            try:
+                vals = _json.loads(r.then_values_json or "[]")
+                if old_value in vals:
+                    vals = [payload.value if v == old_value else v for v in vals]
+                    r.then_values_json = _json.dumps(vals)
+            except Exception:
+                pass
     db.commit()
     db.refresh(val)
     return val
@@ -377,14 +417,67 @@ def _detect_conflicts(new_rule: models.Rule, existing: list) -> list[int]:
 
 @router.post("/projects/{pid}/rules", status_code=201, response_model=schemas.RuleRead, dependencies=[Depends(require_writer)])
 def api_create_rule(pid: DbId, payload: schemas.RuleCreate, db: Session = Depends(get_db)):
-    """REQ-3003: Neue Regel anlegen. REQ-3004: Konflikt-Erkennung."""
+    """REQ-3003: Neue Regel anlegen. REQ-3004: Konflikt-Erkennung. B-19: Validierung."""
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden.")
 
-    cat_ids = {c.id for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+    cat_ids = {c.id: c for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+
+    # IF- und THEN-Kategorie müssen zum Projekt gehören
     if payload.if_category_id not in cat_ids or payload.then_category_id not in cat_ids:
         raise HTTPException(status_code=400, detail="Kategorie gehört nicht zu diesem Projekt.")
+
+    # B-19: IF- und THEN-Kategorie dürfen nicht identisch sein
+    if payload.if_category_id == payload.then_category_id:
+        raise HTTPException(status_code=400, detail="IF- und THEN-Kategorie dürfen nicht identisch sein.")
+
+    if_cat = cat_ids[payload.if_category_id]
+    then_cat = cat_ids[payload.then_category_id]
+
+    # B-19: Wert-Existenz prüfen
+    if_values = [v.value for v in if_cat.values]
+    then_values = [v.value for v in then_cat.values]
+
+    if payload.if_value not in if_values:
+        raise HTTPException(status_code=400, detail=f"Wert '{payload.if_value}' existiert nicht in Kategorie '{if_cat.name}'.")
+
+    if payload.type in ("exclude", "dependency"):
+        if not payload.then_value or not payload.then_value.strip():
+            raise HTTPException(status_code=400, detail="Exclude-/Dependency-Regel benötigt einen Zielwert (then_value).")
+        if payload.then_value not in then_values:
+            raise HTTPException(status_code=400, detail=f"Wert '{payload.then_value}' existiert nicht in Kategorie '{then_cat.name}'.")
+
+    if payload.type == "combine":
+        vals = [v.strip() for v in (payload.then_values or []) if v and v.strip()]
+        if not vals:
+            raise HTTPException(status_code=400, detail="Combine-Regel benötigt mindestens einen Zielwert.")
+        for v in vals:
+            if v not in then_values:
+                raise HTTPException(status_code=400, detail=f"Wert '{v}' existiert nicht in Kategorie '{then_cat.name}'.")
+
+    # B-19: Duplikat-Prüfung
+    existing = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
+    is_duplicate = False
+    for r in existing:
+        if r.type != payload.type:
+            continue
+        if r.if_category_id != payload.if_category_id or r.then_category_id != payload.then_category_id:
+            continue
+        if r.if_value != payload.if_value:
+            continue
+        if payload.type == "combine":
+            import json as _json
+            existing_vals = _json.loads(r.then_values_json or "[]")
+            if sorted(existing_vals) == sorted(vals):
+                is_duplicate = True
+                break
+        else:
+            if r.then_value == (payload.then_value or ""):
+                is_duplicate = True
+                break
+    if is_duplicate:
+        raise HTTPException(status_code=409, detail="Diese Regel existiert bereits.")
 
     rule = models.Rule(
         project_id=pid,
