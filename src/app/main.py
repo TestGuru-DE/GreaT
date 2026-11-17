@@ -14,6 +14,7 @@ from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST, CORS_ORIGINS
+from .version import __version__
 from .database import Base, engine
 from .routers import (
     api_projects,
@@ -58,7 +59,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="G.R.E.A.T. API", version="1.8.0", lifespan=lifespan)
+app = FastAPI(title="G.R.E.A.T. API", version=__version__, lifespan=lifespan)
 
 # REQ-4xxx (EPIC-18 / ADR-015): CORS-Whitelist aus Config (kein Wildcard)
 app.add_middleware(
@@ -165,7 +166,6 @@ app.include_router(api_sharing.router)  # Projektfreigaben (Prefix /api/sharing)
 app.include_router(api_users.router)  # REQ-4025: Benutzerverwaltung (Prefix /api/users, Admin)
 app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /api/users/{id}/password)
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
-# REQ-3011: HTMX-Router archiviert (2026-06-29)
 
 # ---------------------------------------------------------------------------
 # React-Frontend (Production Build) - REQ-1202
@@ -194,24 +194,24 @@ if FRONTEND_DIST.exists():
 
 @app.get("/", include_in_schema=False)
 def root():
-    # Zeige React-App wenn Build vorhanden, sonst HTMX-Fallback
+    # React-App oder 503 wenn kein Build vorhanden
     if FRONTEND_DIST.exists():
         return RedirectResponse(url="/app")
-    return RedirectResponse(url="/ui/projects")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Frontend ist nicht gebaut. Bitte 'npm run build' im Ordner frontend ausfuehren."}
+    )
 
 @app.get("/ui", include_in_schema=False)
 def ui_root():
-    return RedirectResponse(url="/app")
-
-@app.get("/whoami", include_in_schema=False)
-def whoami():
-    return {
-        "module": __name__,
-        "file": __file__,
-        "frontend_dist": str(FRONTEND_DIST),
-        "frontend_available": FRONTEND_DIST.exists(),
-        "routes": sorted([r.path for r in app.routes])[:20],
-    }
+    if FRONTEND_DIST.exists():
+        return RedirectResponse(url="/app")
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=503,
+        content={"detail": "Frontend ist nicht gebaut. Bitte 'npm run build' im Ordner frontend ausfuehren."}
+    )
 
 
 if __name__ == "__main__":

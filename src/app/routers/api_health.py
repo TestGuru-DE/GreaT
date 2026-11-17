@@ -7,6 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.version import __version__
 
 router = APIRouter(tags=["health"])
 _start_time = time.time()
@@ -27,7 +28,7 @@ def health_check(db: Session = Depends(get_db)):
 
     return {
         "status": status,
-        "version": "1.5.2",
+        "version": __version__,
         "db": db_status,
         "uptime_seconds": uptime_seconds,
         "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
