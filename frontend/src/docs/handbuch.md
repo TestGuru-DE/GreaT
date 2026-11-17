@@ -966,7 +966,25 @@ Standardmaessig werden maximal **1000 Testfaelle** pro Generierung erzeugt. Dies
 
 In den Einstellungen finden Sie die Option zur **Datenbank-Sicherung**. Dies erstellt einen JSON-Export aller Projekte, Kategorien, Werte, Regeln und Testfaelle.
 
-> **Tipp:** Vor dem Zuruecksetzen der Datenbank (s. 2.3) immer eine Sicherung erstellen.
+**Sicherungsoptionen:**
+- **Unverschlusselt:** Herunterladen ohne Passwort (schnell, fuer lokale Sicherung)
+- **Verschluesselt:** Passwort eingeben fuer AES-128-Verschluesselung (empfohlen fuer externe Speicherung)
+
+**Was wird gesichert:**
+- Alle Projekte, Kategorien, Werte (inkl. Risiko-Gewichtung, Default-Markierung, Fehlerwerte)
+- Alle Regeln (Abhaengigkeiten, Verbote, Kombinieren)
+- Alle Generierungen und Testfaelle
+- Benutzerdefinierte Datenklassen
+- Hierarchische Datenknoten
+- Entscheidungstabelle-Constraints
+
+**Was wird NICHT gesichert:**
+- **Benutzer und Passwörter:** Aus Sicherheitsgründen werden keine Benutzerdaten oder Passwörter gesichert. Nach dem Wiederherstellen müssen Sie sich mit bestehenden Accounts anmelden.
+- **System-Datenklassen:** Vordefinierte System-Datenklassen (Browser, Betriebssystem, etc.) werden nicht gesichert. Sie werden automatisch beim nächsten Start neu angelegt.
+- **System-Datenknoten:** Vordefinierte System-Datenknoten werden nicht gesichert.
+
+> **Tipp:** Vor dem Zurücksetzen der Datenbank (s. 2.3) immer eine Sicherung erstellen.
+> **Hinweis:** Verschlüsselte Sicherungen können nur mit dem korrekten Passwort wiederhergestellt. Bei Verlust des Passworts sind die Daten nicht wiederherstellbar.
 
 ---
 

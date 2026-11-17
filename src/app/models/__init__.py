@@ -24,6 +24,7 @@ class Project(Base):
     categories = relationship("Category", back_populates="project", cascade="all, delete-orphan")
     generations = relationship("Generation", back_populates="project", cascade="all, delete-orphan")
     memberships = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")  # REQ-4023
+    rules = relationship("Rule", back_populates="project", cascade="all, delete-orphan")
 
 class Category(Base):
     __tablename__ = "categories"
@@ -136,6 +137,8 @@ class Rule(Base):
     # REQ-4024: Audit-Trail
     last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     last_modified_at = Column(DateTime, nullable=True)
+
+    project = relationship("Project", back_populates="rules")
 
 
 # ---------------------------------------------------------------------------

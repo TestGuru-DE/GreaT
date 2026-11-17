@@ -378,6 +378,84 @@ class PasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
     new_password: str = Field(min_length=1, max_length=200)
 
+# ============================================================================
+# Backup-Schemas (v2.0 Format)
+# ============================================================================
+
+class BackupPasswordRequest(BaseModel):
+    """Request-Schema fuer verschluesseltes Backup (POST /api/backup)."""
+    password: str
+
+
+class BackupValueSchema(BaseModel):
+    value: str
+    risk_weight: int = 1
+    vtype: str = "string"
+    allowed: bool = True
+    order_index: int = 0
+    is_default: bool = False
+
+
+class BackupCategorySchema(BaseModel):
+    name: str
+    order_index: int = 0
+    is_result: bool = False
+    category_type: str = "standard"
+    values: list[BackupValueSchema] = []
+
+
+class BackupRuleSchema(BaseModel):
+    type: str
+    if_category_name: str
+    if_value: str
+    then_category_name: str
+    then_value: str | None = None
+    then_values_json: str | None = None
+
+
+class BackupDataClassSchema(BaseModel):
+    name: str
+    value_type: str
+    description: str | None = None
+    values: list[str] = []
+
+
+class BackupDataNodeSchema(BaseModel):
+    """Rekursives Schema fuer hierarchische Datenknoten."""
+    name: str
+    sort_order: int = 0
+    source: str | None = None
+    values: list[str] = []
+    children: list["BackupDataNodeSchema"] = []
+
+
+BackupDataNodeSchema.model_rebuild()
+
+
+class BackupDecisionConstraintSchema(BaseModel):
+    constraint_type: str
+    targets: dict
+    description: str | None = None
+
+
+class BackupProjectSchema(BaseModel):
+    name: str
+    categories: list[BackupCategorySchema] = []
+    rules: list[BackupRuleSchema] = []
+    generations: list[dict] = []
+    dataclasses: list[BackupDataClassSchema] = []
+    data_nodes: list[BackupDataNodeSchema] = []
+    decision_constraints: list[BackupDecisionConstraintSchema] = []
+
+
+class BackupSchema(BaseModel):
+    """Top-Level Backup-Schema (v1.0 und v2.0)."""
+    version: str
+    exported_at: str
+    projects: list[BackupProjectSchema]
+
+
+# ============================================================================
 # REQ-4023: Projekt-Mitgliedschaften
 class ProjectMemberRead(BaseModel):
     user_id: int

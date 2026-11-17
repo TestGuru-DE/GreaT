@@ -24,16 +24,25 @@ export default function SettingsPage() {
   async function handleBackup() {
     setIsLoading(true)
     try {
-      const url = backupPassword
-        ? `/api/backup?password=${encodeURIComponent(backupPassword)}`
-        : '/api/backup'
-      const response = await fetch(url)
+      const response = backupPassword
+        ? await fetch('/api/backup', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ password: backupPassword })
+          })
+        : await fetch('/api/backup')
+
+      if (!response.ok) throw new Error(await response.text())
       const blob = await response.blob()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `great_backup_${new Date().toISOString().split('T')[0]}.zip`
+      a.download = backupPassword
+        ? `great_backup_encrypted_${new Date().toISOString().split('T')[0]}.zip`
+        : `great_backup_${new Date().toISOString().split('T')[0]}.zip`
       a.click()
       setBackupPassword('')
+    } catch (e) {
+      console.error('Backup fehlgeschlagen:', e)
     } finally {
       setIsLoading(false)
     }
@@ -46,20 +55,16 @@ export default function SettingsPage() {
     try {
       const form = new FormData()
       form.append('file', restoreFile)
-      const url = restorePassword
-        ? `/api/backup/restore?password=${encodeURIComponent(restorePassword)}`
-        : '/api/backup/restore'
-      const r = await fetch(url, { method: 'POST', body: form })
+      if (restorePassword) form.append('password', restorePassword)
+
+      const r = await fetch('/api/backup/restore', { method: 'POST', body: form })
       const data = await r.json()
-      if (r.ok) {
-        setRestoreStatus(`OK ${data.projects_restored} Projekte wiederhergestellt`)
-        setRestoreFile(null)
-        setRestorePassword('')
-      } else {
-        setRestoreStatus(`Fehler: ${data.detail}`)
-      }
-    } catch (e) {
-      setRestoreStatus(`Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+      if (!r.ok) throw new Error(JSON.stringify(data.detail))
+      setRestoreStatus(`OK ${data.projects_restored} Projekte wiederhergestellt`)
+      setRestoreFile(null)
+      setRestorePassword('')
+    } catch (e: any) {
+      setRestoreStatus(`Fehler: ${e.message}`)
     } finally {
       setIsLoading(false)
     }

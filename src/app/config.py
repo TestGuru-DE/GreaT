@@ -106,6 +106,10 @@ def get_max_combinations() -> int:
     return value if value > 0 else GREAT_MAX_COMBINATIONS_DEFAULT
 
 
+# Maximale Backup-Dateigroesse in MB (Default 50 MB)
+GREAT_MAX_BACKUP_MB: int = int(os.getenv("GREAT_MAX_BACKUP_MB", "50"))
+
+
 GREAT_GENERATION_TIMEOUT_S_DEFAULT: int = 60
 
 
