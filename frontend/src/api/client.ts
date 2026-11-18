@@ -444,20 +444,20 @@ export interface ConstraintValidateResponse {
 
 export const logicalConstraintsApi = {
   list: (projectId: number) =>
-    api.get<LogicalConstraint[]>(`/projects/${projectId}/constraints`).then((r) => r.data),
+    api.get<LogicalConstraint[]>(`/v1/projects/${projectId}/constraints`).then((r) => r.data),
 
   get: (projectId: number, cid: number) =>
-    api.get<LogicalConstraint>(`/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
+    api.get<LogicalConstraint>(`/v1/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
 
   create: (projectId: number, data: ConstraintCreatePayload) =>
-    api.post<LogicalConstraint>(`/projects/${projectId}/constraints`, data).then((r) => r.data),
+    api.post<LogicalConstraint>(`/v1/projects/${projectId}/constraints`, data).then((r) => r.data),
 
   update: (projectId: number, cid: number, data: ConstraintUpdatePayload) =>
-    api.put<LogicalConstraint>(`/projects/${projectId}/constraints/${cid}`, data).then((r) => r.data),
+    api.put<LogicalConstraint>(`/v1/projects/${projectId}/constraints/${cid}`, data).then((r) => r.data),
 
   delete: (projectId: number, cid: number) =>
-    api.delete(`/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
+    api.delete(`/v1/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
 
   validate: (projectId: number, data: ConstraintCreatePayload) =>
-    api.post<ConstraintValidateResponse>(`/projects/${projectId}/constraints/validate`, data).then((r) => r.data),
+    api.post<ConstraintValidateResponse>(`/v1/projects/${projectId}/constraints/validate`, data).then((r) => r.data),
 };
