@@ -1,4 +1,4 @@
-// REQ-4025: Benutzerverwaltung (Admin-only)
+﻿// REQ-4025: Benutzerverwaltung (Admin-only)
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/authStore";
 import {

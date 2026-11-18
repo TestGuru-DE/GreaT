@@ -1,8 +1,10 @@
-// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
+﻿// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";
 import { generateApi } from "../api/client";
+import { ApiError } from "../api/ApiError";
+import { useToastStore } from "../components/Toast";
 import type { Project } from "../types";
 import DeleteProjectDialog from "../components/DeleteProjectDialog";
 
@@ -40,6 +42,16 @@ export default function ProjectsPage() {
     try {
       await createProject(newName.trim());
       setNewName("");
+    } catch (e: unknown) {
+      if (e instanceof ApiError) {
+        if (e.status === 409) {
+          setMsg({ text: 'Ein Projekt mit diesem Namen existiert bereits.', ok: false });
+        } else {
+          useToastStore.getState().add(e.message, 'error');
+        }
+      } else {
+        useToastStore.getState().add(String(e), 'error');
+      }
     } finally {
       setCreating(false);
     }
@@ -88,7 +100,8 @@ export default function ProjectsPage() {
         });
       }
     } catch (e) {
-      setMsg({ text: String(e), ok: false });
+      const msg = e instanceof ApiError ? e.message : String(e);
+      useToastStore.getState().add(msg, 'error');
     } finally {
       setWorking(false);
     }
@@ -138,16 +151,6 @@ export default function ProjectsPage() {
           }}
         />
       )}
-
-      <header className="bg-theme-surface border-b border-theme-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-theme-text">G.R.E.A.T. &ndash; Testfall Designer</h1>
-        <a href="/app/dataclasses" className="text-sm text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg px-3 py-1">
-          Datenklassen
-        </a>
-        <a href="/docs" target="_blank" className="text-sm text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg px-3 py-1">
-          API-Docs
-        </a>
-      </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6">

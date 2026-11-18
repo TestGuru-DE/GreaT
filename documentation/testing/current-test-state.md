@@ -83,8 +83,8 @@ Erstellt von: Senior QA Director Agent
 | REQ-0801 | Orthogonal Array | ✅ (als Pairwise) | test_pairwise.py |
 | REQ-0802 | Each Choice | ⚠️ Implizit | test_backend_mvp.py |
 | REQ-0806 | All Combinations | ⚠️ Implizit | test_backend_mvp.py |
-| REQ-1000 | CSV Export | ✅ | test_csv_handler.py |
-| REQ-1100 | CSV Import | ✅ | test_csv_handler.py |
+| REQ-1000 | CSV Export (Web-API) | ✅ | test_req1000_csv_export_web.py |
+| REQ-1100 | CSV Import (Desktop) | ❌ | *(obsolet – Desktop-Altcode archiviert)* |
 | REQ-0200 | Projekt anlegen | ✅ | test_backend_mvp.py |
 | REQ-0300 | Kategorie anlegen | ✅ | test_backend_mvp.py |
 | REQ-0400 | Äquivalenzklasse | ✅ | test_backend_mvp.py |

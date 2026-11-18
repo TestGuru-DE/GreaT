@@ -2,11 +2,13 @@
 // REQ-4011: Datensicherung & Wiederherstellung
 // REQ-4012: BugMagnet-Import
 // REQ-4025: Benutzerverwaltung
+
 import { useState, useEffect } from 'react'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { PortSettingsCard } from '../components/PortSettingsCard'
 import { MaxTestCasesSettingsCard } from '../components/MaxTestCasesSettingsCard' // REQ-4018
 import UserManagement from '../components/UserManagement' // REQ-4025
+import { backupApi, datanodesApi } from '../api/client'
 
 export default function SettingsPage() {
   const [backupPassword, setBackupPassword] = useState('')
@@ -24,16 +26,18 @@ export default function SettingsPage() {
   async function handleBackup() {
     setIsLoading(true)
     try {
-      const url = backupPassword
-        ? `/api/backup?password=${encodeURIComponent(backupPassword)}`
-        : '/api/backup'
-      const response = await fetch(url)
-      const blob = await response.blob()
+      const blob = backupPassword
+        ? await backupApi.create(backupPassword)
+        : await backupApi.create()
       const a = document.createElement('a')
       a.href = URL.createObjectURL(blob)
-      a.download = `great_backup_${new Date().toISOString().split('T')[0]}.zip`
+      a.download = backupPassword
+        ? `great_backup_encrypted_${new Date().toISOString().split('T')[0]}.zip`
+        : `great_backup_${new Date().toISOString().split('T')[0]}.zip`
       a.click()
       setBackupPassword('')
+    } catch (e) {
+      console.error('Backup fehlgeschlagen:', e)
     } finally {
       setIsLoading(false)
     }
@@ -44,22 +48,12 @@ export default function SettingsPage() {
     setIsLoading(true)
     setRestoreStatus(null)
     try {
-      const form = new FormData()
-      form.append('file', restoreFile)
-      const url = restorePassword
-        ? `/api/backup/restore?password=${encodeURIComponent(restorePassword)}`
-        : '/api/backup/restore'
-      const r = await fetch(url, { method: 'POST', body: form })
-      const data = await r.json()
-      if (r.ok) {
-        setRestoreStatus(`OK ${data.projects_restored} Projekte wiederhergestellt`)
-        setRestoreFile(null)
-        setRestorePassword('')
-      } else {
-        setRestoreStatus(`Fehler: ${data.detail}`)
-      }
-    } catch (e) {
-      setRestoreStatus(`Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+      const data = await backupApi.restore(restoreFile, restorePassword || undefined)
+      setRestoreStatus(`OK ${data.projects_restored} Projekte wiederhergestellt`)
+      setRestoreFile(null)
+      setRestorePassword('')
+    } catch (e: any) {
+      setRestoreStatus(`Fehler: ${e.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -68,22 +62,14 @@ export default function SettingsPage() {
   async function handleDatabaseReset(action: 'confirm' | 'backup') {
     try {
       if (action === 'backup') {
-        const backupResponse = await fetch('/api/backup')
-        if (!backupResponse.ok) {
-          throw new Error('Backup konnte nicht erstellt werden')
-        }
-        const blob = await backupResponse.blob()
+        const blob = await backupApi.create()
         const a = document.createElement('a')
         a.href = URL.createObjectURL(blob)
         a.download = `great_backup_${new Date().toISOString().split('T')[0]}.zip`
         a.click()
       }
 
-      const resetResponse = await fetch('/api/backup/reset', { method: 'POST' })
-      const data = await resetResponse.json()
-      if (!resetResponse.ok) {
-        throw new Error(data.detail || 'Reset fehlgeschlagen')
-      }
+      const data = await backupApi.reset()
 
       setResetDialogOpen(false)
 
@@ -110,11 +96,8 @@ export default function SettingsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await fetch('/api/datanodes/bugmagnet-status')
-        if (r.ok) {
-          const d = await r.json()
-          setBugmagnetImported(d.imported)
-        }
+        const d = await datanodesApi.getBugMagnetStatus()
+        setBugmagnetImported(d.imported)
       } catch (err) {
         console.error('BugMagnet-Status konnte nicht abgerufen werden:', err)
       }
@@ -125,14 +108,9 @@ export default function SettingsPage() {
     setImporting(true)
     setImportStatus(null)
     try {
-      const r = await fetch('/api/datanodes/bugmagnet-import', { method: 'POST' })
-      const d = await r.json()
-      if (r.ok) {
-        setBugmagnetImported(true)
-        setImportStatus(`OK Import abgeschlossen (${d.nodes_created} Knoten)`)
-      } else {
-        setImportStatus(`Fehler: ${d.detail}`)
-      }
+      const d = await datanodesApi.importBugMagnet()
+      setBugmagnetImported(true)
+      setImportStatus(`OK Import abgeschlossen (${d.nodes_created} Knoten)`)
     } catch (e) {
       setImportStatus(`Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
     } finally {

@@ -124,7 +124,7 @@ Entscheidung durch Projektinhaber: React/TypeScript sofort, kein HTMX-Übergang.
 ## ADR-004 – Archivierung: src/backend/ deaktivieren
 
 **Datum:** 2026-06-10
-**Status:** Accepted
+**Status:** ✅ **Umgesetzt** (2026-11-17)
 
 **Kontext:**
 `src/backend/` ist ein paralleler Prototyp (GeTeCaDe) mit eigener DB, eigenem Backend und eigenen
@@ -140,6 +140,12 @@ Services. Er wird von der Haupt-App nicht verwendet und verursacht Verwirrung.
 **Konsequenzen:**
 - archive-log.md aktualisieren
 - Keine Funktionalität geht verloren
+
+**Umsetzung (2026-11-17):**
+- `src/backend/` nach `archive/2026-11-17/backend-getecade/` verschoben
+- Zusätzlich archiviert: Desktop-Altcode "TaNoS v5.4" (PySide6) nach `archive/2026-11-17/desktop-tanos/`
+- Alte CSV-Handler-Tests nach `archive/2026-11-17/tests/` verschoben
+- Neue Tests: `test_req1000_csv_export_web.py` gegen Web-API
 
 **Entscheider:** Legacy Code Auditor Agent
 
@@ -1773,3 +1779,105 @@ akzeptiert mit der Bedingung, dass das Risiko durch Gegenmassnahmen gemildert wi
 
 **Entscheider:** Georg Hartel (Projektinhaber, Risikoakzeptanz 2026-11-03)
 **Abhaengigkeiten:** REQ-4027, REQ-4028, RISK-S-016, EPIC-18 (REQ-4001 als langfristige Loesung)
+
+---
+
+## ADR-018 – Generierte Testfaelle sind ein unveraenderlicher Schnappschuss (B-18)
+
+**Datum:** 2026-11-17
+**Status:** Accepted
+
+**Kontext:**
+`TestCaseValue` referenziert `category_id` mit `ON DELETE CASCADE` (siehe `src/app/models/__init__.py`, Zeile 103).
+Wird eine Kategorie geloescht, verschwinden sofort alle zugehoerigen `TestCaseValue`-Zeilen –
+auch aus bereits gespeicherten, historischen Generierungen. Die Generierungshistorie ist damit
+kein verlasslicher Nachweis mehr: Spalten gehen verloren, Risikoabdeckung wird falsch berechnet,
+Exporte (CSV/JSON/XLSX) liefern unvollstaendige Daten.
+
+Reproduktion:
+1. Projekt mit Kategorien "Eingabe" und "Land" anlegen
+2. Generieren (Generierung G1)
+3. Kategorie "Land" loeschen
+4. `GET /api/generations/G1/testcases` enthaelt nur noch "Eingabe" – "Land" ist verschwunden
+
+**Entscheidung:**
+`TestCaseValue` erhaelt eine neue Spalte `category_name TEXT`. Diese wird bei der Generierung
+mit dem aktuellen Kategoriename befuellt und macht jeden Testfall unabhaengig von spaeteren
+Aenderungen am Kategoriensystem (Umbenennung, Loeschung).
+
+Konkret:
+- Neue Spalte `category_name VARCHAR(300), nullable=True` in `testcase_values`
+- FK `category_id` aendern: `ondelete="SET NULL"` (statt CASCADE)
+- Bei Kategorie-Loeschung: `category_id` auf NULL setzen, `category_name` bleibt erhalten
+- Bei Kategorie-Umbenennung: alte Testfaelle behalten den alten Namen (per `category_name`)
+- Migration: Spalte idempotent ergaenzen, Bestandsdaten backfillen
+- Export/Display: `category_name` verwenden (falls vorhanden, sonst per FK nachschlagen)
+- `assignment_from_testcase()` in `services.py`: Fallback auf `category_name` wenn JOIN NULL liefert
+
+**Begründung:**
+- **Unveraenderlichkeit:** Eine Generierung ist ein Schnappschuss zum Zeitpunkt der Erstellung.
+  Sie darf sich nicht durch nachfolgende Schema-Aenderungen veraendern.
+- **Minimaler Eingriff:** Nur eine Spalte + FK-Aenderung, keine neue Tabelle, keine
+  JSON-Serialisierung (die waere weniger querybar und schwerer zu migrieren).
+- **SQLite-Kompatibilitaet:** `ALTER TABLE ADD COLUMN` + `UPDATE` mit Subselect funktioniert
+  in SQLite; `batch_alter_table` in Alembic oder inline-Migration in `_migrate_db()` sind
+  idempotent.
+- **Kein Breaking Change:** Bestehende API-Endpunkte liefern weiterhin dieselbe Struktur;
+  `category_name` ist intern und transparent fuer den Client.
+
+**Abgelehnte Alternativen:**
+
+| Alternative | Grund der Ablehnung |
+|---|---|
+| **JSON-Spalte `category_snapshot`** | Schwer querybar, keine FK-Integritaet, Migration komplexer, Indexierung nicht moeglich |
+| **Separate Tabelle `generation_category_snapshot`** | Overengineering fuer ein einfaches Name-Feld; erhoeht JOIN-Komplexitaet bei jedem Export |
+| **Soft-Delete fuer Kategorien** | Brecht bestehende Abfragen ("zeige aktive Kategorien"); `is_deleted`-Flag muss ueberall geprueft werden |
+| **Keine Aenderung, CASCADE beibehalten** | Akzeptiert Datenverlust bei historischen Generierungen – widerspricht dem Prinzip der Nachverfolgbarkeit |
+| **category_id auf NOT NULL + ON DELETE NO ACTION** | Verhindert Kategorie-Loeschung wenn Referenzen existieren – zu restriktiv; Nutzer wollen Kategorien loeschen koennen |
+
+**Konsequenzen:**
+
+| Bereich | Auswirkung |
+|---|---|
+| **DB-Schema** | +1 Spalte `category_name` in `testcase_values`, FK `category_id` → `SET NULL` |
+| **Migration** | Idempotent in `_migrate_db()` (main.py); Backfill aus `categories.name` |
+| **Generierung** | `TestCaseValue` wird mit `category_name=cat.name` erstellt (1 Zeile) |
+| **Kategorie-Loeschung** | Vor `db.delete(cat)`: `category_id=NULL` setzen in allen betroffenen `TestCaseValue`-Zeilen |
+| **Kategorie-Umbenennung** | Keine Aenderung noetig – alte Testfaelle behalten `category_name` aus dem Zeitpunkt der Generierung |
+| **Testcase-Export** | `category_name` als Fallback wenn `category_id` NULL ist (geloeschte Kategorie) |
+| **assignment_from_testcase()** | JOIN auf Category; falls NULL, `category_name` als Key verwenden |
+| **CSV/JSON/XLSX Export** | Header-Zeilen: `category_name` aus TestCaseValue, nicht nur aus Category-JOIN |
+| **Risikoabdeckung** | Alte Generierungen mit geloeschter Kategorie: `risk_weight` nicht mehr nachschlagbar → Default 1 |
+| **Backup-Schema** | `BackupProjectSchema.generations` ist `list[dict]` – keine separate TestCaseValue-Schema-Aenderung noetig |
+| **Tests** | Neue Testdatei `tests/test_bugfix_history_immutable.py` (5 Tests) |
+| **Bestehende Tests** | `force_delete_category()` in `services.py` muss angepasst werden (keine CASCADE-Loeschung mehr) |
+
+**Geaenderte Dateien:**
+- `src/app/models/__init__.py` – TestCaseValue-Modell (category_name + FK-Aenderung)
+- `src/app/main.py` – `_migrate_db()` (idempotente Migration)
+- `src/app/routers/api_generate.py` – Generierung (category_name befuellen), Export-Endpunkte (category_name Fallback)
+- `src/app/routers/api_projects.py` – `delete_category` (SET NULL statt CASCADE)
+- `src/app/services.py` – `assignment_from_testcase()` (category_name Fallback), `force_delete_category()` anpassen
+- `tests/test_bugfix_history_immutable.py` – NEU (5 Tests)
+
+**Entscheider:** GREAT Chief Architect Agent
+**Abhaengigkeiten:** B-18 (Bugfix-Scope), ADR-001 (Python/FastAPI), ADR-002 (Alembic/Migration)
+
+
+---
+
+## ADR-016 – Alembic-Migrationsstatus (2026-11-17)
+
+**Status:** Dokumentiert
+
+**Kontext:**
+Alembic wurde laut ADR-002 als Migrations-Framework eingefuehrt. In der Praxis erfolgt
+die Datenbank-Migration jedoch ausschliesslich ueber `_migrate_db()` in `src/app/main.py`
+(idempotente ALTER TABLE Statements). Alembic wird derzeit nicht im produktiven
+Migrationsweg eingesetzt.
+
+**Konsequenzen:**
+- `alembic.ini` Default auf `sqlite:///./great.db` korrigiert (statt `tanos.db`)
+- `src/db/migrations/env.py` verwendet `DATABASE_URL` aus `app.config`
+- Massgeblicher Migrationsweg bleibt `_migrate_db()` in `main.py`
+- Alembic bleibt als Option fuer zukuenftige Migrationen erhalten

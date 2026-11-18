@@ -1,4 +1,4 @@
-export const THEMES = ['normal', 'dark', 'steampunk', 'rainbow', 'heavy-metal', 'system'] as const
+﻿export const THEMES = ['normal', 'dark', 'steampunk', 'rainbow', 'heavy-metal', 'system'] as const
 export type ThemeName = typeof THEMES[number]
 
 // Interne Theme-Klassen (nicht direkt waehlbar)

@@ -1,4 +1,4 @@
-// REQ-3041, REQ-4015: PreviewTable – Live-Vorschau der zu erzeugenden Werte mit is_error
+﻿// REQ-3041, REQ-4015: PreviewTable – Live-Vorschau der zu erzeugenden Werte mit is_error
 import type { BVAPoint } from "../../lib/bva-calc";
 
 interface PreviewTableProps {

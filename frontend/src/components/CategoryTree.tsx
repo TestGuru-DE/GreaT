@@ -1,4 +1,4 @@
-// REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
+﻿// REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
 import { useEffect, useRef, useState } from "react";

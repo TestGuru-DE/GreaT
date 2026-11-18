@@ -27,6 +27,8 @@ class User(Base):
     is_first_admin = Column(Boolean, default=False, server_default='0')
     # REQ-4027 AK-10: persistierter Zustand "Standardpasswort aktiv" (Sperre REQ-4028, Hinweis REQ-4027)
     default_password_active = Column(Boolean, default=False, server_default='0', nullable=False)
+    # B-06: Token-Versionierung fuer Sitzungs-Invalidierung
+    token_version = Column(Integer, nullable=False, default=0, server_default='0')
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
@@ -44,6 +46,8 @@ class User(Base):
             self.is_first_admin = False
         if self.default_password_active is None:
             self.default_password_active = False
+        if self.token_version is None:
+            self.token_version = 0
 
     def set_password(self, password: str) -> None:
         """Hash password with argon2id.

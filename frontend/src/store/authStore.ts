@@ -1,7 +1,7 @@
-// REQ-4001: Zustand Store fuer Authentifizierungszustand
+﻿// REQ-4001: Zustand Store fuer Authentifizierungszustand
 // REQ-4028: passwordChangeRequired State und changePassword Action
 import { create } from "zustand";
-import { login as apiLogin, logout as apiLogout, me as apiMe, refreshToken, changePassword as apiChangePassword } from "../api/authApi";
+import { authApi } from "../api/authApi";
 import type { UserInfo } from "../api/authApi";
 
 interface AuthState {
@@ -14,7 +14,7 @@ interface AuthState {
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
-  clearError: () => void;
+  
   refresh: () => Promise<void>;
   setPasswordChangeRequired: (value: boolean) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
@@ -29,9 +29,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (username: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
-      await apiLogin(username, password);
+      await authApi.login(username, password);
       // Nach erfolgreichem Login: User-Info laden
-      const user = await apiMe();
+      const user = await authApi.me();
       // REQ-4028 AK-1: password_change_required aus /auth/me auslesen
       const requiresChange = !!user.password_change_required;
       set({ user, isLoading: false, passwordChangeRequired: requiresChange });
@@ -44,7 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     try {
-      await apiLogout();
+      await authApi.logout();
     } finally {
       set({ user: null, error: null, passwordChangeRequired: false });
     }
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadUser: async () => {
     try {
-      const user = await apiMe();
+      const user = await authApi.me();
       // REQ-4028 AK-1: password_change_required aus /auth/me auslesen
       const requiresChange = !!user.password_change_required;
       set({ user, passwordChangeRequired: requiresChange });
@@ -61,11 +61,12 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  clearError: () => set({ error: null }),
+  
+  // clearError: () => set({ error: null }),
 
   refresh: async () => {
     try {
-      await refreshToken();
+      await authApi.refresh();
     } catch {
       // Refresh fehlgeschlagen - User wird ausgeloggt
       set({ user: null, passwordChangeRequired: false });
@@ -78,7 +79,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   changePassword: async (currentPassword: string, newPassword: string) => {
     set({ isLoading: true, error: null });
     try {
-      await apiChangePassword(currentPassword, newPassword);
+      await authApi.changePassword(currentPassword, newPassword);
       // REQ-4028 AK-6: Bei erfolgreichem Wechsel Flag loeschen
       set({ isLoading: false, passwordChangeRequired: false });
     } catch (e: unknown) {

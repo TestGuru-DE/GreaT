@@ -15,8 +15,10 @@ from sqlalchemy.orm import Session
 import httpx
 
 from ..database import get_db
-from ..auth_deps import require_api_capable, require_writer
+from ..auth_deps import require_api_capable, require_writer, require_admin
+from ..api_types import DbId
 from .. import models, schemas
+from ..models.auth import User
 from ..dataclass_validator import validate_value, DATACLASS_TYPES
 
 router = APIRouter(tags=["Datenklassen"], dependencies=[Depends(require_api_capable)])
@@ -72,11 +74,11 @@ def bulk_delete_dataclasses(payload: schemas.DataclassBulkDeleteRequest, db: Ses
 
 
 @router.delete("/dataclasses/{dcid}", dependencies=[Depends(require_writer)])
-def delete_dataclass(dcid: int, db: Session = Depends(get_db)):
+def delete_dataclass(dcid: DbId, db: Session = Depends(get_db)):
     """REQ-2003: Datenklasse loeschen. System-Datenklassen sind geschuetzt (REQ-2005)."""
     dc = db.get(models.DataClass, dcid)
     if not dc:
-        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden")
     if dc.is_system:
         raise HTTPException(status_code=403, detail="System-Datenklassen koennen nicht geloescht werden.")
     db.delete(dc)
@@ -85,20 +87,20 @@ def delete_dataclass(dcid: int, db: Session = Depends(get_db)):
 
 
 @router.get("/dataclasses/{dcid}/values", response_model=List[schemas.DataClassValueRead])
-def list_dataclass_values(dcid: int, db: Session = Depends(get_db)):
+def list_dataclass_values(dcid: DbId, db: Session = Depends(get_db)):
     """REQ-2003: Alle Werte einer Datenklasse auflisten (REQ-4014: sortiert nach sort_order)."""
     dc = db.get(models.DataClass, dcid)
     if not dc:
-        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden")
     return db.query(models.DataClassValue).filter(models.DataClassValue.dataclass_id == dcid).order_by(models.DataClassValue.sort_order, models.DataClassValue.id).all()
 
 
 @router.post("/dataclasses/{dcid}/values", response_model=schemas.DataClassValueRead, dependencies=[Depends(require_writer)])
-def add_dataclass_value(dcid: int, payload: schemas.DataClassValueCreate, db: Session = Depends(get_db)):
+def add_dataclass_value(dcid: DbId, payload: schemas.DataClassValueCreate, db: Session = Depends(get_db)):
     """REQ-2003: Wert zu Datenklasse hinzufuegen (mit Typvalidierung)."""
     dc = db.get(models.DataClass, dcid)
     if not dc:
-        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden")
     ok, msg = validate_value(payload.value, dc.value_type)
     if not ok:
         raise HTTPException(status_code=422, detail=msg)
@@ -121,11 +123,11 @@ def delete_dataclass_value(vid: int, db: Session = Depends(get_db)):
 
 
 @router.put("/dataclasses/{dcid}/values/reorder", dependencies=[Depends(require_writer)])
-def reorder_dataclass_values(dcid: int, payload: dict, db: Session = Depends(get_db)):
+def reorder_dataclass_values(dcid: DbId, payload: dict, db: Session = Depends(get_db)):
     """REQ-4014: Speichert neue Reihenfolge der Werte einer Datenklasse."""
     dc = db.get(models.DataClass, dcid)
     if not dc:
-        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden")
     
     value_ids = payload.get("value_ids", [])
     if not isinstance(value_ids, list):
@@ -151,7 +153,7 @@ def apply_dataclass_to_category(cid: int, payload: schemas.ApplyDataClassRequest
         raise HTTPException(status_code=404, detail="Kategorie nicht gefunden.")
     dc = db.get(models.DataClass, payload.dataclass_id)
     if not dc:
-        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Datenklasse nicht gefunden")
 
     # Bereits vorhandene Werte (Duplikate vermeiden)
     existing_vals = {
@@ -246,22 +248,34 @@ async def import_user_dataclasses(file: UploadFile = File(...), db: Session = De
     return {"status": "ok", "imported": imported}
 
 
-# REQ-4012: BugMagnet-Import Endpoints
+# REQ-4012: BugMagnet-Import Endpoints (deprecated – use /api/datanodes/bugmagnet-* instead)
 
-@router.get("/dataclasses/bugmagnet-status")
-def bugmagnet_status(db: Session = Depends(get_db)):
-    """REQ-4012: Prüft ob BugMagnet bereits importiert wurde."""
+@router.get("/dataclasses/bugmagnet-status", deprecated=True)
+def bugmagnet_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_api_capable),
+):
+    """REQ-4012: [DEPRECATED] Prueft ob BugMagnet bereits importiert wurde.
+
+    .. deprecated:: Use /api/datanodes/bugmagnet-status instead.
+    """
     has_bugmagnet = db.query(models.DataClass).filter(
         models.DataClass.is_system == True
     ).first() is not None
     return {"imported": has_bugmagnet}
 
 
-@router.post("/dataclasses/bugmagnet-import", dependencies=[Depends(require_writer)])
-async def import_bugmagnet(db: Session = Depends(get_db)):
-    """
-    REQ-4012: Importiert BugMagnet-Datenklassen von GitHub.
-    Löscht bestehende is_system=True Klassen, legt neue an.
+@router.post("/dataclasses/bugmagnet-import", deprecated=True)
+async def import_bugmagnet(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    """REQ-4012: [DEPRECATED] Importiert BugMagnet-Datenklassen von GitHub.
+
+    Loescht bestehende is_system=True Klassen, legt neue an.
+    Nur Admin darf BugMagnet importieren.
+
+    .. deprecated:: Use /api/datanodes/bugmagnet-import instead.
     """
     # 1. JSON von GitHub laden
     try:
@@ -314,13 +328,22 @@ class DataClassUpdate(BaseModel):
 
 @router.put("/dataclasses/{dcid}", response_model=schemas.DataClassRead)
 def update_dataclass(
-    dcid: int,
+    dcid: DbId,
     payload: DataClassUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(require_writer),
 ):
     """REQ-4021: Datenklasse aktualisieren; Version-Konflikt -> 409."""
     from ..concurrency import update_with_version
+
+    # B-24: System-Datenklassen duerfen nur von Admins geaendert werden
+    dc = db.get(models.DataClass, dcid)
+    if dc and dc.is_system and current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="System-Datenklassen koennen nur von Admins geaendert werden.",
+        )
+
     update_data = payload.model_dump(exclude={"version"}, exclude_unset=True)
     return update_with_version(
         db=db,

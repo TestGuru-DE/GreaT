@@ -1,4 +1,4 @@
-// REQ-3053: Test für CategoryStore Undo/Redo Integration
+ï»¿// REQ-3053: Test fï¿½r CategoryStore Undo/Redo Integration
 import { renderHook, act } from '@testing-library/react'
 import { useCategoryStore } from '../categoryStore'
 import { categoriesApi, valuesApi } from '../../api/client'

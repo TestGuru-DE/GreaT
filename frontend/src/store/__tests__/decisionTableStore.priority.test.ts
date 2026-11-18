@@ -1,4 +1,4 @@
-// REQ-5021: Tests fuer setEffectPriority im decisionTableStore
+﻿// REQ-5021: Tests fuer setEffectPriority im decisionTableStore
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useDecisionTableStore } from "../decisionTableStore";

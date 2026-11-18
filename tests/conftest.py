@@ -62,10 +62,11 @@ def _make_token_client(username: str, role: str) -> TestClient:
         user.role = role
         user.is_active = True
         user.default_password_active = False
+        user.token_version = 0
         user.set_password(password)
         db.commit()
         db.refresh(user)
-        token = create_access_token(user.id, user.username, user.role)
+        token = create_access_token(user.id, user.username, user.role, user.token_version)
     finally:
         db.close()
     client = TestClient(app_instance())
@@ -99,6 +100,12 @@ def client():
 def auth_client():
     """Angemeldeter Editor (Schreibrechte, kein Admin)."""
     return _make_token_client("testuser", "editor")
+
+
+@pytest.fixture
+def editor_client():
+    """Angemeldeter Editor (alias fuer auth_client; explizit benannt)."""
+    return _make_token_client("editortest", "editor")
 
 
 @pytest.fixture
@@ -163,3 +170,58 @@ def _purge_test_projects_per_test():
     finally:
         db.close()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _purge_datanodes_per_test():
+    """B-09: DataNodes und DataNodeValues je Test entfernen."""
+    from app.database import SessionLocal
+    from app.models import DataNode, DataNodeValue
+    db = SessionLocal()
+    try:
+        db.query(DataNodeValue).delete(synchronize_session=False)
+        db.query(DataNode).delete(synchronize_session=False)
+        db.commit()
+    finally:
+        db.close()
+    yield
+
+
+# ---------------------------------------------------------------------------
+# T-6: Test-Router fuer Debug-Auth-Endpunkte (nur in Tests)
+# ---------------------------------------------------------------------------
+
+def _setup_test_auth_endpoints():
+    """Fuegt Test-Endpunkte fuer Role-Checks zur App hinzu (nur in Tests).
+
+    Diese Endpunkte wurden aus dem Produktivcode entfernt (T-6) und stehen
+    hier fuer Tests zur Verfuegung.
+    """
+    from app.main import app
+    from app.auth_deps import require_admin, require_editor_or_admin, require_writer, require_api_capable
+    from app.models.auth import User
+    from fastapi import Depends, APIRouter
+
+    test_router = APIRouter(prefix="/auth", tags=["auth-test"])
+
+    @test_router.get("/admin-only")
+    def admin_only(current_user: User = Depends(require_admin)):
+        return {"message": "Zugriff als Admin gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/editor-or-admin")
+    def editor_or_admin(current_user: User = Depends(require_editor_or_admin)):
+        return {"message": "Zugriff als Editor/Admin gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/writer-only")
+    def writer_only(current_user: User = Depends(require_writer)):
+        return {"message": "Zugriff als Writer gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    @test_router.get("/api-capable")
+    def api_capable(current_user: User = Depends(require_api_capable)):
+        return {"message": "Zugriff als API-Capable gewaehrt", "username": current_user.username, "role": current_user.role}
+
+    app.include_router(test_router)
+
+
+# Setup test endpoints on first import
+_setup_test_auth_endpoints()

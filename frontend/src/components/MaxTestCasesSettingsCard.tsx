@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import {
   DEFAULT_MAX_TESTCASES,
   MIN_MAX_TESTCASES,
@@ -66,5 +66,3 @@ export function MaxTestCasesSettingsCard() {
     </section>
   );
 }
-
-export default MaxTestCasesSettingsCard;

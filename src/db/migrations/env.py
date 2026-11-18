@@ -14,11 +14,15 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../..")))
 
 from src.app.models import Base  # noqa: E402 – Modelle für autogenerate
+from src.app.config import DATABASE_URL  # noqa: E402 – DATABASE_URL aus App-Konfiguration
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# DATABASE_URL aus app.config verwenden (alembic.ini-Wert wird ueberschrieben)
+config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 target_metadata = Base.metadata
 

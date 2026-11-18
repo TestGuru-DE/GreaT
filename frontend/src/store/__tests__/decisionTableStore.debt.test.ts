@@ -1,4 +1,4 @@
-// EPIC-20 Schulden: Tests fuer neue decisionTableStore Features
+﻿// EPIC-20 Schulden: Tests fuer neue decisionTableStore Features
 import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useDecisionTableStore } from "../decisionTableStore";

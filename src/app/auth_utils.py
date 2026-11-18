@@ -16,13 +16,14 @@ from .config import (
 )
 
 
-def create_access_token(user_id: int, username: str, role: str) -> str:
+def create_access_token(user_id: int, username: str, role: str, token_version: int = 0) -> str:
     """Create JWT access token.
 
     Args:
         user_id: Database ID of the user
         username: Username for identification
         role: User role (admin, editor, viewer)
+        token_version: B-06 Token version for session invalidation
 
     Returns:
         Encoded JWT string
@@ -35,6 +36,7 @@ def create_access_token(user_id: int, username: str, role: str) -> str:
         "exp": expire,
         "type": "access",
         "jti": secrets.token_urlsafe(16),  # B2: Eindeutige Token-ID fuer Rotation
+        "tv": token_version,  # B-06: Token version for session invalidation
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
@@ -58,10 +60,10 @@ def create_refresh_token(user_id: int) -> str:
     return jwt.encode(payload, JWT_REFRESH_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-def decode_token(token: str) -> dict:
-    """Decode and validate JWT token.
+def decode_access_token(token: str) -> dict:
+    """Decode and validate JWT access token.
 
-    Tries access token secret first, then refresh token secret.
+    Uses only the access token secret key.
 
     Args:
         token: JWT token string
@@ -72,6 +74,39 @@ def decode_token(token: str) -> dict:
     Raises:
         jwt.ExpiredSignatureError: If token has expired
         jwt.InvalidTokenError: If token is invalid or tampered
+    """
+    if not token:
+        raise jwt.InvalidTokenError("Empty token")
+    return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+
+
+def decode_refresh_token(token: str) -> dict:
+    """Decode and validate JWT refresh token.
+
+    Uses only the refresh token secret key.
+
+    Args:
+        token: JWT token string
+
+    Returns:
+        Decoded payload dict
+
+    Raises:
+        jwt.ExpiredSignatureError: If token has expired
+        jwt.InvalidTokenError: If token is invalid or tampered
+    """
+    if not token:
+        raise jwt.InvalidTokenError("Empty token")
+    return jwt.decode(token, JWT_REFRESH_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+
+
+# Deprecated: tries both secrets – insecure. Use decode_access_token or decode_refresh_token.
+def decode_token(token: str) -> dict:
+    """Decode and validate JWT token.
+
+    .. deprecated:: Use decode_access_token() or decode_refresh_token() instead.
+
+    Tries access token secret first, then refresh token secret.
     """
     if not token:
         raise jwt.InvalidTokenError("Empty token")

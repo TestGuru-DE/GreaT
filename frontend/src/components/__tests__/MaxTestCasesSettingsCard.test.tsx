@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+﻿import { describe, it, expect, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MaxTestCasesSettingsCard } from '../MaxTestCasesSettingsCard';
 

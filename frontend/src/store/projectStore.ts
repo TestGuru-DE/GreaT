@@ -1,6 +1,8 @@
-// REQ-1204 + REQ-2002: Zustand Store fuer Projektliste mit Bulk-Delete
+﻿// REQ-1204 + REQ-2002: Zustand Store fuer Projektliste mit Bulk-Delete
 import { create } from "zustand";
 import { projectsApi } from "../api/client";
+import { ApiError } from "../api/ApiError";
+import { useToastStore } from "../components/Toast";
 import type { Project } from "../types";
 
 interface BulkDeleteResult { deleted: number; blocked: number[]; }
@@ -12,7 +14,7 @@ interface ProjectStore {
   fetchProjects: () => Promise<void>;
   createProject: (name: string) => Promise<void>;
   deleteProject: (id: number) => Promise<void>;
-  bulkDelete: (ids: number[]) => Promise<BulkDeleteResult>;
+  
   bulkDeleteForce: (ids: number[]) => Promise<BulkDeleteResult>;
 }
 
@@ -26,8 +28,10 @@ export const useProjectStore = create<ProjectStore>((set) => ({
     try {
       const projects = await projectsApi.list();
       set({ projects, loading: false });
-    } catch (e) {
-      set({ error: String(e), loading: false });
+    } catch (e: unknown) {
+      const msg = e instanceof ApiError ? e.message : String(e);
+      set({ error: msg, loading: false });
+      useToastStore.getState().add(msg, 'error');
     }
   },
 
@@ -39,12 +43,6 @@ export const useProjectStore = create<ProjectStore>((set) => ({
   deleteProject: async (id: number) => {
     await projectsApi.forceDelete(id);
     set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
-  },
-
-  bulkDelete: async (ids: number[]) => {
-    const res = await projectsApi.bulkDelete(ids);
-    set((s) => ({ projects: s.projects.filter((p) => !ids.includes(p.id) || (res.blocked ?? []).includes(p.id)) }));
-    return res;
   },
 
   bulkDeleteForce: async (ids: number[]) => {

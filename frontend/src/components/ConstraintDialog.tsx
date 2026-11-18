@@ -1,20 +1,16 @@
-// REQ-5012: Constraint-Dialog
+﻿// REQ-5012: Constraint-Dialog
 // - Links: Auswahlliste aller Ursachen/Wirkungen (Checkboxen)
 // - Rechts: Dropdown fuer Constraint-Typ (E, I, O, R, M)
 // - Validierung: R/M brauchen genau 2, E/I/O brauchen mind. 2
+
 import { useState, useEffect } from "react";
 import { useDecisionTableStore } from "../store/decisionTableStore";
+import { constraintsApi } from "../api/client";
+import type { Constraint } from "../api/client";
 
 interface ConstraintDialogProps {
   projectId: number;
   onClose: () => void;
-}
-
-interface Constraint {
-  id: number;
-  type: string;
-  targets: number[] | { from: number; to: number };
-  description?: string;
 }
 
 interface ConstraintType {
@@ -49,8 +45,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
 
   // Lade bestehende Constraints
   useEffect(() => {
-    fetch(`/api/decision-table/constraints/${projectId}`, { credentials: "include" })
-      .then((r) => r.json())
+    constraintsApi.list(projectId)
       .then(setExistingConstraints)
       .catch(() => {});
   }, [projectId]);
@@ -79,33 +74,18 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
         : selectedItems;
 
     try {
-      const response = await fetch("/api/decision-table/constraints", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          project_id: projectId,
-          constraint_type: constraintType,
-          targets,
-          description: description || undefined,
-        }),
+      await constraintsApi.create(projectId, {
+        constraint_type: constraintType,
+        targets,
+        description: description || undefined,
       });
-
-      if (response.ok) {
-        setSelectedItems([]);
-        setDescription("");
-        setConstraintType("E");
-        // Reload constraints
-        const resp = await fetch(`/api/decision-table/constraints/${projectId}`, {
-          credentials: "include",
-        });
-        setExistingConstraints(await resp.json());
-      } else {
-        const err = await response.json();
-        setError(err.detail || "Fehler");
-      }
+      setSelectedItems([]);
+      setDescription("");
+      setConstraintType("E");
+      // Reload constraints
+      setExistingConstraints(await constraintsApi.list(projectId));
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(e instanceof Error ? e.message : "Fehler");
     } finally {
       setLoading(false);
     }
@@ -113,14 +93,8 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
 
   async function handleDelete(id: number) {
     try {
-      await fetch(`/api/decision-table/constraints/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const resp = await fetch(`/api/decision-table/constraints/${projectId}`, {
-        credentials: "include",
-      });
-      setExistingConstraints(await resp.json());
+      await constraintsApi.delete(id);
+      setExistingConstraints(await constraintsApi.list(projectId));
     } catch {
       // silently fail on delete error
     }

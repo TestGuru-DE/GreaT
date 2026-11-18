@@ -1,4 +1,4 @@
-// REQ-3041: API-Wrapper fuer BVA-Endpoint
+﻿// REQ-3041: API-Wrapper fuer BVA-Endpoint
 import api from "./client";
 
 export interface BVARequest {

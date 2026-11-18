@@ -1,4 +1,4 @@
-// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
+﻿// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
 import type { BVAConfig } from "../../lib/bva-calc";
 import { validateBVAConfig, validateMultiRangeBVAConfig } from "../../lib/bva-calc";
 

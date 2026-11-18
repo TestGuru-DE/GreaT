@@ -206,3 +206,91 @@ Zusaetzlich `opencode.json` angelegt mit `default_agent: "great-orchestrator"`.
 |---|---|---|---|---|
 | 2026-11-08 | src/app/models.py | archive/2026-11-08/models.py | Vom Paket src/app/models/ ueberdeckt (Python laedt das Paket). Veralteter Stand ohne is_result, category_type, DataNode, Versionsfelder. Entscheidung des Nutzers. | GREAT Senior Developer |
 
+
+## 2026-11-17 – Kombinatorik-Optimierung (IPOG-A)
+
+**Grund**: IPOG-A-Algorithmus ersetzt die alte Greedy-Heuristik in orthogonal.py.
+IPOG-A liefert deterministische, ressourcensparende Pairwise-Generierung mit Timeout-Schutz
+und kartesischer Groessenpruefung.
+
+| Datum | Quelle | Ziel | Begruendung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/combinatorics/orthogonal.py | archive/2026-11-17/orthogonal.py | Ersetzt durch IPOG-A (src/combinatorics/ipo.py). Alte Greedy-Heuristik mit kartesischer Enumeration zu langsam bei grossen Kategorien. | GREAT Senior Developer |
+
+---
+
+## 2026-11-17 – Desktop-Altcode "TaNoS" und Alt-Backend archiviert
+
+**Grund**: Desktop-Anwendung "TaNoS v5.4" (PySide6) und paralleler GeTeCaDe-Backend-Prototyp
+vollstaendig durch Web-Anwendung (FastAPI + React) ersetzt. ADR-004 umgesetzt.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/main.py | archive/2026-11-17/desktop-tanos/src/main.py | PySide6 Desktop-App "TaNoS v5.4", durch Web-App ersetzt | GREAT Legacy Auditor |
+| 2026-11-17 | src/tree_view.py | archive/2026-11-17/desktop-tanos/src/tree_view.py | PySide6 TreeView-Logik, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/project_handler.py | archive/2026-11-17/desktop-tanos/src/project_handler.py | PySide6 Projekt-Handler, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/api_client.py | archive/2026-11-17/desktop-tanos/src/api_client.py | requests-basierter API-Client fuer Desktop-App | GREAT Legacy Auditor |
+| 2026-11-17 | src/rules/ (4 Dateien) | archive/2026-11-17/desktop-tanos/src/rules/ | PySide6 Regel-Dialoge und -Klassen, Desktop-Altcode | GREAT Legacy Auditor |
+| 2026-11-17 | src/io_handlers/ | archive/2026-11-17/desktop-tanos/src/io_handlers/ | CSV-Handler fuer Desktop-App, durch Web-API ersetzt | GREAT Legacy Auditor |
+| 2026-11-17 | src/__init__.py | archive/2026-11-17/desktop-tanos/src/__init__.py | Namespace-Package-Marker, nicht mehr noetig (implicit namespace package) | GREAT Legacy Auditor |
+| 2026-11-17 | src/backend/ | archive/2026-11-17/backend-getecade/ | Paralleler GeTeCaDe-Prototyp (ADR-004), nicht integriert | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler.py | archive/2026-11-17/tests/test_csv_handler.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler_names.py | archive/2026-11-17/tests/test_csv_handler_names.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+| 2026-11-17 | tests/test_csv_handler_roundtrip.py | archive/2026-11-17/tests/test_csv_handler_roundtrip.py | Test gegen Desktop-CSV-Handler, ersetzt durch test_req1000_csv_export_web.py | GREAT Legacy Auditor |
+
+---
+
+## 2026-11-17 – Backend Totcode und Doppelungen bereinigt
+
+**Grund:** Unbenutzte Dateien, doppelte Code-Stellen und veraltete Abhaengigkeiten entfernen. Reines Refactoring ohne Verhaltensaenderung.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | src/app/routers/ui_generate.py | archive/2026-11-17/empty-routers/ui_generate.py | 0 Byte, ungenutzt, kein Import | GREAT Senior Developer |
+| 2026-11-17 | src/app/routers/ui_projects.py | archive/2026-11-17/empty-routers/ui_projects.py | 0 Byte, ungenutzt, kein Import | GREAT Senior Developer |
+| 2026-11-17 | src/app/templates_config.py | archive/2026-11-17/htmx-legacy/templates_config.py | Jinja2-Templates-Singleton, ungenutzt (kein Import) | GREAT Senior Developer |
+| 2026-11-17 | src/app/templates/*.html | archive/2026-11-17/htmx-legacy/templates/ | HTMX/Jinja2 HTML-Templates, durch React ersetzt | GREAT Senior Developer |
+
+---
+
+## 2026-11-17 – Frontend Totcode archivieren, HTTP-Schicht vereinheitlichen
+
+**Grund:** Drei parallele HTTP-Pfade (axios, fetch-Wrapper, rohes fetch) durch eine einzige axios-Schicht ersetzt. Totcode und Doppelungen entfernt.
+
+| Datum | Quelle | Ziel | Begründung | Agent |
+|---|---|---|---|---|
+| 2026-11-17 | frontend/src/components/DataNodePicker.tsx | archive/2026-11-17/frontend/DataNodePicker.tsx | Nirgends importiert, Totcode | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/components/ResultCellEditor.tsx | archive/2026-11-17/frontend/ResultCellEditor.tsx | Nirgends importiert, Totcode | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/api/handlers.ts | archive/2026-11-17/frontend/handlers.ts | extractConflict/handleConflictResponse durch ApiError ersetzt | GREAT Senior Developer |
+| 2026-11-17 | frontend/src/api/handlers.test.ts | archive/2026-11-17/frontend/handlers.test.ts | Test zu archiviertem handlers.ts | GREAT Senior Developer |
+| 2026-11-17 | documentation/screenshots/ | archive/2026-11-17/frontend-docs/screenshots/ | Duplikat von frontend/src/docs/screenshots/ | GREAT Senior Developer |
+| 2026-11-17 | documentation/handbuch.md | archive/2026-11-17/frontend-docs/handbuch.md | Duplikat von frontend/src/docs/handbuch.md | GREAT Senior Developer |
+
+**Entfernte API-Exporte (client.ts):**
+- `dataclassApi` samt Typen `DataClass`, `DataClassValue` – nirgends importiert
+- `categoriesApi.getValues` – Duplikat von `valuesApi.list`
+- `categoryPropertiesApi.updateIsResult` – nur in Test-Mocks genutzt
+- `projectsApi.bulkDelete` – nur `bulkDeleteForce` wird genutzt
+- `datanodesApi.get`, `datanodesApi.update` – nirgends genutzt
+
+**Entfernte Store-Methoden:**
+- `projectStore.bulkDelete` – nur `bulkDeleteForce` wird genutzt
+- `authStore.clearError` – nur in Test-Mocks genutzt
+
+**Entfernte Typen:**
+- `ChangePasswordRequest` (usersApi.ts) – nicht mehr noetig
+
+**Neue API-Module (client.ts):**
+- `decisionTableApi` – aus decisionTableStore.ts ausgelagert
+- `constraintsApi` – aus ConstraintDialog.tsx ausgelagert
+- `backupApi` – aus SettingsPage.tsx ausgelagert
+- `datanodesApi.importUser` – aus DataClassesPage.tsx ausgelagert
+
+**Weitere Aenderungen:**
+- `authApi.ts`, `usersApi.ts`, `sharingApi.ts` auf axios umgestellt
+- `usersApi.changePassword` in `usersApi.adminSetPassword` umbenannt
+- Doppelte Default-Exporte in `MaxTestCasesSettingsCard.tsx`, `PortSettingsCard.tsx` entfernt
+- `GenerationsPage.tsx` widersprechende CSS-Klassen bereinigt
+- `e2e/dataclasses-export.spec.ts` console.log entfernt
+- `documentation/handbuch-verweis.md` erstellt
+

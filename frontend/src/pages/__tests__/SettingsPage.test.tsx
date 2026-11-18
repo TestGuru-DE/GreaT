@@ -3,28 +3,31 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from '../SettingsPage';
 
+vi.mock('../../api/client', () => ({
+  backupApi: {
+    create: vi.fn(),
+    restore: vi.fn(),
+    reset: vi.fn(),
+  },
+  datanodesApi: {
+    importBugMagnet: vi.fn(),
+    getBugMagnetStatus: vi.fn(),
+    importUser: vi.fn(),
+  },
+}));
+
+import { backupApi, datanodesApi } from '../../api/client';
+
 beforeEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
 
   vi.stubGlobal('URL.createObjectURL', vi.fn(() => 'blob:test-url'));
-  vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    if (url === '/api/backup') {
-      return {
-        ok: true,
-        blob: async () => new Blob(['backup-zip']),
-      } as Response;
-    }
-    if (url === '/api/backup/reset') {
-      return {
-        ok: true,
-        json: async () => ({ status: 'ok', reset: true }),
-      } as Response;
-    }
-    return {
-      ok: true,
-      json: async () => ({ imported: false }),
-    } as Response;
-  }));
+
+  (backupApi.create as any).mockResolvedValue(new Blob(['backup-zip']));
+  (backupApi.reset as any).mockResolvedValue({ status: 'ok', reset: true });
+  (backupApi.restore as any).mockResolvedValue({ projects_restored: 0 });
+  (datanodesApi.getBugMagnetStatus as any).mockResolvedValue({ imported: false });
 });
 
 describe('SettingsPage', () => {
@@ -36,7 +39,7 @@ describe('SettingsPage', () => {
   });
 
   it('does not render mojibake artifacts anywhere on the page', () => {
-    // Bugfix-Scope: kaputte Emoji-Escapes (z.B. ðŸ’¾, ðŸ—‚ï¸, â³, âœ…, âŒ) duerfen nicht sichtbar sein.
+    // Bugfix-Scope: kaputte Emoji-Escapes (z.B. ðŸ'¾, ðŸ—‚ï¸, â³, âœ…, âŒ) duerfen nicht sichtbar sein.
     const { container } = render(<SettingsPage />);
 
     expect(container.textContent).not.toMatch(/ðŸ/);
@@ -88,24 +91,22 @@ describe('SettingsPage', () => {
 
   it('triggers backup before database reset when choosing backup option', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.mocked(fetch);
     render(<SettingsPage />);
 
     await user.click(screen.getByRole('button', { name: /Datenbank zuruecksetzen|Datenbank loeschen/i }));
     await user.click(screen.getByRole('button', { name: /Vorher Backup/i }));
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/backup');
+    expect(backupApi.create).toHaveBeenCalled();
   });
 
   it('resets the database when the confirmation is accepted', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.mocked(fetch);
     render(<SettingsPage />);
 
     await user.click(screen.getByRole('button', { name: /Datenbank zuruecksetzen|Datenbank loeschen/i }));
     await user.click(screen.getByRole('button', { name: /Ja mach/i }));
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/backup/reset', expect.objectContaining({ method: 'POST' }));
+    expect(backupApi.reset).toHaveBeenCalled();
   });
 
   // REQ-4027 AK-12 / REQ-4028: Kein Passwort mehr nach Reset anzeigen
@@ -123,13 +124,13 @@ describe('SettingsPage', () => {
 
   it('cancels the database reset without sending reset request', async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.mocked(fetch);
     render(<SettingsPage />);
 
     await user.click(screen.getByRole('button', { name: /Datenbank zuruecksetzen|Datenbank loeschen/i }));
     await user.click(screen.getByRole('button', { name: /Upsi nein/i }));
 
     expect(screen.queryByRole('dialog', { name: /Datenbank wirklich zuruecksetzen\?/i })).not.toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalledWith('/api/backup/reset', expect.objectContaining({ method: 'POST' }));
+    // reset should not have been called - only create might have been called for backup
+    expect(backupApi.reset).not.toHaveBeenCalled();
   });
 });

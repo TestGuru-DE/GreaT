@@ -31,6 +31,7 @@
 ## Option 2: Entwickler-Modus
 
 > Voraussetzung: Installation abgeschlossen (siehe **INSTALLATION.md**)
+> Fuer Tests: `pip install -r requirements-dev.txt`
 
 ### Einfachste Methode: Doppelklick auf Start.bat
 
@@ -142,7 +143,7 @@ Browser: **http://localhost:8000**
 | `pip` nicht gefunden | Python neu installieren, "Add to PATH" aktivieren |
 | `npm` nicht gefunden | Node.js neu installieren, "Add to PATH" aktivieren |
 | Seite leer / weisser Bildschirm | `cd frontend && npm run build` erneut ausfuehren |
-| `ModuleNotFoundError` | `pip install -r requirements.txt` erneut ausfuehren |
+| `ModuleNotFoundError` | `pip install -r requirements.txt` erneut ausfuehren. Fuer Tests: `pip install -r requirements-dev.txt` |
 | Datenbankfehler | `great.db` loeschen â€“ wird beim Neustart automatisch neu angelegt |
 | GREAT.exe startet nicht | Windows Defender/Firewall kann blockieren â€“ Ausnahme hinzufuegen |
 | Browser oeffnet sich nicht | Manuel zu `http://localhost:8000` navigieren |

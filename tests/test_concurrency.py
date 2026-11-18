@@ -33,6 +33,10 @@ class MockDB:
     def query(self, model):
         return self.query_mock
 
+    def get(self, model, id):
+        """SQLAlchemy 2.0 style: db.get(model, id)"""
+        return self.query_mock.get(id)
+
     def commit(self):
         self.committed = True
 

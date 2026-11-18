@@ -1,6 +1,6 @@
-// REQ-1216 + REQ-3003 + REQ-3004: Regeleditor und Regelanzeige in React
+﻿// REQ-1216 + REQ-3003 + REQ-3004: Regeleditor und Regelanzeige in React
 import { useEffect, useState, useCallback } from "react";
-import { rulesApi, categoriesApi } from "../api/client";
+import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
 import type { Category } from "../types";
 
@@ -48,7 +48,7 @@ export default function RulesPanel({ projectId }: Props) {
       // Werte für alle Kategorien laden
       const valMap: Record<number, string[]> = {};
       await Promise.all(catList.map(async (c) => {
-        const vals = await categoriesApi.getValues(c.id);
+        const vals = await valuesApi.list(c.id);
         valMap[c.id] = vals.map((v) => v.value);
       }));
       setCatValues(valMap);

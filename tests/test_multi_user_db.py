@@ -29,6 +29,7 @@ def test_queuepool_import():
 
 def test_engine_pool_pre_ping_for_postgresql():
     """PostgreSQL Engine verwendet pool_pre_ping."""
+    pytest.importorskip("psycopg2")
     from sqlalchemy import create_engine
     from sqlalchemy.pool import QueuePool
     # Test mit einer Mock-URL (verbindet nicht wirklich)

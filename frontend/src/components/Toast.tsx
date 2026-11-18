@@ -1,4 +1,4 @@
-// REQ-1212: Toast-Benachrichtigungen
+﻿// REQ-1212: Toast-Benachrichtigungen
 import { create } from "zustand";
 
 type ToastType = "success" | "error" | "info";

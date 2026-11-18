@@ -1,9 +1,11 @@
-/**
+﻿/**
  * REQ-5018: Cause-Effect-Graph-Visualisierung
  * Ursachen links, Wirkungen rechts, Constraints als Kanten
  * SVG-basierte Graph-Ansicht mit Hover-Feedback und Legend
+ 
  */
 import { useEffect, useState, useRef } from "react";
+import { decisionTableApi } from "../api/client";
 
 interface GraphNode {
   id: string;
@@ -57,11 +59,7 @@ export default function CauseEffectGraph({ projectId }: CauseEffectGraphProps) {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/decision-table/graph/${projectId}`, { credentials: "include" })
-      .then((r) => {
-        if (!r.ok) throw new Error("Fehler beim Laden");
-        return r.json();
-      })
+    decisionTableApi.getGraph(projectId)
       .then((data) => {
         const nodeList: GraphNode[] = [];
 

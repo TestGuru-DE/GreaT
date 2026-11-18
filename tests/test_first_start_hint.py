@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app, _migrate_db, _add_default_password_active_column
+from app.main import app, _migrate_db, _add_default_password_active_column, _add_token_version_column
 from app.database import SessionLocal, engine, Base
 from app.models.auth import User
 from app.bootstrap import (
@@ -405,6 +405,7 @@ class TestDefaultPasswordMigration:
         _insert_legacy_user(eng, "admin", "admin", DEFAULT_ADMIN_PASSWORD, is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -418,6 +419,7 @@ class TestDefaultPasswordMigration:
         _insert_legacy_user(eng, "admin", "admin", "admin123", is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -431,6 +433,7 @@ class TestDefaultPasswordMigration:
         _insert_legacy_user(eng, "chef", "admin", "Eigenes-Passwort-2026", is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -445,6 +448,7 @@ class TestDefaultPasswordMigration:
         _insert_legacy_user(eng, "inaktiv", "admin", DEFAULT_ADMIN_PASSWORD, is_active=0, is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -461,6 +465,7 @@ class TestDefaultPasswordMigration:
         _insert_legacy_user(eng, "chef", "admin", "Eigenes-Passwort-2026", is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -477,6 +482,7 @@ class TestDefaultPasswordMigration:
         pw_hash = _insert_legacy_user(eng, "admin", "admin", DEFAULT_ADMIN_PASSWORD, is_first_admin=1)
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
+            _add_token_version_column(conn)
         session = sessionmaker(bind=eng)()
         caplog.set_level(logging.DEBUG)
         try:

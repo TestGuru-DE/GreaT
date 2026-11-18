@@ -1,7 +1,7 @@
 ﻿// REQ-4022: Zustand Store fuer Konflikt-Management
 // Teil von EPIC-18 (Multi-User) / Sprint 12
 import { create } from "zustand";
-import type { ConflictInfo } from "../api/handlers";
+import type { ConflictInfo } from "../api/conflictTypes";
 
 interface ConflictState {
   /** Der aktuelle Konflikt (null wenn kein Konflikt) */

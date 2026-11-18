@@ -1,4 +1,4 @@
-// REQ-1203: TypeScript-Interfaces fuer alle Pydantic-Schemas
+﻿// REQ-1203: TypeScript-Interfaces fuer alle Pydantic-Schemas
 
 export interface Project {
   id: number;

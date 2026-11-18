@@ -5,7 +5,7 @@ Passwoerter werden nie zurueckgegeben oder geloggt (REQ-4028 AK-9).
 """
 from sqlalchemy.orm import Session
 
-from .models.auth import User
+from .models.auth import User, RefreshToken
 from .password_policy import ERROR_CURRENT_PASSWORD_INVALID, PasswordError, validate_new_password
 
 
@@ -22,16 +22,38 @@ def apply_new_password(user: User, new_password: str) -> None:
 
 
 def change_own_password(db: Session, user: User, current_password: str, new_password: str) -> None:
-    """REQ-4028 AK-3: Selbst-Wechsel. Aktuelles Passwort muss stimmen."""
+    """REQ-4028 AK-3: Selbst-Wechsel. Aktuelles Passwort muss stimmen.
+
+    B-06: Invalidiert alle anderen Sitzungen nach Passwortwechsel.
+    """
     if not user.check_password(current_password):
         raise PasswordError(ERROR_CURRENT_PASSWORD_INVALID)
     apply_new_password(user, new_password)
-    db.commit()
+    increment_token_version(db, user)
 
 
 def admin_set_password(db: Session, target: User, new_password: str) -> None:
-    """REQ-4025 / REQ-4028 AK-4/AK-5: Admin setzt das Passwort eines Nutzers."""
+    """REQ-4025 / REQ-4028 AK-4/AK-5: Admin setzt das Passwort eines Nutzers.
+
+    B-06: Invalidiert alle Sitzungen des Ziel-Nutzers nach Passwortwechsel.
+    B-22: Setzt default_password_active=True, damit der Nutzer das Passwort
+    beim ersten Login aendern muss.
+    """
     apply_new_password(target, new_password)
+    target.default_password_active = True
+    increment_token_version(db, target)
+
+
+def increment_token_version(db: Session, user: User) -> None:
+    """B-06: Erhoeht token_version und revokiert alle aktiven Refresh-Tokens.
+
+    Muss aufgerufen werden nach: Passwortwechsel, Rollenaeanderung, Deaktivierung.
+    """
+    user.token_version += 1
+    db.query(RefreshToken).filter(
+        RefreshToken.user_id == user.id,
+        RefreshToken.is_revoked == False,
+    ).update({"is_revoked": True}, synchronize_session=False)
     db.commit()
 
 

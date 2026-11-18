@@ -74,7 +74,7 @@ def test_fehlerwert_testfall_landet_am_ende_trotz_hohem_risiko(auth_client, clea
     # BrokenOS ist ein Fehlerwert (allowed=False) mit hohem risk_weight
     resp = auth_client.post(
         f"/api/categories/{cat2_id}/values",
-        json={"value": "BrokenOS", "risk_weight": 20},
+        json={"value": "BrokenOS", "risk_weight": 10},
     )
     broken_value_id = resp.json()["id"]
     resp = auth_client.patch(f"/api/values/{broken_value_id}/properties", json={"allowed": False})

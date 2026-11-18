@@ -1,4 +1,4 @@
-// REQ-5013/5014/5019/5020: DecisionTable Optimization Tests
+﻿// REQ-5013/5014/5019/5020: DecisionTable Optimization Tests
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import DecisionTable from "../DecisionTable";

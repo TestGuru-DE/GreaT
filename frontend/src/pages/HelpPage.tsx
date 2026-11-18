@@ -1,4 +1,4 @@
-// In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
+﻿// In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
 // Erreichbar via: TopNav "?"-Button oder F1-Taste
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';

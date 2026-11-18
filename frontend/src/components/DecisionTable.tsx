@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+﻿import { useEffect } from "react";
 // REQ-5003 + REQ-5004 + REQ-5005: Entscheidungstabelle-Komponente
 // Layout: Ursachen oben, Wirkungen unten, Regeln als Spalten
 // Boolean-Werte (Y/N) als Default, automatische Regelgenerierung

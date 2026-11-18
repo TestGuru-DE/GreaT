@@ -32,7 +32,7 @@ def check_version(
         HTTPException 404: Nicht gefunden
         HTTPException 409: Version-Konflikt
     """
-    entity = db.query(model).get(entity_id)
+    entity = db.get(model, entity_id)
     if not entity:
         raise HTTPException(status_code=404, detail="Ressource nicht gefunden")
 

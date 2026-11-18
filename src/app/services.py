@@ -17,7 +17,7 @@ from . import models
 from .database import Base, engine
 from .seed_example import seed_example_project
 from .system_dataclasses import seed_system_dataclasses
-from combinatorics import all_combinations, each_choice, orthogonal, linear_expansion, t_wise, mcdc
+from combinatorics import all_combinations, each_choice, ipo, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
 from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAMultiRangeResult
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
@@ -307,14 +307,15 @@ def generate_cases(
     project_id: int = None,
     t_strength: int = 2,
     rule_engine=None,
+    deadline=None,
 ) -> List[Dict[str, str]]:
     """Ruft die gewuenschte Kombinatorik-Strategie auf."""
     if strategy == "all":
         return all_combinations.generate(categories)
     if strategy == "each":
         return each_choice.generate(categories, rule_engine=rule_engine)
-    if strategy in ("pairwise", "orthogonal"):
-        return orthogonal.generate(categories, rule_engine=rule_engine)
+    if strategy in ("pairwise", "orthogonal"):  # "orthogonal": veralteter Alias fuer pairwise, nicht entfernen
+        return ipo.generate(categories, rule_engine=rule_engine, deadline=deadline)
     if strategy == "linear":
         return linear_expansion.generate(categories, rule_engine=rule_engine)
     if strategy == "t_wise":
@@ -371,14 +372,29 @@ def load_rules_structured(db: Session, pid: int) -> Dict[str, list]:
     return out
 
 
+def find_unreachable_values(catmap: Dict[str, List[str]], result: List[Dict[str, str]]) -> List[str]:
+    """Finde Werte, die nach Regelanwendung in keinem Testfall vorkommen. B-20."""
+    warnings: List[str] = []
+    for cat_name, values in catmap.items():
+        for val in values:
+            if not any(tc.get(cat_name) == val for tc in result):
+                warnings.append(f"Wert '{val}' ({cat_name}) ist durch die Regeln in keinem Testfall erreichbar.")
+    return warnings
+
+
 def apply_business_rules(
     pid: int,
     assignments: List[Dict[str, str]],
     db: Session,
-) -> List[Dict[str, str]]:
+    catmap: Dict[str, List[str]] = None,
+) -> Tuple[List[Dict[str, str]], List[str]]:
     """
     Wendet alle Geschäftsregeln auf die Testfälle an.
     Reihenfolge: CombineRule → ForbiddenRule → DependencyRule
+    + finaler Validierungs-Filter + unreachable values (B-20)
+
+    Returns:
+        Tuple von (unique_testcases, warnings)
     """
     rules_raw = load_rules_structured(db, pid)
     id2name = cat_id_to_name_map(db, pid)
@@ -408,14 +424,26 @@ def apply_business_rules(
     engine = RuleEngine(rules=rules)
     result = engine.apply(list(assignments))
 
+    # B-20: Finaler Validierungs-Filter – entferne Testfälle die gegen Regeln verstoßen
+    final_result = []
+    for tc in result:
+        if engine.is_combination_valid(tc):
+            final_result.append(tc)
+
     seen: set = set()
     unique: List[Dict[str, str]] = []
-    for a in result:
+    for a in final_result:
         key = tuple(sorted(a.items()))
         if key not in seen:
             seen.add(key)
             unique.append(a)
-    return unique
+
+    # Unreachable values detection
+    warnings: List[str] = []
+    if catmap:
+        warnings = find_unreachable_values(catmap, unique)
+
+    return unique, warnings
 
 
 # ---------------------------------------------------------------------------
@@ -446,12 +474,34 @@ def force_delete_project(db: Session, pid: int) -> None:
     db.query(models.Project).filter(models.Project.id == pid).delete(synchronize_session=False)
 
 
+def delete_project(db: Session, pid: int, force: bool = False) -> None:
+    """Ein Projekt loeschen. Ohne force: 409 bei Generierungen. Immer: alle Abhaengigkeiten entfernen."""
+    from fastapi import HTTPException
+    
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    
+    if not force and project_has_generations(db, pid):
+        raise HTTPException(status_code=409, detail="Project has generations. Use force=true to delete.")
+    
+    # Alle abhaengigen Daten loeschen (wie force_delete_project)
+    force_delete_project(db, pid)
+    db.commit()
+
+
 def force_delete_category(db: Session, cid: int) -> int:
     cat = db.get(models.Category, cid)
     if not cat:
         return 0
     pid = cat.project_id
-    db.query(models.TestCaseValue).filter(models.TestCaseValue.category_id == cid).delete(synchronize_session=False)
+    # B-18: TestCaseValue-Referenzen auf NULL setzen (nicht loeschen)
+    db.query(models.TestCaseValue).filter(
+        models.TestCaseValue.category_id == cid
+    ).update(
+        {models.TestCaseValue.category_id: None},
+        synchronize_session=False
+    )
     db.query(models.Value).filter(models.Value.category_id == cid).delete(synchronize_session=False)
     db.delete(cat)
     return pid
@@ -475,13 +525,20 @@ def force_delete_value(db: Session, vid: int) -> int:
 # ---------------------------------------------------------------------------
 
 def assignment_from_testcase(db: Session, tc_id: int) -> Dict[str, str]:
+    from sqlalchemy import outerjoin
     rows = (
         db.query(models.TestCaseValue, models.Category.name)
-        .join(models.Category, models.Category.id == models.TestCaseValue.category_id)
+        .outerjoin(models.Category, models.Category.id == models.TestCaseValue.category_id)
         .filter(models.TestCaseValue.testcase_id == tc_id)
         .all()
     )
-    return {cat_name: tcv.value for tcv, cat_name in rows}
+    result = {}
+    for tcv, cat_name in rows:
+        # B-18: Falls Kategorie geloescht (cat_name=None), verwende gespeicherten category_name
+        if cat_name is None:
+            cat_name = tcv.category_name or f"cat#{tcv.category_id}"
+        result[cat_name] = tcv.value
+    return result
 
 
 def status_for_assignment(pid: int, a: Dict[str, str], db: Session) -> str:

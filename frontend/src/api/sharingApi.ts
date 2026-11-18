@@ -1,5 +1,6 @@
-// REQ-4023: Sharing-API-Calls fuer Projekt-Mitgliederverwaltung
+﻿// REQ-4023: Sharing-API-Calls fuer Projekt-Mitgliederverwaltung
 // Teil von EPIC-18 (Multi-User) / Sprint 13
+import api from "./client";
 
 export interface Member {
   user_id: number;
@@ -7,35 +8,29 @@ export interface Member {
   role: "editor" | "viewer";
 }
 
-export async function getProjectMembers(projectId: number): Promise<Member[]> {
-  const response = await fetch(`/api/sharing/project/${projectId}/members`, {
-    credentials: "include",
-  });
-  if (!response.ok) throw new Error(await response.text());
-  return response.json();
-}
+export const sharingApi = {
+  getProjectMembers: async (projectId: number): Promise<Member[]> => {
+    const { data } = await api.get<Member[]>(`/sharing/project/${projectId}/members`);
+    return data;
+  },
 
-export async function addProjectMember(
-  projectId: number,
-  userId: number,
-  role: string = "viewer"
-): Promise<void> {
-  const response = await fetch(`/api/sharing/project/${projectId}/members`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, role }),
-    credentials: "include",
-  });
-  if (!response.ok) throw new Error(await response.text());
-}
+  addProjectMember: async (
+    projectId: number,
+    userId: number,
+    role: string = "viewer"
+  ): Promise<void> => {
+    await api.post(`/sharing/project/${projectId}/members`, { user_id: userId, role });
+  },
 
-export async function removeProjectMember(
-  projectId: number,
-  userId: number
-): Promise<void> {
-  const response = await fetch(`/api/sharing/project/${projectId}/members/${userId}`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-  if (!response.ok) throw new Error(await response.text());
-}
+  removeProjectMember: async (
+    projectId: number,
+    userId: number
+  ): Promise<void> => {
+    await api.delete(`/sharing/project/${projectId}/members/${userId}`);
+  },
+};
+
+// Legacy exports for backwards compatibility during migration
+export const getProjectMembers = sharingApi.getProjectMembers;
+export const addProjectMember = sharingApi.addProjectMember;
+export const removeProjectMember = sharingApi.removeProjectMember;

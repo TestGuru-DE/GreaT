@@ -1,4 +1,4 @@
-// REQ-3009: Generierungen-Tab im Projektdetail
+﻿// REQ-3009: Generierungen-Tab im Projektdetail
 import { useEffect, useState, useCallback } from "react";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";

@@ -5,20 +5,42 @@ REQ-4001: Login, Logout, Refresh-Token
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 import jwt
 
 from ..database import get_db
 from ..models.auth import User, RefreshToken
-from ..auth_utils import create_access_token, create_refresh_token, decode_token
-from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_editor_or_admin, require_writer, require_api_capable
-from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS
+from ..auth_utils import create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
+from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_writer, require_api_capable
+from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS, GREAT_COOKIE_SECURE
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
+from ..config import GREAT_TRUST_PROXY_HEADERS
 from ..schemas import PasswordChangeRequest
 from ..password_policy import PasswordError
 from ..auth_service import change_own_password, is_first_start_hint_active
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+# B-26: Hilfsfunktionen fuer Cookie-Secure-Flag
+def _set_auth_cookie(response: Response, name: str, value: str, max_age: int) -> None:
+    response.set_cookie(
+        key=name,
+        value=value,
+        httponly=True,
+        secure=GREAT_COOKIE_SECURE,
+        samesite="strict",
+        max_age=max_age,
+    )
+
+
+def _delete_auth_cookie(response: Response, name: str) -> None:
+    response.delete_cookie(
+        key=name,
+        secure=GREAT_COOKIE_SECURE,
+        samesite="strict",
+    )
 
 
 @router.post("/login")
@@ -31,10 +53,16 @@ def login(
     """Login with username/password, returns access + refresh tokens in httpOnly cookies.
 
     REQ-4001: POST /auth/login akzeptiert Benutzername/Passwort und liefert JWT Access-Token + Refresh-Token.
+    B-08: Rate-Limit pro IP|Username, Reset nach erfolgreichem Login.
     """
-    # Rate limiting
-    client_ip = request.client.host
-    is_limited, retry_after = login_rate_limiter.is_rate_limited(client_ip)
+    # B-08: Rate limiting pro IP|Username
+    client_ip = (
+        request.headers.get("x-forwarded-for", request.client.host).split(",")[0].strip()
+        if GREAT_TRUST_PROXY_HEADERS
+        else request.client.host
+    )
+    key = f"{client_ip}|{form_data.username.lower()}"
+    is_limited, retry_after = login_rate_limiter.is_rate_limited(key, is_failure=True)
     if is_limited:
         raise HTTPException(
             status_code=429,
@@ -42,16 +70,21 @@ def login(
             headers={"Retry-After": str(retry_after)},
         )
 
-    # Find user
-    user = db.query(User).filter(User.username == form_data.username).first()
+    # B-22: Case-insensitive user lookup
+    user = db.query(User).filter(
+        func.lower(User.username) == form_data.username.lower()
+    ).first()
     if not user or not user.check_password(form_data.password):
-        raise HTTPException(status_code=401, detail="Ungultige Anmeldedaten")
+        raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
 
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
 
-    # Create tokens
-    access_token = create_access_token(user.id, user.username, user.role)
+    # B-08: Reset rate-limiter nach erfolgreichem Login
+    login_rate_limiter.is_rate_limited(key, is_failure=False)
+
+    # B-06: Token mit token_version erzeugen
+    access_token = create_access_token(user.id, user.username, user.role, user.token_version)
     refresh_token = create_refresh_token(user.id)
 
     # Store refresh token in DB
@@ -63,22 +96,18 @@ def login(
     db.add(rt)
     db.commit()
 
-    # Set httpOnly cookies
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=False,  # True in Production (HTTPS)
-        samesite="strict",
-        max_age=JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    # B-26: Set httpOnly cookies via helper
+    _set_auth_cookie(
+        response,
+        "access_token",
+        access_token,
+        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    _set_auth_cookie(
+        response,
+        "refresh_token",
+        refresh_token,
+        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
     return {
@@ -107,8 +136,9 @@ def logout(
             rt.is_revoked = True
             db.commit()
 
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    # B-26: Delete cookies via helper
+    _delete_auth_cookie(response, "access_token")
+    _delete_auth_cookie(response, "refresh_token")
 
     return {"message": "Logout erfolgreich"}
 
@@ -134,30 +164,48 @@ def refresh_token_endpoint(
         RefreshToken.is_revoked == False,
     ).first()
     if not rt:
-        raise HTTPException(status_code=401, detail="Ungultiger Refresh-Token")
+        raise HTTPException(status_code=401, detail="Ungültiger Refresh-Token")
 
     # Decode and validate
     try:
-        payload = decode_token(refresh_token_str)
+        payload = decode_refresh_token(refresh_token_str)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh-Token abgelaufen")
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Ungultiger Refresh-Token")
+        raise HTTPException(status_code=401, detail="Ungültiger Refresh-Token")
 
     if payload.get("type") != "refresh":
-        raise HTTPException(status_code=401, detail="Ungultiger Token-Typ")
+        raise HTTPException(status_code=401, detail="Ungültiger Token-Typ")
 
     # Get user
     user = db.query(User).filter(User.id == int(payload["sub"])).first()
     if not user:
         raise HTTPException(status_code=401, detail="Nutzer nicht gefunden")
 
+    # B-06: Deaktivierte Nutzer koennen nicht refreshen
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
+
+    # B-06: Token-Version pruefen (Access-Token im Cookie)
+    access_token_str = request.cookies.get("access_token")
+    if access_token_str:
+        try:
+            access_payload = decode_access_token(access_token_str)
+            if access_payload.get("type") == "access":
+                token_tv = access_payload.get("tv", 0)
+                if token_tv != user.token_version:
+                    raise HTTPException(status_code=401, detail="Sitzung abgelaufen, bitte neu anmelden")
+        except jwt.ExpiredSignatureError:
+            pass  # Access-Token abgelaufen ist OK – das ist der Grund fuer den Refresh
+        except jwt.InvalidTokenError:
+            pass  # Ungueltiger Access-Token ist OK – Refresh soll neuen liefern
+
     # B2: REVOKE old refresh token (Rotation!)
     rt.is_revoked = True
     db.commit()
 
     # Create NEW tokens
-    new_access_token = create_access_token(user.id, user.username, user.role)
+    new_access_token = create_access_token(user.id, user.username, user.role, user.token_version)
     new_refresh_token = create_refresh_token(user.id)
 
     # Store new refresh token in DB
@@ -169,22 +217,18 @@ def refresh_token_endpoint(
     db.add(new_rt)
     db.commit()
 
-    # Set new httpOnly cookies (BOTH access AND refresh)
-    response.set_cookie(
-        key="access_token",
-        value=new_access_token,
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    # B-26: Set new httpOnly cookies via helper
+    _set_auth_cookie(
+        response,
+        "access_token",
+        new_access_token,
+        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    response.set_cookie(
-        key="refresh_token",
-        value=new_refresh_token,  # B2: NEUER Token!
-        httponly=True,
-        secure=False,
-        samesite="strict",
-        max_age=JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+    _set_auth_cookie(
+        response,
+        "refresh_token",
+        new_refresh_token,  # B2: NEUER Token!
+        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
     )
 
     return {"message": "Token erneuert"}
@@ -266,44 +310,4 @@ def get_me(current_user: User = Depends(get_current_user_unrestricted)):
         "role": current_user.role,
         "is_active": current_user.is_active,
         "password_change_required": bool(current_user.default_password_active),
-    }
-
-
-@router.get("/admin-only")
-def admin_only(current_user: User = Depends(require_admin)):
-    """Admin-only endpoint. Used for testing require_role dependency."""
-    return {
-        "message": "Zugriff als Admin gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/editor-or-admin")
-def editor_or_admin(current_user: User = Depends(require_editor_or_admin)):
-    """Editor-or-admin endpoint. Used for testing require_role dependency."""
-    return {
-        "message": "Zugriff als Editor/Admin gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/writer-only")
-def writer_only(current_user: User = Depends(require_writer)):
-    """Writer-only endpoint (admin, editor). Used for testing require_writer dependency."""
-    return {
-        "message": "Zugriff als Writer gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
-    }
-
-
-@router.get("/api-capable")
-def api_capable(current_user: User = Depends(require_api_capable)):
-    """API-capable endpoint (admin, editor, viewer, api_user). Used for testing require_api_capable dependency."""
-    return {
-        "message": "Zugriff als API-Capable gewaehrt",
-        "username": current_user.username,
-        "role": current_user.role,
     }

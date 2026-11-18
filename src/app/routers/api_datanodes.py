@@ -14,10 +14,12 @@ from sqlalchemy.orm import Session
 import httpx
 
 from ..database import get_db
+from ..api_types import DbId
 from .. import models, schemas
 from ..auth_deps import require_writer, require_api_capable, require_admin, get_current_user
 from ..models.auth import User
 from ..concurrency import update_with_version
+from ..datavalidation import validate_parent_id
 
 router = APIRouter(tags=["DataNodes"])
 
@@ -123,7 +125,7 @@ def get_full_tree(
 
 @router.get("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
 def get_node(
-    node_id: int,
+    node_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_api_capable),
 ):
@@ -141,7 +143,23 @@ def create_node(
     current_user: User = Depends(require_writer),
 ):
     """REQ-4018: Neuen Knoten erstellen."""
-    node = models.DataNode(**data.model_dump())
+    # B-09: parent_id-Validierung vor dem Speichern
+    if data.parent_id is not None:
+        parent = db.get(models.DataNode, data.parent_id)
+        if not parent:
+            raise HTTPException(
+                status_code=404,
+                detail="Elternknoten nicht gefunden",
+            )
+
+    # B-24: Client darf is_system und source nicht setzen
+    node = models.DataNode(
+        name=data.name,
+        parent_id=data.parent_id,
+        sort_order=data.sort_order,
+        is_system=False,
+        source=None,
+    )
     db.add(node)
     db.commit()
     db.refresh(node)
@@ -150,18 +168,24 @@ def create_node(
 
 @router.put("/datanodes/{node_id}", response_model=schemas.DataNodeRead)
 def update_node(
-    node_id: int,
+    node_id: DbId,
     data: schemas.DataNodeUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
 ):
     """REQ-4018: Knoten aktualisieren mit Concurrency-Support."""
+    update_data = data.model_dump(exclude={"version"}, exclude_unset=True)
+
+    # B-09: parent_id-Validierung VOR dem commit
+    if "parent_id" in update_data:
+        validate_parent_id(db, node_id, update_data["parent_id"])
+
     result = update_with_version(
         db=db,
         model=models.DataNode,
         entity_id=node_id,
         client_version=data.version,
-        update_data=data.model_dump(exclude={"version"}, exclude_unset=True),
+        update_data=update_data,
         current_user_id=current_user.id,
     )
     return result
@@ -169,7 +193,7 @@ def update_node(
 
 @router.delete("/datanodes/{node_id}")
 def delete_node(
-    node_id: int,
+    node_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
 ):
@@ -184,7 +208,7 @@ def delete_node(
 
 @router.post("/datanodes/{node_id}/values", response_model=schemas.DataNodeValueRead)
 def add_value(
-    node_id: int,
+    node_id: DbId,
     data: schemas.DataNodeValueCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
@@ -202,8 +226,8 @@ def add_value(
 
 @router.delete("/datanodes/{node_id}/values/{value_id}")
 def delete_value(
-    node_id: int,
-    value_id: int,
+    node_id: DbId,
+    value_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_writer),
 ):

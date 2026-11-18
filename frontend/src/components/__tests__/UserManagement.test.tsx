@@ -1,4 +1,4 @@
-// REQ-4025: Tests fuer UserManagement-Komponente
+﻿// REQ-4025: Tests fuer UserManagement-Komponente
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import UserManagement from "../UserManagement";
@@ -8,6 +8,17 @@ import { useAuthStore } from "../../store/authStore";
 vi.mock("../../store/authStore", () => ({
   useAuthStore: vi.fn(),
 }));
+
+// Mock usersApi
+vi.mock("../../api/usersApi", () => ({
+  fetchUsers: vi.fn(),
+  createUser: vi.fn(),
+  updateUser: vi.fn(),
+  deleteUser: vi.fn(),
+  changePassword: vi.fn(),
+}));
+
+import { fetchUsers, createUser, updateUser, deleteUser, changePassword } from "../../api/usersApi";
 
 // Typen fuer Mock-Daten
 interface MockUser {
@@ -35,46 +46,6 @@ describe("UserManagement - REQ-4025", () => {
     vi.restoreAllMocks();
   });
 
-  function mockFetchForUsers(users: MockUser[]) {
-    return vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || opts.method === "GET" || !opts.method)) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(users),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "PUT" && !urlStr.includes("/password")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "DELETE") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "PUT" && urlStr.includes("/password")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      if (urlStr === "/api/users" && opts?.method === "POST") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 99, username: "newuser", role: "viewer", is_active: true }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
-    });
-  }
-
   function setupAuth(user: MockUser) {
     vi.mocked(useAuthStore).mockImplementation((selector: any) => {
       const state = {
@@ -84,7 +55,6 @@ describe("UserManagement - REQ-4025", () => {
         login: vi.fn(),
         logout: vi.fn(),
         loadUser: vi.fn(),
-        clearError: vi.fn(),
         refresh: vi.fn(),
       };
       // @ts-expect-error - selector returns the right value
@@ -94,7 +64,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("zeigt nichts fuer nicht-Admin-User", () => {
     setupAuth({ ...mockCurrentUser, role: "editor" });
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     const { container } = render(<UserManagement />);
     expect(container.textContent).toBe("");
@@ -102,7 +72,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("zeigt die Komponente fuer Admin-User", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     render(<UserManagement />);
 
@@ -113,7 +83,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("zeigt alle Nutzer in der Tabelle", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     render(<UserManagement />);
 
@@ -126,7 +96,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("zeigt Rollen und Status in der Tabelle", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     render(<UserManagement />);
 
@@ -151,7 +121,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("zeigt 'Neuen Nutzer anlegen' Button", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     render(<UserManagement />);
 
@@ -162,7 +132,7 @@ describe("UserManagement - REQ-4025", () => {
 
   it("oeffnet den 'Neuen Nutzer' Dialog beim Klick", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     render(<UserManagement />);
 
@@ -176,29 +146,9 @@ describe("UserManagement - REQ-4025", () => {
     });
   });
 
-  it("sendet POST /api/users beim Erstellen eines neuen Nutzers", async () => {
-    let capturedBody: any = null;
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr === "/api/users" && opts?.method === "POST") {
-        capturedBody = JSON.parse(opts.body);
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve([...mockUsers, { id: 99, username: "newuser", role: "viewer", is_active: true }]),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+  it("sendet POST beim Erstellen eines neuen Nutzers", async () => {
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (createUser as any).mockResolvedValue({ id: 99, username: "newuser", role: "viewer", is_active: true });
 
     setupAuth(mockCurrentUser);
 
@@ -222,39 +172,19 @@ describe("UserManagement - REQ-4025", () => {
     });
 
     await waitFor(() => {
-      expect(mockedFetch).toHaveBeenCalledWith(
-        "/api/users",
+      expect(createUser).toHaveBeenCalledWith(
         expect.objectContaining({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: "newuser", password: "secret123", role: "editor" }),
-          credentials: "include",
+          username: "newuser",
+          password: "secret123",
+          role: "editor",
         })
       );
     });
   });
 
-  it("sendet PUT /api/users/{id} beim Aendern der Rolle", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "PUT" && !urlStr.includes("/password")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+  it("sendet PUT beim Aendern der Rolle", async () => {
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (updateUser as any).mockResolvedValue(undefined);
 
     setupAuth(mockCurrentUser);
 
@@ -272,32 +202,12 @@ describe("UserManagement - REQ-4025", () => {
     }
 
     await waitFor(() => {
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/users/"),
-        expect.objectContaining({
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        })
-      );
+      expect(updateUser).toHaveBeenCalled();
     });
   });
 
   it("zeigt Bestaetigungsdialog beim Loeschen eines Nutzers", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ message: "OK" }),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     setupAuth(mockCurrentUser);
 
@@ -318,27 +228,9 @@ describe("UserManagement - REQ-4025", () => {
     });
   });
 
-  it("sendet DELETE /api/users/{id} beim Bestaetigen des Loeschens", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "DELETE") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+  it("sendet DELETE beim Bestaetigen des Loeschens", async () => {
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (deleteUser as any).mockResolvedValue(undefined);
 
     setupAuth(mockCurrentUser);
 
@@ -360,31 +252,12 @@ describe("UserManagement - REQ-4025", () => {
     });
 
     await waitFor(() => {
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/users/"),
-        expect.objectContaining({
-          method: "DELETE",
-          credentials: "include",
-        })
-      );
+      expect(deleteUser).toHaveBeenCalled();
     });
   });
 
   it("versteckt Loesch-Button fuer den eigenen Account", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ message: "OK" }),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     setupAuth(mockCurrentUser);
 
@@ -401,20 +274,7 @@ describe("UserManagement - REQ-4025", () => {
   });
 
   it("oeffnet den Passwort-Dialog beim Klick auf 'Passwort aendern'", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ message: "OK" }),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     setupAuth(mockCurrentUser);
 
@@ -435,27 +295,9 @@ describe("UserManagement - REQ-4025", () => {
     });
   });
 
-  it("sendet PUT /api/users/{id}/password beim Aendern des Passworts", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr.includes("/password") && opts?.method === "PUT") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+  it("sendet PUT beim Aendern des Passworts", async () => {
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (changePassword as any).mockResolvedValue(undefined);
 
     setupAuth(mockCurrentUser);
 
@@ -482,40 +324,13 @@ describe("UserManagement - REQ-4025", () => {
     });
 
     await waitFor(() => {
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/password"),
-        expect.objectContaining({
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: "newpass123" }),
-          credentials: "include",
-        })
-      );
+      expect(changePassword).toHaveBeenCalled();
     });
   });
 
   it("zeigt Fehlermeldung bei fehlgeschlagenem API-Aufruf", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr === "/api/users" && opts?.method === "POST") {
-        return Promise.resolve({
-          ok: false,
-          status: 400,
-          json: () => Promise.resolve({ detail: "Benutzername existiert bereits" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (createUser as any).mockRejectedValue(new Error("Benutzername existiert bereits"));
 
     setupAuth(mockCurrentUser);
 
@@ -541,26 +356,8 @@ describe("UserManagement - REQ-4025", () => {
   });
 
   it("schaltet Nutzer aktiv/inaktiv mit Toggle", async () => {
-    const mockedFetch = vi.fn().mockImplementation((url: string | URL | Request, opts?: any) => {
-      const urlStr = url.toString();
-      if (urlStr === "/api/users" && (!opts || !opts.method || opts.method === "GET")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockUsers),
-        });
-      }
-      if (urlStr.startsWith("/api/users/") && opts?.method === "PUT" && !urlStr.includes("/password")) {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({ message: "OK" }),
-        });
-      }
-      return Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve(mockUsers),
-      });
-    });
-    vi.stubGlobal("fetch", mockedFetch);
+    (fetchUsers as any).mockResolvedValue(mockUsers);
+    (updateUser as any).mockResolvedValue(undefined);
 
     setupAuth(mockCurrentUser);
 
@@ -577,20 +374,13 @@ describe("UserManagement - REQ-4025", () => {
     }
 
     await waitFor(() => {
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/users/"),
-        expect.objectContaining({
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        })
-      );
+      expect(updateUser).toHaveBeenCalled();
     });
   });
 
   it("nutzt Theme-Tokens statt hartkodierter Farben", async () => {
     setupAuth(mockCurrentUser);
-    vi.stubGlobal("fetch", mockFetchForUsers(mockUsers));
+    (fetchUsers as any).mockResolvedValue(mockUsers);
 
     const { container } = render(<UserManagement />);
 

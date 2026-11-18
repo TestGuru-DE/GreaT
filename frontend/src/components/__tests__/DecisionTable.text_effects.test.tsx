@@ -1,4 +1,4 @@
-/**
+﻿/**
  * REQ-5016/5021: DecisionTable Text-Effects & Override Tests
  */
 import { describe, it, expect, vi } from "vitest";

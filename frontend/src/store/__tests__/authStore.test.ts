@@ -1,9 +1,18 @@
-// REQ-4001: Unit-Tests fuer AuthStore
+﻿// REQ-4001: Unit-Tests fuer AuthStore
 import { renderHook, act } from "@testing-library/react";
 import { useAuthStore } from "../authStore";
-import * as authApi from "../../api/authApi";
+import * as authApiModule from "../../api/authApi";
 
 vi.mock("../../api/authApi", () => ({
+  authApi: {
+    login: vi.fn(),
+    logout: vi.fn(),
+    me: vi.fn(),
+    refresh: vi.fn(),
+    getFirstStartHint: vi.fn(),
+    changePassword: vi.fn(),
+  },
+  // Legacy exports for backwards compatibility
   login: vi.fn(),
   logout: vi.fn(),
   me: vi.fn(),
@@ -26,13 +35,13 @@ describe("authStore", () => {
 
   describe("login", () => {
     it("setzt isLoading=true und dann user nach erfolgreichem Login", async () => {
-      vi.mocked(authApi.login).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.login).mockResolvedValue({
         user_id: 1,
         username: "admin",
         role: "admin",
         message: "Login erfolgreich",
       });
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -45,8 +54,8 @@ describe("authStore", () => {
         await result.current.login("admin", "password123");
       });
 
-      expect(authApi.login).toHaveBeenCalledWith("admin", "password123");
-      expect(authApi.me).toHaveBeenCalled();
+      expect(authApiModule.authApi.login).toHaveBeenCalledWith("admin", "password123");
+      expect(authApiModule.authApi.me).toHaveBeenCalled();
       expect(result.current.user).toEqual({
         id: 1,
         username: "admin",
@@ -58,7 +67,7 @@ describe("authStore", () => {
     });
 
     it("setzt error bei fehlgeschlagenem Login", async () => {
-      vi.mocked(authApi.login).mockRejectedValue(new Error("Ungueltige Anmeldedaten"));
+      vi.mocked(authApiModule.authApi.login).mockRejectedValue(new Error("Ungueltige Anmeldedaten"));
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -76,7 +85,7 @@ describe("authStore", () => {
     });
 
     it("wirft den Error weiter", async () => {
-      vi.mocked(authApi.login).mockRejectedValue(new Error("Ungueltige Anmeldedaten"));
+      vi.mocked(authApiModule.authApi.login).mockRejectedValue(new Error("Ungueltige Anmeldedaten"));
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -90,7 +99,7 @@ describe("authStore", () => {
 
   describe("logout", () => {
     it("setzt user=null nach Logout", async () => {
-      vi.mocked(authApi.logout).mockResolvedValue(undefined);
+      vi.mocked(authApiModule.authApi.logout).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -110,13 +119,13 @@ describe("authStore", () => {
         await result.current.logout();
       });
 
-      expect(authApi.logout).toHaveBeenCalled();
+      expect(authApiModule.authApi.logout).toHaveBeenCalled();
       expect(result.current.user).toBe(null);
       expect(result.current.error).toBe(null);
     });
 
     it("setzt user=null auch wenn Logout-API fehlschlaegt", async () => {
-      vi.mocked(authApi.logout).mockRejectedValue(new Error("Server Error"));
+      vi.mocked(authApiModule.authApi.logout).mockRejectedValue(new Error("Server Error"));
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -145,7 +154,7 @@ describe("authStore", () => {
 
   describe("loadUser", () => {
     it("laedt User-Info bei gueltiger Session", async () => {
-      vi.mocked(authApi.me).mockResolvedValue({
+      vi.mocked(authApiModule.authApi.me).mockResolvedValue({
         id: 1,
         username: "admin",
         role: "admin",
@@ -167,7 +176,7 @@ describe("authStore", () => {
     });
 
     it("setzt user=null bei ungueltiger Session", async () => {
-      vi.mocked(authApi.me).mockRejectedValue(new Error("Nicht authentifiziert"));
+      vi.mocked(authApiModule.authApi.me).mockRejectedValue(new Error("Nicht authentifiziert"));
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -179,25 +188,9 @@ describe("authStore", () => {
     });
   });
 
-  describe("clearError", () => {
-    it("setzt error auf null", () => {
-      const { result } = renderHook(() => useAuthStore());
-
-      act(() => {
-        useAuthStore.setState({ error: "Some error" });
-      });
-
-      act(() => {
-        result.current.clearError();
-      });
-
-      expect(result.current.error).toBe(null);
-    });
-  });
-
   describe("refresh", () => {
-    it("ruft refreshToken auf und behaelt User bei Erfolg", async () => {
-      vi.mocked(authApi.refreshToken).mockResolvedValue(undefined);
+    it("ruft refresh auf und behaelt User bei Erfolg", async () => {
+      vi.mocked(authApiModule.authApi.refresh).mockResolvedValue(undefined);
 
       const { result } = renderHook(() => useAuthStore());
 
@@ -216,12 +209,12 @@ describe("authStore", () => {
         await result.current.refresh();
       });
 
-      expect(authApi.refreshToken).toHaveBeenCalled();
+      expect(authApiModule.authApi.refresh).toHaveBeenCalled();
       expect(result.current.user).not.toBe(null);
     });
 
     it("setzt user=null bei fehlgeschlagenem Refresh", async () => {
-      vi.mocked(authApi.refreshToken).mockRejectedValue(new Error("Token expired"));
+      vi.mocked(authApiModule.authApi.refresh).mockRejectedValue(new Error("Token expired"));
 
       const { result } = renderHook(() => useAuthStore());
 

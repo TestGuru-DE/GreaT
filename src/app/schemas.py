@@ -1,9 +1,19 @@
 # src/app/schemas.py
+import re
 from typing import List, Optional, Dict
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._@-]{3,50}$")
+
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def name_not_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Projektname darf nicht leer oder nur Leerzeichen sein.")
+        return v.strip()
 
 class ProjectRead(BaseModel):
     id: int
@@ -12,26 +22,25 @@ class ProjectRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class CategoryCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=200)
     order_index: int = 0
     is_result: bool = False  # REQ-4016: Ergebnis-Kategorie
     category_type: str = "standard"  # REQ-5002: standard | cause | effect
+
+    @field_validator("name")
+    @classmethod
+    def name_not_empty(cls, v: str) -> str:
+        trimmed = v.strip()
+        if not trimmed:
+            raise ValueError("Kategoriename darf nicht leer sein.")
+        if len(trimmed) > 200:
+            raise ValueError("Kategoriename darf maximal 200 Zeichen haben.")
+        return trimmed
 
     @field_validator("category_type")
     @classmethod
     def validate_category_type(cls, v: str) -> str:
         if v not in VALID_CATEGORY_TYPES:
-            raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
-        return v
-
-class CategoryUpdate(BaseModel):
-    # REQ-5002: optional; None = unveraendert
-    category_type: Optional[str] = None
-
-    @field_validator("category_type")
-    @classmethod
-    def validate_category_type(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v not in VALID_CATEGORY_TYPES:
             raise ValueError(f"category_type muss einer von {sorted(VALID_CATEGORY_TYPES)} sein.")
         return v
 
@@ -46,6 +55,22 @@ class CategoryRead(BaseModel):
 class ValueCreate(BaseModel):
     value: str
     risk_weight: int = 1
+
+    @field_validator("value")
+    @classmethod
+    def value_not_empty(cls, v: str) -> str:
+        if v == "":
+            raise ValueError("Wert darf nicht leer sein.")
+        if len(v) > 500:
+            raise ValueError("Wert darf maximal 500 Zeichen haben.")
+        return v  # NICHT trimmen!
+
+    @field_validator("risk_weight")
+    @classmethod
+    def validate_risk_weight(cls, v: int) -> int:
+        if not (1 <= v <= 10):
+            raise ValueError("risk_weight muss zwischen 1 und 10 liegen.")
+        return v
 
 VALID_VTYPES = {"string", "number", "date", "time", "boolean", "email", "text"}
 # REQ-5002: Kategorie-Typ (Ursache/Wirkung fuer Entscheidungstabelle)
@@ -84,13 +109,26 @@ class ValuePropertiesUpdate(BaseModel):
 
 class GenerateRequest(BaseModel):
     strategy: str  # "all" | "each" | "pairwise" | "t_wise"
-    limit: Optional[int] = None
+    limit: Optional[int] = Field(default=None, ge=1, le=100000)
     apply_rules: bool = False  # REQ-3005
-    t_strength: Optional[int] = 2  # REQ-3039: T-Wise Parameter (Default: 2 = Pairwise)
+    t_strength: Optional[int] = Field(default=None, ge=1, le=10)
+
+    @field_validator("t_strength", mode="before")
+    @classmethod
+    def resolve_t_strength(cls, v):
+        if v is None:
+            return 2
+        return v
+
 
 class GenerateResponse(BaseModel):
     generation_id: int
     count: int
+    total_possible: Optional[int] = None
+    truncated: bool = False
+    rules_applied: bool = False
+    rule_count: int = 0
+    warnings: List[str] = []
 
 class TestCaseOut(BaseModel):
     id: int
@@ -265,6 +303,7 @@ class DataNodeRead(BaseModel):
     is_system: bool = False
     source: Optional[str] = None
     sort_order: int = 0
+    version: int = 0  # B-09: Fuer Concurrency-Control in PUT
     values: List[DataNodeValueRead] = []
     children: List["DataNodeRead"] = []  # Rekursiv
     
@@ -276,8 +315,6 @@ DataNodeRead.model_rebuild()
 class DataNodeCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
-    is_system: bool = False
-    source: Optional[str] = None
     sort_order: int = 0
 
 class DataNodeValueCreate(BaseModel):
@@ -303,6 +340,24 @@ class UserCreate(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=1, max_length=200)
     role: str = "viewer"
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, v: str) -> str:
+        trimmed = v.strip()
+        if not USERNAME_PATTERN.match(trimmed):
+            raise ValueError("Benutzername muss 3-50 Zeichen aus A-Z a-z 0-9 . _ - @ enthalten.")
+        return trimmed
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        from .password_policy import validate_new_password, PasswordError
+        try:
+            validate_new_password(v)
+        except PasswordError as e:
+            raise ValueError(e.code)
+        return v
 
     @field_validator("role")
     @classmethod
@@ -334,6 +389,84 @@ class PasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
     new_password: str = Field(min_length=1, max_length=200)
 
+# ============================================================================
+# Backup-Schemas (v2.0 Format)
+# ============================================================================
+
+class BackupPasswordRequest(BaseModel):
+    """Request-Schema fuer verschluesseltes Backup (POST /api/backup)."""
+    password: str
+
+
+class BackupValueSchema(BaseModel):
+    value: str
+    risk_weight: int = 1
+    vtype: str = "string"
+    allowed: bool = True
+    order_index: int = 0
+    is_default: bool = False
+
+
+class BackupCategorySchema(BaseModel):
+    name: str
+    order_index: int = 0
+    is_result: bool = False
+    category_type: str = "standard"
+    values: list[BackupValueSchema] = []
+
+
+class BackupRuleSchema(BaseModel):
+    type: str
+    if_category_name: str
+    if_value: str
+    then_category_name: str
+    then_value: str | None = None
+    then_values_json: str | None = None
+
+
+class BackupDataClassSchema(BaseModel):
+    name: str
+    value_type: str
+    description: str | None = None
+    values: list[str] = []
+
+
+class BackupDataNodeSchema(BaseModel):
+    """Rekursives Schema fuer hierarchische Datenknoten."""
+    name: str
+    sort_order: int = 0
+    source: str | None = None
+    values: list[str] = []
+    children: list["BackupDataNodeSchema"] = []
+
+
+BackupDataNodeSchema.model_rebuild()
+
+
+class BackupDecisionConstraintSchema(BaseModel):
+    constraint_type: str
+    targets: dict
+    description: str | None = None
+
+
+class BackupProjectSchema(BaseModel):
+    name: str
+    categories: list[BackupCategorySchema] = []
+    rules: list[BackupRuleSchema] = []
+    generations: list[dict] = []
+    dataclasses: list[BackupDataClassSchema] = []
+    data_nodes: list[BackupDataNodeSchema] = []
+    decision_constraints: list[BackupDecisionConstraintSchema] = []
+
+
+class BackupSchema(BaseModel):
+    """Top-Level Backup-Schema (v1.0 und v2.0)."""
+    version: str
+    exported_at: str
+    projects: list[BackupProjectSchema]
+
+
+# ============================================================================
 # REQ-4023: Projekt-Mitgliedschaften
 class ProjectMemberRead(BaseModel):
     user_id: int

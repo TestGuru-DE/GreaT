@@ -1,10 +1,35 @@
-// REQ-5000 + REQ-5003 + REQ-5004 + REQ-5005: Tests fuer decisionTableStore
+﻿// REQ-5000 + REQ-5003 + REQ-5004 + REQ-5005: Tests fuer decisionTableStore
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useDecisionTableStore } from "../decisionTableStore";
+import * as clientModule from "../../api/client";
+
+vi.mock("../../api/client", async (importOriginal) => {
+  const actual = await importOriginal<ReturnType<typeof import("../../api/client")>>();
+  return {
+    ...actual,
+    decisionTableApi: {
+      generate: vi.fn(),
+      collapse: vi.fn(),
+      loadCategories: vi.fn(),
+      validate: vi.fn(),
+      getGraph: vi.fn(),
+    },
+  };
+});
+
+const dtApi = clientModule.decisionTableApi as {
+  generate: ReturnType<typeof vi.fn>;
+  collapse: ReturnType<typeof vi.fn>;
+  loadCategories: ReturnType<typeof vi.fn>;
+  validate: ReturnType<typeof vi.fn>;
+  getGraph: ReturnType<typeof vi.fn>;
+};
 
 describe("decisionTableStore - REQ-5000/5003/5004/5005", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Reset store state before each test
     useDecisionTableStore.setState({
       mode: false,
@@ -67,12 +92,7 @@ describe("decisionTableStore - REQ-5000/5003/5004/5005", () => {
         ],
       };
 
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockResponse),
-        })
-      );
+      dtApi.generate.mockResolvedValueOnce(mockResponse);
 
       const { result } = renderHook(() => useDecisionTableStore());
 
@@ -88,12 +108,7 @@ describe("decisionTableStore - REQ-5000/5003/5004/5005", () => {
     });
 
     it("setzt error bei fehlgeschlagener Generierung", async () => {
-      global.fetch = vi.fn(() =>
-        Promise.resolve({
-          ok: false,
-          json: () => Promise.resolve({ detail: "Keine Ursache-Kategorien gefunden" }),
-        })
-      );
+      dtApi.generate.mockRejectedValueOnce(new Error("Keine Ursache-Kategorien gefunden"));
 
       const { result } = renderHook(() => useDecisionTableStore());
 
@@ -107,7 +122,7 @@ describe("decisionTableStore - REQ-5000/5003/5004/5005", () => {
 
     it("setzt loading waehrend der Generierung", async () => {
       let resolvePromise: (value: unknown) => void;
-      global.fetch = vi.fn(() =>
+      dtApi.generate.mockImplementationOnce(() =>
         new Promise((resolve) => {
           resolvePromise = resolve;
         })
@@ -123,10 +138,7 @@ describe("decisionTableStore - REQ-5000/5003/5004/5005", () => {
       expect(result.current.loading).toBe(true);
 
       await act(async () => {
-        resolvePromise!({
-          ok: true,
-          json: () => Promise.resolve({ causes: [], effects: [], rules: [] }),
-        });
+        resolvePromise!({ causes: [], effects: [], rules: [] });
         await generatePromise;
       });
 

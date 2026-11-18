@@ -1,4 +1,4 @@
-// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
+﻿// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjectStore } from "../store/projectStore";
@@ -12,6 +12,8 @@ import CauseEffectGraph from "../components/CauseEffectGraph";
 import RuleVisualization from "../components/RuleVisualization";
 import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
+import { ApiError } from "../api/ApiError";
+import { useToastStore } from "../components/Toast";
 
 type RightTab = "generate" | "rules" | "generations" | "decision";
 
@@ -46,22 +48,21 @@ export default function ProjectDetailPage() {
       await projectsApi.update(projectId, { name, version });
       setRenaming(false);
       fetchProjects();
-    } catch (err: any) {
-      const resp = err?.response;
-      if (resp?.status === 409) {
-        const d = resp.data?.detail ?? {};
+    } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 409) {
+        const d = err.detail as Record<string, unknown> ?? {};
         setConflict(
           {
-            type: "version_conflict",
-            message: d.message ?? "Diese Ressource wurde zwischenzeitlich geaendert",
-            clientVersion: d.client_version,
-            serverVersion: d.server_version,
+            type: 'version_conflict',
+            message: (d.message as string) ?? 'Diese Ressource wurde zwischenzeitlich geaendert',
+            clientVersion: d.client_version as number,
+            serverVersion: d.server_version as number,
           },
-          // "Trotzdem ueberschreiben": gleiche Aenderung ohne Version erneut senden
           () => saveName(name, undefined),
         );
       } else {
-        alert("Fehler beim Umbenennen: " + String(err));
+        const msg = err instanceof ApiError ? err.message : String(err);
+        useToastStore.getState().add(msg, 'error');
       }
     }
   }

@@ -139,7 +139,7 @@ def test_generate_explicit_limit_still_honored_within_default(auth_client, monke
 # REQ-4018
 def test_generate_limit_still_rejects_non_positive_values(auth_client):
     """Regressionsschutz: Die bestehende Validierung (limit muss positiv sein)
-    bleibt unveraendert erhalten."""
+    bleibt unveraendert erhalten. Pydantic validation returns 422."""
     project = auth_client.post(
         "/api/projects",
         json={"name": f"REQ4018-InvalidLimit-{_unique_suffix()}"},
@@ -152,4 +152,4 @@ def test_generate_limit_still_rejects_non_positive_values(auth_client):
         f"/api/projects/{project_id}/generate",
         json={"strategy": "each", "limit": 0},
     )
-    assert response.status_code == 400, response.text
+    assert response.status_code == 422, response.text

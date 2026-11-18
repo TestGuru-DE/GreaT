@@ -13,7 +13,7 @@ from PySide6.QtGui import QIcon
 
 from tree_view import create_example_tree, load_wertesammlung_config, deep_copy_item
 from tree_view import create_example_tree #add_category, add_value
-from combinatorics import all_combinations, each_choice, orthogonal
+from combinatorics import all_combinations, each_choice, ipo
 from io_handlers import csv_handler
 
 from rules.exclude_rule_dialog import ExcludeRuleDialog
@@ -853,7 +853,7 @@ class MainWindow(QMainWindow):
 
     def generate_orthogonal(self):
         cats = self.get_categories_from_tree()
-        tcs = orthogonal.generate(cats)
+        tcs = ipo.generate(cats)
         tcs = self.apply_rules(tcs)  # NEU
         self.display_testcases(tcs)
         self.update_rule_columns()

@@ -8,10 +8,12 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field as PydanticField, field_validator
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
+from ..api_types import DbId
 from .. import models, schemas
 from combinatorics.boundary_value import generate_bva_values, BVAError
 
@@ -38,20 +40,17 @@ def list_strategies() -> List[str]:
 
 @router.get("/projects", response_model=List[schemas.ProjectRead])
 def list_projects(db: Session = Depends(get_db), current_user=Depends(require_api_capable)):
-    """REQ-4023: Admin sieht alle Projekte; andere Rollen nur Projekte mit Mitgliedschaft."""
-    query = db.query(models.Project)
-    if current_user.role != "admin":
-        from ..models.project_membership import ProjectMembership
-        member_ids = db.query(ProjectMembership.project_id).filter(ProjectMembership.user_id == current_user.id)
-        query = query.filter(models.Project.id.in_(member_ids))
-    return query.order_by(models.Project.id).all()
+    """Alle Projekte listen. Projektbezogene Sichtbarkeit folgt mit REQ-4023."""
+    return db.query(models.Project).order_by(models.Project.id).all()
 
 
 @router.post("/projects", response_model=schemas.ProjectRead, dependencies=[Depends(require_writer)])
 def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)):
-    exists = db.query(models.Project).filter(models.Project.name == payload.name).first()
+    exists = db.query(models.Project).filter(
+        func.lower(models.Project.name) == payload.name.lower()
+    ).first()
     if exists:
-        raise HTTPException(status_code=409, detail="Project name already exists.")
+        raise HTTPException(status_code=409, detail=f"Ein Projekt mit dem Namen '{payload.name}' existiert bereits.")
     p = models.Project(name=payload.name)
     db.add(p)
     db.commit()
@@ -60,18 +59,10 @@ def create_project(payload: schemas.ProjectCreate, db: Session = Depends(get_db)
 
 
 @router.delete("/projects/{pid}", dependencies=[Depends(require_writer)])
-def delete_project(pid: int, db: Session = Depends(get_db)):
-    """REQ-1206: Projekt loeschen."""
-    project = db.get(models.Project, pid)
-    if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
-    # Projektbezogene Tabellen ohne ON DELETE CASCADE vorher leeren (keine verwaisten Reste).
-    from ..models.decision_table_constraint import DecisionTableConstraint
-    from ..models.project_membership import ProjectMembership
-    db.query(DecisionTableConstraint).filter(DecisionTableConstraint.project_id == pid).delete(synchronize_session=False)
-    db.query(ProjectMembership).filter(ProjectMembership.project_id == pid).delete(synchronize_session=False)
-    db.delete(project)
-    db.commit()
+def delete_project(pid: DbId, db: Session = Depends(get_db), force: bool = False):
+    """REQ-1206: Projekt loeschen. force=true ignoriert Generierungen."""
+    from ..services import delete_project as svc_delete_project
+    svc_delete_project(db, pid, force=force)
     return {"ok": True, "id": pid}
 
 
@@ -80,7 +71,10 @@ def delete_project(pid: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.get("/projects/{pid}/categories", response_model=List[schemas.CategoryRead])
-def list_categories(pid: int, db: Session = Depends(get_db)):
+def list_categories(pid: DbId, db: Session = Depends(get_db)):
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
     return (
         db.query(models.Category)
         .filter(models.Category.project_id == pid)
@@ -90,13 +84,19 @@ def list_categories(pid: int, db: Session = Depends(get_db)):
 
 
 @router.post("/projects/{pid}/categories", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
-def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Depends(get_db)):
+def create_category(pid: DbId, payload: schemas.CategoryCreate, db: Session = Depends(get_db)):
     project = db.get(models.Project, pid)
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    exists = db.query(models.Category).filter(
+        models.Category.project_id == pid,
+        func.lower(models.Category.name) == payload.name.lower()
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Eine Kategorie mit dem Namen '{payload.name}' existiert in diesem Projekt bereits.")
     c = models.Category(
-        project_id=pid, 
-        name=payload.name, 
+        project_id=pid,
+        name=payload.name,
         order_index=payload.order_index,
         is_result=payload.is_result,  # REQ-4016
         category_type=payload.category_type,  # REQ-5002
@@ -108,11 +108,18 @@ def create_category(pid: int, payload: schemas.CategoryCreate, db: Session = Dep
 
 
 @router.delete("/categories/{cid}", dependencies=[Depends(require_writer)])
-def delete_category(cid: int, db: Session = Depends(get_db)):
+def delete_category(cid: DbId, db: Session = Depends(get_db)):
     """REQ-1206: Kategorie loeschen."""
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    # B-18: TestCaseValue-Referenzen auf NULL setzen (nicht CASCADE-Loeschen)
+    db.query(models.TestCaseValue).filter(
+        models.TestCaseValue.category_id == cid
+    ).update(
+        {models.TestCaseValue.category_id: None},
+        synchronize_session=False
+    )
     db.delete(cat)
     db.commit()
     return {"ok": True, "id": cid}
@@ -147,11 +154,19 @@ def _stamp_audit(entity, current_user) -> None:
 
 
 @router.patch("/categories/{cid}/rename", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
-def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get_db), current_user=Depends(require_writer)):
+def rename_category(cid: DbId, payload: RenameCategory, db: Session = Depends(get_db), current_user=Depends(require_writer)):
     """REQ-1213: Kategorie umbenennen."""
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    # Duplikatpruefung (casefold, gleiche Kategorie ausschliessen)
+    exists = db.query(models.Category).filter(
+        models.Category.id != cid,
+        models.Category.project_id == cat.project_id,
+        func.lower(models.Category.name) == payload.name.lower()
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Eine Kategorie mit dem Namen '{payload.name}' existiert in diesem Projekt bereits.")
     cat.name = payload.name
     _stamp_audit(cat, current_user)
     db.commit()
@@ -160,11 +175,11 @@ def rename_category(cid: int, payload: RenameCategory, db: Session = Depends(get
 
 
 @router.patch("/categories/{cid}/properties", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
-def update_category_properties(cid: int, payload: UpdateCategoryProperties, db: Session = Depends(get_db)):
+def update_category_properties(cid: DbId, payload: UpdateCategoryProperties, db: Session = Depends(get_db)):
     """REQ-4016: Kategorie-Eigenschaften aktualisieren (z.B. is_result)."""
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
     if payload.is_result is not None:
         cat.is_result = payload.is_result
     if payload.category_type is not None:
@@ -175,7 +190,7 @@ def update_category_properties(cid: int, payload: UpdateCategoryProperties, db: 
 
 
 @router.patch("/projects/{pid}/categories/reorder", dependencies=[Depends(require_writer)])
-def reorder_categories(pid: int, payload: ReorderRequest, db: Session = Depends(get_db)):
+def reorder_categories(pid: DbId, payload: ReorderRequest, db: Session = Depends(get_db)):
     """REQ-1209: Kategorien-Reihenfolge aendern."""
     for idx, cid in enumerate(payload.order):
         cat = db.get(models.Category, cid)
@@ -190,15 +205,24 @@ def reorder_categories(pid: int, payload: ReorderRequest, db: Session = Depends(
 # ---------------------------------------------------------------------------
 
 @router.get("/categories/{cid}/values", response_model=List[schemas.ValueRead])
-def list_values(cid: int, db: Session = Depends(get_db)):
+def list_values(cid: DbId, db: Session = Depends(get_db)):
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
     return db.query(models.Value).filter(models.Value.category_id == cid).order_by(models.Value.id).all()
 
 
 @router.post("/categories/{cid}/values", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
-def create_value(cid: int, payload: schemas.ValueCreate, db: Session = Depends(get_db)):
+def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(get_db)):
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    exists = db.query(models.Value).filter(
+        models.Value.category_id == cid,
+        models.Value.value == payload.value
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
     # REQ-3008: Erster Wert einer Kategorie ist automatisch Default
     existing_count = db.query(models.Value).filter(models.Value.category_id == cid).count()
     v = models.Value(
@@ -215,10 +239,22 @@ def create_value(cid: int, payload: schemas.ValueCreate, db: Session = Depends(g
 
 @router.delete("/values/{vid}", dependencies=[Depends(require_writer)])
 def delete_value(vid: int, db: Session = Depends(get_db)):
-    """REQ-1206: Wert loeschen."""
+    """REQ-1206: Wert loeschen. B-19: Regeln die diesen Wert referenzieren mitloeschen."""
     val = db.get(models.Value, vid)
     if not val:
-        raise HTTPException(status_code=404, detail="Value not found.")
+        raise HTTPException(status_code=404, detail="Wert nicht gefunden")
+    cid = val.category_id
+    # B-19: Regeln die diesen Wert referenzieren (als if_value oder then_value) mitloeschen
+    rules_to_delete = db.query(models.Rule).filter(
+        models.Rule.project_id == val.category.project_id,
+        (
+            (models.Rule.if_category_id == cid) & (models.Rule.if_value == val.value)
+        ) | (
+            (models.Rule.then_category_id == cid) & (models.Rule.then_value == val.value)
+        )
+    ).all()
+    for r in rules_to_delete:
+        db.delete(r)
     db.delete(val)
     db.commit()
     return {"ok": True, "id": vid}
@@ -230,12 +266,47 @@ class RenameValue(BaseModel):
 
 @router.patch("/values/{vid}/rename", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
 def rename_value(vid: int, payload: RenameValue, db: Session = Depends(get_db), current_user=Depends(require_writer)):
-    """REQ-1213: Wert umbenennen."""
+    """REQ-1213: Wert umbenennen. B-19: Regeln die diesen Wert referenzieren aktualisieren."""
     val = db.get(models.Value, vid)
     if not val:
-        raise HTTPException(status_code=404, detail="Value not found.")
+        raise HTTPException(status_code=404, detail="Wert nicht gefunden")
+    exists = db.query(models.Value).filter(
+        models.Value.id != vid,
+        models.Value.category_id == val.category_id,
+        models.Value.value == payload.value
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
+    cid = val.category_id
+    old_value = val.value
     val.value = payload.value
     _stamp_audit(val, current_user)
+    # B-19: Regeln die diesen Wert referenzieren aktualisieren
+    if old_value != payload.value:
+        # if_value aktualisieren
+        db.query(models.Rule).filter(
+            models.Rule.if_category_id == cid,
+            models.Rule.if_value == old_value
+        ).update({"if_value": payload.value}, synchronize_session=False)
+        # then_value aktualisieren
+        db.query(models.Rule).filter(
+            models.Rule.then_category_id == cid,
+            models.Rule.then_value == old_value
+        ).update({"then_value": payload.value}, synchronize_session=False)
+        # then_values_json aktualisieren (combine rules)
+        rules_with_json = db.query(models.Rule).filter(
+            models.Rule.then_category_id == cid,
+            models.Rule.then_values_json.isnot(None)
+        ).all()
+        for r in rules_with_json:
+            import json as _json
+            try:
+                vals = _json.loads(r.then_values_json or "[]")
+                if old_value in vals:
+                    vals = [payload.value if v == old_value else v for v in vals]
+                    r.then_values_json = _json.dumps(vals)
+            except Exception:
+                pass
     db.commit()
     db.refresh(val)
     return val
@@ -247,7 +318,7 @@ def update_value_properties(vid: int, payload: schemas.ValuePropertiesUpdate, db
     """REQ-3007: Risiko, Datentyp und Fehlerwert eines Werts aktualisieren."""
     val = db.get(models.Value, vid)
     if not val:
-        raise HTTPException(status_code=404, detail="Value not found.")
+        raise HTTPException(status_code=404, detail="Wert nicht gefunden")
     if payload.risk_weight is not None:
         val.risk_weight = payload.risk_weight
     if payload.vtype is not None:
@@ -266,7 +337,7 @@ def set_default_value(vid: int, db: Session = Depends(get_db)):
     """REQ-3008: Setzt einen Wert als Default für seine Kategorie (nur einer pro Kategorie)."""
     val = db.get(models.Value, vid)
     if not val:
-        raise HTTPException(status_code=404, detail="Value not found.")
+        raise HTTPException(status_code=404, detail="Wert nicht gefunden")
     # Vorherigen Default in dieser Kategorie zurücksetzen
     db.query(models.Value).filter(
         models.Value.category_id == val.category_id,
@@ -284,7 +355,7 @@ def unset_default_value(vid: int, db: Session = Depends(get_db)):
     """REQ-3008: Entfernt die Default-Markierung von einem Wert."""
     val = db.get(models.Value, vid)
     if not val:
-        raise HTTPException(status_code=404, detail="Value not found.")
+        raise HTTPException(status_code=404, detail="Wert nicht gefunden")
     val.is_default = False
     db.commit()
     db.refresh(val)
@@ -296,7 +367,10 @@ def unset_default_value(vid: int, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.get("/projects/{pid}/rules", response_model=list)
-def api_list_rules(pid: int, db: Session = Depends(get_db)):
+def api_list_rules(pid: DbId, db: Session = Depends(get_db)):
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
     rules = db.query(models.Rule).filter(models.Rule.project_id == pid).order_by(models.Rule.id).all()
     return [
         {
@@ -349,15 +423,68 @@ def _detect_conflicts(new_rule: models.Rule, existing: list) -> list[int]:
 
 
 @router.post("/projects/{pid}/rules", status_code=201, response_model=schemas.RuleRead, dependencies=[Depends(require_writer)])
-def api_create_rule(pid: int, payload: schemas.RuleCreate, db: Session = Depends(get_db)):
-    """REQ-3003: Neue Regel anlegen. REQ-3004: Konflikt-Erkennung."""
+def api_create_rule(pid: DbId, payload: schemas.RuleCreate, db: Session = Depends(get_db)):
+    """REQ-3003: Neue Regel anlegen. REQ-3004: Konflikt-Erkennung. B-19: Validierung."""
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden.")
 
-    cat_ids = {c.id for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+    cat_ids = {c.id: c for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+
+    # IF- und THEN-Kategorie müssen zum Projekt gehören
     if payload.if_category_id not in cat_ids or payload.then_category_id not in cat_ids:
         raise HTTPException(status_code=400, detail="Kategorie gehört nicht zu diesem Projekt.")
+
+    # B-19: IF- und THEN-Kategorie dürfen nicht identisch sein
+    if payload.if_category_id == payload.then_category_id:
+        raise HTTPException(status_code=400, detail="IF- und THEN-Kategorie dürfen nicht identisch sein.")
+
+    if_cat = cat_ids[payload.if_category_id]
+    then_cat = cat_ids[payload.then_category_id]
+
+    # B-19: Wert-Existenz prüfen
+    if_values = [v.value for v in if_cat.values]
+    then_values = [v.value for v in then_cat.values]
+
+    if payload.if_value not in if_values:
+        raise HTTPException(status_code=400, detail=f"Wert '{payload.if_value}' existiert nicht in Kategorie '{if_cat.name}'.")
+
+    if payload.type in ("exclude", "dependency"):
+        if not payload.then_value or not payload.then_value.strip():
+            raise HTTPException(status_code=400, detail="Exclude-/Dependency-Regel benötigt einen Zielwert (then_value).")
+        if payload.then_value not in then_values:
+            raise HTTPException(status_code=400, detail=f"Wert '{payload.then_value}' existiert nicht in Kategorie '{then_cat.name}'.")
+
+    if payload.type == "combine":
+        vals = [v.strip() for v in (payload.then_values or []) if v and v.strip()]
+        if not vals:
+            raise HTTPException(status_code=400, detail="Combine-Regel benötigt mindestens einen Zielwert.")
+        for v in vals:
+            if v not in then_values:
+                raise HTTPException(status_code=400, detail=f"Wert '{v}' existiert nicht in Kategorie '{then_cat.name}'.")
+
+    # B-19: Duplikat-Prüfung
+    existing = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
+    is_duplicate = False
+    for r in existing:
+        if r.type != payload.type:
+            continue
+        if r.if_category_id != payload.if_category_id or r.then_category_id != payload.then_category_id:
+            continue
+        if r.if_value != payload.if_value:
+            continue
+        if payload.type == "combine":
+            import json as _json
+            existing_vals = _json.loads(r.then_values_json or "[]")
+            if sorted(existing_vals) == sorted(vals):
+                is_duplicate = True
+                break
+        else:
+            if r.then_value == (payload.then_value or ""):
+                is_duplicate = True
+                break
+    if is_duplicate:
+        raise HTTPException(status_code=409, detail="Diese Regel existiert bereits.")
 
     rule = models.Rule(
         project_id=pid,
@@ -396,22 +523,22 @@ def api_create_rule(pid: int, payload: schemas.RuleCreate, db: Session = Depends
 
 
 @router.delete("/projects/{pid}/rules/{rid}", dependencies=[Depends(require_writer)])
-def api_delete_rule(pid: int, rid: int, db: Session = Depends(get_db)):
+def api_delete_rule(pid: DbId, rid: DbId, db: Session = Depends(get_db)):
     """REQ-3003: Regel löschen."""
     rule = db.get(models.Rule, rid)
     if not rule or rule.project_id != pid:
-        raise HTTPException(status_code=404, detail="Regel nicht gefunden.")
+        raise HTTPException(status_code=404, detail="Regel nicht gefunden")
     db.delete(rule)
     db.commit()
     return {"ok": True, "id": rid}
 
 
 @router.get("/projects/{pid}/generations", response_model=List[schemas.GenerationSummary])
-def list_generations(pid: int, db: Session = Depends(get_db)):
+def list_generations(pid: DbId, db: Session = Depends(get_db)):
     """REQ-2001: Generierungshistorie eines Projekts."""
     project = db.get(models.Project, pid)
     if not project:
-        raise HTTPException(status_code=404, detail="Project not found.")
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
     gens = (
         db.query(models.Generation)
         .filter(models.Generation.project_id == pid)
@@ -437,19 +564,22 @@ def list_generations(pid: int, db: Session = Depends(get_db)):
 
 @router.post("/projects/bulk-delete", response_model=schemas.BulkDeleteResponse, dependencies=[Depends(require_writer)])
 def bulk_delete_projects(payload: schemas.BulkDeleteRequest, db: Session = Depends(get_db)):
-    """REQ-2002: Mehrere Projekte auf einmal löschen (blockiert wenn Generierungen vorhanden)."""
-    from ..services import project_has_generations
+    """REQ-2002: Mehrere Projekte loeschen (blockiert wenn Generierungen vorhanden)."""
+    from ..services import delete_project as svc_delete_project
     deleted = 0
     blocked = []
     for pid in payload.project_ids:
         p = db.get(models.Project, pid)
         if not p:
             continue
-        if project_has_generations(db, pid):
-            blocked.append(pid)
-        else:
-            db.delete(p)
+        try:
+            svc_delete_project(db, pid, force=False)
             deleted += 1
+        except HTTPException as e:
+            if e.status_code == 409:
+                blocked.append(pid)
+            else:
+                raise
     db.commit()
     return schemas.BulkDeleteResponse(deleted=deleted, blocked=blocked)
 
@@ -475,7 +605,7 @@ def rename_generation(gid: int, payload: schemas.GenerationRenameRequest, db: Se
     """REQ-2004: Setzt einen benutzerdefinierten Namen fuer eine Generierung."""
     g = db.get(models.Generation, gid)
     if not g:
-        raise HTTPException(status_code=404, detail="Generation not found.")
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
     g.name = payload.name
     db.commit()
     db.refresh(g)
@@ -518,11 +648,11 @@ class BvaResponse(BaseModel):
 
 
 @router.post("/categories/{cid}/bva", response_model=BvaResponse, dependencies=[Depends(require_writer)])
-def generate_bva_for_category(cid: int, payload: BvaRequest, db: Session = Depends(get_db)):
+def generate_bva_for_category(cid: DbId, payload: BvaRequest, db: Session = Depends(get_db)):
     """REQ-0306: Grenzwertanalyse."""
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
     try:
         bva_values = generate_bva_values(min_val=payload.min_val, max_val=payload.max_val, points=payload.points)
     except BVAError as e:
@@ -541,14 +671,14 @@ class BvaMultiRangeResponse(BaseModel):
 
 @router.post("/categories/{cid}/bva/ranges", response_model=BvaMultiRangeResponse, dependencies=[Depends(require_writer)])
 def generate_multi_range_bva_for_category(
-    cid: int,
+    cid: DbId,
     payload: schemas.BVAMultiRangeRequest,
     db: Session = Depends(get_db),
 ):
     """REQ-3064: Mehrere BVA-Bereiche direkt erfassen und als Werte übernehmen."""
     cat = db.get(models.Category, cid)
     if not cat:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
     try:
         from ..services import apply_multi_range_bva_to_parameter
 
@@ -583,7 +713,7 @@ class ProjectUpdate(BaseModel):
 
 @router.put("/projects/{pid}", response_model=schemas.ProjectRead)
 def update_project(
-    pid: int,
+    pid: DbId,
     payload: ProjectUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(require_writer),

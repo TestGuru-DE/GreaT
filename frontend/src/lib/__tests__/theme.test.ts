@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+﻿import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getTheme, setTheme, THEMES, getEffectiveTheme, setupSystemThemeSync } from '../theme'
 
 describe('Theme System', () => {

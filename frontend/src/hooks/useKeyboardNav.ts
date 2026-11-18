@@ -1,4 +1,4 @@
-// REQ-3054: Pfeiltasten-Navigation und Fokus-Management für Office-ähnliche UX
+﻿// REQ-3054: Pfeiltasten-Navigation und Fokus-Management für Office-ähnliche UX
 import { useEffect, useState, useCallback } from "react";
 
 export interface NavigableItem {

@@ -867,10 +867,12 @@ Exportiert Testfaelle als CSV-Datei (semikolon-getrennt, UTF-8 mit BOM fuer Exce
 **URL-Parameter:**
 | Parameter | Standard | Beschreibung |
 |-----------|---------|-------------|
-| `encoding` | `utf-8-sig` | utf-8-sig, utf-8, cp1252, iso-8859-1, utf-16le, utf-16be |
+| `encoding` | `utf-8-sig` | utf-8-sig, utf-8, cp1252, iso-8859-1, latin-1, utf-16le, utf-16be |
 | `excel` | `true` | Fügt `sep=;` als erste Zeile hinzu |
 | `bom` | auto | BOM ein/aus |
 | `status` | `false` | Regel-Status-Spalte hinzufuegen |
+
+> **Sicherheit:** Werte, die mit `=`, `+`, `-` oder `@` beginnen, werden beim CSV-Export mit einem Apostroph geschuetzt, damit Excel/LibreOffice sie nicht als Formel ausfuehrt (Formel-Injection-Schutz).
 
 ### 8.2 JSON-Export
 
@@ -896,6 +898,8 @@ Exportiert Testfaelle als strukturiertes JSON mit Projekt-, Kategorie- und Testf
 ### 8.3 Excel-Export
 
 Exportiert Testfaelle als `.xlsx`-Datei (openpyxl). Gleiche Spalten wie CSV, aber als native Excel-Tabelle mit fettgedruckten Ueberschriften.
+
+> **Sicherheit:** Alle Textzellen werden als String-Typ markiert, sodass Excel keine Werte als Formeln interpretiert (Formel-Injection-Schutz). Numerische IDs (TC-ID, Generierungs-ID) bleiben als Zahlen.
 
 ### 8.4 Fehlerwert-Kennzeichnung im Export
 
@@ -962,7 +966,25 @@ Standardmaessig werden maximal **1000 Testfaelle** pro Generierung erzeugt. Dies
 
 In den Einstellungen finden Sie die Option zur **Datenbank-Sicherung**. Dies erstellt einen JSON-Export aller Projekte, Kategorien, Werte, Regeln und Testfaelle.
 
-> **Tipp:** Vor dem Zuruecksetzen der Datenbank (s. 2.3) immer eine Sicherung erstellen.
+**Sicherungsoptionen:**
+- **Unverschlusselt:** Herunterladen ohne Passwort (schnell, fuer lokale Sicherung)
+- **Verschluesselt:** Passwort eingeben fuer AES-128-Verschluesselung (empfohlen fuer externe Speicherung)
+
+**Was wird gesichert:**
+- Alle Projekte, Kategorien, Werte (inkl. Risiko-Gewichtung, Default-Markierung, Fehlerwerte)
+- Alle Regeln (Abhaengigkeiten, Verbote, Kombinieren)
+- Alle Generierungen und Testfaelle
+- Benutzerdefinierte Datenklassen
+- Hierarchische Datenknoten
+- Entscheidungstabelle-Constraints
+
+**Was wird NICHT gesichert:**
+- **Benutzer und Passwörter:** Aus Sicherheitsgründen werden keine Benutzerdaten oder Passwörter gesichert. Nach dem Wiederherstellen müssen Sie sich mit bestehenden Accounts anmelden.
+- **System-Datenklassen:** Vordefinierte System-Datenklassen (Browser, Betriebssystem, etc.) werden nicht gesichert. Sie werden automatisch beim nächsten Start neu angelegt.
+- **System-Datenknoten:** Vordefinierte System-Datenknoten werden nicht gesichert.
+
+> **Tipp:** Vor dem Zurücksetzen der Datenbank (s. 2.3) immer eine Sicherung erstellen.
+> **Hinweis:** Verschlüsselte Sicherungen können nur mit dem korrekten Passwort wiederhergestellt. Bei Verlust des Passworts sind die Daten nicht wiederherstellbar.
 
 ---
 

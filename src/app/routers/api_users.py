@@ -4,14 +4,16 @@ Admin kann Nutzer verwalten (CRUD), Passwort aendern.
 Alle Endpunkte erfordern Admin-Rolle (außer Passwort-aendern fuer sich selbst).
 """
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..api_types import DbId
 from ..models.auth import User, RefreshToken
 from ..models.project_membership import ProjectMembership
 from ..auth_deps import get_current_user, require_admin, require_writer
 from ..password_policy import PasswordError
-from ..auth_service import admin_set_password
+from ..auth_service import admin_set_password, increment_token_version
 from ..schemas import UserCreate, UserUpdate, UserPasswordChange, UserRead
 
 # Admin-only router fuer CRUD-Operationen
@@ -39,8 +41,10 @@ def create_user(
     current_user: User = Depends(require_admin),
 ):
     """REQ-4025: Erstellt einen neuen Nutzer (Admin nur)."""
-    # Pruefe auf Duplikat
-    existing = db.query(User).filter(User.username == payload.username).first()
+    # B-22: Case-insensitive Duplikat-Prüfung
+    existing = db.query(User).filter(
+        func.lower(User.username) == payload.username.lower()
+    ).first()
     if existing:
         raise HTTPException(
             status_code=409,
@@ -51,6 +55,8 @@ def create_user(
         username=payload.username,
         role=payload.role,
         is_active=True,
+        # B-22: Admin-created users must change password on first login
+        default_password_active=True,
     )
     new_user.set_password(payload.password)
     db.add(new_user)
@@ -61,7 +67,7 @@ def create_user(
 
 @router.put("/{user_id}", response_model=UserRead)
 def update_user(
-    user_id: int,
+    user_id: DbId,
     payload: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
@@ -93,6 +99,10 @@ def update_user(
     if payload.is_active is not None:
         target.is_active = payload.is_active
 
+    # B-06: Sitzungen invalidieren bei Rollenaeanderung oder Deaktivierung
+    if payload.role is not None or payload.is_active is False:
+        increment_token_version(db, target)
+
     db.commit()
     db.refresh(target)
     return target
@@ -100,7 +110,7 @@ def update_user(
 
 @router.delete("/{user_id}")
 def delete_user(
-    user_id: int,
+    user_id: DbId,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
@@ -140,40 +150,31 @@ def delete_user(
 # Dieser Endpunkt hat KEINE Admin-Dependency auf Router-Ebene.
 # ---------------------------------------------------------------------------
 
+# B-07: Passwort-Reset nur fuer Admins
 password_router = APIRouter(
     prefix="/api/users",
     tags=["users"],
+    dependencies=[Depends(require_admin)],
 )
 
 
 @password_router.put("/{user_id}/password")
 def change_password(
-    user_id: int,
+    user_id: DbId,
     payload: UserPasswordChange,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_writer),
+    current_user: User = Depends(require_admin),
 ):
-    """REQ-4025: Aendert das Passwort eines Nutzers.
+    """B-07: Aendert das Passwort eines Nutzers (Admin nur).
 
-    Admin kann das Passwort jedes Nutzers aendern.
-    Editor kann sein eigenes Passwort aendern.
-    api_user ist blockiert (require_writer).
+    B-06: Invalidiert alle Sitzungen des Ziel-Nutzers nach Passwortwechsel.
     """
     target = db.query(User).filter(User.id == user_id).first()
     if not target:
         raise HTTPException(status_code=404, detail="Nutzer nicht gefunden")
 
-    # Admin kann fuer jeden aendern
-    if current_user.role != "admin":
-        # Nicht-Admin kann nur sein eigenes Passwort aendern
-        if target.id != current_user.id:
-            raise HTTPException(
-                status_code=403,
-                detail="Du kannst nur dein eigenes Passwort aendern",
-            )
-
     try:
-        admin_set_password(db, target, payload.new_password)  # REQ-4028 AK-4/AK-5, Flag-Rueckstellung AK-6
+        admin_set_password(db, target, payload.new_password)
     except PasswordError as exc:
         raise HTTPException(status_code=400, detail=exc.code)
     return {"message": f"Passwort fuer '{target.username}' geaendert"}

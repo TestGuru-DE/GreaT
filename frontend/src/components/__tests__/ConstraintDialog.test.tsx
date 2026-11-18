@@ -1,4 +1,4 @@
-// REQ-5012: Tests fuer ConstraintDialog-Komponente
+﻿// REQ-5012: Tests fuer ConstraintDialog-Komponente
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ConstraintDialog from "../ConstraintDialog";
@@ -9,9 +9,16 @@ vi.mock("../../store/decisionTableStore", () => ({
   useDecisionTableStore: vi.fn(),
 }));
 
-// Mock von fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock von constraintsApi
+vi.mock("../../api/client", () => ({
+  constraintsApi: {
+    list: vi.fn(),
+    create: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
+
+import { constraintsApi } from "../../api/client";
 
 describe("ConstraintDialog - REQ-5012", () => {
   const mockCauses = [
@@ -55,12 +62,8 @@ describe("ConstraintDialog - REQ-5012", () => {
       return typeof selector === "function" ? selector(state) : state;
     });
 
-    // Default fetch responses
-    mockFetch.mockReset();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(mockExistingConstraints),
-    });
+    // Default API responses
+    (constraintsApi.list as any).mockResolvedValue(mockExistingConstraints);
   });
 
   afterEach(() => {
@@ -264,19 +267,8 @@ describe("ConstraintDialog - REQ-5012", () => {
   });
 
   it("sendet POST /constraints mit korrekten Daten fuer E-Typ", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "E", targets: [1, 2] }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "E", targets: [1, 2] });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -288,33 +280,16 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(addBtn);
 
     await waitFor(() => {
-      // Pruefe dass fetch mit POST aufgerufen wurde
-      const postCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints"
-      );
-      expect(postCall).toBeDefined();
-      expect(JSON.parse(postCall![1].body)).toEqual({
-        project_id: 1,
+      expect(constraintsApi.create).toHaveBeenCalledWith(1, expect.objectContaining({
         constraint_type: "E",
         targets: [1, 2],
-      });
+      }));
     });
   });
 
   it("sendet POST /constraints mit from/to fuer R-Typ", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "R", targets: { from: 1, to: 2 } }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "R", targets: { from: 1, to: 2 } }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "R", targets: { from: 1, to: 2 } });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "R", targets: { from: 1, to: 2 } }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -329,30 +304,15 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(addBtn);
 
     await waitFor(() => {
-      const postCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints"
-      );
-      expect(postCall).toBeDefined();
-      const body = JSON.parse(postCall![1].body);
-      expect(body.constraint_type).toBe("R");
-      expect(body.targets).toEqual({ from: 1, to: 2 });
+      const call = (constraintsApi.create as any).mock.calls[0];
+      expect(call[1].constraint_type).toBe("R");
+      expect(call[1].targets).toEqual({ from: 1, to: 2 });
     });
   });
 
   it("sendet POST /constraints mit from/to fuer M-Typ", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "M", targets: { from: 10, to: 11 } }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "M", targets: { from: 10, to: 11 } }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "M", targets: { from: 10, to: 11 } });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "M", targets: { from: 10, to: 11 } }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -367,30 +327,15 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(addBtn);
 
     await waitFor(() => {
-      const postCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints"
-      );
-      expect(postCall).toBeDefined();
-      const body = JSON.parse(postCall![1].body);
-      expect(body.constraint_type).toBe("M");
-      expect(body.targets).toEqual({ from: 10, to: 11 });
+      const call = (constraintsApi.create as any).mock.calls[0];
+      expect(call[1].constraint_type).toBe("M");
+      expect(call[1].targets).toEqual({ from: 10, to: 11 });
     });
   });
 
   it("sendet description wenn eingegeben", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "E", targets: [1, 2] }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "E", targets: [1, 2] });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -406,29 +351,14 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(addBtn);
 
     await waitFor(() => {
-      const postCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints"
-      );
-      expect(postCall).toBeDefined();
-      const body = JSON.parse(postCall![1].body);
-      expect(body.description).toBe("Nur eine Zahlungsmethode moeglich");
+      const call = (constraintsApi.create as any).mock.calls[0];
+      expect(call[1].description).toBe("Nur eine Zahlungsmethode moeglich");
     });
   });
 
   it("sendet keine description wenn leer", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "E", targets: [1, 2] }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "E", targets: [1, 2] });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -440,25 +370,13 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(addBtn);
 
     await waitFor(() => {
-      const postCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints"
-      );
-      expect(postCall).toBeDefined();
-      const body = JSON.parse(postCall![1].body);
-      expect(body.description).toBeUndefined();
+      const call = (constraintsApi.create as any).mock.calls[0];
+      expect(call[1].description).toBeUndefined();
     });
   });
 
   it("zeigt Fehler bei fehlgeschlagenem POST", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: false,
-        json: () => Promise.resolve({ detail: "Ungueltige Constraint-Kombination" }),
-      });
+    (constraintsApi.create as any).mockRejectedValue(new Error("Ungueltige Constraint-Kombination"));
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -475,19 +393,11 @@ describe("ConstraintDialog - REQ-5012", () => {
   });
 
   it("loescht Constraint per DELETE", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({}),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([]),
-      });
+    (constraintsApi.delete as any).mockResolvedValue({});
+    // After delete, reload returns empty
+    (constraintsApi.list as any)
+      .mockResolvedValueOnce(mockExistingConstraints)  // initial load
+      .mockResolvedValueOnce([]);  // after delete
 
     const { container } = render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -501,25 +411,16 @@ describe("ConstraintDialog - REQ-5012", () => {
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {
-      // DELETE wurde aufgerufen
-      const deleteCall = mockFetch.mock.calls.find(
-        (call) => call[0] === "/api/decision-table/constraints/1" && call[1]?.method === "DELETE"
-      );
-      expect(deleteCall).toBeDefined();
+      expect(constraintsApi.delete).toHaveBeenCalledWith(1);
     });
   });
 
   it("zeigt bestehende Constraints mit Typ und Targets", async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve(mockExistingConstraints),
-    });
-
-    const { container } = render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
+    render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
     await waitFor(() => {
-      expect(container.textContent).toContain("Bestehende Constraints");
-      expect(container.textContent).toContain("E");
+      expect(screen.getByText("Bestehende Constraints")).toBeInTheDocument();
+      expect(screen.getByText("E")).toBeInTheDocument();
     });
   });
 
@@ -531,19 +432,8 @@ describe("ConstraintDialog - REQ-5012", () => {
   });
 
   it("setzt selectedItems zurueck nach erfolgreichem POST", async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ id: 2, type: "E", targets: [1, 2] }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]),
-      });
+    (constraintsApi.create as any).mockResolvedValue({ id: 2, type: "E", targets: [1, 2] });
+    (constraintsApi.list as any).mockResolvedValue([...mockExistingConstraints, { id: 2, type: "E", targets: [1, 2] }]);
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -563,17 +453,11 @@ describe("ConstraintDialog - REQ-5012", () => {
 
   it("zeigt loading-State waehrend POST", async () => {
     let resolvePromise: () => void;
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockExistingConstraints),
+    (constraintsApi.create as any).mockImplementation(() =>
+      new Promise((resolve) => {
+        resolvePromise = () => resolve({ id: 2, type: "E", targets: [1, 2] });
       })
-      .mockReturnValue(new Promise((resolve) => {
-        resolvePromise = () => resolve({
-          ok: true,
-          json: () => Promise.resolve({ id: 2, type: "E", targets: [1, 2] }),
-        });
-      }));
+    );
 
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
 
@@ -589,7 +473,7 @@ describe("ConstraintDialog - REQ-5012", () => {
       expect(addBtn).toBeDisabled();
     });
 
-    // Resolve den pending fetch
+    // Resolve den pending call
     resolvePromise!();
   });
 

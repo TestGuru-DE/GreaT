@@ -1,4 +1,4 @@
-// REQ-5002/REQ-4016: Kategorie-Typ wird im Baum visuell angezeigt (Badge U/W/E)
+﻿// REQ-5002/REQ-4016: Kategorie-Typ wird im Baum visuell angezeigt (Badge U/W/E)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import CategoryTree from "../CategoryTree";

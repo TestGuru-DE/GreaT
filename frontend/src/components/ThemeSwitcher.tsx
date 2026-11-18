@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { THEMES, getTheme, setTheme, type ThemeName } from '../lib/theme'
 
 // REQ-3045 (Sofort-Fix): Label wieder schlichtes "Normal" - "(HSV)" war

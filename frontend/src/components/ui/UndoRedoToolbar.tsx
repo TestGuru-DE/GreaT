@@ -1,4 +1,4 @@
-// REQ-3053: Undo/Redo Toolbar-Komponente
+﻿// REQ-3053: Undo/Redo Toolbar-Komponente
 import { useEffect } from 'react'
 
 interface UndoRedoToolbarProps {

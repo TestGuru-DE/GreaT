@@ -1,11 +1,11 @@
-// REQ-4022: Tests fuer StaleDataWarning-Integration in ProjectDetailPage
+﻿// REQ-4022: Tests fuer StaleDataWarning-Integration in ProjectDetailPage
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ProjectDetailPage from "../ProjectDetailPage";
 import { useProjectStore } from "../../store/projectStore";
 import { useConflictStore } from "../../store/conflictStore";
-import type { ConflictInfo } from "../../api/handlers";
+import type { ConflictInfo } from "../../api/conflictTypes";
 
 // Mock react-router-dom
 vi.mock("react-router-dom", async (importOriginal) => {

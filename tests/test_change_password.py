@@ -93,7 +93,7 @@ def _client_for(user_id) -> TestClient:
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.id == user_id).first()
-        token = create_access_token(user.id, user.username, user.role)
+        token = create_access_token(user.id, user.username, user.role, user.token_version)
     finally:
         db.close()
     client = TestClient(app, raise_server_exceptions=False)
@@ -127,17 +127,42 @@ def _detail(response):
 
 
 def _uses_locked_dependency(dependant) -> bool:
-    if dependant.call is get_current_user:
+    # Prueft, ob die Abhaengigkeit (rekursiv) get_current_user verwendet.
+    # Verwendet Modul- und Funktionsnamens-Vergleich statt "is", um
+    # Identity-Probleme bei verschiedenen FastAPI-Versionen zu vermeiden.
+    call = dependant.call
+    if call and getattr(call, "__module__", None) == "app.auth_deps" and getattr(call, "__name__", None) == "get_current_user":
         return True
     return any(_uses_locked_dependency(sub) for sub in dependant.dependencies)
 
 
+def _collect_routes(routes):
+    """Rekursiv alle APIRoute-Objekte aus einer Routenliste extrahieren.
+
+    Durchlaeuft auch Unterrouter (z. B. _IncludedRouter in FastAPI >= 0.137),
+    die ihre eigenen routes-Listen enthalten. Mit FastAPI <0.137 sind alle
+    Routen direkt auf app.routes und diese Funktion ist ein No-Op.
+    """
+    result = []
+    for route in routes:
+        if isinstance(route, APIRoute):
+            result.append(route)
+        elif type(route).__name__ == "_IncludedRouter":
+            if hasattr(route, "original_router") and hasattr(route.original_router, "routes"):
+                result.extend(_collect_routes(route.original_router.routes))
+        elif hasattr(route, "routes") and route.routes:
+            result.extend(_collect_routes(route.routes))
+    return result
+
+
 def _protected_route_calls():
-    """Alle Routen, die ueber get_current_user (gesperrt) laufen: (Methode, konkreter Pfad, Vorlage)."""
+    """Alle Routen, die ueber get_current_user (gesperrt) laufen: (Methode, konkreter Pfad, Vorlage).
+
+    Verwendet _collect_routes() fuer Rekursion durch _IncludedRouter-Objekte
+    (FastAPI >= 0.137). Mit FastAPI <0.137 sind alle Routen direkt auf app.routes.
+    """
     calls = []
-    for route in app.routes:
-        if not isinstance(route, APIRoute):
-            continue
+    for route in _collect_routes(app.routes):
         if not _uses_locked_dependency(route.dependant):
             continue
         concrete = re.sub(r"\{[^}]+\}", "1", route.path)
@@ -285,7 +310,11 @@ class TestSelfChangePassword:
         ],
     )
     def test_known_default_passwords_are_rejected(self, candidate):
-        """REQ-4028 AK-5 / REQ-4027 AK-14: Bekannte Standardpasswoerter abgelehnt, Flag bleibt."""
+        """REQ-4028 AK-5 / REQ-4027 AK-14: Bekannte Standardpasswoerter abgelehnt, Flag bleibt.
+
+        B-23: Common-passwords-Check kommt vor Default-Check; Fehlercode kann
+        password_too_common oder password_is_default sein – beide bedeuten Ablehnung.
+        """
         user_id = _bootstrap_default_admin()
         client = _client_for(user_id)
         r = client.post(
@@ -293,7 +322,9 @@ class TestSelfChangePassword:
             json={"current_password": DEFAULT_ADMIN_PASSWORD, "new_password": candidate},
         )
         assert r.status_code == 400
-        assert r.json() == {"detail": "password_is_default"}
+        # B-23: Common-Check kommt vor Default-Check; beide Codes bedeuten Ablehnung
+        detail = r.json().get("detail", "")
+        assert detail in ("password_is_default", "password_too_common"), f"Unerwarteter Fehlercode: {detail}"
         assert candidate.strip() not in r.text  # REQ-4028 AK-9: kein Echo des abgelehnten Passworts
         assert _state(user_id)[0] is True
 
@@ -338,7 +369,11 @@ class TestSelfChangePassword:
         assert r.json() == {"detail": "password_too_long"}
 
     def test_success_clears_flag_and_unlocks_routes(self):
-        """REQ-4028 AK-6/AK-2: Erfolg -> Flag 0, gesperrte Route danach erreichbar."""
+        """REQ-4028 AK-6/AK-2: Erfolg -> Flag 0, gesperrte Route danach erreichbar.
+
+        B-06: Nach Passwortwechsel wird token_version erhoeht; alter Token ist ungültig.
+        Neuer Login ist erforderlich.
+        """
         user_id = _bootstrap_default_admin()
         client = _client_for(user_id)
         assert client.get("/api/users/").status_code == 403
@@ -353,8 +388,18 @@ class TestSelfChangePassword:
         flag, _ = _state(user_id)
         assert flag is False
         assert _verify(user_id, GOOD_NEW)
-        assert client.get("/api/users/").status_code == 200
-        assert client.get("/auth/me").json()["password_change_required"] is False
+
+        # B-06: Alter Token ist nach Passwortwechsel ungültig – neu anmelden
+        new_client = TestClient(app, raise_server_exceptions=False)
+        resp = new_client.post(
+            "/auth/login",
+            data={"username": "admin", "password": GOOD_NEW},
+        )
+        assert resp.status_code == 200
+        # Nach neuem Login sollte /api/users/ erreichbar sein
+        new_client.cookies.set("access_token", resp.cookies.get("access_token", ""))
+        assert new_client.get("/api/users/").status_code == 200
+        assert new_client.get("/auth/me").json()["password_change_required"] is False
 
     def test_success_response_and_errors_do_not_echo_passwords(self):
         """REQ-4028 AK-9: Weder Erfolg noch Fehler geben Passwoerter aus."""
@@ -411,7 +456,10 @@ class TestAdminSetPasswordPolicy:
     """REQ-4028 AK-4/AK-5/AK-6 gelten auch fuer die Admin-Passwortsetzung (REQ-4025)."""
 
     def test_admin_rejects_default_password_for_other_user(self):
-        """Admin kann einem Nutzer kein bekanntes Standardpasswort setzen -> 400."""
+        """Admin kann einem Nutzer kein bekanntes Standardpasswort setzen -> 400.
+
+        B-23: Common-passwords-Check kommt vor Default-Check; beide Codes bedeuten Ablehnung.
+        """
         admin_id = _add_user("adm_pol", "admin", OLD_PASSWORD)
         target_id = _add_user("tgt_pol", "editor", OLD_PASSWORD)
         r = _client_for(admin_id).put(
@@ -419,7 +467,8 @@ class TestAdminSetPasswordPolicy:
             json={"new_password": DEFAULT_ADMIN_PASSWORD},
         )
         assert r.status_code == 400
-        assert r.json() == {"detail": "password_is_default"}
+        detail = r.json().get("detail", "")
+        assert detail in ("password_is_default", "password_too_common"), f"Unerwarteter Fehlercode: {detail}"
         assert _verify(target_id, OLD_PASSWORD)
 
     def test_admin_rejects_short_password(self):
@@ -434,7 +483,10 @@ class TestAdminSetPasswordPolicy:
         assert r.json() == {"detail": "password_too_short"}
 
     def test_admin_sets_valid_password_and_clears_flag_of_default_admin(self):
-        """REQ-4027 AK-10: Fremdsetzung eines gueltigen Passworts loescht das Flag des Default-Admins."""
+        """B-22: Fremdsetzung durch Admin setzt default_password_active=True.
+
+        Der Nutzer muss das Passwort beim naechsten Login aendern.
+        """
         default_id = _bootstrap_default_admin()
         other_admin_id = _add_user("adm_other", "admin", OLD_PASSWORD)
         r = _client_for(other_admin_id).put(
@@ -442,7 +494,8 @@ class TestAdminSetPasswordPolicy:
             json={"new_password": GOOD_NEW},
         )
         assert r.status_code == 200
-        assert _state(default_id)[0] is False
+        # B-22: admin_set_password setzt default_password_active=True
+        assert _state(default_id)[0] is True
         assert _verify(default_id, GOOD_NEW)
 
     def test_admin_password_route_still_denied_for_editor(self):

@@ -133,9 +133,16 @@ def test_bugmagnet_status_before_import(auth_client):
 
 
 def test_system_flag(auth_client):
-    """REQ-4018: is_system Flag wird korrekt gesetzt."""
+    """B-24: is_system kann vom Client nicht mehr gesetzt werden.
+
+    DataNodeCreate hat kein is_system-Feld mehr; alle client-erzeugten
+    Knoten haben is_system=False und source=None.
+    """
     user_node = auth_client.post("/api/datanodes", json={"name": "UserNode"}).json()
     assert user_node["is_system"] is False
-    
+    assert user_node["source"] is None
+
+    # B-24: is_system im Request wird ignoriert (Schema akzeptiert es nicht)
     system_node = auth_client.post("/api/datanodes", json={"name": "SystemNode", "is_system": True}).json()
-    assert system_node["is_system"] is True
+    assert system_node["is_system"] is False  # Client darf is_system nicht setzen
+    assert system_node["source"] is None

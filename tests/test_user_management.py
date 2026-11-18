@@ -74,7 +74,7 @@ def _user_mgmt_db():
 def admin_cookies(_user_mgmt_db):
     """Return admin access_token cookies dict."""
     _, admin, _, _ = _user_mgmt_db
-    token = create_access_token(admin.id, admin.username, admin.role)
+    token = create_access_token(admin.id, admin.username, admin.role, admin.token_version)
     return {"access_token": token}
 
 
@@ -82,7 +82,7 @@ def admin_cookies(_user_mgmt_db):
 def editor_cookies(_user_mgmt_db):
     """Return editor access_token cookies dict."""
     _, _, editor, _ = _user_mgmt_db
-    token = create_access_token(editor.id, editor.username, editor.role)
+    token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
     return {"access_token": token}
 
 
@@ -90,7 +90,7 @@ def editor_cookies(_user_mgmt_db):
 def viewer_cookies(_user_mgmt_db):
     """Return viewer access_token cookies dict."""
     _, _, _, viewer = _user_mgmt_db
-    token = create_access_token(viewer.id, viewer.username, viewer.role)
+    token = create_access_token(viewer.id, viewer.username, viewer.role, viewer.token_version)
     return {"access_token": token}
 
 
@@ -137,7 +137,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen (12+ chars, 4+ variety)
                 "role": "editor",
             },
         )
@@ -154,7 +154,7 @@ class TestCreateUser:
             assert user is not None
             assert user.role == "editor"
             assert user.is_active is True
-            assert user.check_password("newpass123")
+            assert user.check_password("Newpass12345!")
         finally:
             db.close()
 
@@ -165,7 +165,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "admin_user",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "editor",
             },
         )
@@ -178,7 +178,7 @@ class TestCreateUser:
             cookies=editor_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "editor",
             },
         )
@@ -191,7 +191,7 @@ class TestCreateUser:
             cookies=admin_cookies,
             json={
                 "username": "newuser",
-                "password": "newpass123",
+                "password": "Newpass12345!",  # B-23: Muss Policy erfuellen
                 "role": "superadmin",
             },
         )
@@ -368,7 +368,7 @@ class TestChangePassword:
         response = client.put(
             f"/api/users/{editor.id}/password",
             cookies=admin_cookies,
-            json={"new_password": "neweditor123"},
+            json={"new_password": "Neweditor123!"},  # B-23: Muss Policy erfuellen
         )
         assert response.status_code == 200
 
@@ -376,7 +376,7 @@ class TestChangePassword:
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.id == editor.id).first()
-            assert user.check_password("neweditor123")
+            assert user.check_password("Neweditor123!")
             assert not user.check_password("editor123")
         finally:
             db.close()
@@ -400,20 +400,36 @@ class TestChangePassword:
             db.close()
 
     def test_user_can_change_own_password(self, _user_mgmt_db, editor_cookies):
-        """Ein Nutzer kann sein eigenes Passwort aendern."""
+        """B-07: Editor kann sein Passwort nicht mehr via /api/users aendern (403).
+
+        Editor nutzt /auth/change-password fuer Selbst-Wechsel.
+        """
         _, _, editor, _ = _user_mgmt_db
         response = client.put(
             f"/api/users/{editor.id}/password",
             cookies=editor_cookies,
-            json={"new_password": "neweditorpass"},
+            json={"new_password": "neweditorpass123456"},
         )
-        assert response.status_code == 200
+        assert response.status_code == 403, "Editor darf nicht via /api/users Passwort aendern (B-07)"
+
+        # Editor nutzt /auth/change-password fuer Selbst-Wechsel
+        editor.set_password("currentpass123456")
+        _user_mgmt_db[0].commit()
+        # Neuer Token mit korrekter token_version
+        from app.auth_utils import create_access_token
+        new_token = create_access_token(editor.id, editor.username, editor.role, editor.token_version)
+        resp = client.post(
+            "/auth/change-password",
+            json={"current_password": "currentpass123456", "new_password": "neweditorpass123456"},
+            cookies={"access_token": new_token},
+        )
+        assert resp.status_code == 200
 
         # Verify new password works
         db = SessionLocal()
         try:
             user = db.query(User).filter(User.id == editor.id).first()
-            assert user.check_password("neweditorpass")
+            assert user.check_password("neweditorpass123456")
         finally:
             db.close()
 
