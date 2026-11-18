@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 import ProjectDetailPage from "../ProjectDetailPage";
 import { useProjectStore } from "../../store/projectStore";
 import { useConflictStore } from "../../store/conflictStore";
-import type { ConflictInfo } from "../../api/handlers";
+import type { ConflictInfo } from "../../api/conflictTypes";
 
 // Mock react-router-dom
 vi.mock("react-router-dom", async (importOriginal) => {
