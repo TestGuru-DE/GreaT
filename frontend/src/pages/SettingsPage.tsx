@@ -3,6 +3,7 @@
 // REQ-4012: BugMagnet-Import
 // REQ-4025: Benutzerverwaltung
 // REQ-6005: i18n
+// REQ-6012: API-Token-Verwaltung
 
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +11,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { PortSettingsCard } from '../components/PortSettingsCard'
 import { MaxTestCasesSettingsCard } from '../components/MaxTestCasesSettingsCard' // REQ-4018
 import UserManagement from '../components/UserManagement' // REQ-4025
+import ApiTokensCard from '../components/ApiTokensCard' // REQ-6012
 import { backupApi, datanodesApi } from '../api/client'
 
 export default function SettingsPage() {
@@ -253,6 +255,9 @@ export default function SettingsPage() {
 
       {/* REQ-4025: Benutzerverwaltung (nur fuer Admins sichtbar) */}
       <UserManagement />
+
+      {/* REQ-6012: API-Token-Verwaltung */}
+      <ApiTokensCard />
     </main>
   )
 }
