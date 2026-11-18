@@ -1,16 +1,20 @@
 ﻿// REQ-4001: Unit-Tests fuer Auth-API-Client (axios-basiert)
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { authApi } from "../api/authApi";
-import * as clientModule from "../api/client";
+import { authApi } from "./authApi";
+import * as clientModule from "./client";
 
-vi.mock("../api/client", () => ({
+vi.mock("./client", () => ({
   default: {
+    post: vi.fn(),
+    get: vi.fn(),
+  },
+  authClient: {
     post: vi.fn(),
     get: vi.fn(),
   },
 }));
 
-const mockApi = vi.mocked(clientModule.default);
+const mockAuthClient = vi.mocked(clientModule.authClient);
 
 describe("authApi.login", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -23,11 +27,11 @@ describe("authApi.login", () => {
       message: "Login erfolgreich",
     };
 
-    mockApi.post.mockResolvedValueOnce({ data: mockResponse });
+    mockAuthClient.post.mockResolvedValueOnce({ data: mockResponse });
 
     const result = await authApi.login("admin", "password123");
 
-    expect(mockApi.post).toHaveBeenCalledWith("/auth/login", expect.any(URLSearchParams), {
+    expect(mockAuthClient.post).toHaveBeenCalledWith("/login", expect.any(URLSearchParams), {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     expect(result).toEqual(mockResponse);
@@ -36,7 +40,7 @@ describe("authApi.login", () => {
   it("wirft Error bei 401 Antwort", async () => {
     const error = new Error("Ungueltige Anmeldedaten");
     (error as any).response = { status: 401, data: { detail: "Ungueltige Anmeldedaten" } };
-    mockApi.post.mockRejectedValueOnce(error);
+    mockAuthClient.post.mockRejectedValueOnce(error);
 
     await expect(authApi.login("admin", "wrong")).rejects.toThrow();
   });
@@ -46,11 +50,11 @@ describe("authApi.logout", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("sendet POST /auth/logout", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: undefined });
+    mockAuthClient.post.mockResolvedValueOnce({ data: undefined });
 
     await authApi.logout();
 
-    expect(mockApi.post).toHaveBeenCalledWith("/auth/logout");
+    expect(mockAuthClient.post).toHaveBeenCalledWith("/logout");
   });
 });
 
@@ -58,11 +62,11 @@ describe("authApi.refresh", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("sendet POST /auth/refresh", async () => {
-    mockApi.post.mockResolvedValueOnce({ data: undefined });
+    mockAuthClient.post.mockResolvedValueOnce({ data: undefined });
 
     await authApi.refresh();
 
-    expect(mockApi.post).toHaveBeenCalledWith("/auth/refresh");
+    expect(mockAuthClient.post).toHaveBeenCalledWith("/refresh");
   });
 });
 
@@ -77,11 +81,11 @@ describe("authApi.me", () => {
       is_active: true,
     };
 
-    mockApi.get.mockResolvedValueOnce({ data: mockUser });
+    mockAuthClient.get.mockResolvedValueOnce({ data: mockUser });
 
     const result = await authApi.me();
 
-    expect(mockApi.get).toHaveBeenCalledWith("/auth/me");
+    expect(mockAuthClient.get).toHaveBeenCalledWith("/me");
     expect(result).toEqual(mockUser);
   });
 });

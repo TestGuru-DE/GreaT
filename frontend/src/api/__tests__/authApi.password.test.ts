@@ -7,28 +7,32 @@ vi.mock("../client", () => ({
     get: vi.fn(),
     post: vi.fn(),
   },
+  authClient: {
+    get: vi.fn(),
+    post: vi.fn(),
+  },
 }));
 
-import api from "../client";
+import { authClient } from "../client";
 
 beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("authApi.getFirstStartHint - REQ-4027", () => {
+describe("authauthClient.getFirstStartHint - REQ-4027", () => {
   it("gibt { show_hint: true } bei 200 mit true zurueck", async () => {
-    (api.get as any).mockResolvedValue({
+    (authClient.get as any).mockResolvedValue({
       data: { show_hint: true },
     });
 
     const result = await getFirstStartHint();
 
-    expect(api.get).toHaveBeenCalledWith("/auth/first-start-hint");
+    expect(authClient.get).toHaveBeenCalledWith("/first-start-hint");
     expect(result).toEqual({ show_hint: true });
   });
 
   it("gibt { show_hint: false } bei 200 mit false zurueck", async () => {
-    (api.get as any).mockResolvedValue({
+    (authClient.get as any).mockResolvedValue({
       data: { show_hint: false },
     });
 
@@ -38,27 +42,27 @@ describe("authApi.getFirstStartHint - REQ-4027", () => {
   });
 
   it("wirft Error bei 429 Rate-Limit", async () => {
-    (api.get as any).mockRejectedValue(new Error("too_many_requests"));
+    (authClient.get as any).mockRejectedValue(new Error("too_many_requests"));
 
     await expect(getFirstStartHint()).rejects.toThrow("too_many_requests");
   });
 
   it("wirft Error bei Server-Fehler", async () => {
-    (api.get as any).mockRejectedValue(new Error("internal_error"));
+    (authClient.get as any).mockRejectedValue(new Error("internal_error"));
 
     await expect(getFirstStartHint()).rejects.toThrow("internal_error");
   });
 });
 
-describe("authApi.changePassword - REQ-4028", () => {
+describe("authauthClient.changePassword - REQ-4028", () => {
   it("sendet POST /auth/change-password mit korrektem Body", async () => {
-    (api.post as any).mockResolvedValue({
+    (authClient.post as any).mockResolvedValue({
       data: { message: "Passwort wurde geaendert" },
     });
 
     const result = await changePassword("oldpass123!", "newpass123!abc");
 
-    expect(api.post).toHaveBeenCalledWith("/auth/change-password", {
+    expect(authClient.post).toHaveBeenCalledWith("/change-password", {
       current_password: "oldpass123!",
       new_password: "newpass123!abc",
     });
@@ -66,7 +70,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error mit detail 'current_password_invalid' bei falschem Passwort", async () => {
-    (api.post as any).mockRejectedValue(new Error("current_password_invalid"));
+    (authClient.post as any).mockRejectedValue(new Error("current_password_invalid"));
 
     await expect(changePassword("wrong", "newpass123!abc")).rejects.toThrow(
       "current_password_invalid"
@@ -74,7 +78,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error mit detail 'password_is_default' bei Standardpasswort", async () => {
-    (api.post as any).mockRejectedValue(new Error("password_is_default"));
+    (authClient.post as any).mockRejectedValue(new Error("password_is_default"));
 
     await expect(changePassword("old", "changeme123!")).rejects.toThrow(
       "password_is_default"
@@ -82,7 +86,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error mit detail 'password_too_short' bei zu kurzem Passwort", async () => {
-    (api.post as any).mockRejectedValue(new Error("password_too_short"));
+    (authClient.post as any).mockRejectedValue(new Error("password_too_short"));
 
     await expect(changePassword("old", "short")).rejects.toThrow(
       "password_too_short"
@@ -90,7 +94,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error mit detail 'password_too_long' bei zu langem Passwort", async () => {
-    (api.post as any).mockRejectedValue(new Error("password_too_long"));
+    (authClient.post as any).mockRejectedValue(new Error("password_too_long"));
 
     await expect(changePassword("old", "a".repeat(129))).rejects.toThrow(
       "password_too_long"
@@ -98,7 +102,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error mit detail 'too_many_attempts' bei 429", async () => {
-    (api.post as any).mockRejectedValue(new Error("too_many_attempts"));
+    (authClient.post as any).mockRejectedValue(new Error("too_many_attempts"));
 
     await expect(changePassword("old", "new")).rejects.toThrow(
       "too_many_attempts"
@@ -106,7 +110,7 @@ describe("authApi.changePassword - REQ-4028", () => {
   });
 
   it("wirft Error bei 401 ohne Token", async () => {
-    (api.post as any).mockRejectedValue(new Error("Not authenticated"));
+    (authClient.post as any).mockRejectedValue(new Error("Not authenticated"));
 
     await expect(changePassword("old", "new")).rejects.toThrow(
       "Not authenticated"

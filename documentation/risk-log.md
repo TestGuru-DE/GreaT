@@ -37,8 +37,8 @@ Erstellt von: Program Manager Agent
 | RISK-T-001 | Monolithischer main.py wird unwartbar | 5 | 4 | 20 | 🔴 | Sofort in Router-Module aufteilen (DEBT-001) |
 | RISK-T-002 | Kein Migrations-Framework führt zu Datenverlust/Fehler bei Updates | 4 | 5 | 20 | 🔴 | Alembic einführen (DEBT-002) |
 | RISK-T-003 | Abhängigkeitskonflikte durch unpinned requirements.txt | 3 | 3 | 9 | 🟡 | Versionspinning + requirements-lock.txt |
-| RISK-T-004 | Zwei parallele Backends (src/app + src/backend) erzeugen Verwirrung | 4 | 3 | 12 | 🔴 | src/backend/ archivieren |
-| RISK-T-005 | Frontend-Technologie (HTMX) nicht auf Zielarchitektur (React) ausgerichtet | 5 | 3 | 15 | 🔴 | ADR-001 verfassen: Python beibehalten vs. .NET |
+| RISK-T-004 | Zwei parallele Backends (src/app + src/backend) erzeugen Verwirrung | 1 | 3 | 3 | 🟢 | **GESCHLOSSEN (v1.9.0):** src/backend/ (GeTeCaDe) archiviert unter archive/2026-11-17/. Nur noch src/app/ als aktives Backend. |
+| RISK-T-005 | Frontend-Technologie (HTMX) nicht auf Zielarchitektur (React) ausgerichtet | 1 | 3 | 3 | 🟢 | **GESCHLOSSEN (v1.9.0):** HTMX/Jinja2-Templates archiviert. React/TypeScript ist nun das einzige aktive Frontend (Phase 3 React-First). |
 | RISK-T-006 | SQLite für Multi-User-Betrieb ungeeignet | 2 | 4 | 8 | 🟡 | PostgreSQL-Migration in Roadmap vorbereiten |
 | RISK-T-007 | Keine Fehlerbehandlung in API (keine 4xx/5xx) | 4 | 3 | 12 | 🔴 | Exception Handler für FastAPI einführen |
 | RISK-T-008 | Konflikte bei gleichzeitiger Bearbeitung durch mehrere Nutzer (Multi-User, EPIC-18) | 3 | 4 | 12 | 🔴 | HYBRID-Ansatz (ADR-012): Optimistic Concurrency (REQ-4021) + Stale-Data-Warning (REQ-4022), keine volle Realtime-Kollaboration in Sprint 11–13 |
@@ -58,13 +58,13 @@ Erstellt von: Program Manager Agent
 
 | ID | Risiko | W | I | Score | Ampel | Maßnahme |
 |---|---|---|---|---|---|---|
-| RISK-S-001 | Keine Authentifizierung – alle Endpunkte öffentlich | 5 | 4 | 20 | 🔴 | Für Team-Nutzung: OAuth2/JWT vorbereiten (SYSTEM_v1.0 §15) |
+| RISK-S-001 | Keine Authentifizierung – alle Endpunkte öffentlich | 1 | 4 | 4 | 🟢 | **GESCHLOSSEN (v1.9.0):** JWT-Authentifizierung implementiert (REQ-4006–4020). OAuth2/JWT aktiv, alle Endpunkte geschützt. |
 | RISK-S-002 | SQL-Injection via SQLAlchemy ORM (gering, da ORM parametrisiert) | 1 | 5 | 5 | 🟡 | ORM-Muster beibehalten, kein Raw-SQL |
 | RISK-S-003 | Sensitive Daten in tanos.db nicht verschlüsselt | 2 | 3 | 6 | 🟡 | Dokumentieren: Testdaten sind nicht sensitiv, für Produktiv: Encryption at Rest |
 | RISK-S-004 | OWASP Top 10 nicht systematisch geprüft | 3 | 4 | 12 | 🔴 | Security Review durch Security Architect Agent vor Release |
-| RISK-S-005 | Keine Input-Validierung auf UI-Ebene (HTMX-Forms) | 3 | 3 | 9 | 🟡 | Pydantic-Validierung auf API-Ebene prüfen und erweitern |
-| RISK-S-016 | Default-Admin mit festem Passwort `changeme123!` (src/app/bootstrap.py); kein Zwang zum Passwortwechsel nach dem ersten Login; Passwort steht im Quellcode des Repositories | 4 | 5 | 20 | 🔴 | Hinweis auf Login-Seite (Risikoakzeptanz), Pflicht-Passwortwechsel (REQ-4028), Ablehnung bekannter Defaults, Rate-Limit 10/min/IP. **Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03). Hinweis zeigt Standardpasswort auf Login-Seite. Score bleibt 20 (Risiko nicht beseitigt, nur gemildert).** |
-| RISK-S-017 | Access-Token bleibt bis zu 15 min nach Logout/Passwortwechsel/Rollenaeanderung gueltig (JWT ist stateless; Server kann es nicht sofort revokieren). **Risikoakzeptanz: akzeptiertes Restrisiko, gemindert durch kurze TTL (15 min Default) und Token-Versionierung (B-06).** | 2 | 3 | 6 | 🟡 | |
+| RISK-S-005 | Keine Input-Validierung auf UI-Ebene (HTMX-Forms) | 2 | 3 | 6 | 🟡 | **GEMILDERT (v1.9.0):** Pydantic-Validierung auf API-Ebene erweitert (B-03..B-04, B-13, B-15..B-16, B-19..B-26). React-Frontend mit Client-Validierung. HTMX-Forms archiviert. |
+| RISK-S-016 | Default-Admin mit festem Passwort `changeme123!` (src/app/bootstrap.py); kein Zwang zum Passwortwechsel nach dem ersten Login; Passwort steht im Quellcode des Repositories | 2 | 5 | 10 | 🟡 | **GEMILDERT (v1.9.0):** Hinweis auf Login-Seite (REQ-4027), Pflicht-Passwortwechsel bei Erstanmeldung (REQ-4028), Ablehnung bekannter Defaults, Rate-Limit 10/min/IP. Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03). Score reduziert von 20 auf 10. |
+| RISK-S-017 | Access-Token bleibt bis zu 15 min nach Logout/Passwortwechsel/Rollenaeanderung gueltig (JWT ist stateless; Server kann es nicht sofort revokieren) | 2 | 3 | 6 | 🟡 | **AKZEPTIERTES RESTRISIKO (WP-07):** Gemindert durch kurze TTL (15 min Default) und Token-Versionierung (B-06). Akzeptiert als Restrisiko; sofortige Revokation wuerde stateful Session-Tracking erfordern. |
 
 ## Kategorie: Betrieb
 

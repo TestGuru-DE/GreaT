@@ -16,6 +16,13 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Auth-Endpunkte liegen unter /auth/* (nicht /api/auth/*)
+const authClient = axios.create({
+  baseURL: "/auth",
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true,
+});
+
 let refreshPromise: Promise<void> | null = null;
 
 function isAuthRoute(url?: string): boolean {
@@ -349,3 +356,5 @@ export const backupApi = {
   reset: () =>
     api.post<{ default_admin_created: boolean; default_admin_username?: string }>("/backup/reset").then((r) => r.data),
 };
+// Export authClient for auth endpoints (baseURL: /auth, not /api)
+export { authClient };
