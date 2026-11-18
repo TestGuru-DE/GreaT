@@ -1970,3 +1970,277 @@ Exporte in `api_generate.py` als monolithische Funktionen.
 
 **Entscheider:** GREAT Senior Developer Agent
 **Abhaengigkeiten:** REQ-6011, ADR-001 (Python/FastAPI), B-05 (Formel-Schutz)
+
+---
+
+## ADR-020 – JSON-AST-Format fuer logische Constraints (REQ-6001)
+
+**Datum:** 2026-11-18
+**Status:** Accepted
+**Betroffene REQs:** REQ-6001 (Logische Constraints / Mehrbedingungs-Regeln)
+
+**Kontext:**
+REQ-6001 verlangt logische Constraints als Mehrbedingungs-Regeln jenseits der
+bestehenden einfachen Dependency/Forbidden/Combine-Regeln (REQ-0700–0702).
+Beispiel: „WENN Zahlart=Rechnung UND Land!=DE DANN NICHT Versand=Express".
+
+Die bestehenden Regeln in der `rules`-Tabelle (siehe ADR-014/015) unterstuetzen
+nur einfache Wenn-Dann-Regeln mit je einer Bedingung und einer Folge. Fuer
+komplexere logische Ausdruecke mit UND/ODER/NICHT und Klammern ist ein
+strukturiertes Format notwendig.
+
+Anforderungen an das Format:
+- **Flexibilitaet:** Verschachtelung bis Tiefe 5, maximal 20 atomare Vergleiche pro Ausdruck
+- **Validierung:** Struktur muss statisch pruefbar sein (Schema-Validierung)
+- **Serialisierung:** JSON-serialisierbar fuer API-Transport und DB-Speicherung
+- **Frontend-Builder:** Der React-Frontend muss Ausdruecke visuell aufbauen, bearbeiten und validieren koennen
+- **Dreiwertige Logik:** Notwendig fuer Pairwise-Teiltestfaelle (wahr/falsch/unbekannt)
+- **Zwei Constraint-Arten:** Verbot (forbid) und Implikation (implies)
+
+**Entscheidung:** JSON-AST (Abstract Syntax Tree) als kanonisches Format fuer logische Constraints.
+
+### JSON-AST-Schema
+
+#### Atomare Vergleichsoperationen
+
+| Operator | Bedeutung | Beispiel |
+|---|---|---|
+| `eq` | Kategorie = Wert | `{"op": "eq", "category_id": 3, "value_id": 17}` |
+| `ne` | Kategorie != Wert | `{"op": "ne", "category_id": 5, "value_id": 22}` |
+| `in` | Kategorie IN {Werte} | `{"op": "in", "category_id": 3, "value_ids": [17, 18]}` |
+| `not_in` | Kategorie NICHT IN {Werte} | `{"op": "not_in", "category_id": 3, "value_ids": [17, 18]}` |
+
+#### Logische Verknuepfungen
+
+| Operator | Bedeutung | Arity |
+|---|---|---|
+| `and` | logisches UND | 2+ args |
+| `or` | logisches ODER | 2+ args |
+| `not` | logisches NICHT | genau 1 arg |
+
+#### Beispiel: Einfacher UND-Ausdruck
+
+```json
+{
+  "op": "and",
+  "args": [
+    {"op": "eq", "category_id": 3, "value_id": 17},
+    {"op": "ne", "category_id": 5, "value_id": 22}
+  ]
+}
+```
+
+Bedeutung: „Kategorie 3 = Wert 17 UND Kategorie 5 != Wert 22"
+
+#### Beispiel: Komplexe verschachtelte Bedingung
+
+```json
+{
+  "op": "and",
+  "args": [
+    {"op": "eq", "category_id": 3, "value_id": 17},
+    {
+      "op": "or",
+      "args": [
+        {"op": "in", "category_id": 5, "value_ids": [22, 23]},
+        {"op": "not", "args": [{"op": "eq", "category_id": 7, "value_id": 31}]}
+      ]
+    }
+  ]
+}
+```
+
+Bedeutung: „Kategorie 3 = Wert 17 UND (Kategorie 5 IN {22,23} ODER NICHT(Kategorie 7 = Wert 31))"
+
+#### Top-Level-Struktur: Constraint mit Art
+
+```json
+{
+  "kind": "forbid",
+  "condition": {
+    "op": "and",
+    "args": [
+      {"op": "eq", "category_id": 3, "value_id": 17},
+      {"op": "ne", "category_id": 5, "value_id": 22}
+    ]
+  }
+}
+```
+
+Bedeutung (forbid): „Es ist verboten, dass (Kategorie 3 = Wert 17 UND Kategorie 5 != Wert 22)."
+Kein Testfall darf diese Bedingung erfuellen.
+
+```json
+{
+  "kind": "implies",
+  "condition": {
+    "op": "and",
+    "args": [
+      {"op": "eq", "category_id": 3, "value_id": 17},
+      {"op": "ne", "category_id": 5, "value_id": 22}
+    ]
+  },
+  "consequence": {
+    "op": "not",
+    "args": [{"op": "eq", "category_id": 8, "value_id": 41}]
+  }
+}
+```
+
+Bedeutung (implies): „WENN (Kategorie 3 = Wert 17 UND Kategorie 5 != Wert 22) DANN NICHT (Kategorie 8 = Wert 41)."
+
+### Struktur-Spezifikation
+
+| Element | Typ | Pflicht | Beschreibung |
+|---|---|---|---|
+| `kind` | string | ja | `"forbid"` oder `"implies"` |
+| `condition` | AST-Node | ja | Bedingungsausdruck |
+| `consequence` | AST-Node | nur bei `implies` | Folgeausdruck (nur bei `kind: "implies"`) |
+| `op` | string | ja (in AST-Node) | Operator: `eq`, `ne`, `in`, `not_in`, `and`, `or`, `not` |
+| `args` | array | ja (bei `and`, `or`, `not`) | Unterausdruecke |
+| `category_id` | integer | ja (bei `eq`, `ne`, `in`, `not_in`) | Referenz auf Kategorie in `categories`-Tabelle |
+| `value_id` | integer | ja (bei `eq`, `ne`) | Referenz auf Wert in `values`-Tabelle |
+| `value_ids` | array[int] | ja (bei `in`, `not_in`) | Referenzen auf Werte in `values`-Tabelle |
+
+### Validierungsregeln
+
+| Regel | Beschreibung |
+|---|---|
+| **Max-Tiefe** | Verschachtelungstiefe <= 5 (gemessen als maximale Pfadlaenge vom Root-Node zu einem Blatt) |
+| **Max-Vergleiche** | Maximal 20 atomare Vergleichsoperationen (`eq`, `ne`, `in`, `not_in`) pro Ausdruck |
+| **Max-Args** | `and`/`or` haben 2-10 Argumente; `not` hat genau 1 Argument |
+| **Max-Value-IDs** | `in`/`not_in` haben 2-20 `value_ids` |
+| **Keine Zyklen** | AST ist ein Baum (kein Graph) – keine zirkulaeren Referenzen moeglich durch Struktur |
+| **Referenz-Integritaet** | `category_id` muss in `categories` existieren; `value_id`/`value_ids` muss in `values` existieren und zur `category_id` gehoeren |
+| **Kind-Pflicht** | `forbid` hat nur `condition`; `implies` hat `condition` + `consequence` |
+| **Keine leeren Args** | `and`/`or` duerfen nie 0 oder 1 Argument haben |
+
+### Dreiwertige Logik-Spezifikation
+
+Fuer Pairwise-Generierung muessen Teiltestfaelle (incomplete test cases) gegen
+Constraints geprueft werden. Ein Teiltestfall hat nicht alle Kategorien befuellt.
+
+| Wert | Bedeutung | Verwendung |
+|---|---|---|
+| `True` | Bedingung ist definitiv erfuellt | Testfall verletzt Constraint → verwerfen |
+| `False` | Bedingung ist definitiv NICHT erfuellt | Testfall verletzt Constraint nicht → behalten |
+| `None` | Unbekannt (fehlende Kategorie-Werte) | Testfall koennte spaeter verletzen → behalten, aber markieren |
+
+#### Evaluierungsregeln dreiwertig
+
+| Operator | True, True | True, False | True, None | False, False | False, None | None, None |
+|---|---|---|---|---|---|---|
+| `and` | True | False | False | False | False | None |
+| `or` | True | True | True | False | None | None |
+| `not` (True) | False | – | – | – | – | – |
+| `not` (False) | True | – | – | – | – | – |
+| `not` (None) | None | – | – | – | – | – |
+
+Fuer atomare Operationen (`eq`, `ne`, `in`, `not_in`):
+- Wenn die Kategorie im Teiltestfall keinen Wert hat → `None`
+- Sonst normal evaluieren (`True`/`False`)
+
+#### Constraint-Auswertung pro Constraint-Art
+
+| Art | Bedingung=True | Bedingung=False | Bedingung=None |
+|---|---|---|---|
+| `forbid` | Testfall verwerfen | Testfall behalten | Testfall behalten (markieren) |
+| `implies` | Consequence evaluieren: wenn True → verwerfen, wenn False → behalten, wenn None → behalten (markieren) | Testfall behalten | Testfall behalten (markieren) |
+
+### Datenbankmodell-Skizze
+
+Neue Tabelle `constraints` (additive Erweiterung, bestehende `rules`-Tabelle bleibt erhalten):
+
+```python
+class Constraint(Base):
+    __tablename__ = "constraints"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(300), nullable=False)          # Menschenlesbarer Name
+    kind = Column(String(10), nullable=False)           # "forbid" oder "implies"
+    expression_json = Column(Text, nullable=False)      # JSON-AST als Text (SQLite) / JSONB (PostgreSQL)
+    is_valid = Column(Boolean, nullable=False, default=True, server_default="1")
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+
+    project = relationship("Project")
+```
+
+**Feldauswahl-Begründung:**
+- `expression_json` als Text: SQLite hat keinen nativen JSONB-Typ; Text ist cross-DB-kompatibel
+  (PostgreSQL akzeptiert Text in JSON-Funktionen). Validierung erfolgt in der Service-Schicht.
+- `is_valid`: Marker fuer Constraints mit ungueltigen Referenzen (z.B. geloeschte Kategorie/Wert).
+  Ungueltige Constraints werden bei Generierung ignoriert und im Frontend als „ungueltig" markiert.
+- `kind` als String-Enum (nicht sa.Enum): Cross-DB-Kompatibilitaet (ADR-015-Praezedens)
+- `name` fuer Frontend-Anzeige und Fehlermeldungen (analog REQ-3013: Regeln benennen)
+- Referenzen im AST per ID (`category_id`, `value_id`) – keine Namen, keine Duplikate
+
+**Migration (Alembic oder `_migrate_db()`):**
+
+```python
+def upgrade():
+    op.create_table('constraints',
+        sa.Column('id', sa.Integer, primary_key=True),
+        sa.Column('project_id', sa.Integer, sa.ForeignKey('projects.id', ondelete='CASCADE'), nullable=False),
+        sa.Column('name', sa.String(300), nullable=False),
+        sa.Column('kind', sa.String(10), nullable=False),
+        sa.Column('expression_json', sa.Text, nullable=False),
+        sa.Column('is_valid', sa.Boolean, nullable=False, server_default='1'),
+        sa.Column('created_at', sa.DateTime, nullable=False),
+        sa.Column('updated_at', sa.DateTime, nullable=False),
+        sa.Index('idx_constraints_project', 'project_id')
+    )
+```
+
+### Beziehung zu bestehenden Regeln
+
+| Aspekt | Bestehende `rules`-Tabelle | Neue `constraints`-Tabelle |
+|---|---|---|
+| **Komplexitaet** | Einfache Wenn-Dann (1 Bedingung → 1 Folge) | Komplexe logische Ausdruecke (UND/ODER/NICHT, Klammern) |
+| **REQ-Abdeckung** | REQ-0700–0702 (Verboten, Abhaengig, Kombinierbar) | REQ-6001 (Logische Constraints) |
+| **Format** | Separate Spalten (if_category_id, if_value, then_category_id, then_value) | JSON-AST in einer Spalte |
+| **Koexistenz** | Bleibt erhalten; wird nicht deprecated | Additiv; bestehende Regeln funktionieren unveraendert |
+| **Generierung** | `services.py` Rule-Engine | Neue Constraint-Engine (dreiwertige Evaluierung) |
+
+### Abgelehnte Alternativen
+
+| Alternative | Grund der Ablehnung |
+|---|---|
+| **Natuerliche Sprache (Textfeld)** | Nicht maschinenlesbar, keine statische Validierung, keine strukturierte Editierung im Frontend |
+| **SQL-WHERE-Klausel als String** | Security-Risiko (SQL-Injection), nicht frontend-freundlich, proprietar fuer DB-Backend |
+| **Separate Spalten pro Bedingung (if_cat_1, if_val_1, op_1, if_cat_2, ...)** | Max 20 Bedingungen → 80+ Spalten; unwartbar, schwer zu erweitern, schlechte API |
+| **Relationale Normalform (constraint_conditions-Junction-Table)** | Verknuepfungsoperatoren (UND/ODER) und Verschachtelung sind relational schwer darstellbar; ADR-014 lehnte dies bereits fuer Decision-Table-Constraints ab |
+| **Expression-Language-String (z.B. `"cat3==17 AND cat5!=22"`)** | Parsing-Fehleranfellig, keine Schema-Validierung, Frontend-Builder komplex |
+| **XML-AST** | Schwerer zu parsen/serialisieren als JSON, schlechtere Git-Diff-Unterstuetzung, groesseres Payload |
+
+**Begründung:**
+- JSON-AST ist das etablierte Format fuer strukturierte Ausdruecke (vergleiche JSON Logic,
+  JSON Patch, JSON Schema)
+- Einfache Validierung via JSON-Schema oder Pydantic
+- Frontend kann AST direkt in Baum-/Graph-Ansicht rendern
+- SQLite-Text-Spalte ist ausreichend (keine JSON-Query-Funktionen notwendig;
+  Evaluierung erfolgt in Python/Service-Schicht)
+- Cross-DB-kompatibel (SQLite + PostgreSQL)
+- Keine neuen Dependencies (JSON ist in Python standardmaessig verfuegbar)
+
+**Konsequenzen:**
+
+| Bereich | Auswirkung |
+|---|---|
+| **DB-Schema** | Neue Tabelle `constraints` (siehe oben), additive Erweiterung |
+| **Backend** | Neues Modul `src/app/constraints/` mit AST-Parser, Validator, Evaluierer (dreiwertig) |
+| **API** | CRUD-Endpunkte `/api/v1/projects/{pid}/constraints/` (GET, POST, PATCH, DELETE) |
+| **Validierung** | Pydantic-Modelle fuer AST-Node-Typen; Schema-Validierung bei POST/PATCH |
+| **Generierung** | Constraint-Engine evaluieret jeden (Teil-)Testfall gegen alle projekt-spezifischen Constraints |
+| **Frontend** | Visueller Constraint-Builder (Baum-/Block-Ansicht); Drag&Drop fuer Verschachtelung |
+| **Tests** | TDD: AST-Parser-Tests, Validator-Tests, dreiwertige Evaluierungs-Tests, Generierungs-Integrationstests |
+| **Dependencies** | Keine neuen Dependencies (JSON-Modul + Pydantic sind bereits vorhanden) |
+| **Migration** | Idempotente Migration in `_migrate_db()` oder Alembic |
+| **Performance** | Evaluierung pro Testfall × Constraint; bei vielen Constraints/TCs kann Caching notwendig sein |
+
+**Entscheider:** GREAT Chief Architect Agent
+**Abhaengigkeiten:** REQ-6001, ADR-001 (Python/FastAPI), ADR-002 (Alembic/Migration),
+ADR-014 (Entscheidungstabelle-Schema, als Praezedens fuer JSON-in-DB),
+ADR-015 (Multi-User-DB-Schema, String-Enum-Praezedens),
+REQ-0800 (Pairwise, dreiwertige Evaluierung)

@@ -3003,7 +3003,38 @@ Dieses neue EPIC wurde als **EPIC-20** angelegt, um die Nummerierungskollision z
 **REQ-5001** bleibt dem bestehenden EPIC-19 (Installation) zugeordnet.
 Die neuen REQs beginnen mit **REQ-5000** und enden bei **REQ-5021**.---
 
-## EPIC-21 â€“ Feature-Erweiterung (v1.10.0 â€“ v1.13.0)
+## EPIC-21 – Feature-Erweiterung & Methodik-Release (v1.10.0 – v1.13.0)
+
+Methodik-Erweiterungen: Logische Constraints (Mehrbedingungs-Regeln), Testfall-Vorlagen, Seed-basierte Generierung, BVA-Export, Testdaten-Seed und Locale. Diese Features erweitern den fachlichen Ausdrucksumfang jenseits der klassischen Zwei-Kategorien-Regeln und runden die ISTQB-konforme Methodik ab.
+
+---
+
+### REQ-6001 | Logische Constraints (Mehrbedingungs-Regeln)
+**Titel:** Regeln mit mehreren Bedingungen über beliebig viele Kategorien (UND/ODER/NICHT)
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 5, Release v1.11.0
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester
+moechte ich fachliche Einschränkungen formulieren, die mehrere Kategorien gleichzeitig betreffen, z. B. „WENN Zahlart = Rechnung UND Land ≠ DE DANN NICHT Versand = Express",
+damit die Generierung keine fachlich unmöglichen Testfälle erzeugt und ich nicht auf Paar-Regeln zwischen genau zwei Kategorien beschränkt bin.
+**Akzeptanzkriterien:**
+1. Neuer Regeltyp „Constraint" mit zwei Formen:
+   - **Verbot:** `NICHT (Bedingung)`. Kein Testfall darf die Bedingung erfüllen.
+   - **Implikation:** `WENN (Bedingung) DANN (Folge)`. Jeder Testfall, der die Bedingung erfüllt, muss auch die Folge erfüllen.
+2. Bedingungen bestehen aus Vergleichen `Kategorie = Wert`, `Kategorie ≠ Wert`, `Kategorie IN {Werte}`, `Kategorie NICHT IN {Werte}`, verknüpft mit UND, ODER, NICHT und Klammern. Verschachtelung bis Tiefe 5, höchstens 20 Vergleiche je Constraint.
+3. **Regel-Editor (Builder)** in der Oberfläche: Bedingungen werden per Auswahllisten zusammengeklickt (Kategorie, Operator, Wert/Werte), Gruppen per „UND-Gruppe" / „ODER-Gruppe". Keine Freitexteingabe nötig.
+4. Zusätzlich eine **Textdarstellung** (nur lesend und kopierbar), z. B. `IF Zahlart = "Rechnung" AND Land != "DE" THEN NOT Versand = "Express"`, zur Dokumentation und für REQ-6013.
+5. Constraints gelten für **alle** Strategien (each, linear, all, pairwise, t_wise, risk_based, mcdc), wenn „Mit Regeln generieren" aktiv ist. Kein ausgelieferter Testfall verletzt einen Constraint.
+6. Pairwise und T-Wise behandeln Constraints bei **unvollständigen** Testfällen korrekt (dreiwertige Logik: wahr/falsch/unbekannt). Ein Teil-Testfall wird nur verworfen, wenn er einen Constraint sicher verletzt.
+7. Paare/Tupel, die durch Constraints unmöglich sind, zählen nicht als Abdeckungslücke und werden als „durch Regeln ausgeschlossen" gemeldet (Anbindung an die Warnungen aus `generate`).
+8. **Widerspruchsprüfung beim Speichern:** Macht ein Constraint einen Wert vollständig unerreichbar oder das ganze Modell unerfüllbar, erscheint eine Warnung mit dem betroffenen Wert. Speichern bleibt möglich.
+9. Bestehende Regeln (exclude, dependency, combine) funktionieren unverändert weiter. Optional: Aktion „In Constraint umwandeln" je bestehender Regel.
+10. Constraints werden im Backup (Format 2.x) und in der Modell-Datei (REQ-6013) gesichert. Wird eine Kategorie oder ein Wert umbenannt, passen sich Constraints automatisch an. Wird eine referenzierte Kategorie/ein Wert gelöscht, erscheint vorher ein Hinweis, welche Constraints betroffen sind; sie werden dann als „ungültig" markiert, nicht still gelöscht.
+**TDD-Hinweis:** Zuerst Unit-Tests für den Ausdrucksauswerter (Wahrheitstabellen inkl. „unbekannt"), dann Property-Test: zufällige Modelle mit zufälligen Constraints, jede Strategie liefert nur gültige Testfälle; dann API-Tests für Anlegen/Validieren/Widerspruch.
+**Abhaengigkeiten:** REQ-3003, REQ-3005, REQ-3040; Bugfixes v1.9.0
+**Blockiert:** REQ-6008, REQ-6009, REQ-6014
 
 ---
 
