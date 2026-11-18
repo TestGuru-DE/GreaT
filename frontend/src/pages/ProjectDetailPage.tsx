@@ -1,5 +1,6 @@
 ﻿// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
 // REQ-6005: i18n
+// REQ-6013: Modell-Export/Import
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,8 @@ import StaleDataWarning from "../components/StaleDataWarning";
 import DecisionTable from "../components/DecisionTable";
 import CauseEffectGraph from "../components/CauseEffectGraph";
 import RuleVisualization from "../components/RuleVisualization";
+import ModelExportDropdown from "../components/ModelExportDropdown";
+import ModelImportDialog from "../components/ModelImportDialog";
 import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
@@ -45,6 +48,9 @@ export default function ProjectDetailPage() {
   // REQ-4021/REQ-4022: Projekt umbenennen mit Konflikt-Erkennung
   const [renaming, setRenaming] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+
+  // REQ-6013: Import-Dialog
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   async function saveName(name: string, version?: number): Promise<void> {
     try {
@@ -124,6 +130,19 @@ export default function ProjectDetailPage() {
                 {t('projectDetail.rename')}
               </button>
             )}
+            {/* REQ-6013: Export/Import im Header */}
+            <div className="ml-auto flex items-center gap-2">
+              <ModelExportDropdown projectId={projectId} projectName={projectName} />
+              <button
+                type="button"
+                onClick={() => setShowImportDialog(true)}
+                className="flex items-center gap-1 text-sm text-theme-text-secondary hover:text-theme-text border border-theme-border rounded-lg px-3 py-1 transition-colors"
+                title={t("modelImport.button")}
+              >
+                <span className="text-xs">📥</span>
+                <span>{t("modelImport.button")}</span>
+              </button>
+            </div>
           </>
         )}
       </header>
@@ -178,6 +197,16 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* REQ-6013: Import-Dialog */}
+      {showImportDialog && (
+        <ModelImportDialog
+          projects={projects}
+          onClose={() => setShowImportDialog(false)}
+          onProjectCreated={() => fetchProjects()}
+          onProjectUpdated={() => fetchProjects()}
+        />
+      )}
     </div>
   );
 }

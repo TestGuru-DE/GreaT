@@ -78,4 +78,60 @@ describe("REQ-6005: Translation Key Completeness", () => {
     expect(deKeys).toContain("language.switcher.en");
     expect(deKeys).toContain("language.switcher.label");
   });
+
+  // REQ-6013: Model Export/Import i18n keys
+  it("should have all required modelExport keys", () => {
+    const deKeys = getFlatKeys(translationDE);
+    const requiredExportKeys = [
+      "modelExport.button",
+      "modelExport.yaml",
+      "modelExport.json",
+      "modelExport.loading",
+      "modelExport.error",
+      "modelExport.success",
+    ];
+
+    for (const key of requiredExportKeys) {
+      expect(deKeys).toContain(key);
+    }
+  });
+
+  it("should have all required modelImport keys", () => {
+    const deKeys = getFlatKeys(translationDE);
+    const requiredImportKeys = [
+      "modelImport.title",
+      "modelImport.button",
+      "modelImport.fileSelect",
+      "modelImport.dragDrop",
+      "modelImport.acceptedFormats",
+      "modelImport.mode",
+      "modelImport.modeNew",
+      "modelImport.modeUpdate",
+      "modelImport.projectSelect",
+      "modelImport.previewTitle",
+      "modelImport.previewLoading",
+      "modelImport.noChanges",
+      "modelImport.added",
+      "modelImport.modified",
+      "modelImport.removed",
+      "modelImport.categories",
+      "modelImport.values",
+      "modelImport.rules",
+      "modelImport.warning",
+      "modelImport.confirm",
+      "modelImport.confirmLoading",
+      "modelImport.cancel",
+      "modelImport.errorFileTooLarge",
+      "modelImport.errorInvalidFormat",
+      "modelImport.errorImport",
+      "modelImport.errorValidation",
+      "modelImport.errorPreview",
+      "modelImport.successNew",
+      "modelImport.successUpdate",
+    ];
+
+    for (const key of requiredImportKeys) {
+      expect(deKeys).toContain(key);
+    }
+  });
 });

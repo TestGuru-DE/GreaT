@@ -1,0 +1,206 @@
+{
+  "$defs": {
+    "ModelCategory": {
+      "description": "Eine Kategorie mit ihren Werten.",
+      "properties": {
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "orderIndex": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Orderindex",
+          "type": "integer"
+        },
+        "isResult": {
+          "default": false,
+          "title": "Isresult",
+          "type": "boolean"
+        },
+        "categoryType": {
+          "default": "standard",
+          "title": "Categorytype",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/$defs/ModelValue"
+          },
+          "title": "Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ModelCategory",
+      "type": "object"
+    },
+    "ModelDecisionConstraint": {
+      "description": "Constraint fuer Entscheidungstabelle.",
+      "properties": {
+        "constraintType": {
+          "title": "Constrainttype",
+          "type": "string"
+        },
+        "targets": {
+          "additionalProperties": true,
+          "title": "Targets",
+          "type": "object"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "constraintType"
+      ],
+      "title": "ModelDecisionConstraint",
+      "type": "object"
+    },
+    "ModelRule": {
+      "description": "Abhaengigkeitsregel (Referenzen ueber Namen, nicht IDs).",
+      "properties": {
+        "type": {
+          "default": "dependency",
+          "title": "Type",
+          "type": "string"
+        },
+        "ifCategoryName": {
+          "title": "Ifcategoryname",
+          "type": "string"
+        },
+        "ifValue": {
+          "title": "Ifvalue",
+          "type": "string"
+        },
+        "thenCategoryName": {
+          "title": "Thencategoryname",
+          "type": "string"
+        },
+        "thenValue": {
+          "default": "",
+          "title": "Thenvalue",
+          "type": "string"
+        },
+        "thenValuesJson": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thenvaluesjson"
+        }
+      },
+      "required": [
+        "ifCategoryName",
+        "ifValue",
+        "thenCategoryName"
+      ],
+      "title": "ModelRule",
+      "type": "object"
+    },
+    "ModelValue": {
+      "description": "Ein Wert innerhalb einer Kategorie.",
+      "properties": {
+        "value": {
+          "maxLength": 500,
+          "minLength": 0,
+          "title": "Value",
+          "type": "string"
+        },
+        "riskWeight": {
+          "default": 1,
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Riskweight",
+          "type": "integer"
+        },
+        "vtype": {
+          "default": "string",
+          "title": "Vtype",
+          "type": "string"
+        },
+        "allowed": {
+          "default": true,
+          "title": "Allowed",
+          "type": "boolean"
+        },
+        "orderIndex": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Orderindex",
+          "type": "integer"
+        },
+        "isDefault": {
+          "default": false,
+          "title": "Isdefault",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "ModelValue",
+      "type": "object"
+    }
+  },
+  "description": "Vollstaendiges Testmodell eines G.R.E.A.T.-Projekts.\n\nNicht enthalten: Generierungen, Benutzer, IDs, Zeitstempel.\nReferenzen innerhalb der Datei erfolgen ueber Namen.",
+  "properties": {
+    "schemaVersion": {
+      "default": 1,
+      "title": "Schemaversion",
+      "type": "integer"
+    },
+    "projectName": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Projectname",
+      "type": "string"
+    },
+    "categories": {
+      "items": {
+        "$ref": "#/$defs/ModelCategory"
+      },
+      "title": "Categories",
+      "type": "array"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/ModelRule"
+      },
+      "title": "Rules",
+      "type": "array"
+    },
+    "decisionConstraints": {
+      "items": {
+        "$ref": "#/$defs/ModelDecisionConstraint"
+      },
+      "title": "Decisionconstraints",
+      "type": "array"
+    }
+  },
+  "required": [
+    "projectName"
+  ],
+  "title": "GreatModel",
+  "type": "object",
+  "$id": "https://great-testdesign.de/schemas/great-model.v1.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

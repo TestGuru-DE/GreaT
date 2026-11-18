@@ -3136,7 +3136,7 @@ Dann Frontend-Tests fuer die Token-Verwaltung.
 ### REQ-6013 | Testmodell als Datei (YAML/JSON)
 **Titel:** Vollstaendiges Testmodell eines Projekts als versionierbare Datei exportieren und importieren
 **Prioritaet:** Must
-**Status:** Proposed
+**Status:** Implemented
 **Phase:** 5, Release v1.10.0
 **User Story:**
 Als Tester in einem Entwicklungsteam

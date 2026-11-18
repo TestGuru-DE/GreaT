@@ -26,6 +26,7 @@ from .routers import (
     api_decision_table,
     api_sharing,
     api_users,
+    api_model,
     auth,
 )
 from .system_dataclasses import seed_system_dataclasses
@@ -217,6 +218,7 @@ app.include_router(api_decision_table.router)  # Entscheidungstabelle (Prefix /a
 app.include_router(api_sharing.router)  # Projektfreigaben (Prefix /api/sharing)
 app.include_router(api_users.router)  # REQ-4025: Benutzerverwaltung (Prefix /api/users, Admin)
 app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /api/users/{id}/password)
+app.include_router(api_model.router)  # REQ-6013: Modell-Export/Import (Prefix /api/v1/projects)
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
 
 # ---------------------------------------------------------------------------

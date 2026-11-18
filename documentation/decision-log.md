@@ -1507,6 +1507,43 @@ async def update_category(
 | **E-Mail-Authentifizierung** | EPIC-18 ist fuer lokale Teams ohne E-Mail-Infrastructure |
 | **OAuth2-Provider (Google, GitHub)** | Out of Scope – nur lokale Authentifizierung (REQ-4001: "lokale OAuth2/JWT-Nutzer") |
 | **Vollstaendiges Audit-Log (alle Aenderungen)** | REQ-4024 verlangt explizit nur "letzten Aenderer"; voller Audit-Trail ist REQ-4003 (Phase 5+) |
+
+---
+
+## ADR-019 – Testmodell als Datei (YAML/JSON) (REQ-6013)
+
+**Datum:** 2026-11-18
+**Status:** Accepted
+**Betroffene REQs:** REQ-6013
+
+**Kontext:**
+REQ-6013 verlangt, dass das Testmodell eines Projekts als versionierbare Datei
+(YAML oder JSON) exportiert und importiert werden kann. Das Modell soll neben dem
+Quellcode im Git liegen, per Pull Request geprueft werden koennen und zwischen
+G.R.E.A.T.-Instanzen uebertragbar sein.
+
+**Entscheidung:**
+- Neues Modul `src/app/model_io/` mit Pydantic-Modellen als Single Source of Truth
+- JSON-Schema automatisch aus Pydantic generiert (`model_json_schema()`)
+- YAML: PyYAML safe_load/safe_dump, custom Dumper ohne Aliases, Blockstil, sort_keys=False
+- JSON: json.dumps mit sort_keys=False, ensure_ascii=False, indent=2
+- Referenzen innerhalb der Datei ueber Namen (Kategoriename, Wertname), nicht IDs
+- Deterministisch: zweimal exportiert = byte-identisch (gleiche Inhalte)
+- API-Endpunkte unter `/api/v1/projects/` (neuer Prefix fuer v1-API)
+- Groessenlimit 5 MB fuer Import
+
+**Alternativen:**
+1. Backup-Format v2.0 wiederverwenden – abgelehnt: Backup enthaelt Generierungen und Zeitstempel
+2. XML-Format – abgelehnt: YAML/JSON sind Git-freundlicher und besser lesbar
+3. Binaries (MessagePack, Protocol Buffers) – abgelehnt: nicht menschenlesbar, schlechter fuer Git-Diffs
+
+**Konsequenzen:**
+- PyYAML als neue Dependency (bereits installiert, MIT-Lizenz)
+- JSON-Schema-Datei unter `schemas/great-model.v1.schema.json`
+- Neue API-Endpunkte koennen in Phase 5 erweitert werden (z.B. Migration aelterer Schema-Versionen)
+- Existing Backup-Format (v2.0) bleibt unveraendert (REQ-6013: "Keine Verhaltensaenderung des Backups")
+
+**Entscheider:** GREAT Senior Developer Agent
 | **Version auf allen Tabellen** | `generations`, `testcase_values`, `rules`, `dataclasses` werden nicht von Nutzern direkt bearbeitet; Overhead ohne Nutzen |
 | **Pessimistic Locking (SELECT FOR UPDATE)** | ADR-012 hat Optimistic Concurrency entschieden; Pessimistic Locking waere ein Konflikt mit ADR-012 |
 | **Row-Level Security (PostgreSQL RLS)** | SQLite hat keine RLS; Cross-DB-Kompatibilitaet erfordert App-Level-Filterung |
