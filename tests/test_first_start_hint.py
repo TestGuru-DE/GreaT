@@ -20,7 +20,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app, _migrate_db, _add_default_password_active_column, _add_token_version_column
+from app.main import app, _migrate_db, _add_default_password_active_column, _add_token_version_column, _add_language_column
 from app.database import SessionLocal, engine, Base
 from app.models.auth import User
 from app.bootstrap import (
@@ -306,7 +306,7 @@ class TestDefaultPasswordFlagLifecycle:
         assert r.status_code == 200
         body = r.json()
         assert body["password_change_required"] is True
-        assert set(body.keys()) == {"user_id", "username", "role", "is_active", "password_change_required"}
+        assert set(body.keys()) == {"user_id", "username", "role", "is_active", "password_change_required", "language"}
 
 
 # ---------------------------------------------------------------------------
@@ -406,6 +406,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -420,6 +421,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -434,6 +436,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -449,6 +452,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -466,6 +470,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         try:
             backfill_default_password_flags(session)
@@ -483,6 +488,7 @@ class TestDefaultPasswordMigration:
         with eng.begin() as conn:
             _add_default_password_active_column(conn)
             _add_token_version_column(conn)
+            _add_language_column(conn)
         session = sessionmaker(bind=eng)()
         caplog.set_level(logging.DEBUG)
         try:

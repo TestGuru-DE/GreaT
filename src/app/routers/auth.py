@@ -16,7 +16,7 @@ from ..auth_deps import get_current_user, get_current_user_unrestricted, require
 from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS, GREAT_COOKIE_SECURE
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
 from ..config import GREAT_TRUST_PROXY_HEADERS
-from ..schemas import PasswordChangeRequest
+from ..schemas import PasswordChangeRequest, UserPreferencesRequest
 from ..password_policy import PasswordError
 from ..auth_service import change_own_password, is_first_start_hint_active
 
@@ -116,6 +116,7 @@ def login(
         "role": user.role,
         "message": "Login erfolgreich",
         "password_change_required": bool(user.default_password_active),  # REQ-4028 AK-1
+        "language": user.language,  # REQ-6005
     }
 
 
@@ -302,6 +303,7 @@ def change_password(
 def get_me(current_user: User = Depends(get_current_user_unrestricted)):
     """Return current user info. REQ-4028 AK-1: liefert password_change_required.
 
+    REQ-6005: Liefert auch language (Sprachpraferenz).
     Bewusst ohne Passwort-Sperre, damit das Frontend nach Login weiterleiten kann.
     """
     return {
@@ -310,4 +312,26 @@ def get_me(current_user: User = Depends(get_current_user_unrestricted)):
         "role": current_user.role,
         "is_active": current_user.is_active,
         "password_change_required": bool(current_user.default_password_active),
+        "language": current_user.language,
     }
+
+
+# ---------------------------------------------------------------------------
+# REQ-6005: Sprachpraferenz speichern
+# ---------------------------------------------------------------------------
+
+@router.put("/me/preferences")
+def update_preferences(
+    payload: UserPreferencesRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_unrestricted),
+):
+    """Sprachpraferenz aktualisieren (REQ-6005).
+
+    Body: {"language": "de" | "en"}
+    Erfolg: {"language": "de" | "en" | null}
+    """
+    current_user.language = payload.language
+    db.commit()
+    db.refresh(current_user)
+    return {"language": current_user.language}

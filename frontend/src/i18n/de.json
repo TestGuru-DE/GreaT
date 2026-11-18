@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "Home",
+    "projects": "Projekte",
+    "dataclasses": "Datenklassen",
+    "generations": "Generierungen",
+    "settings": "Einstellungen",
+    "changePassword": "Passwort aendern",
+    "help": "Hilfe (F1)",
+    "apiDocs": "API-Docs",
+    "logout": "Logout",
+    "logoutTitle": "Abmelden ({{username}})"
+  },
+  "login": {
+    "title": "G.R.E.A.T. &ndash; Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "defaultUser": "Standardbenutzer: {{username}}",
+    "defaultPassword": "Standardpasswort: {{password}} (bitte nach der ersten Anmeldung aendern)",
+    "submitLoading": "Anmelden...",
+    "submit": "Anmelden",
+    "errorInvalid": "Ungültige Anmeldedaten"
+  },
+  "language": {
+    "switcher": {
+      "de": "DE",
+      "en": "EN",
+      "label": "Sprache wechseln"
+    }
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Fehler",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Loeschen",
+    "confirm": "Bestaetigen",
+    "close": "Schließen"
+  },
+  "errors": {
+    "invalidCredentials": "Ungültige Anmeldedaten",
+    "accountDeactivated": "Konto ist deaktiviert",
+    "sessionExpired": "Sitzung abgelaufen, bitte neu anmelden",
+    "internalError": "Interner Serverfehler",
+    "passwordChangeRequired": "Passwortwechsel erforderlich",
+    "tooManyAttempts": "Zu viele Versuche. Bitte versuche es spaeter erneut."
+  }
+}

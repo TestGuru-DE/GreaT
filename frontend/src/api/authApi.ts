@@ -15,6 +15,7 @@ export interface UserInfo {
   role: string;
   is_active: boolean;
   password_change_required?: boolean;
+  language?: "de" | "en" | null;
 }
 
 export const authApi = {
@@ -55,6 +56,14 @@ export const authApi = {
     const { data } = await authClient.post<{ message: string }>("/change-password", {
       current_password: currentPassword,
       new_password: newPassword,
+    });
+    return data;
+  },
+
+  // REQ-6005: Sprachpraferenz speichern
+  setLanguage: async (lang: "de" | "en"): Promise<{ language: string | null }> => {
+    const { data } = await authClient.put<{ language: string | null }>("/me/preferences", {
+      language: lang,
     });
     return data;
   },

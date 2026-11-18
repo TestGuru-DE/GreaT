@@ -17,6 +17,35 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
+// REQ-6005: Mock i18n fuer TopNav-Tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const translations: Record<string, string> = {
+        "nav.home": "Home",
+        "nav.projects": "Projekte",
+        "nav.dataclasses": "Datenklassen",
+        "nav.generations": "Generierungen",
+        "nav.settings": "Einstellungen",
+        "nav.changePassword": "Passwort aendern",
+        "nav.help": "Hilfe (F1)",
+        "nav.apiDocs": "API-Docs",
+        "nav.logout": "Logout",
+        "nav.logoutTitle": `Abmelden (${params?.username ?? "user"})`,
+        "language.switcher.de": "DE",
+        "language.switcher.en": "EN",
+        "language.switcher.label": "Sprache wechseln",
+      };
+      return translations[key] ?? key;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
+vi.mock("../../i18n", () => ({
+  default: { language: "de" },
+}));
+
 describe("TopNav - REQ-4028 Passwort aendern Navigation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,6 +56,7 @@ describe("TopNav - REQ-4028 Passwort aendern Navigation", () => {
         isLoading: false,
         error: null,
         passwordChangeRequired: false,
+        language: null,
         login: vi.fn(),
         logout: vi.fn(),
         loadUser: vi.fn(),
@@ -34,6 +64,7 @@ describe("TopNav - REQ-4028 Passwort aendern Navigation", () => {
         refresh: vi.fn(),
         setPasswordChangeRequired: vi.fn(),
         changePassword: vi.fn(),
+        setLanguage: vi.fn(),
       };
       // @ts-expect-error
       return selector(state);

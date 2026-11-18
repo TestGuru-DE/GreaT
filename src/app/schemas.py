@@ -389,6 +389,20 @@ class PasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=200)
     new_password: str = Field(min_length=1, max_length=200)
 
+# REQ-6005: Sprachpraferenz aktualisieren
+class UserPreferencesRequest(BaseModel):
+    language: str = Field(min_length=2, max_length=2)
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        if v not in {"de", "en"}:
+            raise ValueError("language muss 'de' oder 'en' sein.")
+        return v
+
+class UserPreferencesResponse(BaseModel):
+    language: Optional[str] = None
+
 # ============================================================================
 # Backup-Schemas (v2.0 Format)
 # ============================================================================

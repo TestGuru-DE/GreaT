@@ -1,12 +1,16 @@
 ﻿// REQ-4001: Login-Seite fuer JWT-basierte Authentifizierung
 // REQ-4027: Erststart-Hinweis (Standardbenutzer/Standardpasswort)
+// REQ-6005: i18n + LanguageSwitcher
 import { useState, FormEvent, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { getFirstStartHint } from "../api/authApi";
 import { DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD } from "../lib/defaultCredentials";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const login = useAuthStore((s) => s.login);
@@ -48,9 +52,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-theme-bg">
       <div className="max-w-md w-full space-y-8 bg-theme-surface p-8 rounded-lg shadow">
-        <h2 className="text-2xl font-bold text-center text-theme-text">
-          G.R.E.A.T. &ndash; Anmelden
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-center text-theme-text flex-1">
+            {t("login.title")}
+          </h2>
+          {/* REQ-6005: LanguageSwitcher auf Login-Seite */}
+          <LanguageSwitcher />
+        </div>
 
         {error && (
           <div className="bg-red-100 text-red-700 p-3 rounded" role="alert">
@@ -64,7 +72,7 @@ export default function LoginPage() {
               htmlFor="username"
               className="block text-sm font-medium text-theme-text"
             >
-              Benutzername
+              {t("login.username")}
             </label>
             <input
               id="username"
@@ -78,7 +86,7 @@ export default function LoginPage() {
             {/* REQ-4027 AK-2: Standardbenutzer-Hinweis unter dem Feld "Benutzername" */}
             {showHint && (
               <p className="mt-1 text-xs text-theme-text-secondary">
-                Standardbenutzer: {DEFAULT_ADMIN_USERNAME}
+                {t("login.defaultUser", { username: DEFAULT_ADMIN_USERNAME })}
               </p>
             )}
           </div>
@@ -88,7 +96,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-sm font-medium text-theme-text"
             >
-              Passwort
+              {t("login.password")}
             </label>
             <input
               id="password"
@@ -101,7 +109,7 @@ export default function LoginPage() {
             {/* REQ-4027 AK-2: Standardpasswort-Hinweis unter dem Feld "Passwort" */}
             {showHint && (
               <p className="mt-1 text-xs text-theme-text-secondary">
-                Standardpasswort: {DEFAULT_ADMIN_PASSWORD} (bitte nach der ersten Anmeldung aendern)
+                {t("login.defaultPassword", { password: DEFAULT_ADMIN_PASSWORD })}
               </p>
             )}
           </div>
@@ -111,7 +119,7 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
-            {isLoading ? "Anmelden..." : "Anmelden"}
+            {isLoading ? t("login.submitLoading") : t("login.submit")}
           </button>
         </form>
       </div>

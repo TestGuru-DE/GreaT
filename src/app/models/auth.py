@@ -29,6 +29,8 @@ class User(Base):
     default_password_active = Column(Boolean, default=False, server_default='0', nullable=False)
     # B-06: Token-Versionierung fuer Sitzungs-Invalidierung
     token_version = Column(Integer, nullable=False, default=0, server_default='0')
+    # REQ-6005: Sprachpraferenz des Nutzers (de/en, NULL = nicht gesetzt)
+    language = Column(String(2), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships

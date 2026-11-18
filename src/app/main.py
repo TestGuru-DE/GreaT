@@ -146,12 +146,23 @@ def _add_token_version_column(conn) -> None:
         conn.exec_driver_sql("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
 
 
+def _add_language_column(conn) -> None:
+    """REQ-6005: Spalte users.language idempotent ergaenzen."""
+    cols = conn.exec_driver_sql("PRAGMA table_info('users')").fetchall()
+    if not cols:
+        return
+    have = {c[1] for c in cols}
+    if "language" not in have:
+        conn.exec_driver_sql("ALTER TABLE users ADD COLUMN language VARCHAR(2)")
+
+
 def _migrate_db() -> None:
     if engine.url.get_backend_name() != "sqlite":
         return
     with engine.begin() as conn:
         _add_default_password_active_column(conn)
         _add_token_version_column(conn)
+        _add_language_column(conn)
         cols = conn.exec_driver_sql("PRAGMA table_info('values')").fetchall()
         have = {c[1] for c in cols}
         if "allowed" not in have:

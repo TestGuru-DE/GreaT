@@ -1,0 +1,48 @@
+{
+  "nav": {
+    "home": "Home",
+    "projects": "Projects",
+    "dataclasses": "Data Classes",
+    "generations": "Generations",
+    "settings": "Settings",
+    "changePassword": "Change Password",
+    "help": "Help (F1)",
+    "apiDocs": "API Docs",
+    "logout": "Logout",
+    "logoutTitle": "Log out ({{username}})"
+  },
+  "login": {
+    "title": "G.R.E.A.T. &ndash; Login",
+    "username": "Username",
+    "password": "Password",
+    "defaultUser": "Default user: {{username}}",
+    "defaultPassword": "Default password: {{password}} (please change after first login)",
+    "submitLoading": "Logging in...",
+    "submit": "Login",
+    "errorInvalid": "Invalid credentials"
+  },
+  "language": {
+    "switcher": {
+      "de": "DE",
+      "en": "EN",
+      "label": "Switch language"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "close": "Close"
+  },
+  "errors": {
+    "invalidCredentials": "Invalid credentials",
+    "accountDeactivated": "Account is deactivated",
+    "sessionExpired": "Session expired, please log in again",
+    "internalError": "Internal server error",
+    "passwordChangeRequired": "Password change required",
+    "tooManyAttempts": "Too many attempts. Please try again later."
+  }
+}

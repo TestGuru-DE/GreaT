@@ -1,20 +1,24 @@
 ﻿// REQ-3001: Einheitliche Top-Navigation in jeder Ansicht
 // REQ-4028 AK-3: "Passwort aendern" fuer alle Rollen
+// REQ-6005: i18n + LanguageSwitcher
 import { useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { Home } from "lucide-react";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const NAV_ITEMS = [
-  { to: "/projects",       label: "Projekte" },
-  { to: "/dataclasses",    label: "Datenklassen" },
-  { to: "/generations",    label: "Generierungen" },
-  { to: "/settings",       label: "Einstellungen" },
+  { to: "/projects",       key: "nav.projects" },
+  { to: "/dataclasses",    key: "nav.dataclasses" },
+  { to: "/generations",    key: "nav.generations" },
+  { to: "/settings",       key: "nav.settings" },
   // REQ-4028: "Passwort aendern" fuer alle Rollen (Editor/Viewer haben keinen anderen Weg)
-  { to: "/account/password", label: "Passwort aendern" },
+  { to: "/account/password", key: "nav.changePassword" },
 ];
 
 export default function TopNav() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -61,7 +65,7 @@ export default function TopNav() {
         }
       >
         <Home className="w-4 h-4" />
-        <span>Home</span>
+        <span>{t("nav.home")}</span>
       </NavLink>
       <nav className="flex items-center gap-1 flex-1">
         {NAV_ITEMS.map((item) => (
@@ -76,7 +80,7 @@ export default function TopNav() {
                 : "border-transparent text-theme-text-secondary hover:text-theme-text hover:border-theme-border")
             }
           >
-            {item.label}
+            {t(item.key)}
           </NavLink>
         ))}
       </nav>
@@ -84,7 +88,7 @@ export default function TopNav() {
       <button
         onClick={() => navigate('/help')}
         className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-2"
-        title="Hilfe (F1)"
+        title={t("nav.help")}
       >
         ?
       </button>
@@ -94,15 +98,17 @@ export default function TopNav() {
         rel="noopener noreferrer"
         className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-accent border border-theme-border rounded-lg ml-1"
       >
-        API-Docs
+        {t("nav.apiDocs")}
       </a>
+      {/* REQ-6005: LanguageSwitcher */}
+      <LanguageSwitcher />
       {user && (
         <button
           onClick={handleLogout}
           className="px-3 py-1 text-xs text-theme-text-secondary hover:text-theme-danger border border-theme-border rounded-lg ml-1"
-          title={`Abmelden (${user.username})`}
+          title={t("nav.logoutTitle", { username: user.username })}
         >
-          Logout
+          {t("nav.logout")}
         </button>
       )}
     </header>

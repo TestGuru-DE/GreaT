@@ -20,6 +20,47 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
+// REQ-6005: Mock i18n fuer LoginPage-Tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const translations: Record<string, string> = {
+        "login.title": "G.R.E.A.T. &ndash; Anmelden",
+        "login.username": "Benutzername",
+        "login.password": "Passwort",
+        "login.defaultUser": `Standardbenutzer: ${params?.username ?? ""}`,
+        "login.defaultPassword": `Standardpasswort: ${params?.password ?? ""} (bitte nach der ersten Anmeldung aendern)`,
+        "login.submitLoading": "Anmelden...",
+        "login.submit": "Anmelden",
+        "login.errorInvalid": "Ungültige Anmeldedaten",
+        "language.switcher.de": "DE",
+        "language.switcher.en": "EN",
+        "language.switcher.label": "Sprache wechseln",
+      };
+      return translations[key] ?? key;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
+vi.mock("../../i18n", () => ({
+  default: { language: "de" },
+}));
+
+// Mock getFirstStartHint
+vi.mock("../../api/authApi", () => ({
+  getFirstStartHint: vi.fn().mockResolvedValue({ show_hint: false }),
+  authApi: {
+    getFirstStartHint: vi.fn().mockResolvedValue({ show_hint: false }),
+  },
+}));
+
+// Mock defaultCredentials
+vi.mock("../../lib/defaultCredentials", () => ({
+  DEFAULT_ADMIN_USERNAME: "admin",
+  DEFAULT_ADMIN_PASSWORD: "changeme123!",
+}));
+
 describe("LoginPage - REQ-4001", () => {
   const mockLogin = vi.fn();
   const mockNavigate = vi.fn();
@@ -39,6 +80,9 @@ describe("LoginPage - REQ-4001", () => {
         loadUser: vi.fn(),
         clearError: vi.fn(),
         refresh: vi.fn(),
+        passwordChangeRequired: false,
+        language: null,
+        setLanguage: vi.fn(),
       };
       // @ts-expect-error - selector returns the right value
       return selector(state);
@@ -64,7 +108,7 @@ describe("LoginPage - REQ-4001", () => {
     );
 
     expect(screen.getByText(/G\.R\.E\.A\.T\./)).toBeInTheDocument();
-    // Button separat pruefen (getByText mit regex trifft auch Button)
+    // REQ-6005: Button mit spezifischem Namen suchen (nicht getByRole("button"))
     expect(screen.getByRole("button", { name: /Anmelden/ })).toBeInTheDocument();
   });
 
@@ -79,6 +123,7 @@ describe("LoginPage - REQ-4001", () => {
 
     const usernameInput = screen.getByLabelText("Benutzername");
     const passwordInput = screen.getByLabelText("Passwort");
+    // REQ-6005: Submit-Button mit spezifischem Namen suchen
     const submitButton = screen.getByRole("button", { name: /Anmelden/ });
 
     await userEvent.type(usernameInput, "admin");
@@ -103,6 +148,9 @@ describe("LoginPage - REQ-4001", () => {
       loadUser: vi.fn(),
       clearError: vi.fn(),
       refresh: vi.fn(),
+      passwordChangeRequired: false,
+      language: null,
+      setLanguage: vi.fn(),
     };
 
     vi.mocked(useAuthStore).mockImplementation((selector) => {
@@ -132,6 +180,9 @@ describe("LoginPage - REQ-4001", () => {
       loadUser: vi.fn(),
       clearError: vi.fn(),
       refresh: vi.fn(),
+      passwordChangeRequired: false,
+      language: null,
+      setLanguage: vi.fn(),
     };
 
     vi.mocked(useAuthStore).mockImplementation((selector) => {
@@ -145,7 +196,8 @@ describe("LoginPage - REQ-4001", () => {
       </MemoryRouter>
     );
 
-    const button = screen.getByRole("button");
+    // REQ-6005: Submit-Button mit spezifischem Namen suchen (nicht getByRole("button"))
+    const button = screen.getByRole("button", { name: /Anmelden/ });
     expect(button).toBeDisabled();
     expect(button).toHaveTextContent("Anmelden...");
   });
@@ -160,6 +212,9 @@ describe("LoginPage - REQ-4001", () => {
       loadUser: vi.fn(),
       clearError: vi.fn(),
       refresh: vi.fn(),
+      passwordChangeRequired: false,
+      language: null,
+      setLanguage: vi.fn(),
     };
 
     vi.mocked(useAuthStore).mockImplementation((selector) => {
@@ -173,7 +228,8 @@ describe("LoginPage - REQ-4001", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole("button")).toBeDisabled();
+    // REQ-6005: Submit-Button mit spezifischem Namen suchen
+    expect(screen.getByRole("button", { name: /Anmelden/ })).toBeDisabled();
   });
 
   it("nutzt Theme-Tokens statt hartkodierter Farben", () => {

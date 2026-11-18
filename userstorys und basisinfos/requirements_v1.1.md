@@ -3001,4 +3001,170 @@ damit ich Superposition/Override-Szenarien korrekt abbilden kann.
 Der Nutzer hat EPIC-19 gewuenscht. EPIC-19 existiert bereits (Installation & Distribution, REQ-5001).
 Dieses neue EPIC wurde als **EPIC-20** angelegt, um die Nummerierungskollision zu vermeiden.
 **REQ-5001** bleibt dem bestehenden EPIC-19 (Installation) zugeordnet.
-Die neuen REQs beginnen mit **REQ-5000** und enden bei **REQ-5021**.
+Die neuen REQs beginnen mit **REQ-5000** und enden bei **REQ-5021**.---
+
+## EPIC-21 â€“ Feature-Erweiterung (v1.10.0 â€“ v1.13.0)
+
+---
+
+### REQ-6005 | Sprachumschaltung Deutsch/Englisch
+**Titel:** Oberflaechensprache oben in der Navigationsleiste zwischen Deutsch und Englisch umschalten
+**Prioritaet:** Must
+**Status:** Proposed
+**Phase:** 5, Release v1.10.0
+**User Story:**
+Als Nutzer, der kein Deutsch spricht,
+moechte ich die Oberflaeche von G.R.E.A.T. oben rechts per Umschalter auf Englisch stellen,
+damit ich das Werkzeug ohne Sprachbarriere nutzen kann und das Open-Source-Projekt international einsetzbar ist.
+**Akzeptanzkriterien:**
+- **Umschalter** oben rechts in der Navigationsleiste, auch auf der Login-Seite, mit "DE | EN" (aktive Sprache hervorgehoben). Per Tastatur bedienbar, mit `aria-label`.
+- Der Wechsel wirkt **sofort**, ohne Neuladen und ohne Verlust ungespeicherter Eingaben.
+- **Standardsprache:**
+  1. gespeicherte Nutzerwahl
+  2. sonst Browsersprache (`de*` -> Deutsch, sonst Englisch)
+  3. sonst Deutsch
+- Die Wahl wird **pro Benutzer serverseitig** gespeichert (gilt auf allen Geraten) und zusÃ¤tzlich im localStorage (fuer die Login-Seite vor der Anmeldung).
+- **Alle** Texte der Oberflaeche sind uebersetzt: Navigation, Seiten, Dialoge, Tooltips, Platzhalter, Validierungs- und Fehlermeldungen, Toasts, Tastaturkurzel-Hinweise, Theme-Namen, Strategienamen und -beschreibungen, Entscheidungstabelle, Benutzerverwaltung, Einstellungen.
+- **Fehlermeldungen des Servers:** Die Oberflaeche uebersetzt anhand des stabilen Fehler-`code`. Fuer Meldungen ohne Code sendet das Frontend `Accept-Language`, und der Server liefert den `detail`-Text in dieser Sprache. Fehlercodes bleiben sprachneutral.
+- **Datums- und Zahlenformate** folgen der Sprache (de: `18.11.2026`, `1.234,5`; en: `2026-11-18` oder lokal, `1,234.5`).
+- **Exporte:** Spaltenkoepfe der Systemspalten (TC-ID, Strategie, Fehlerwert ...) in der Sprache des Nutzers. Optional pro Export waehlbar. Nutzerdaten (Kategorien, Werte) werden **nie** uebersetzt.
+- **Handbuch/Hilfe:** englische Fassung `handbuch.en.md`. Die Hilfe-Seite zeigt die Fassung der aktiven Sprache. Screenshots duerfen deutsch bleiben, bis neue erstellt sind (Hinweis im englischen Handbuch).
+- System-Datenklassen (z. B. Beschreibungen der BugMagnet-Kategorien) zeigen ihre Beschreibung zweisprachig, soweit vorhanden.
+- **Neue Texte nur ueber Schluessel:** Ein automatischer Test schlaegt fehl, wenn in `frontend/src` (ohne Tests) sichtbare Texte fest codiert sind (ESLint-Regel) oder wenn `de.json` und `en.json` unterschiedliche Schluessel haben.
+**TDD-Hinweis:**
+- Zuerst ein Test "Schluessel-Vollstaendigkeit de = en".
+- Dann ein Vitest-Test, dass der Umschalter die Texte einer Beispielseite aendert.
+- Dann ein Backend-Test fuer das Speichern der Sprache am Benutzer (`PUT /auth/me/preferences`) und fuer `Accept-Language` bei `detail`.
+- Danach Seite fuer Seite umstellen, mit je einem Snapshot- oder Text-Test pro Seite in Englisch.
+**Abhaengigkeiten:** REQ-3001 (Top-Nav); Bugfix v1.9.0 (Fehler-`code`, ApiError)
+**Blockiert:** alle UI-REQs von EPIC-21 (neue Texte direkt zweisprachig)
+
+---
+
+### REQ-6011 | Exporte fuer Testmanagement- und Automatisierungswerkzeuge
+**Titel:** Generierte Testfaelle in Formaten fuer BDD, Testautomatisierung und gaengige Testmanagement-Systeme exportieren
+**Prioritaet:** Must
+**Status:** Proposed
+**Phase:** 5, Release v1.10.0
+**User Story:**
+Als Tester oder Testautomatisierer
+moechte ich generierte Testfaelle direkt im Format meines Testmanagement- oder Automatisierungswerkzeugs exportieren,
+damit ich sie ohne Abtippen oder Umformatieren weiterverwenden kann.
+**Akzeptanzkriterien:**
+- Neues Exportmenue je Generierung mit folgenden Formaten:
+
+  | Format | Inhalt |
+  |---|---|
+  | **Gherkin (.feature)** | Ein `Feature` je Projekt, ein `Scenario Outline` mit `Examples`-Tabelle; Spalten = Kategorien (Leer- und Sonderzeichen in Spaltennamen gemaeÃŸ Gherkin maskiert). Mit Vorlage (REQ-6002) werden die Schritte als Given/When/Then uebernommen, sonst ein Platzhalterschritt je Kategorie. Sprache des Gherkin-Schluesselworts DE (`# language: de`, Funktionalitaet/Szenariogrundriss/Beispiele) oder EN waehlbar. |
+  | **pytest** (.py) | Datei mit `@pytest.mark.parametrize` ueber alle Kategorien, Test-IDs = TC-ID, Funktionsrumpf mit `pytest.skip("TODO")`. Kategorienamen in gueltige Python-Bezeichner umgewandelt (Zuordnung als Kommentar). |
+  | **JSON fuer data-driven Tests** | Liste von Objekten `{ "id": "TC_1", "<Kategorie>": "<Wert>", ... }`, direkt nutzbar fuer Playwright/Jest `test.each`, JUnit5 `@MethodSource` usw. |
+  | **Robot Framework** (.robot) | Data-Driven-Test mit `[Template]` und einer Zeile je Testfall |
+  | **Xray (Jira) CSV** | Spalten nach Xray-Testimport (Testtyp, Summary, Schritte/Action/Data/Expected Result) |
+  | **TestRail CSV** | Spalten nach TestRail-CSV-Import (Title, Preconditions, Steps, Expected Result) |
+  | **Azure DevOps Test Plans CSV** | Spalten nach Azure-DevOps-Testfall-Import (Work Item Type, Title, Test Step, Step Action, Step Expected) |
+  | **Markdown** | Tabelle fuer Wikis/Pull Requests |
+
+- Testmanagement-Formate uebernehmen, sofern vorhanden:
+  - ausformulierte Felder aus REQ-6002
+  - Ergebnis-Kategorien als erwartetes Ergebnis
+  - Fehlerwert-Kennzeichnung als Label/Prioritaet
+  - Herkunft (Seed/ergaenzt, REQ-6009)
+  - konkrete Testdaten (REQ-6010)
+- Jede Datei beginnt (wo das Format Kommentare erlaubt) mit einer Kopfzeile: Projekt, Generierung, Strategie, Datum, G.R.E.A.T.-Version.
+- Alle Formate auch per API: `GET /api/generations/{gid}/export/{format}` (bzw. `/api/v1/...` aus REQ-6012) mit den Optionen aus REQ-6010 (`values=`) und der Teilmengenauswahl aus REQ-6004.
+- Exporte sind deterministisch (gleiche Eingabe = byte-identische Ausgabe, abgesehen vom Datum in der Kopfzeile, das per Option abschaltbar ist).
+- Formel-Schutz (CSV/XLSX) und korrekte Maskierung je Format (Anfuehrungszeichen, Pipe-Zeichen in Gherkin/Markdown, Python-Strings, Robot-Sonderzeichen).
+**TDD-Hinweis:** Zuerst je Format ein **Golden-File-Test** (`tests/golden/export/*.expected`) mit einem kleinen Projekt, das Sonderzeichen, Umlaute, Pipe, Anfuehrungszeichen, Formelzeichen, leere Werte und Ergebnis-Kategorien enthaelt. ZusÃ¤tzlich:
+- pytest-Export: Die erzeugte Datei wird im Test mit `python -m py_compile` uebersetzt und mit pytest gesammelt (`--collect-only`), Anzahl Tests = Anzahl Testfaelle.
+- Gherkin-Export: mit einem Gherkin-Parser auf Gueltigkeit pruefen (`gherkin-official`, MIT, nur als Test-Abhaengigkeit).
+**Abhaengigkeiten:** REQ-3063 (Fehlerwert im Export); optional REQ-6002, REQ-6004, REQ-6009, REQ-6010, REQ-6012
+**Blockiert:** --
+
+---
+
+### REQ-6012 | API-Tokens fuer CI und Testwerkzeuge
+**Titel:** Persoenliche API-Tokens mit Bearer-Authentifizierung, Berechtigungsumfang und versionierter API
+**Prioritaet:** Must
+**Status:** Proposed
+**Phase:** 5, Release v1.10.0
+**User Story:**
+Als Testautomatisierer
+moechte ich mit einem eigenen API-Token aus CI-Pipelines und Testwerkzeugen auf G.R.E.A.T. zugreifen,
+damit Testmodelle automatisiert generiert und exportiert werden koennen, ohne dass sich ein Skript ueber die Login-Seite mit Cookies anmelden muss.
+**Akzeptanzkriterien:**
+- **Token anlegen** in "Einstellungen -> API-Tokens":
+  - Name (Pflicht, z. B. "Jenkins Nightly")
+  - Ablaufdatum (Pflicht, max. 365 Tage, Vorschlag 90)
+  - **Berechtigungen (Scopes):** `projects:read`, `projects:write`, `generate`, `export`, `models:read`, `models:write`
+  - Das Token wird **genau einmal** im Klartext angezeigt, mit Kopierknopf und Warnhinweis.
+- Format `great_pat_<zufaellig>`, mindestens 256 Bit Zufall. Gespeichert wird nur ein **Hash** (SHA-256) plus die ersten 8 Zeichen als Praefix zur Wiedererkennung.
+- **Liste eigener Tokens:** Name, Praefix, Scopes, erstellt, laeuft ab, zuletzt benutzt (Zeit, IP); Aktion "Widerrufen". Admins sehen und widerrufen zusÃ¤tzlich alle Tokens aller Nutzer.
+- **Authentifizierung:**
+  - Der Header `Authorization: Bearer great_pat_...` wird auf allen `/api/*`-Endpunkten akzeptiert; das Cookie-Verfahren bleibt unveraendert.
+  - Es gelten **zusÃ¤tzlich** die Rolle des Token-Besitzers (z. B. Viewer kann nie schreiben) **und** die Scopes des Tokens (Schnittmenge).
+  - Fehlender Scope: 403 mit Code `insufficient_scope`.
+- Tokens werden ungÃ¼ltig bei: Ablauf, Widerruf, Deaktivierung/Loeschung des Nutzers, Rollenwechsel (wie Sitzungen in v1.9.0).
+- Tokens sind **nicht** gueltig fuer: Benutzerverwaltung, Passwortaenderung, Token-Verwaltung, Backup-Restore/Reset.
+- Rolle `api_user` (REQ-4025): kann sich nicht per Oberflaeche anmelden, nur per Token. Der Admin legt Tokens fuer technische Nutzer an.
+- **Rate-Limit pro Token** (Standard 600 Anfragen/Minute, konfigurierbar `GREAT_TOKEN_RATE_LIMIT`), 429 mit `Retry-After`.
+- **OpenAPI:**
+  - Security-Scheme `HTTPBearer` fuer `/api/*`; Swagger UI zeigt "Authorize".
+  - `/openapi.json` und `/docs` sind auch per Bearer-Token abrufbar (mit beliebigem gueltigen Token).
+- **Versionierte API:** Alle `/api/*`-Pfade zusÃ¤tzlich unter `/api/v1/*` (gleiche Implementierung). In der Dokumentation ist `/api/v1` der empfohlene Pfad; `/api/*` bleibt als Alias bestehen.
+- **Komfort-Endpunkte fuer Pipelines:**
+  - `GET /api/v1/projects?name=<Name>` (exakte Suche, Gross-/Kleinschreibung egal)
+  - `POST /api/v1/projects/{id}/generate?export=<format>&persist=false` liefert die Testfaelle direkt im gewuenschten Exportformat (REQ-6011), ohne dauerhafte Generierung, wenn `persist=false`.
+- **Audit:** Token-Nutzung wird mit Zeit und Endpunkt protokolliert (Log, kein Inhalt).
+- Handbuch-Kapitel "API-Einbindung" (DE/EN) mit Beispielen fuer curl, GitHub Actions, GitLab CI und Jenkins.
+**TDD-Hinweis:** Zuerst Tests fuer:
+- Token-Erzeugung: Hash gespeichert, Klartext nur einmal
+- Bearer-Auth erfolgreich, abgelaufen, widerrufen
+- Scope fehlt (403)
+- Rolle schlaegt Scope (Viewer + `projects:write` -> 403)
+- gesperrte Endpunkte
+- Ungueltigkeit nach Rollenwechsel
+- Rate-Limit
+- OpenAPI enthaelt das Security-Scheme
+- `/api/v1`-Alias liefert identische Antworten
+
+Dann Frontend-Tests fuer die Token-Verwaltung.
+**Abhaengigkeiten:** REQ-4001, REQ-4025; Sitzungs-Invalidierung (`token_version`) aus v1.9.0; REQ-6011 (Exportformate im Komfort-Endpunkt)
+**Blockiert:** --
+
+---
+
+### REQ-6013 | Testmodell als Datei (YAML/JSON)
+**Titel:** Vollstaendiges Testmodell eines Projekts als versionierbare Datei exportieren und importieren
+**Prioritaet:** Must
+**Status:** Proposed
+**Phase:** 5, Release v1.10.0
+**User Story:**
+Als Tester in einem Entwicklungsteam
+moechte ich das Testmodell eines Projekts als lesbare YAML- oder JSON-Datei speichern und wieder einlesen,
+damit das Modell neben dem Quellcode im Git liegt, per Pull Request geprueft werden kann und zwischen G.R.E.A.T.-Instanzen uebertragbar ist.
+**Akzeptanzkriterien:**
+- **Dateiformat "G.R.E.A.T. Model"** mit `schemaVersion: 1`. EnthaelÑ‚:
+  - Projektname, Beschreibung
+  - Kategorien in Reihenfolge, mit Typ (standard/cause/effect), Ergebnis-Kennzeichen und Hierarchie (falls REQ-6016)
+  - Werte in Reihenfolge, mit Risiko, Datentyp, erlaubt/Fehlerwert, Default, BVA-Definition (REQ-6007) und Datenquelle (REQ-6010)
+  - Regeln (alle Typen), Constraints (REQ-6001), Entscheidungstabellen-Constraints, Testfall-Vorlage (REQ-6002), Seed-Saetze (REQ-6009), Testdaten-Seed und Locale
+  - Fuer noch nicht umgesetzte Features bleiben die Felder weg. Das Schema ist erweiterbar.
+- **Nicht enthalten:** Generierungen, Benutzer, IDs der Datenbank, Zeitstempel (damit Diffs ruhig bleiben).
+- Referenzen innerhalb der Datei erfolgen **ueber Namen** (Kategoriename, Wert), nicht ueber IDs. Mehrdeutigkeiten (nach v1.9.0 nicht mehr moeglich) werden beim Import abgelehnt.
+- **Git-freundlich:** feste Schluessel-Reihenfolge, stabile Sortierung, UTF-8, Zeilenende LF, YAML mit Blockstil, keine Anker/Aliase. Zweimal exportiert ergibt das byte-identische Dateien.
+- Ein **JSON-Schema** der Datei liegt im Repository unter `schemas/great-model.v1.schema.json` und wird im Handbuch verlinkt (fuer Editor-Unterstuetzung und CI-Validierung).
+- **Export:** Projektmenue "Modell exportieren" -> YAML (Standard) oder JSON. API `GET /api/v1/projects/{id}/model?format=yaml|json`.
+- **Import:**
+  - als **neues Projekt** (Name aus Datei, bei Konflikt Suffix wie beim Restore), oder
+  - als **Aktualisierung eines bestehenden Projekts** mit **Aenderungsvorschau** (hinzugefuegt/geaendert/entfernt je Kategorie, Wert, Regel). Nach Bestaetigung wird die Aenderung in einer Transaktion uebernommen. Bestehende Generierungen bleiben unveraendert (Historie).
+  - API: `POST /api/v1/projects/import-model`, `POST /api/v1/projects/{id}/model/preview`, `PUT /api/v1/projects/{id}/model`.
+- **Validierung** gegen das Schema und gegen fachliche Regeln (Eindeutigkeit, Wertebereiche, Referenzen), mit Fehlerliste inkl. Pfad in der Datei (z. B. `categories[2].values[5].risk_weight`). Groessenlimit 5 MB.
+- **Aeltere `schemaVersion`** werden beim Import automatisch migriert. Eine **neuere** Version als unterstuetzt wird mit verstaendlicher Meldung abgelehnt.
+- Die Beispielprojekte (z. B. "Portoberechnung") liegen zusÃ¤tzlich als Modell-Datei unter `examples/`.
+**TDD-Hinweis:**
+- Zuerst ein **Roundtrip-Test**: Projekt mit allen Merkmalen -> Export -> Import als neues Projekt -> Export, beide Dateien byte-identisch.
+- Dann Schema-Validierungstests (fehlende Pflichtfelder, falsche Typen, unbekannte Referenzen, zu gross, neuere `schemaVersion`).
+- Dann Tests fuer die Aenderungsvorschau und die Transaktion (Fehler mitten im Import -> nichts geaendert).
+- Das JSON-Schema selbst wird im Test gegen die Beispieldateien geprueft.
+**Abhaengigkeiten:** Backup-Format 2.0 aus v1.9.0 (gleiche Datenabdeckung), WP-04-Eindeutigkeit aus v1.9.0
+**Blockiert:** REQ-6003, REQ-6014
