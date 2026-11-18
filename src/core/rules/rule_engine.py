@@ -1,16 +1,69 @@
 """
 Rule Engine – G.R.E.A.T.
 REQ-0700 (Verboten), REQ-0701 (Abhängig), REQ-0702 (Kombinierbar)
+REQ-6001 (Logische Constraints mit dreiwertiger Logik)
 
 Reihenfolge der Regelanwendung: Combine → Forbidden → Dependency
 (Combine filtert zuerst, dann Forbidden, dann Dependency überschreibt Werte)
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 Testfall = Dict[str, str]
+
+
+# ---------------------------------------------------------------------------
+# REQ-6001: ConstraintRule – JSON-AST mit dreiwertiger Logik
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ConstraintRule:
+    """
+    REQ-6001: Logisches Constraint als Mehrbedingungs-Regel.
+    
+    Verwendet JSON-AST (ADR-020) und dreiwertige Logik (3VL) fuer
+    Evaluierung bei partiellen Testfaellen (Pairwise/T-Wise).
+    
+    Attributes:
+        expression: JSON-AST nach ADR-020 (dict mit kind, condition, consequence)
+        category_map: {category_name: category_id} – Mapping fuer AST-Evaluierung
+        value_map: {(category_id, value_name): value_id} – Mapping fuer AST-Evaluierung
+    """
+    expression: dict
+    category_map: Dict[str, int] = field(default_factory=dict)
+    value_map: Dict[tuple, int] = field(default_factory=dict)
+
+    def is_violated(self, tc: Testfall) -> bool:
+        """
+        Prueft ob ein Testfall (vollstaendig oder partiell) das Constraint verletzt.
+        
+        Verwendet dreiwertige Logik: ein partieller Testfall wird NUR verworfen,
+        wenn das Constraint sicher verletzt ist (AK-6).
+        
+        Args:
+            tc: Testfall als {category_name: value_name}
+        
+        Returns:
+            True wenn Constraint verletzt (Testfall verwerfen)
+            False wenn Constraint nicht verletzt oder unbekannt (Testfall behalten)
+        """
+        from app.constraints.evaluator_3vl import check_constraint
+        
+        # Testfall von {name: name} nach {category_id: value_id} mappen
+        assignment: Dict[int, int] = {}
+        for cat_name, val_name in tc.items():
+            cat_id = self.category_map.get(cat_name)
+            if cat_id is None:
+                continue
+            val_id = self.value_map.get((cat_id, val_name))
+            if val_id is not None:
+                assignment[cat_id] = val_id
+        
+        # 3VL-Evaluierung: True = nicht verletzt, False = verletzt
+        result = check_constraint(self.expression, assignment)
+        return result is False
 
 
 # ---------------------------------------------------------------------------
@@ -79,12 +132,16 @@ class RuleEngine:
     
     REQ-3040: Constraint-aware Generierung – is_combination_valid() prüft
     partielle Testfälle während der Generierung.
+    
+    REQ-6001: Logische Constraints mit dreiwertiger Logik (3VL).
     """
 
     def __init__(self, rules: list) -> None:
         self._combine_rules: List[CombineRule] = [r for r in rules if isinstance(r, CombineRule)]
         self._forbidden_rules: List[ForbiddenRule] = [r for r in rules if isinstance(r, ForbiddenRule)]
         self._dependency_rules: List[DependencyRule] = [r for r in rules if isinstance(r, DependencyRule)]
+        # REQ-6001: Constraint-Regeln
+        self._constraint_rules: List[ConstraintRule] = [r for r in rules if isinstance(r, ConstraintRule)]
 
     def is_combination_valid(self, partial_testcase: Testfall) -> bool:
         """
@@ -119,6 +176,11 @@ class RuleEngine:
         # 3. DependencyRules ignorieren wir hier – die werden später beim finalisieren angewendet
         # (Dependencies setzen Werte, verbieten sie nicht)
         
+        # 4. REQ-6001: Constraint-Regeln mit dreiwertiger Logik
+        for regel in self._constraint_rules:
+            if regel.is_violated(partial_testcase):
+                return False
+        
         return True
 
     def apply_dependency_rules(self, testfall: Testfall) -> Testfall:
@@ -152,5 +214,9 @@ class RuleEngine:
         # 3. DependencyRules: Werte setzen
         for regel in self._dependency_rules:
             result = [regel.apply(tc) for tc in result]
+        
+        # 4. REQ-6001: Constraint-Regeln anwenden (dreiwertige Logik)
+        for regel in self._constraint_rules:
+            result = [tc for tc in result if not regel.is_violated(tc)]
 
         return result
