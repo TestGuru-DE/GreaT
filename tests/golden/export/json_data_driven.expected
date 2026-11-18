@@ -1,0 +1,98 @@
+[
+  {
+    "id": "TC_1",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "Windows",
+    "Eingabe": "mit|Pipe",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_2",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "Windows",
+    "Eingabe": "mit\"Quote",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_3",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "Windows",
+    "Eingabe": "Normal",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_4",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "macOS",
+    "Eingabe": "mit|Pipe",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_5",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "macOS",
+    "Eingabe": "mit\"Quote",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_6",
+    "has_error_value": false,
+    "Browser": "Chrome",
+    "OS": "macOS",
+    "Eingabe": "Normal",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_7",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "Windows",
+    "Eingabe": "mit|Pipe",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_8",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "Windows",
+    "Eingabe": "mit\"Quote",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_9",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "Windows",
+    "Eingabe": "Normal",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_10",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "macOS",
+    "Eingabe": "mit|Pipe",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_11",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "macOS",
+    "Eingabe": "mit\"Quote",
+    "Ergebnis": ""
+  },
+  {
+    "id": "TC_12",
+    "has_error_value": false,
+    "Browser": "Firefox",
+    "OS": "macOS",
+    "Eingabe": "Normal",
+    "Ergebnis": ""
+  }
+]

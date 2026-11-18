@@ -1918,3 +1918,55 @@ Migrationsweg eingesetzt.
 - `src/db/migrations/env.py` verwendet `DATABASE_URL` aus `app.config`
 - Massgeblicher Migrationsweg bleibt `_migrate_db()` in `main.py`
 - Alembic bleibt als Option fuer zukuenftige Migrationen erhalten
+
+---
+
+## ADR-019 – Exporter-Registry fuer Testmanagement-Formate (REQ-6011)
+
+**Datum:** 2026-11-18
+**Status:** Accepted
+
+**Kontext:**
+REQ-6011 verlangt Export in 8 Formaten: Gherkin, pytest, JSON Data-Driven, Robot Framework,
+Xray CSV, TestRail CSV, Azure DevOps CSV und Markdown. Bisher existieren nur CSV/JSON/XLSX
+Exporte in `api_generate.py` als monolithische Funktionen.
+
+**Entscheidung:**
+- Neues Modul `src/app/exporters/` mit Registry-Pattern
+- `BaseExporter` (ABC) mit `name`, `file_extension`, `media_type`, `render()`
+- Registry in `__init__.py`: `register_exporter()` / `get_exporter(name)`
+- Ein Exporter pro Datei, auto-registriert bei Import
+- API-Route: `GET /api/generations/{gen_id}/export/{format}`
+- `generation_view` Dict als einheitliches Interface zwischen API und Exportern
+- Formel-Schutz via bestehende `export_utils.escape_spreadsheet_value()`
+- Determinismus: `?deterministic=true` fixiert Datum auf 1970-01-01
+- Sortierung der Testfaelle nach TC-ID (alphabetisch)
+
+**Abgelehnte Alternativen:**
+
+| Alternative | Grund der Ablehnung |
+|---|---|
+| **Monolithische Funktionen in api_generate.py** | 8+ Funktionen mit je 100+ Zeilen; schwer testbar; keine Wiederverwendbarkeit |
+| **Strategy-Pattern mit Dependency Injection** | Overengineering fuer 8 Exporter; Registry-Pattern ist einfacher |
+| **Template-Engine (Jinja2)** | Neue Dependency; CSV/Code-Export sind strukturiert, nicht templated |
+| **Separater Microservice** | Export ist synchron und klein; kein Bedarf fuer separate Deployment |
+
+**Konsequenzen:**
+
+| Bereich | Auswirkung |
+|---|---|
+| **Neue Dateien** | `src/app/exporters/{base,gherkin,pytest_exporter,json_data_driven,robot,xray_csv,testrail_csv,azuredevops_csv,markdown,`__init__`}.py` |
+| **API** | Neuer Endpunkt `GET /api/generations/{gen_id}/export/{format}` mit Query-Params `lang`, `deterministic`, `values` |
+| **Tests** | `tests/test_export_formats.py` (21 Tests), `tests/golden/export/` (8 Golden-Files) |
+| **Dependencies** | Keine neuen Dependencies (außer `gherkin-official` als Test-Dependency, planned) |
+| **Regression** | 1092 Tests bestanden (1 vorbestehend flaky) |
+
+**Geaenderte Dateien:**
+- `src/app/exporters/` – NEU (9 Dateien)
+- `src/app/routers/api_generate.py` – Neuer Export-Endpunkt
+- `tests/test_export_formats.py` – NEU (21 Tests)
+- `tests/golden/export/` – NEU (8 Golden-Files)
+- `userstorys und basisinfos/requirements_v1.1.md` – REQ-6011 Status: Implemented
+
+**Entscheider:** GREAT Senior Developer Agent
+**Abhaengigkeiten:** REQ-6011, ADR-001 (Python/FastAPI), B-05 (Formel-Schutz)

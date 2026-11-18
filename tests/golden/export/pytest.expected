@@ -1,0 +1,23 @@
+# G.R.E.A.T. Export | Projekt: GoldenExportTest | Generierung: 1 | Strategie: all | Datum: 1970-01-01 | Version: 1.9.1
+
+"""Auto-generated test file by G.R.E.A.T."""
+import pytest
+
+# Mapping: Browser -> Browser, OS -> OS, Eingabe -> Eingabe, Ergebnis -> Ergebnis
+
+@pytest.mark.parametrize("Browser, OS, Eingabe, Ergebnis", [
+    ('Chrome', 'Windows', 'mit|Pipe', ''),
+    ('Firefox', 'macOS', 'mit|Pipe', ''),
+    ('Firefox', 'macOS', 'mit"Quote', ''),
+    ('Firefox', 'macOS', 'Normal', ''),
+    ('Chrome', 'Windows', 'mit"Quote', ''),
+    ('Chrome', 'Windows', 'Normal', ''),
+    ('Chrome', 'macOS', 'mit|Pipe', ''),
+    ('Chrome', 'macOS', 'mit"Quote', ''),
+    ('Chrome', 'macOS', 'Normal', ''),
+    ('Firefox', 'Windows', 'mit|Pipe', ''),
+    ('Firefox', 'Windows', 'mit"Quote', ''),
+    ('Firefox', 'Windows', 'Normal', ''),
+], ids=["TC_1", "TC_10", "TC_11", "TC_12", "TC_2", "TC_3", "TC_4", "TC_5", "TC_6", "TC_7", "TC_8", "TC_9"])
+def test_generated(Browser, OS, Eingabe, Ergebnis):
+    pytest.skip("TODO")

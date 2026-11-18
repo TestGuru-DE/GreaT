@@ -3044,7 +3044,7 @@ damit ich das Werkzeug ohne Sprachbarriere nutzen kann und das Open-Source-Proje
 ### REQ-6011 | Exporte fuer Testmanagement- und Automatisierungswerkzeuge
 **Titel:** Generierte Testfaelle in Formaten fuer BDD, Testautomatisierung und gaengige Testmanagement-Systeme exportieren
 **Prioritaet:** Must
-**Status:** Proposed
+**Status:** Implemented
 **Phase:** 5, Release v1.10.0
 **User Story:**
 Als Tester oder Testautomatisierer

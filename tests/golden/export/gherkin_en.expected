@@ -1,0 +1,26 @@
+# language: en
+# G.R.E.A.T. Export | Projekt: GoldenExportTest | Generierung: 1 | Strategie: all | Datum: 1970-01-01 | Version: 1.9.1
+
+Feature: GoldenExportTest
+
+Scenario Outline: Test Case Execution
+
+  Given <Browser> is 'Chrome'
+  When <OS> is 'Windows'
+  When <Eingabe> is 'mit\|Pipe'
+  Then <Ergebnis> is ''
+
+Examples:
+  | TC-ID | Browser | OS | Eingabe | Ergebnis |
+  | TC_1 | Chrome | Windows | mit\|Pipe |  |
+  | TC_10 | Firefox | macOS | mit\|Pipe |  |
+  | TC_11 | Firefox | macOS | "mit\"Quote" |  |
+  | TC_12 | Firefox | macOS | Normal |  |
+  | TC_2 | Chrome | Windows | "mit\"Quote" |  |
+  | TC_3 | Chrome | Windows | Normal |  |
+  | TC_4 | Chrome | macOS | mit\|Pipe |  |
+  | TC_5 | Chrome | macOS | "mit\"Quote" |  |
+  | TC_6 | Chrome | macOS | Normal |  |
+  | TC_7 | Firefox | Windows | mit\|Pipe |  |
+  | TC_8 | Firefox | Windows | "mit\"Quote" |  |
+  | TC_9 | Firefox | Windows | Normal |  |
