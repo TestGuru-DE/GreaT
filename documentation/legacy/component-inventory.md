@@ -139,12 +139,12 @@ Ein `Start.bat` startet den uvicorn-Server.
 |---|---|---|
 | `README.md` | Startanleitung, Kurzübersicht | **Refactor** | Unvollständig, kein Installationsguide |
 | `CHANGELOG.md` | Änderungshistorie | **Refactor** | Nicht vollständig (fehlt Markdown-Wrapper) |
-| `Agenten und basisinfos/SYSTEM_v1.0.md` | Governance-Dokument | **Reuse** | Verbindlich, gut strukturiert |
-| `Agenten und basisinfos/requirements_v1.0.md` | Requirements v1.0 | **Reuse** | Basis, wird zu v1.1 konsolidiert |
-| `Agenten und basisinfos/requirements.md` | Erweiterter Backlog | **Reuse** | Ergänzt v1.0 |
-| `Agenten und basisinfos/projektbeschreibung.md` | Fachliche Vision | **Reuse** | Wichtige Fachquelle |
-| `Agenten und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md` | Phase-0 Checkliste | **Reuse** | Verbindlich |
-| `Agenten und basisinfos/AGENT_BOOTSTRAP_PROMPT_v1.0.md` | Agent Start-Prompt | **Reuse** | Verbindlich |
+| `userstorys und basisinfos/SYSTEM_v1.0.md` | Governance-Dokument | **Reuse** | Verbindlich, gut strukturiert |
+| `userstorys und basisinfos/requirements_v1.0.md` | Requirements v1.0 | **Reuse** | Basis, wird zu v1.1 konsolidiert |
+| `userstorys und basisinfos/requirements.md` | Erweiterter Backlog | **Reuse** | Ergänzt v1.0 |
+| `userstorys und basisinfos/projektbeschreibung.md` | Fachliche Vision | **Reuse** | Wichtige Fachquelle |
+| `userstorys und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md` | Phase-0 Checkliste | **Reuse** | Verbindlich |
+| `userstorys und basisinfos/AGENT_BOOTSTRAP_PROMPT_v1.0.md` | Agent Start-Prompt | **Reuse** | Verbindlich |
 
 ---
 

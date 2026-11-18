@@ -716,12 +716,12 @@ Entscheidungstabelle-Modus ignoriert.
 
 | ID | Quelle |
 |---|---|
-| REQ-EPIC-20 | `Agenten und basisinfos/requirements_v1.1.md` (REQ-5000-5021) |
+| REQ-EPIC-20 | `userstorys und basisinfos/requirements_v1.1.md` (REQ-5000-5021) |
 | ISTQB-CTFL | CTFL v4.0 Syllabus FL-4.2.3 (K3 Apply) |
 | ISTQB-CTAL | CTAL-TA v4.0 Syllabus TA-3.2.4 (K4 Analyse) |
 | Recherche | `documentation/research-decision-table-istqb.md` |
 | ADR-005 | `documentation/decision-log.md` (TDD + pytest-cov verpflichtend) |
-| SYSTEM | `Agenten und basisinfos/SYSTEM_v1.0.md` (Governance) |
+| SYSTEM | `userstorys und basisinfos/SYSTEM_v1.0.md` (Governance) |
 | QA-Regeln | `.github/instructions/great-qa-director.instructions.md` |
 | AGENTS | `AGENTS.md` (Projektanweisungen) |
 

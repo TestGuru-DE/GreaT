@@ -11,10 +11,10 @@ Erstellt von: Requirements Engineer Agent
 ---
 
 ## Quellen dieser Konsolidierung
-- `Agenten und basisinfos/requirements_v1.0.md` (Initialbacklog)
-- `Agenten und basisinfos/requirements.md` (Erweiterter Backlog)
-- `Agenten und basisinfos/projektbeschreibung.md` (Fachliche Vision)
-- `Agenten und basisinfos/SYSTEM_v1.0.md` (Governance)
+- `userstorys und basisinfos/requirements_v1.0.md` (Initialbacklog)
+- `userstorys und basisinfos/requirements.md` (Erweiterter Backlog)
+- `userstorys und basisinfos/projektbeschreibung.md` (Fachliche Vision)
+- `userstorys und basisinfos/SYSTEM_v1.0.md` (Governance)
 - Codeanalyse (bestehende Implementierung)
 
 ---

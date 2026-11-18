@@ -70,8 +70,13 @@ frontend/.playwright/
 # WICHTIG: Dateien bleiben auf der Festplatte erhalten, werden nur nicht getrackt.
 .github/
 .vscode/
-Agenten und basisinfos/SYSTEM_v1.0.md
-Agenten und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md
+userstorys und basisinfos/SYSTEM_v1.0.md
+userstorys und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md
 apply_bug_fixes.py
 
 test_bugmagnet.py
+
+# OpenChamber / OpenCode lokale Dateien (NIEMALS ins oeffentliche Repo pushen!)
+.openchamber/screenshots/
+.opencode/
+AGENTS.md
