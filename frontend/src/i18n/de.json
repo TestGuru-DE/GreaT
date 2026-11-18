@@ -686,6 +686,7 @@
     "edit": "Bearbeiten",
     "noConstraints": "Noch keine logischen Constraints.",
     "needOneCategory": "Mindestens eine Kategorie erforderlich.",
+    "loadError": "Fehler beim Laden der Daten: {{error}}",
     "ifThen": "WENN",
     "thenNot": "DANN NICHT",
     "then": "DANN",
