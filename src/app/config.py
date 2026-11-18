@@ -175,3 +175,10 @@ def get_generation_timeout() -> float:
     except (TypeError, ValueError):
         return float(GREAT_GENERATION_TIMEOUT_S_DEFAULT)
     return value if value > 0 else float(GREAT_GENERATION_TIMEOUT_S_DEFAULT)
+
+
+# ============================================================================
+# REQ-6012: API-Token Rate-Limit (Standard 600/Minute, konfigurierbar)
+# ============================================================================
+
+GREAT_TOKEN_RATE_LIMIT: int = int(os.getenv("GREAT_TOKEN_RATE_LIMIT", "600"))

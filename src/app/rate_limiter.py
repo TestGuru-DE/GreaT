@@ -70,3 +70,8 @@ login_rate_limiter = RateLimiter(max_attempts=5, time_window=60)
 first_start_hint_rate_limiter = RateLimiter(max_attempts=10, time_window=60)
 # REQ-4028 AK-8: Fehlversuche Selbst-Passwortwechsel, 10 Versuche/Minute/Konto
 password_change_rate_limiter = RateLimiter(max_attempts=10, time_window=60)
+
+# REQ-6012: Rate-Limit pro API-Token (Standard 600/Minute, konfigurierbar via GREAT_TOKEN_RATE_LIMIT)
+# In-Memory: dokumentiert als MVP; in Production: Redis-basiert
+from .config import GREAT_TOKEN_RATE_LIMIT
+token_rate_limiter = RateLimiter(max_attempts=GREAT_TOKEN_RATE_LIMIT, time_window=60)

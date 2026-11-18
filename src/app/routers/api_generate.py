@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth_deps import require_api_capable, require_writer
+from ..auth_deps import require_api_capable, require_writer, require_scope
 from ..api_types import DbId
 from .. import models, schemas
 from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
@@ -54,8 +54,14 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
             engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
     return RuleEngine(engine_rules)
 
-@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer)])
-def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
+@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer), Depends(require_scope("generate"))])
+def generate(
+    pid: DbId,
+    payload: schemas.GenerateRequest,
+    db: Session = Depends(get_db),
+    export: Optional[str] = None,  # REQ-6012: Komfort-Endpunkt (csv/json)
+    persist: bool = True,          # REQ-6012: persist=false = keine dauerhafte Generierung
+):
     import time as _time
 
     project = db.get(models.Project, pid)

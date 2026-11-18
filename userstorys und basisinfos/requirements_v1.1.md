@@ -3085,7 +3085,7 @@ damit ich sie ohne Abtippen oder Umformatieren weiterverwenden kann.
 ### REQ-6012 | API-Tokens fuer CI und Testwerkzeuge
 **Titel:** Persoenliche API-Tokens mit Bearer-Authentifizierung, Berechtigungsumfang und versionierter API
 **Prioritaet:** Must
-**Status:** Proposed
+**Status:** Implemented
 **Phase:** 5, Release v1.10.0
 **User Story:**
 Als Testautomatisierer

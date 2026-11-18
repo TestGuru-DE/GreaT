@@ -17,7 +17,7 @@ from typing import Iterable, Optional
 from sqlalchemy import update, delete
 
 from app.database import Base
-from app.models.auth import User, RefreshToken
+from app.models.auth import User, RefreshToken, ApiToken
 from app.models.project_membership import ProjectMembership
 
 
@@ -44,6 +44,7 @@ def purge_users(db, usernames: Optional[Iterable[str]] = None) -> None:
             )
 
     db.execute(delete(RefreshToken).where(RefreshToken.user_id.in_(user_ids)))
+    db.execute(delete(ApiToken).where(ApiToken.user_id.in_(user_ids)))
     db.execute(delete(ProjectMembership).where(ProjectMembership.user_id.in_(user_ids)))
     db.execute(delete(User).where(User.id.in_(user_ids)))
     db.commit()

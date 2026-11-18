@@ -39,9 +39,19 @@ def list_strategies() -> List[str]:
 # ---------------------------------------------------------------------------
 
 @router.get("/projects", response_model=List[schemas.ProjectRead])
-def list_projects(db: Session = Depends(get_db), current_user=Depends(require_api_capable)):
-    """Alle Projekte listen. Projektbezogene Sichtbarkeit folgt mit REQ-4023."""
-    return db.query(models.Project).order_by(models.Project.id).all()
+def list_projects(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_api_capable),
+    name: Optional[str] = None,  # REQ-6012: Komfort-Endpunkt fuer Pipelines
+):
+    """Alle Projekte listen. Projektbezogene Sichtbarkeit folgt mit REQ-4023.
+
+    REQ-6012: Optionaler name-Parameter fuer exakte Suche (Groß-/Kleinschreibung egal).
+    """
+    query = db.query(models.Project)
+    if name:
+        query = query.filter(func.lower(models.Project.name) == name.lower())
+    return query.order_by(models.Project.id).all()
 
 
 @router.post("/projects", response_model=schemas.ProjectRead, dependencies=[Depends(require_writer)])

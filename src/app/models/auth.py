@@ -2,10 +2,11 @@
 
 REQ-4001: User-Modell mit Password-Hashing (argon2id)
 REQ-4020: Rollen-Modell (Admin/Editor/Viewer)
+REQ-6012: API-Tokens fuer CI und Testwerkzeuge
 """
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, LargeBinary
 from sqlalchemy.orm import relationship
 from ..database import Base
 import argon2
@@ -89,3 +90,64 @@ class RefreshToken(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     user = relationship("User", back_populates="refresh_tokens")
+
+
+class ApiToken(Base):
+    """REQ-6012: Persoenliches API-Token mit argon2id-Hash + Salt.
+
+    Format: great_pat_<zufaellig> (mindestens 256 Bit Zufall).
+    Gespeichert wird nur der Hash (argon2id) und ein Salt (32 Byte).
+    Die ersten 8 Zeichen des Tokens werden als Praefix gespeichert.
+
+    Tokens werden ungueltig bei:
+    - Ablauf (expires_at)
+    - Widerruf (revoked_at)
+    - Deaktivierung/Loeschung des Nutzers
+    - Rollenwechsel (token_version_at_creation != user.token_version)
+
+    Scopes: projects:read, projects:write, generate, export, models:read, models:write
+    """
+    __tablename__ = "api_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+
+    # Name fuer Wiedererkennung (z. B. "Jenkins Nightly")
+    name = Column(String(100), nullable=False)
+
+    # Erste 16 Zeichen des Klartext-Tokens zur Wiedererkennung und DB-Lookup
+    prefix = Column(String(16), nullable=False, index=True)
+
+    # 32 Byte Salt als hex-String (64 Zeichen)
+    salt = Column(String(64), nullable=False)
+
+    # argon2id-Hash von (salt + token)
+    token_hash = Column(String(500), nullable=False)
+
+    # Scopes als JSON-String (Array von Strings)
+    scopes = Column(String(500), nullable=False, default="[]")
+
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    last_used_at = Column(DateTime, nullable=True)
+    last_used_ip = Column(String(45), nullable=True)  # IPv6 max 45 chars
+
+    # Widerruf: NULL = aktiv, Zeitstempel = widerrufen
+    revoked_at = Column(DateTime, nullable=True)
+
+    # Token-Version des Nutzers bei Erzeugung (für Rollenwechsel-Invalidierung)
+    token_version_at_creation = Column(Integer, nullable=False, default=0)
+
+    user = relationship("User", backref="api_tokens")
+
+    def get_scopes_list(self) -> list[str]:
+        """Parse scopes JSON string to list."""
+        import json
+        try:
+            return json.loads(self.scopes)
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    def has_scope(self, scope: str) -> bool:
+        """Check if token has the given scope."""
+        return scope in self.get_scopes_list()
