@@ -622,5 +622,18 @@
     "errorPreview": "Preview failed: {{error}}",
     "successNew": "Project \"{{name}}\" created.",
     "successUpdate": "Project \"{{name}}\" updated."
+  },
+  "export": {
+    "columns": {
+      "id": "#",
+      "risk": "Risk",
+      "testCaseId": "TC-ID",
+      "generationId": "Generation ID",
+      "strategy": "Strategy",
+      "errorValue": "Error Value",
+      "yes": "YES",
+      "no": "NO",
+      "fileName": "testcases"
+    }
   }
 }

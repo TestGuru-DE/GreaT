@@ -33,6 +33,30 @@ from ..services import (
 from combinatorics.risk_based import sort_by_risk_descending
 from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
 
+# REQ-6005 Slice 3: Uebersetzte Spaltenkoepfe fuer Exporte
+_EXPORT_HEADERS = {
+    "de": {
+        "testCaseId": "TC-ID",
+        "generationId": "Generierungs-ID",
+        "strategy": "Strategie",
+        "errorValue": "Fehlerwert",
+        "yes": "JA",
+        "no": "NEIN",
+    },
+    "en": {
+        "testCaseId": "TC-ID",
+        "generationId": "Generation ID",
+        "strategy": "Strategy",
+        "errorValue": "Error Value",
+        "yes": "YES",
+        "no": "NO",
+    },
+}
+
+def _get_export_headers(lang: str = "de") -> dict:
+    """Returns translated export column headers for the given language."""
+    return _EXPORT_HEADERS.get(lang, _EXPORT_HEADERS["de"])
+
 router = APIRouter(tags=["API"], dependencies=[Depends(require_api_capable)])
 
 
@@ -391,6 +415,7 @@ def export_generation_csv(
     encoding: str = Query("utf-8-sig", description="z. B. utf-8-sig, utf-8, cp1252, iso-8859-1, utf-16le, utf-16be, utf-16"),
     excel: bool = Query(True, description="Wenn True: erste Zeile 'sep=;' für Excel"),
     bom: Optional[bool] = Query(None, description="BOM explizit setzen/entfernen; Standard je nach Encoding"),
+    lang: str = Query("de", description="Sprache (de/en) fuer Spaltenkoepfe"),
     db: Session = Depends(get_db),
 ):
     gen = db.get(models.Generation, gen_id)
@@ -433,10 +458,16 @@ def export_generation_csv(
     if excel:
         writer.writerow(["sep=;"])
 
-    headers = [escape_spreadsheet_value(h) for h in cat_headers] + ["__TestCaseID", "__GenerationID", "__Strategy"]  # B-05
+    exh = _get_export_headers(lang)
+
+    headers = [escape_spreadsheet_value(h) for h in cat_headers] + [  # B-05
+        escape_spreadsheet_value(exh["testCaseId"]),
+        escape_spreadsheet_value(exh["generationId"]),
+        escape_spreadsheet_value(exh["strategy"]),
+    ]
     if include_status:
         headers.append("Status")
-    headers.append("Fehlerwert")  # REQ-3063
+    headers.append(exh["errorValue"])  # REQ-3063 / REQ-6005
     writer.writerow(headers)
 
     for tc in tcs:
@@ -447,7 +478,7 @@ def export_generation_csv(
             row.append(status_for_assignment(gen.project_id, a, db))
         # REQ-3063: Fehlerwert markieren
         has_error = any(v in error_values for v in a.values() if v)
-        row.append("JA" if has_error else "NEIN")
+        row.append(exh["yes"] if has_error else exh["no"])
         writer.writerow(row)
 
     csv_text: str = out.getvalue()
@@ -499,10 +530,15 @@ def export_generation_csv(
 # ---------------------------------------------------------------------------
 
 @router.get("/generations/{gen_id}/export/json")
-def export_generation_json(gen_id: DbId, db: Session = Depends(get_db)):
+def export_generation_json(
+    gen_id: DbId,
+    lang: str = Query("de", description="Sprache (de/en), fuer Zukunftserweiterungen"),
+    db: Session = Depends(get_db),
+):
     """Exportiert alle Testfälle einer Generation als strukturiertes JSON.
 
     REQ-1001: JSON Export mit project/categories/testcases-Hierarchie.
+    REQ-6005: lang-Parameter fuer API-Konsistenz.
     """
     gen = db.get(models.Generation, gen_id)
     if not gen:
@@ -570,10 +606,15 @@ def export_generation_json(gen_id: DbId, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 @router.get("/generations/{gen_id}/export/xlsx")
-def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
+def export_generation_xlsx(
+    gen_id: DbId,
+    lang: str = Query("de", description="Sprache (de/en) fuer Spaltenkoepfe"),
+    db: Session = Depends(get_db),
+):
     """Exportiert alle Testfälle einer Generation als Excel-Datei (.xlsx).
 
     REQ-1002: Excel Export mit openpyxl – Kategorien als Spaltenüberschriften.
+    REQ-6005: Spaltenkoepfe pro Sprache.
     """
     try:
         import openpyxl
@@ -621,8 +662,11 @@ def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
     ws = wb.active
     ws.title = f"Generation_{gen.id}"
 
+    # REQ-6005: Spaltenkoepfe pro Sprache
+    exh = _get_export_headers(lang)
+
     # Header-Zeile (fett) – B-05: Formel-Injection verhindern
-    headers = cat_headers + ["TC-ID", "Generierungs-ID", "Strategie", "Fehlerwert"]
+    headers = cat_headers + [exh["testCaseId"], exh["generationId"], exh["strategy"], exh["errorValue"]]
     for col_idx, header in enumerate(headers, start=1):
         cell = ws.cell(row=1, column=col_idx, value=escape_spreadsheet_value(header))
         cell.data_type = "s"  # B-05: explizit als String
@@ -648,7 +692,7 @@ def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
         row_data += [tc.id, gen.id, gen.strategy]
         # REQ-3063: Fehlerwert markieren
         has_error = any(val in error_values for val in assignments.values() if val)
-        row_data.append("JA" if has_error else "NEIN")
+        row_data.append(exh["yes"] if has_error else exh["no"])
         for col_idx, value in enumerate(row_data, start=1):
             cell = ws.cell(row=row_idx, column=col_idx)
             # B-05: TC-ID (col_idx=cat_count+1) und Generierungs-ID (col_idx=cat_count+2) als Zahl

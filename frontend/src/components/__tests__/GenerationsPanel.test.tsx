@@ -1,4 +1,5 @@
 ﻿// REQ-3045: Export-Buttons muessen in allen Kern-Themes schwarzen Text behalten
+// REQ-6005 Slice 3: Buttons nutzen jetzt t() fuer Uebersetzung
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import GenerationsPanel from "../GenerationsPanel";
@@ -33,9 +34,10 @@ describe("GenerationsPanel - REQ-3045 Export-Kontrast", () => {
     document.documentElement.className = themeClass;
     render(<GenerationsPanel projectId={1} />);
 
-    const jsonButton = await screen.findByRole("button", { name: "JSON" });
-    const excelButton = screen.getByRole("button", { name: "Excel" });
-    const csvButton = screen.getByRole("button", { name: "CSV" });
+    // REQ-6005: Buttons nutzen t() -> Keys werden ohne i18n-Mock als Key selbst gerendert
+    const jsonButton = await screen.findByRole("button", { name: "generations.actions.json" });
+    const excelButton = screen.getByRole("button", { name: "generations.actions.excel" });
+    const csvButton = screen.getByRole("button", { name: "generations.actions.csv" });
 
     expect(jsonButton).toHaveClass("text-black");
     expect(excelButton).toHaveClass("text-black");

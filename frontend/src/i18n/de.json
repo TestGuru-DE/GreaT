@@ -622,5 +622,18 @@
     "errorPreview": "Aenderungsvorschau fehlgeschlagen: {{error}}",
     "successNew": "Projekt \"{{name}}\" erstellt.",
     "successUpdate": "Projekt \"{{name}}\" aktualisiert."
+  },
+  "export": {
+    "columns": {
+      "id": "#",
+      "risk": "Risiko",
+      "testCaseId": "TC-ID",
+      "generationId": "Generierungs-ID",
+      "strategy": "Strategie",
+      "errorValue": "Fehlerwert",
+      "yes": "JA",
+      "no": "NEIN",
+      "fileName": "testfaelle"
+    }
   }
 }

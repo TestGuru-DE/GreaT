@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { generateApi, projectsApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
+import { useFormattedDate } from "../hooks/useFormattedDate";
 
 interface GenWithProject extends GenerationSummary {
   projectId: number;
@@ -11,7 +12,8 @@ interface GenWithProject extends GenerationSummary {
 }
 
 export default function GenerationsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const { formatDate } = useFormattedDate();
   const [items, setItems] = useState<GenWithProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -54,7 +56,8 @@ export default function GenerationsPage() {
   };
 
   const handleExport = (gid: number, fmt: string) => {
-    window.open(`/api/generations/${gid}/export/${fmt}`, "_blank");
+    const lang = i18n.language === "de" ? "de" : "en";
+    window.open(`/api/generations/${gid}/export/${fmt}?lang=${lang}`, "_blank");
   };
 
   return (
@@ -118,7 +121,7 @@ export default function GenerationsPage() {
                   </td>
                   <td className="px-3 py-2 text-center text-theme-text">{g.testcase_count}</td>
                   <td className="px-3 py-2 text-theme-text text-xs">
-                    {new Date(g.created_at).toLocaleDateString("de-DE")}
+                    {formatDate(g.created_at)}
                   </td>
                   <td className="px-3 py-2">
                     <div className="flex gap-1 flex-wrap">

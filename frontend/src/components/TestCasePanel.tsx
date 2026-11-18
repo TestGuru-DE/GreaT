@@ -1,9 +1,12 @@
 ﻿// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
+// REQ-6005 Slice 3: i18n Datums-/Zahlenformate, Export-Spaltenkoepfe
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { rulesApi } from "../api/client";
 import { useGenerateStore } from "../store/generateStore";
 import { useDecisionTableStore } from "../store/decisionTableStore";
 import { useSortableTable } from "../hooks/useSortableTable";
+import { useFormattedNumber } from "../hooks/useFormattedNumber";
 import type { Strategy } from "../types";
 
 const STRATEGIES: { value: Strategy; label: string }[] = [
@@ -19,6 +22,8 @@ const STRATEGIES: { value: Strategy; label: string }[] = [
 interface Props { projectId: number; }
 
 export default function TestCasePanel({ projectId }: Props) {
+  const { t, i18n } = useTranslation();
+  const { formatNumber } = useFormattedNumber({ minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const {
     testcases, count, loading, error, strategy, setStrategy, generate,
     generations, generationsLoading, fetchGenerations, loadGeneration, generationId, renameGeneration,
@@ -103,42 +108,48 @@ export default function TestCasePanel({ projectId }: Props) {
   const handleExport = (format: "json" | "xlsx" | "csv") => {
     const genId = useGenerateStore.getState().generationId;
     if (!genId) return;
-    window.open("/api/generations/" + genId + "/export/" + format, "_blank");
+    const lang = i18n.language === "de" ? "de" : "en";
+    window.open(`/api/generations/${genId}/export/${format}?lang=${lang}`, "_blank");
   };
 
-  // REQ-3052: Client-seitiger CSV-Export
+  // REQ-3052: Client-seitiger CSV-Export mit i18n Spaltenkoepfen
   const exportTableAsCSV = () => {
     if (testcases.length === 0) return;
-    
-    // Header-Zeile erstellen (REQ-3063: Fehlerwert-Spalte)
-    const headers = ["#", "Risiko", ...columns, "Fehlerwert"];
-    const csvHeader = headers.map(h => `"${h}"`).join(";");
-    
+
+    // REQ-6005: Spaltenkoepfe pro Sprache
+    const colHeaders = [
+      t("export.columns.id"),
+      t("export.columns.risk"),
+      ...columns,
+      t("export.columns.errorValue"),
+    ];
+    const csvHeader = colHeaders.map(h => `"${h}"`).join(";");
+
     // Datenzeilen erstellen
     const csvRows = sorted.map((row) => {
       const hasError = row["__hasError"] ?? false;
       const values = [
         String(row["#"] ?? ""),
-        String(Number(row["Risiko"] ?? 0).toFixed(1)),
+        formatNumber(Number(row["Risiko"] ?? 0)),
         ...columns.map(col => {
           const val = String(row[col] ?? "-");
           return `"${val.replace(/"/g, '""')}"`;
         }),
-        hasError ? "JA" : "NEIN",  // REQ-3063
+        hasError ? t("export.columns.yes") : t("export.columns.no"),
       ];
       return values.join(";");
     });
-    
+
     // CSV zusammenbauen (mit BOM für Excel)
     const csv = [csvHeader, ...csvRows].join("\r\n");
     const bom = "\uFEFF";
     const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
-    
+
     // Download auslösen
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `testfaelle_${generationId ?? Date.now()}.csv`;
+    link.download = `${t("export.columns.fileName")}_${generationId ?? Date.now()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -315,7 +326,7 @@ export default function TestCasePanel({ projectId }: Props) {
             <span>Risikoabdeckung: {riskSummary.risk_coverage_percent}%</span>
           </div>
           <span className="text-xs text-slate-400">
-            ({riskSummary.total_risk.toFixed(1)} / {riskSummary.max_possible_risk.toFixed(1)})
+            ({formatNumber(riskSummary.total_risk)} / {formatNumber(riskSummary.max_possible_risk)})
           </span>
         </div>
       )}
@@ -379,7 +390,7 @@ export default function TestCasePanel({ projectId }: Props) {
                       {hasError && <span title="Fehlerwert-Testfall" className="text-red-500 text-sm">⚠️</span>}
                     </td>
                     {/* REQ-3050: Risiko-Zelle */}
-                    <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{risk.toFixed(1)}</td>
+                    <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{formatNumber(risk)}</td>
                     {columns.map((col) => {
                       const resultCategory = resultCategoryByName[col];
                       const currentValue = String(row[col] ?? "");
