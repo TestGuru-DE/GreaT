@@ -504,7 +504,7 @@ Vollständiges Planning-Dokument wurde unter `documentation/phase-3-sprint-4-pla
 **Dokumentation Phase 4 verfügbar:**
 - `documentation/phase-4-planning.md` – Sprint-Struktur + Zeitleiste
 - `documentation/phase-4-sprint-stabi-needs.md` – Technische-Schulden-Analyse (25 Kandidaten)
-- `Agenten und basisinfos/requirements_v1.1.md` – REQ-4001–4010 hinzugefügt
+- `userstorys und basisinfos/requirements_v1.1.md` – REQ-4001–4010 hinzugefügt
 
 **Go/No-Go:** ✅ **GO** – Keine Blockierer, Phase 4 starten.
 
@@ -587,7 +587,7 @@ Aufgabe 6 (Multi-User) ──► Research-Output als Input für Sprint-11-Planni
 
 **Status:** 🔵 SPRINTFÄHIG VORBEREITET – Program Manager Freigabe erteilt
 **Auslöser:** Eskalation Sprint 10 (Multi-User-Architektur, Score 16) aufgelöst durch ADR-012 (HYBRID-Ansatz)
-**Vollständige EPIC-Definition:** `Agenten und basisinfos/requirements_v1.1.md` → EPIC-18
+**Vollständige EPIC-Definition:** `userstorys und basisinfos/requirements_v1.1.md` → EPIC-18
 
 ### Zielbild
 
