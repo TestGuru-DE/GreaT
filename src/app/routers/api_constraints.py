@@ -97,9 +97,17 @@ def create_constraint(
         "condition": payload.expression,
     }
     if payload.kind == "implies":
-        # Bei implies: consequence muss im expression enthalten sein
-        # Wir erwarten, dass das Frontend das komplette AST sendet
-        pass
+        if payload.consequence is None:
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "implies-Constraints brauchen ein 'consequence'-Feld"},
+            )
+        ast_dict["consequence"] = payload.consequence
+    elif payload.consequence is not None:
+        raise HTTPException(
+            status_code=400,
+            detail={"message": "forbid-Constraints duerfen kein 'consequence'-Feld haben"},
+        )
 
     is_valid, errors = validate_ast(ast_dict)
     if not is_valid:
@@ -119,12 +127,12 @@ def create_constraint(
             detail=f"Zu viele atomare Vergleiche: {leaf_count} (max {MAX_LEAF_NODES})",
         )
 
-    # Constraint anlegen
+    # Constraint anlegen (komplettes AST speichern)
     constraint = models.Constraint(
         project_id=project_id,
         name=payload.name,
         kind=payload.kind,
-        expression_json=json.dumps(payload.expression, ensure_ascii=False),
+        expression_json=json.dumps(ast_dict, ensure_ascii=False),
         is_valid=True,
     )
     db.add(constraint)
@@ -182,12 +190,29 @@ def update_constraint(
     if not constraint:
         raise HTTPException(status_code=404, detail="Constraint nicht gefunden")
 
-    # AST validieren wenn expression geaendert wird
-    if payload.expression is not None:
+    # AST validieren wenn expression oder consequence geaendert wird
+    if payload.expression is not None or payload.consequence is not None:
+        # Bestehendes AST laden als Basis
+        existing_ast = json.loads(constraint.expression_json) if constraint.expression_json else {}
+        
         ast_dict = {
             "kind": payload.kind or constraint.kind,
-            "condition": payload.expression,
+            "condition": payload.expression if payload.expression is not None else existing_ast.get("condition", {}),
         }
+        
+        # consequence handling
+        existing_consequence = existing_ast.get("consequence")
+        if payload.kind == "implies" or constraint.kind == "implies":
+            if payload.consequence is not None:
+                ast_dict["consequence"] = payload.consequence
+            elif existing_consequence is not None:
+                ast_dict["consequence"] = existing_consequence
+        elif payload.consequence is not None:
+            raise HTTPException(
+                status_code=400,
+                detail={"message": "forbid-Constraints duerfen kein 'consequence'-Feld haben"},
+            )
+        
         is_valid, errors = validate_ast(ast_dict)
         if not is_valid:
             raise HTTPException(
@@ -210,8 +235,19 @@ def update_constraint(
         constraint.name = payload.name
     if payload.kind is not None:
         constraint.kind = payload.kind
-    if payload.expression is not None:
-        constraint.expression_json = json.dumps(payload.expression, ensure_ascii=False)
+    if payload.expression is not None or payload.consequence is not None:
+        # Komplettes AST speichern
+        existing_ast = json.loads(constraint.expression_json) if constraint.expression_json else {}
+        ast_dict = {
+            "kind": payload.kind or constraint.kind,
+            "condition": payload.expression if payload.expression is not None else existing_ast.get("condition", {}),
+        }
+        if payload.kind == "implies" or constraint.kind == "implies":
+            if payload.consequence is not None:
+                ast_dict["consequence"] = payload.consequence
+            elif existing_ast.get("consequence") is not None:
+                ast_dict["consequence"] = existing_ast["consequence"]
+        constraint.expression_json = json.dumps(ast_dict, ensure_ascii=False)
     if payload.is_valid is not None:
         constraint.is_valid = payload.is_valid
 

@@ -510,7 +510,8 @@ class ConstraintCreate(BaseModel):
     """Request-Schema zum Anlegen eines Constraints."""
     name: str = Field(min_length=1, max_length=300)
     kind: str  # "forbid" oder "implies"
-    expression: dict  # JSON-AST nach ADR-020
+    expression: dict  # JSON-AST condition nach ADR-020
+    consequence: Optional[dict] = None  # nur bei implies
 
     @field_validator("kind")
     @classmethod
@@ -525,6 +526,7 @@ class ConstraintUpdate(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=300)
     kind: Optional[str] = None
     expression: Optional[dict] = None
+    consequence: Optional[dict] = None  # nur bei implies
     is_valid: Optional[bool] = None
 
     @field_validator("kind")
