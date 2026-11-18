@@ -3010,7 +3010,7 @@ Die neuen REQs beginnen mit **REQ-5000** und enden bei **REQ-5021**.---
 ### REQ-6005 | Sprachumschaltung Deutsch/Englisch
 **Titel:** Oberflaechensprache oben in der Navigationsleiste zwischen Deutsch und Englisch umschalten
 **Prioritaet:** Must
-**Status:** Proposed
+**Status:** Implemented (Slice 1-3: Umschalter, i18n-Keys, Datums-/Zahlenformate, Export-Spaltenkoepfe, no-literal-strings-Test)
 **Phase:** 5, Release v1.10.0
 **User Story:**
 Als Nutzer, der kein Deutsch spricht,

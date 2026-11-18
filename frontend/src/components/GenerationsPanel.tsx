@@ -1,14 +1,18 @@
 ﻿// REQ-3009: Generierungen-Tab im Projektdetail
 // REQ-6005: i18n
+// REQ-6011: Export-Menü-Dropdown
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
+import { useFormattedDate } from "../hooks/useFormattedDate";
+import ExportFormatDropdown from "./ExportFormatDropdown";
 
 interface Props { projectId: number; }
 
 export default function GenerationsPanel({ projectId }: Props) {
   const { t } = useTranslation();
+  const { formatDate } = useFormattedDate();
   const [items, setItems] = useState<GenerationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -39,10 +43,6 @@ export default function GenerationsPanel({ projectId }: Props) {
     const updated = await generateApi.renameGeneration(gid, editName.trim());
     setItems((prev) => prev.map((g) => g.id === gid ? { ...g, name: updated.name } : g));
     setEditingId(null);
-  };
-
-  const handleExport = (gid: number, fmt: string) => {
-    window.open(`/api/generations/${gid}/export/${fmt}`, "_blank");
   };
 
   if (loading) return <p className="text-sm text-slate-400">{t('generationsPanel.loading')}</p>;
@@ -80,14 +80,12 @@ export default function GenerationsPanel({ projectId }: Props) {
               </span>
             )}
             <p className="text-xs text-slate-400 mt-0.5">
-              {g.strategy} · {g.testcase_count} Testfälle · {new Date(g.created_at).toLocaleDateString("de-DE")}
+              {g.strategy} · {g.testcase_count} {t('generations.columns.testcases')} · {formatDate(g.created_at)}
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             <button onClick={() => startEdit(g)} title={t('generationsPanel.editTitle')} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">✏️</button>
-            <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">JSON</button>
-            <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">Excel</button>
-            <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">CSV</button>
+            <ExportFormatDropdown generationId={g.id} generationName={g.name} />
             <button onClick={() => handleDelete(g.id)} title={t('generationsPanel.deleteTitle')} className="text-xs px-2 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50">🗑️</button>
           </div>
         </div>

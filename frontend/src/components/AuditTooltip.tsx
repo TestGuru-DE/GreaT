@@ -1,8 +1,11 @@
 ﻿// REQ-4024: Audit-Trail-Tooltip (wer hat zuletzt geaendert)
 // Teil von EPIC-18 (Multi-User) / Sprint 13
+// REQ-6005 Slice 3: i18n Datumsformate
 //
 // Zeigt dezent ein Tooltip mit "Zuletzt geaendert von X am Y"
 // wenn der Mauszeiger ueber dem Element schwebt.
+
+import { useFormattedDate } from "../hooks/useFormattedDate";
 
 interface AuditTooltipProps {
   /** Username des letzten Aenderers (optional) */
@@ -18,11 +21,11 @@ export default function AuditTooltip({
   lastModifiedAt,
   entityType,
 }: AuditTooltipProps) {
+  const { formatDate } = useFormattedDate({ style: "datetime" });
+
   if (!lastModifiedBy && !lastModifiedAt) return null;
 
-  const formattedDate = lastModifiedAt
-    ? new Date(lastModifiedAt).toLocaleString("de-DE")
-    : null;
+  const formattedDate = lastModifiedAt ? formatDate(lastModifiedAt) : null;
 
   const tooltipText = [
     lastModifiedBy ? `Geaendert von: ${lastModifiedBy}` : null,

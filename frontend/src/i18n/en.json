@@ -237,6 +237,34 @@
       "importBtn": "Import",
       "importSuccess": "OK Import completed ({{count}} nodes)",
       "importError": "Error: {{message}}"
+    },
+    "apiTokens": {
+      "title": "API Tokens",
+      "description": "API tokens allow CI/CD systems to access G.R.E.A.T. without user login.",
+      "createButton": "Create new token",
+      "createTitle": "Create new API token",
+      "name": "Name",
+      "namePlaceholder": "e.g. Jenkins Nightly",
+      "nameRequired": "Please enter a name.",
+      "expiresAt": "Expiry date",
+      "expiresAtHint": "Maximum 365 days, suggested: 90 days",
+      "scopes": "Scopes",
+      "scopeDescriptions": {
+        "projects:read": "Read projects",
+        "projects:write": "Edit projects",
+        "generate": "Generate test cases",
+        "export": "Export",
+        "models:read": "Read models",
+        "models:write": "Edit models"
+      },
+      "revokeButton": "Revoke",
+      "revokeConfirm": "Really revoke this token irreversibly?",
+      "warning": "This token will not be shown again. Save it securely.",
+      "copyButton": "Copy",
+      "understood": "Understood",
+      "empty": "No API tokens created yet.",
+      "expires": "Expires:",
+      "lastUsed": "Last used:"
     }
   },
   "changePassword": {
@@ -622,5 +650,37 @@
     "errorPreview": "Preview failed: {{error}}",
     "successNew": "Project \"{{name}}\" created.",
     "successUpdate": "Project \"{{name}}\" updated."
+  },
+  "export": {
+    "columns": {
+      "id": "#",
+      "risk": "Risk",
+      "testCaseId": "TC-ID",
+      "generationId": "Generation ID",
+      "strategy": "Strategy",
+      "errorValue": "Error Value",
+      "yes": "YES",
+      "no": "NO",
+      "fileName": "testcases"
+    },
+    "menu": {
+      "button": "Export",
+      "buttonTitle": "Choose export format",
+      "groupAutomation": "Automation",
+      "groupTestManagement": "Test Management",
+      "groupDocumentation": "Documentation",
+      "gherkinEn": "Gherkin (EN)",
+      "gherkinDe": "Gherkin (DE)",
+      "pytest": "pytest",
+      "robot": "Robot Framework",
+      "jsonDataDriven": "JSON (data-driven)",
+      "xrayCsv": "Xray (Jira)",
+      "testrailCsv": "TestRail",
+      "azuredevopsCsv": "Azure DevOps",
+      "markdown": "Markdown",
+      "csv": "CSV",
+      "excel": "Excel",
+      "json": "JSON"
+    }
   }
 }

@@ -237,6 +237,34 @@
       "importBtn": "Importieren",
       "importSuccess": "OK Import abgeschlossen ({{count}} Knoten)",
       "importError": "Fehler: {{message}}"
+    },
+    "apiTokens": {
+      "title": "API-Tokens",
+      "description": "API-Tokens erlauben CI/CD-Systemen den Zugriff auf G.R.E.A.T. ohne Benutzeranmeldung.",
+      "createButton": "Neues Token erstellen",
+      "createTitle": "Neues API-Token erstellen",
+      "name": "Name",
+      "namePlaceholder": "z.B. Jenkins Nightly",
+      "nameRequired": "Bitte einen Namen eingeben.",
+      "expiresAt": "Ablaufdatum",
+      "expiresAtHint": "Maximal 365 Tage, Vorschlag: 90 Tage",
+      "scopes": "Bereiche (Scopes)",
+      "scopeDescriptions": {
+        "projects:read": "Projekte lesen",
+        "projects:write": "Projekte bearbeiten",
+        "generate": "Testfälle generieren",
+        "export": "Exportieren",
+        "models:read": "Modelle lesen",
+        "models:write": "Modelle bearbeiten"
+      },
+      "revokeButton": "Widerrufen",
+      "revokeConfirm": "Token wirklich unwiderruflich widerrufen?",
+      "warning": "Dieser Token wird nicht mehr angezeigt. Speichere ihn sicher.",
+      "copyButton": "Kopieren",
+      "understood": "Verstanden",
+      "empty": "Noch keine API-Tokens erstellt.",
+      "expires": "Läuft ab:",
+      "lastUsed": "Letzter Gebrauch:"
     }
   },
   "changePassword": {
@@ -622,5 +650,37 @@
     "errorPreview": "Aenderungsvorschau fehlgeschlagen: {{error}}",
     "successNew": "Projekt \"{{name}}\" erstellt.",
     "successUpdate": "Projekt \"{{name}}\" aktualisiert."
+  },
+  "export": {
+    "columns": {
+      "id": "#",
+      "risk": "Risiko",
+      "testCaseId": "TC-ID",
+      "generationId": "Generierungs-ID",
+      "strategy": "Strategie",
+      "errorValue": "Fehlerwert",
+      "yes": "JA",
+      "no": "NEIN",
+      "fileName": "testfaelle"
+    },
+    "menu": {
+      "button": "Exportieren",
+      "buttonTitle": "Export-Format auswählen",
+      "groupAutomation": "Automatisierung",
+      "groupTestManagement": "Testmanagement",
+      "groupDocumentation": "Dokumentation",
+      "gherkinEn": "Gherkin (EN)",
+      "gherkinDe": "Gherkin (DE)",
+      "pytest": "pytest",
+      "robot": "Robot Framework",
+      "jsonDataDriven": "JSON (data-driven)",
+      "xrayCsv": "Xray (Jira)",
+      "testrailCsv": "TestRail",
+      "azuredevopsCsv": "Azure DevOps",
+      "markdown": "Markdown",
+      "csv": "CSV",
+      "excel": "Excel",
+      "json": "JSON"
+    }
   }
 }

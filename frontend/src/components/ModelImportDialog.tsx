@@ -1,4 +1,5 @@
 // REQ-6013: Import-Dialog mit Datei-Upload, zwei Modi und Aenderungsvorschau
+// REQ-6005 Slice 3: i18n Zahlenformate
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -12,6 +13,7 @@ import {
   type ModelDiffResult,
 } from "../api/modelApi";
 import { useToastStore } from "./Toast";
+import { useFormattedNumber } from "../hooks/useFormattedNumber";
 import ModelDiffPreview from "./ModelDiffPreview";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -27,6 +29,7 @@ interface Props {
 
 export default function ModelImportDialog({ projects, onClose, onProjectCreated, onProjectUpdated }: Props) {
   const { t } = useTranslation();
+  const { formatNumber } = useFormattedNumber({ minimumFractionDigits: 1, maximumFractionDigits: 1 });
   const navigate = useNavigate();
 
   const [file, setFile] = useState<File | null>(null);
@@ -254,7 +257,7 @@ export default function ModelImportDialog({ projects, onClose, onProjectCreated,
                   <FileText className="w-4 h-4 text-theme-accent" />
                   <span className="font-medium">{file.name}</span>
                   <span className="text-theme-text-muted text-xs">
-                    ({(file.size / 1024).toFixed(1)} KB)
+                    ({formatNumber(file.size / 1024)} KB)
                   </span>
                 </div>
               ) : (
