@@ -1,10 +1,12 @@
 ﻿// REQ-3009: Globale Generierungsübersicht (alle Projekte)
 // REQ-6005: i18n
+// REQ-6011: Export-Menü-Dropdown
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { generateApi, projectsApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
 import { useFormattedDate } from "../hooks/useFormattedDate";
+import ExportFormatDropdown from "../components/ExportFormatDropdown";
 
 interface GenWithProject extends GenerationSummary {
   projectId: number;
@@ -12,7 +14,7 @@ interface GenWithProject extends GenerationSummary {
 }
 
 export default function GenerationsPage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { formatDate } = useFormattedDate();
   const [items, setItems] = useState<GenWithProject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,11 +55,6 @@ export default function GenerationsPage() {
     const updated = await generateApi.renameGeneration(gid, editName.trim());
     setItems((prev) => prev.map((g) => g.id === gid ? { ...g, name: updated.name } : g));
     setEditingId(null);
-  };
-
-  const handleExport = (gid: number, fmt: string) => {
-    const lang = i18n.language === "de" ? "de" : "en";
-    window.open(`/api/generations/${gid}/export/${fmt}?lang=${lang}`, "_blank");
   };
 
   return (
@@ -124,11 +121,9 @@ export default function GenerationsPage() {
                     {formatDate(g.created_at)}
                   </td>
                   <td className="px-3 py-2">
-                    <div className="flex gap-1 flex-wrap">
+                    <div className="flex gap-1 flex-wrap items-center">
                       <button onClick={() => startEdit(g)} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">{t('generations.actions.edit')}</button>
-                      <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">{t('generations.actions.json')}</button>
-                      <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">{t('generations.actions.excel')}</button>
-                      <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-0.5 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text">{t('generations.actions.csv')}</button>
+                      <ExportFormatDropdown generationId={g.id} generationName={g.name} filenamePrefix={`${g.projectName} - ${g.name}`} />
                       <button onClick={() => handleDelete(g.id)} className="text-xs px-2 py-0.5 border border-theme-danger rounded hover:bg-theme-surface-hover text-theme-text">{t('generations.actions.delete')}</button>
                     </div>
                   </td>

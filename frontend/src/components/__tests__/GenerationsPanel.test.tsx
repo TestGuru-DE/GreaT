@@ -1,7 +1,8 @@
-﻿// REQ-3045: Export-Buttons muessen in allen Kern-Themes schwarzen Text behalten
-// REQ-6005 Slice 3: Buttons nutzen jetzt t() fuer Uebersetzung
+﻿// REQ-3009: GenerationsPanel rendering
+// REQ-6005: i18n
+// REQ-6011: Export-Menü-Dropdown
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import GenerationsPanel from "../GenerationsPanel";
 import { generateApi } from "../../api/client";
 
@@ -10,11 +11,13 @@ vi.mock("../../api/client", () => ({
     listGenerations: vi.fn(),
     renameGeneration: vi.fn(),
     deleteGeneration: vi.fn(),
+    exportGeneration: vi.fn(),
   },
 }));
 
-describe("GenerationsPanel - REQ-3045 Export-Kontrast", () => {
+describe("GenerationsPanel - REQ-3009 / REQ-6011", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(generateApi.listGenerations).mockResolvedValue([
       {
         id: 11,
@@ -24,23 +27,93 @@ describe("GenerationsPanel - REQ-3045 Export-Kontrast", () => {
         testcase_count: 12,
       },
     ] as never);
+    vi.mocked(generateApi.exportGeneration).mockResolvedValue(
+      new Blob(['test content'], { type: 'application/octet-stream' }) as never
+    );
   });
 
-  it.each([
-    ["Normal", ""],
-    ["Dark", "theme-dark"],
-    ["Heavy Metal", "theme-heavy-metal"],
-  ])("zeigt in Theme %s schwarze Export-Button-Texte fuer JSON/Excel/CSV", async (_themeName, themeClass) => {
-    document.documentElement.className = themeClass;
+  it("zeigt Export-Button mit Dropdown-Pfeil", async () => {
     render(<GenerationsPanel projectId={1} />);
 
-    // REQ-6005: Buttons nutzen t() -> Keys werden ohne i18n-Mock als Key selbst gerendert
-    const jsonButton = await screen.findByRole("button", { name: "generations.actions.json" });
-    const excelButton = screen.getByRole("button", { name: "generations.actions.excel" });
-    const csvButton = screen.getByRole("button", { name: "generations.actions.csv" });
+    const exportButton = await screen.findByRole("button", {
+      name: "export.menu.buttonTitle",
+    });
+    expect(exportButton).toBeInTheDocument();
+  });
 
-    expect(jsonButton).toHaveClass("text-black");
-    expect(excelButton).toHaveClass("text-black");
-    expect(csvButton).toHaveClass("text-black");
+  it("öffnet Dropdown bei Klick auf Export-Button", async () => {
+    render(<GenerationsPanel projectId={1} />);
+
+    const exportButton = await screen.findByRole("button", {
+      name: "export.menu.buttonTitle",
+    });
+
+    expect(() => screen.getByRole("menu")).toThrow();
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+  });
+
+  it("zeigt gruppierte Format-Einträge im Dropdown", async () => {
+    render(<GenerationsPanel projectId={1} />);
+
+    const exportButton = await screen.findByRole("button", {
+      name: "export.menu.buttonTitle",
+    });
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    // Check for menu items
+    const menuItems = screen.getAllByRole("menuitem");
+    expect(menuItems.length).toBeGreaterThan(0);
+  });
+
+  it("schließt Dropdown nach Auswahl eines Formats", async () => {
+    render(<GenerationsPanel projectId={1} />);
+
+    const exportButton = await screen.findByRole("button", {
+      name: "export.menu.buttonTitle",
+    });
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    const menuItems = screen.getAllByRole("menuitem");
+    fireEvent.click(menuItems[0]);
+
+    await waitFor(() => {
+      expect(() => screen.getByRole("menu")).toThrow();
+    });
+  });
+
+  it("ruft exportGeneration API bei Format-Auswahl auf", async () => {
+    render(<GenerationsPanel projectId={1} />);
+
+    const exportButton = await screen.findByRole("button", {
+      name: "export.menu.buttonTitle",
+    });
+    fireEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole("menu")).toBeInTheDocument();
+    });
+
+    const menuItems = screen.getAllByRole("menuitem");
+    fireEvent.click(menuItems[0]);
+
+    await waitFor(() => {
+      expect(generateApi.exportGeneration).toHaveBeenCalledWith(
+        11,
+        expect.any(String),
+        expect.any(String)
+      );
+    });
   });
 });

@@ -1,4 +1,5 @@
 ﻿// REQ-3045/3046/3047/3049: Generierungen-Seite muss in Kern-Themes lesbar bleiben
+// REQ-6011: Export-Menü-Dropdown
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import GenerationsPage from "../GenerationsPage";
@@ -21,10 +22,10 @@ vi.mock("react-i18next", () => ({
         "generations.columns.date": "Datum",
         "generations.columns.actions": "Aktionen",
         "generations.actions.edit": "✏️",
-        "generations.actions.json": "JSON",
-        "generations.actions.excel": "Excel",
-        "generations.actions.csv": "CSV",
         "generations.actions.delete": "🗑️",
+        // REQ-6011: Export dropdown
+        "export.menu.button": "Exportieren",
+        "export.menu.buttonTitle": "Export-Format auswählen",
       };
       let v = tr[key] ?? key;
       if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
@@ -42,6 +43,7 @@ vi.mock("../../api/client", () => ({
     listGenerations: vi.fn(),
     renameGeneration: vi.fn(),
     deleteGeneration: vi.fn(),
+    exportGeneration: vi.fn(),
   },
   valuesApi: {
     list: vi.fn(),
@@ -88,12 +90,9 @@ describe("GenerationsPage - Theme-Kontrast in Normal/Dark/Steampunk/Heavy Metal"
     expect(screen.getByText("Projekt A")).toHaveClass("text-theme-text");
     expect(screen.getByText("pairwise")).toHaveClass("text-theme-text");
 
-    const jsonButton = screen.getByRole("button", { name: "JSON" });
-    const excelButton = screen.getByRole("button", { name: "Excel" });
-    const csvButton = screen.getByRole("button", { name: "CSV" });
-    expect(jsonButton).toHaveClass("text-theme-text");
-    expect(excelButton).toHaveClass("text-theme-text");
-    expect(csvButton).toHaveClass("text-theme-text");
+    // REQ-6011: Export dropdown button replaces individual JSON/Excel/CSV buttons
+    const exportButton = screen.getByRole("button", { name: "Export-Format auswählen" });
+    expect(exportButton).toHaveAttribute("aria-haspopup", "menu");
 
     fireEvent.doubleClick(screen.getByText("Run 77"));
     const nameInput = screen.getByDisplayValue("Run 77");

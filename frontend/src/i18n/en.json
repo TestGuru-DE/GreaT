@@ -634,6 +634,25 @@
       "yes": "YES",
       "no": "NO",
       "fileName": "testcases"
+    },
+    "menu": {
+      "button": "Export",
+      "buttonTitle": "Choose export format",
+      "groupAutomation": "Automation",
+      "groupTestManagement": "Test Management",
+      "groupDocumentation": "Documentation",
+      "gherkinEn": "Gherkin (EN)",
+      "gherkinDe": "Gherkin (DE)",
+      "pytest": "pytest",
+      "robot": "Robot Framework",
+      "jsonDataDriven": "JSON (data-driven)",
+      "xrayCsv": "Xray (Jira)",
+      "testrailCsv": "TestRail",
+      "azuredevopsCsv": "Azure DevOps",
+      "markdown": "Markdown",
+      "csv": "CSV",
+      "excel": "Excel",
+      "json": "JSON"
     }
   }
 }

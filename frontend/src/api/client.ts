@@ -167,6 +167,15 @@ export const generateApi = {
       "/testcases/" + testcaseId + "/assignments",
       { category_name: categoryName, value },
     ).then((r) => r.data),
+  // REQ-6011: Export generation in various formats via Blob download
+  exportGeneration: (generationId: number, format: string, lang?: string) => {
+    const params: Record<string, string> = {};
+    if (lang) params.lang = lang;
+    return api.get(`/generations/${generationId}/export/${format}`, {
+      params,
+      responseType: "blob",
+    }).then((r) => r.data);
+  },
 };
 
 // --- Rename + Reorder (REQ-1209, REQ-1213) ---
