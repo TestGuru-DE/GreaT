@@ -564,6 +564,7 @@ class ConstraintValidateRequest(BaseModel):
     """Request-Schema zur Validierung eines AST ohne Speicherung."""
     expression: dict
     kind: str = "forbid"
+    consequence: Optional[dict] = None
 
     @field_validator("kind")
     @classmethod

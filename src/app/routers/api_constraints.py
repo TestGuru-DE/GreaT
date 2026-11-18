@@ -305,6 +305,9 @@ def validate_constraint_ast(
         "kind": payload.kind,
         "condition": payload.expression,
     }
+    if payload.kind == "implies":
+        if payload.consequence is not None:
+            ast_dict["consequence"] = payload.consequence
 
     is_valid, errors = validate_ast(ast_dict)
     leaf_count = count_leaf_nodes(ast_dict)
