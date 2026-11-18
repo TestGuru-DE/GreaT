@@ -548,6 +548,7 @@ export default function ConstraintBuilder({ projectId }: Props) {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setMsg(null);
     try {
       const [constrList, catList] = await Promise.all([
         logicalConstraintsApi.list(projectId),
@@ -561,10 +562,17 @@ export default function ConstraintBuilder({ projectId }: Props) {
         valMap[c.id] = vals;
       }));
       setCatValues(valMap);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[ConstraintBuilder] loadData failed:", err);
+      setMsg({
+        text: t("constraintBuilder.loadError", { error: message }),
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, t]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -680,11 +688,20 @@ export default function ConstraintBuilder({ projectId }: Props) {
   };
 
   if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t("common.loading")}</p>;
-  if (categories.length === 0) return (
-    <div className="text-center py-8 text-slate-400">
-      <p className="text-sm">{t("constraintBuilder.needOneCategory")}</p>
-    </div>
-  );
+  if (categories.length === 0) {
+    if (msg && msg.type === "error") return (
+      <div className="text-center py-8">
+        <div className="px-3 py-2 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700 inline-block">
+          {msg.text}
+        </div>
+      </div>
+    );
+    return (
+      <div className="text-center py-8 text-slate-400">
+        <p className="text-sm">{t("constraintBuilder.needOneCategory")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-5">
