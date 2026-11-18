@@ -129,3 +129,38 @@ export interface DataNode {
   values: DataNodeValue[];
   children: DataNode[];
 }
+
+// REQ-6001: Logische Constraints (ADR-020 AST-Format)
+export type ConstraintKind = "forbid" | "implies";
+export type ConstraintOp = "eq" | "ne" | "in" | "not_in" | "and" | "or" | "not";
+
+export interface ConstraintAtom {
+  op: "eq" | "ne" | "in" | "not_in";
+  category_id: number;
+  value_id: number;
+  value_ids?: number[]; // for in / not_in
+}
+
+export interface ConstraintGroup {
+  op: "and" | "or";
+  args: (ConstraintAtom | ConstraintGroup | ConstraintNot)[];
+}
+
+export interface ConstraintNot {
+  op: "not";
+  arg: ConstraintNode;
+}
+
+export type ConstraintNode = ConstraintAtom | ConstraintGroup | ConstraintNot;
+
+export interface LogicalConstraint {
+  id: number;
+  project_id: number;
+  name: string;
+  kind: ConstraintKind;
+  expression: ConstraintNode;
+  consequence?: ConstraintNode; // only for "implies"
+  is_valid: boolean;
+  created_at: string;
+  updated_at: string;
+}
