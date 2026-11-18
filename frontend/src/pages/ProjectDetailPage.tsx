@@ -8,6 +8,7 @@ import { useProjectStore } from "../store/projectStore";
 import CategoryTree from "../components/CategoryTree";
 import TestCasePanel from "../components/TestCasePanel";
 import RulesPanel from "../components/RulesPanel";
+import ConstraintBuilder from "../components/ConstraintBuilder";
 import GenerationsPanel from "../components/GenerationsPanel";
 import StaleDataWarning from "../components/StaleDataWarning";
 import DecisionTable from "../components/DecisionTable";
@@ -20,7 +21,7 @@ import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
 import { useToastStore } from "../components/Toast";
 
-type RightTab = "generate" | "rules" | "generations" | "decision";
+type RightTab = "generate" | "rules" | "constraints" | "generations" | "decision";
 
 export default function ProjectDetailPage() {
   const { t } = useTranslation();
@@ -176,6 +177,9 @@ export default function ProjectDetailPage() {
             <button onClick={() => setRightTab("rules")} className={tabClass("rules")}>
               {t('projectDetail.tabRules')}
             </button>
+            <button onClick={() => setRightTab("constraints")} className={tabClass("constraints")}>
+              {t('projectDetail.tabConstraints')}
+            </button>
             <button onClick={() => setRightTab("generations")} className={tabClass("generations")}>
               {t('projectDetail.tabGenerations')}
             </button>
@@ -187,6 +191,7 @@ export default function ProjectDetailPage() {
           <div className="flex-1 p-4 flex flex-col min-h-0 overflow-auto">
             {rightTab === "generate" && <TestCasePanel projectId={projectId} />}
             {rightTab === "rules" && <RulesPanel projectId={projectId} />}
+            {rightTab === "constraints" && <ConstraintBuilder projectId={projectId} />}
             {rightTab === "generations" && <GenerationsPanel projectId={projectId} />}
             {rightTab === "decision" && (
               <div className="flex flex-col gap-6">

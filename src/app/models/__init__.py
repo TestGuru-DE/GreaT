@@ -25,6 +25,7 @@ class Project(Base):
     generations = relationship("Generation", back_populates="project", cascade="all, delete-orphan")
     memberships = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")  # REQ-4023
     rules = relationship("Rule", back_populates="project", cascade="all, delete-orphan")
+    constraints = relationship("Constraint", back_populates="project", cascade="all, delete-orphan")  # REQ-6001
 
 class Category(Base):
     __tablename__ = "categories"
@@ -140,6 +141,35 @@ class Rule(Base):
     last_modified_at = Column(DateTime, nullable=True)
 
     project = relationship("Project", back_populates="rules")
+
+
+# ---------------------------------------------------------------------------
+# REQ-6001: Logische Constraints (Mehrbedingungs-Regeln)
+# ---------------------------------------------------------------------------
+
+class Constraint(Base):
+    """
+    REQ-6001: Logische Constraints als Mehrbedingungs-Regeln.
+    - kind: 'forbid' (NICHT Bedingung) oder 'implies' (WENN Bedingung DANN Folge)
+    - expression_json: JSON-AST nach ADR-020
+    - is_valid: False wenn referenzierte Kategorie/Wert geloescht wurden
+    """
+    __tablename__ = "constraints"
+
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(300), nullable=False)
+    kind = Column(String(10), nullable=False)  # "forbid" oder "implies"
+    expression_json = Column(Text, nullable=False)  # JSON-AST als Text
+    is_valid = Column(Boolean, default=True, nullable=False)
+    version = Column(Integer, default=0, server_default="0", nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    last_modified_at = Column(DateTime, nullable=True)
+
+    project = relationship("Project", back_populates="constraints")
 
 
 # ---------------------------------------------------------------------------

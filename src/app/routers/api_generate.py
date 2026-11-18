@@ -31,7 +31,7 @@ from ..services import (
     apply_business_rules,  # B-20/B-21
 )
 from combinatorics.risk_based import sort_by_risk_descending
-from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
+from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule, ConstraintRule
 
 # REQ-6005 Slice 3: Uebersetzte Spaltenkoepfe fuer Exporte
 _EXPORT_HEADERS = {
@@ -62,9 +62,19 @@ router = APIRouter(tags=["API"], dependencies=[Depends(require_api_capable)])
 
 
 def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
-    """REQ-3005/REQ-3040: Regel-Engine aus den Projektregeln aufbauen."""
+    """REQ-3005/REQ-3040/REQ-6001: Regel-Engine aus Projektregeln + Constraints aufbauen."""
     db_rules = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
-    cat_name_by_id = {c.id: c.name for c in db.query(models.Category).filter(models.Category.project_id == pid).all()}
+    categories = db.query(models.Category).filter(models.Category.project_id == pid).all()
+    cat_name_by_id = {c.id: c.name for c in categories}
+
+    # REQ-6001: value_id -> value_name Mapping (pro Kategorie)
+    all_values = db.query(models.Value).filter(
+        models.Value.category_id.in_(cat_name_by_id.keys())
+    ).all()
+    value_name_by_id: dict[int, str] = {v.id: v.value for v in all_values}
+    # Umgekehrtes Mapping: (category_id, value_id) -> value_name
+    val_map: dict[tuple[int, int], int] = {}  # (cat_id, val_id) -> val_id (selbst, fuer ConstraintRule)
+
     engine_rules = []
     for r in db_rules:
         ic = cat_name_by_id.get(r.if_category_id, "")
@@ -76,6 +86,34 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
         elif r.type == "combine":
             allowed = json.loads(r.then_values_json or "[]")
             engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
+
+    # REQ-6001: Constraints laden und als ConstraintRule hinzufügen
+    constraints = db.query(models.Constraint).filter(
+        models.Constraint.project_id == pid,
+        models.Constraint.is_valid == True,  # noqa: E712
+    ).all()
+
+    for c in constraints:
+        import json as json_mod
+        try:
+            expression = json_mod.loads(c.expression_json)
+            # category_map: category_name -> category_id
+            # value_map: (category_id, value_name) -> value_id
+            cat_map: dict[str, int] = {name: cid for cid, name in cat_name_by_id.items()}
+            val_map2: dict[tuple[int, str], int] = {}
+            for v in all_values:
+                val_map2[(v.category_id, v.value)] = v.id
+
+            engine_rules.append(ConstraintRule(
+                expression=expression,
+                category_map=cat_map,
+                value_map=val_map2,
+            ))
+        except (json_mod.JSONDecodeError, Exception) as e:
+            # Ungueltige Constraints ueberspringen (is_valid=False setzen wuerde besser passen)
+            log = __import__("logging").getLogger("great.api")
+            log.warning("Skipping invalid constraint id=%d: %s", c.id, e)
+
     return RuleEngine(engine_rules)
 
 @router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer), Depends(require_scope("generate"))])

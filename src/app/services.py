@@ -20,7 +20,7 @@ from .system_dataclasses import seed_system_dataclasses
 from combinatorics import all_combinations, each_choice, ipo, linear_expansion, t_wise, mcdc
 from combinatorics.risk_based import generate as risk_based_generate
 from combinatorics.boundary_value import generate_multi_range_bva, BVARange, BVAMultiRangeResult
-from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule
+from core.rules.rule_engine import RuleEngine, ForbiddenRule, DependencyRule, CombineRule, ConstraintRule
 
 
 def reset_database_state(db: Session) -> dict:
@@ -420,6 +420,34 @@ def apply_business_rules(
         if if_name and then_name:
             rules.append(DependencyRule(if_category=if_name, if_value=if_val,
                                         then_category=then_name, then_value=then_val))
+
+    # REQ-6001: Constraints laden und als ConstraintRule hinzufuegen
+    constraints = db.query(models.Constraint).filter(
+        models.Constraint.project_id == pid,
+        models.Constraint.is_valid == True,  # noqa: E712
+    ).all()
+
+    # Mapping: category_name -> category_id
+    name2id = {v: k for k, v in id2name.items()}
+
+    # Mapping: (category_id, value_name) -> value_id
+    all_values = db.query(models.Value).filter(
+        models.Value.category_id.in_(id2name.keys())
+    ).all()
+    val_name_map: dict[tuple[int, str], int] = {}
+    for v in all_values:
+        val_name_map[(v.category_id, v.value)] = v.id
+
+    for c in constraints:
+        try:
+            expression = json.loads(c.expression_json)
+            rules.append(ConstraintRule(
+                expression=expression,
+                category_map=name2id,
+                value_map=val_name_map,
+            ))
+        except (json.JSONDecodeError, Exception):
+            pass  # Ungueltige Constraints ueberspringen
 
     engine = RuleEngine(rules=rules)
     result = engine.apply(list(assignments))

@@ -156,7 +156,7 @@ def _purge_test_projects_per_test():
     Abhaengige Tabellen ohne ON DELETE CASCADE werden vorher geleert.
     """
     from app.database import SessionLocal
-    from app.models import Project
+    from app.models import Project, Constraint
     from app.models.decision_table_constraint import DecisionTableConstraint
     from app.models.project_membership import ProjectMembership
     db = SessionLocal()
@@ -164,6 +164,7 @@ def _purge_test_projects_per_test():
         ids = [p.id for p in db.query(Project.id).filter(Project.name != "Portoberechnung (Beispiel)").all()]
         if ids:
             # Tabellen ohne ON DELETE CASCADE zuerst leeren (sonst FK-Fehler)
+            db.query(Constraint).filter(Constraint.project_id.in_(ids)).delete(synchronize_session=False)  # REQ-6001
             db.query(DecisionTableConstraint).filter(DecisionTableConstraint.project_id.in_(ids)).delete(synchronize_session=False)
             db.query(ProjectMembership).filter(ProjectMembership.project_id.in_(ids)).delete(synchronize_session=False)
             db.query(Project).filter(Project.id.in_(ids)).delete(synchronize_session=False)
@@ -196,6 +197,20 @@ def _purge_api_tokens_per_test():
     db = SessionLocal()
     try:
         db.query(ApiToken).delete(synchronize_session=False)
+        db.commit()
+    finally:
+        db.close()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _purge_constraints_per_test():
+    """REQ-6001: Constraints je Test entfernen (vor Project-Cleanup wegen FK)."""
+    from app.database import SessionLocal
+    from app.models import Constraint
+    db = SessionLocal()
+    try:
+        db.query(Constraint).delete(synchronize_session=False)
         db.commit()
     finally:
         db.close()

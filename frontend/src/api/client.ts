@@ -385,3 +385,79 @@ export const backupApi = {
 };
 // Export authClient for auth endpoints (baseURL: /auth, not /api)
 export { authClient };
+
+// --- REQ-6001: Logische Constraints (ADR-020 AST-Format) ---
+// NEU: logicalConstraintsApi – bestehendes constraintsApi (REQ-5012) bleibt unveraendert
+
+export type ConstraintKind = "forbid" | "implies";
+export type ConstraintOp = "eq" | "ne" | "in" | "not_in" | "and" | "or" | "not";
+
+export interface ConstraintAtom {
+  op: "eq" | "ne" | "in" | "not_in";
+  category_id: number;
+  value_id: number;
+  value_ids?: number[]; // for in / not_in
+}
+
+export interface ConstraintGroup {
+  op: "and" | "or";
+  args: (ConstraintAtom | ConstraintGroup | ConstraintNot)[];
+}
+
+export interface ConstraintNot {
+  op: "not";
+  arg: ConstraintNode;
+}
+
+export type ConstraintNode = ConstraintAtom | ConstraintGroup | ConstraintNot;
+
+export interface LogicalConstraint {
+  id: number;
+  project_id: number;
+  name: string;
+  kind: ConstraintKind;
+  expression: ConstraintNode;
+  consequence?: ConstraintNode; // only for "implies"
+  is_valid: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ConstraintCreatePayload {
+  name: string;
+  kind: ConstraintKind;
+  expression: ConstraintNode;
+  consequence?: ConstraintNode;
+}
+
+export interface ConstraintUpdatePayload {
+  name?: string;
+  kind?: ConstraintKind;
+  expression?: ConstraintNode;
+  consequence?: ConstraintNode | null;
+}
+
+export interface ConstraintValidateResponse {
+  is_valid: boolean;
+  errors: string[];
+}
+
+export const logicalConstraintsApi = {
+  list: (projectId: number) =>
+    api.get<LogicalConstraint[]>(`/projects/${projectId}/constraints`).then((r) => r.data),
+
+  get: (projectId: number, cid: number) =>
+    api.get<LogicalConstraint>(`/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
+
+  create: (projectId: number, data: ConstraintCreatePayload) =>
+    api.post<LogicalConstraint>(`/projects/${projectId}/constraints`, data).then((r) => r.data),
+
+  update: (projectId: number, cid: number, data: ConstraintUpdatePayload) =>
+    api.put<LogicalConstraint>(`/projects/${projectId}/constraints/${cid}`, data).then((r) => r.data),
+
+  delete: (projectId: number, cid: number) =>
+    api.delete(`/projects/${projectId}/constraints/${cid}`).then((r) => r.data),
+
+  validate: (projectId: number, data: ConstraintCreatePayload) =>
+    api.post<ConstraintValidateResponse>(`/projects/${projectId}/constraints/validate`, data).then((r) => r.data),
+};

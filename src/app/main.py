@@ -29,6 +29,7 @@ from .routers import (
     api_sharing,
     api_users,
     api_model,
+    api_constraints,  # REQ-6001: Logische Constraints
     auth,
 )
 from .routers import api_tokens  # REQ-6012
@@ -286,6 +287,7 @@ app.include_router(api_sharing.router)  # Projektfreigaben (Prefix /api/sharing)
 app.include_router(api_users.router)  # REQ-4025: Benutzerverwaltung (Prefix /api/users, Admin)
 app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /api/users/{id}/password)
 app.include_router(api_model.router)  # REQ-6013: Modell-Export/Import (Prefix /api/v1/projects)
+app.include_router(api_constraints.router, prefix="/api/v1")  # REQ-6001: Logische Constraints (Prefix /api/v1/projects)
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
 
 # REQ-6012: API-Token Management

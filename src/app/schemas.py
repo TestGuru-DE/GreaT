@@ -497,3 +497,87 @@ class AddProjectMemberRequest(BaseModel):
         if v not in {"editor", "viewer"}:
             raise ValueError("role muss 'editor' oder 'viewer' sein.")
         return v
+
+
+# ============================================================================
+# REQ-6001: Logische Constraints (Mehrbedingungs-Regeln)
+# ============================================================================
+
+VALID_CONSTRAINT_KINDS = {"forbid", "implies"}
+
+
+class ConstraintCreate(BaseModel):
+    """Request-Schema zum Anlegen eines Constraints."""
+    name: str = Field(min_length=1, max_length=300)
+    kind: str  # "forbid" oder "implies"
+    expression: dict  # JSON-AST condition nach ADR-020
+    consequence: Optional[dict] = None  # nur bei implies
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, v: str) -> str:
+        if v not in VALID_CONSTRAINT_KINDS:
+            raise ValueError(f"kind muss einer von {VALID_CONSTRAINT_KINDS} sein.")
+        return v
+
+
+class ConstraintUpdate(BaseModel):
+    """Partielle Aktualisierung eines Constraints."""
+    name: Optional[str] = Field(default=None, min_length=1, max_length=300)
+    kind: Optional[str] = None
+    expression: Optional[dict] = None
+    consequence: Optional[dict] = None  # nur bei implies
+    is_valid: Optional[bool] = None
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in VALID_CONSTRAINT_KINDS:
+            raise ValueError(f"kind muss einer von {VALID_CONSTRAINT_KINDS} sein.")
+        return v
+
+
+class ConstraintRead(BaseModel):
+    """Response-Schema fuer ein Constraint."""
+    id: int
+    project_id: int
+    name: str
+    kind: str
+    expression: dict
+    is_valid: bool
+    created_at: str
+    updated_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm(cls, obj):
+        # Custom serialization: parse expression_json from string to dict
+        import json
+        data = obj.__dict__.copy()
+        data['expression'] = json.loads(obj.expression_json) if obj.expression_json else {}
+        data.pop('expression_json', None)
+        return cls(**data)
+
+
+class ConstraintValidateRequest(BaseModel):
+    """Request-Schema zur Validierung eines AST ohne Speicherung."""
+    expression: dict
+    kind: str = "forbid"
+    consequence: Optional[dict] = None
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, v: str) -> str:
+        if v not in VALID_CONSTRAINT_KINDS:
+            raise ValueError(f"kind muss einer von {VALID_CONSTRAINT_KINDS} sein.")
+        return v
+
+
+class ConstraintValidateResponse(BaseModel):
+    """Response-Schema fuer AST-Validierung."""
+    is_valid: bool
+    errors: List[str] = []
+    warnings: List[str] = []
+    leaf_count: int = 0
+    depth: int = 0
