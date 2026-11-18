@@ -3,7 +3,9 @@
 //
 // Zeigt ein deutliches Banner wenn Daten veraltet sind (Optimistic Concurrency Conflict).
 // Kein automatisches, stilles Ueberschreiben ohne Nutzerinteraktion.
+// REQ-6005: i18n
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface StaleDataWarningProps {
   /** Wer hat die Aenderung vorgenommen (optional, aus 409-Response) */
@@ -28,6 +30,7 @@ export default function StaleDataWarning({
   visible,
   onClose,
 }: StaleDataWarningProps) {
+  const { t } = useTranslation();
   const [showConfirm, setShowConfirm] = useState(false);
 
   if (!visible) return null;
@@ -52,15 +55,15 @@ export default function StaleDataWarning({
             </svg>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-theme-warning">
-                Diese Ansicht ist veraltet
+                {t('staleDataWarning.title')}
               </h3>
               <p className="text-sm text-theme-text-secondary mt-1">
                 {modifiedBy
-                  ? `Diese Daten wurden zwischenzeitlich von ${modifiedBy} geaendert.`
-                  : "Diese Daten wurden zwischenzeitlich von einer anderen Person geaendert."}
+                  ? t('staleDataWarning.messageModifiedBy', { user: modifiedBy })
+                  : t('staleDataWarning.messageGeneral')}
                 {modifiedAt && (
                   <span className="block text-xs text-theme-text-muted">
-                    Letzte Aenderung: {modifiedAt}
+                    {t('staleDataWarning.lastModified', { date: modifiedAt })}
                   </span>
                 )}
               </p>
@@ -68,7 +71,7 @@ export default function StaleDataWarning({
             <button
               onClick={onClose}
               className="text-theme-text-muted hover:text-theme-text"
-              aria-label="Schliessen"
+              aria-label={t('common.close')}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -80,13 +83,13 @@ export default function StaleDataWarning({
               onClick={onReload}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-theme-accent-text bg-theme-warning hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-warning"
             >
-              Neu laden
+              {t('staleDataWarning.reload')}
             </button>
             <button
               onClick={() => setShowConfirm(true)}
               className="inline-flex items-center px-3 py-1.5 border border-theme-border text-sm font-medium rounded-md text-theme-text bg-theme-surface hover:bg-theme-surface-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-warning"
             >
-              Trotzdem ueberschreiben
+              {t('staleDataWarning.overwrite')}
             </button>
           </div>
         </div>
@@ -97,18 +100,17 @@ export default function StaleDataWarning({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-theme-surface rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 border border-theme-border">
             <h3 className="text-lg font-semibold text-theme-text">
-              Ueberschreiben bestaetigen
+              {t('staleDataWarning.confirmOverwrite.title')}
             </h3>
             <p className="mt-2 text-sm text-theme-text-secondary">
-              Du bist dabei, die Aenderungen einer anderen Person zu ueberschreiben.
-              Diese Aktion kann nicht rueckgaengig gemacht werden.
+              {t('staleDataWarning.confirmOverwrite.message')}
             </p>
             <div className="mt-4 flex gap-2 justify-end">
               <button
                 onClick={() => setShowConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-theme-text-muted bg-theme-surface-hover hover:opacity-90 rounded-md border border-theme-border"
               >
-                Abbrechen
+                {t('staleDataWarning.confirmOverwrite.cancel')}
               </button>
               <button
                 onClick={() => {
@@ -117,7 +119,7 @@ export default function StaleDataWarning({
                 }}
                 className="px-4 py-2 text-sm font-medium text-theme-accent-text bg-theme-danger hover:opacity-90 rounded-md"
               >
-                Trotzdem ueberschreiben
+                {t('staleDataWarning.confirmOverwrite.confirm')}
               </button>
             </div>
           </div>

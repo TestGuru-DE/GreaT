@@ -3,6 +3,31 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import StaleDataWarning from "../StaleDataWarning";
 
+// REQ-6005: i18n mock for StaleDataWarning tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "staleDataWarning.title": "Diese Ansicht ist veraltet",
+        "staleDataWarning.messageModifiedBy": "Diese Daten wurden zwischenzeitlich von {{user}} geaendert.",
+        "staleDataWarning.messageGeneral": "Diese Daten wurden zwischenzeitlich von einer anderen Person geaendert.",
+        "staleDataWarning.lastModified": "Letzte Aenderung: {{date}}",
+        "staleDataWarning.reload": "Neu laden",
+        "staleDataWarning.overwrite": "Trotzdem ueberschreiben",
+        "staleDataWarning.confirmOverwrite.title": "Ueberschreiben bestaetigen",
+        "staleDataWarning.confirmOverwrite.message": "Du bist dabei, die Aenderungen einer anderen Person zu ueberschreiben. Diese Aktion kann nicht rueckgaengig gemacht werden.",
+        "staleDataWarning.confirmOverwrite.cancel": "Abbrechen",
+        "staleDataWarning.confirmOverwrite.confirm": "Trotzdem ueberschreiben",
+        "common.close": "Schließen",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 describe("StaleDataWarning - REQ-4022", () => {
   const mockOnReload = vi.fn();
   const mockOnOverwrite = vi.fn();
@@ -102,7 +127,7 @@ describe("StaleDataWarning - REQ-4022", () => {
 
   it("Close-Button schliesst Banner", () => {
     renderComponent({ visible: true });
-    const closeBtn = screen.getByRole("button", { name: /Schliessen/i });
+    const closeBtn = screen.getByRole("button", { name: /Schließen/i });
     fireEvent.click(closeBtn);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });

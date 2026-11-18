@@ -1,5 +1,7 @@
 ﻿// REQ-3041: BVADialog – Modal-Container fuer Grenzwertanalyse
+// REQ-6005: i18n
 import { useEffect, useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { BVAInputPanel } from "./BVAInputPanel";
 import { PreviewTable } from "./PreviewTable";
 import { NumberlineVisualization } from "./NumberlineVisualization";
@@ -26,6 +28,7 @@ export function BVADialog({
   onClose,
   onApply,
 }: BVADialogProps) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<BVAConfig>({
     min: "",
     max: "",
@@ -82,7 +85,7 @@ export function BVADialog({
       onApply(response.values);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unbekannter Fehler");
+      setError(err instanceof Error ? err.message : t('errors.unknown'));
     } finally {
       setLoading(false);
     }
@@ -113,10 +116,10 @@ export function BVADialog({
             id="bva-dialog-title"
             className="text-lg font-bold text-slate-800"
           >
-            Grenzwertanalyse (BVA)
+            {t('bvaDialog.title', { categoryName })}
           </h2>
           <p className="text-sm text-slate-600 mt-1">
-            Kategorie: <span className="font-semibold">{categoryName}</span>
+            {t('bvaDialog.category')}: <span className="font-semibold">{categoryName}</span>
           </p>
         </div>
 
@@ -128,7 +131,7 @@ export function BVADialog({
           {points.length > 0 && (
             <div className="bg-slate-50 rounded-lg p-4">
               <h3 className="text-sm font-semibold text-slate-700 mb-3">
-                Zahlenstrahl
+                {t('bvaDialog.numberline')}
               </h3>
               <NumberlineVisualization points={points} />
             </div>
@@ -138,7 +141,7 @@ export function BVADialog({
           {points.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-2">
-                Vorschau ({points.length} Werte)
+                {t('bvaDialog.preview', { count: points.length })}
               </h3>
               <PreviewTable
                 points={points}
@@ -150,7 +153,7 @@ export function BVADialog({
           {/* Backend-Fehler */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-700 font-semibold">Fehler</p>
+              <p className="text-sm text-red-700 font-semibold">{t('common.error')}</p>
               <p className="text-sm text-red-600 mt-1">{error}</p>
             </div>
           )}
@@ -163,14 +166,14 @@ export function BVADialog({
             disabled={loading}
             className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
           >
-            Abbrechen
+            {t('bvaDialog.cancel')}
           </button>
           <button
             onClick={handleApply}
             disabled={!isValid || loading}
             className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Wird angewendet..." : "Anwenden"}
+            {loading ? t('bvaDialog.applying') : t('bvaDialog.apply')}
           </button>
         </div>
       </div>

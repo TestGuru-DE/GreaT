@@ -2,6 +2,27 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MaxTestCasesSettingsCard } from '../MaxTestCasesSettingsCard';
 
+// REQ-6005: i18n mock for MaxTestCasesSettingsCard tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "maxTestCases.title": "Maximale Anzahl Testfälle",
+        "maxTestCases.label": "Obergrenze pro Generierung",
+        "maxTestCases.description": "Standard ist <strong>{{default}}</strong>. Verhindert, dass eine Generierung unbegrenzt viele Testfälle erzeugt.",
+        "maxTestCases.currentLimit": "Aktuell gewählte Obergrenze:",
+        "maxTestCases.save": "Speichern",
+        "maxTestCases.success": "Obergrenze auf {{count}} Testfälle gesetzt. Wird ab der nächsten Generierung angewendet.",
+        "maxTestCases.error": "Ungültiger Wert.",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 describe('MaxTestCasesSettingsCard', () => {
   beforeEach(() => {
     localStorage.clear();

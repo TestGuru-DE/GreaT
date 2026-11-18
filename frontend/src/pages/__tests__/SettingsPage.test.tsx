@@ -3,6 +3,74 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from '../SettingsPage';
 
+// REQ-6005: i18n mock for SettingsPage tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "settings.title": "Einstellungen",
+        "settings.appearance.title": "Erscheinungsbild",
+        "settings.appearance.description": "Waehle ein Theme fuer die Oberflaeche. Die Einstellung wird automatisch gespeichert.",
+        "settings.backup.title": "Datensicherung",
+        "settings.backup.create.title": "Sicherung erstellen",
+        "settings.backup.create.passwordPlaceholder": "Passwort (optional, fuer Verschluesselung)",
+        "settings.backup.create.downloadBtn": "Sicherung herunterladen",
+        "settings.backup.create.downloadBtnLoading": "Lädt...",
+        "settings.backup.restore.title": "Sicherung wiederherstellen",
+        "settings.backup.restore.passwordPlaceholder": "Passwort (falls verschluesselt)",
+        "settings.backup.restore.restoreBtn": "Wiederherstellen",
+        "settings.backup.restore.restoreBtnLoading": "Verarbeitet...",
+        "settings.backup.restore.success": "OK {{count}} Projekte wiederhergestellt",
+        "settings.backup.restore.error": "Fehler: {{message}}",
+        "settings.database.title": "Datenbank",
+        "settings.database.description": "Alle Projekte, Kategorien, Werte und Generierungen werden vollstaendig auf den Startzustand zurueckgesetzt.",
+        "settings.database.resetBtn": "Datenbank zuruecksetzen",
+        "settings.database.dialog.title": "Datenbank wirklich zuruecksetzen?",
+        "settings.database.dialog.confirm": "Bist du sicher? Du loescht damit alles.",
+        "settings.database.dialog.warning": "Das Zuruecksetzen entfernt alle Projekte, Kategorien, Werte, Regeln und Generierungen von der Datenbank.",
+        "settings.database.dialog.yesDoIt": "Ja mach",
+        "settings.database.dialog.backupFirst": "Vorher Backup",
+        "settings.database.dialog.cancel": "Ups nein",
+        "settings.database.resetSuccessAdmin": "OK Datenbank wurde zurueckgesetzt.\\n\\nEin Standard-Admin wurde erstellt:\\nBenutzername: {{username}}\\n\\nBitte aendere das Passwort nach dem Login!",
+        "settings.database.resetSuccess": "OK Datenbank wurde zurueckgesetzt. Deine Session bleibt aktiv.",
+        "settings.database.resetError": "Fehler: {{message}}",
+        "settings.dataclasses.title": "Datenklassen",
+        "settings.dataclasses.description": "Beispielklassen importieren von Bug Magnet Git.<br /><span class=\"text-xs text-theme-text-muted\">Fuer die Inhalte ist der Urheber verantwortlich.</span>",
+        "settings.dataclasses.source": "github.com/gojko/bugmagnet/blob/master/template/config.json",
+        "settings.dataclasses.importing": "Importiere...",
+        "settings.dataclasses.refresh": "Aktualisieren",
+        "settings.dataclasses.importBtn": "Importieren",
+        "settings.dataclasses.importSuccess": "OK Import abgeschlossen ({{count}} Knoten)",
+        "settings.dataclasses.importError": "Fehler: {{message}}",
+        "portSettings.title": "Port-Einstellung",
+        "portSettings.label": "Bevorzugter Port",
+        "portSettings.description": "Standard ist <strong>8000</strong>. <strong>5173</strong> bleibt nur die Dev-Option. Nach einer Aenderung muss der Server neu gestartet werden.",
+        "portSettings.currentUrl": "Aktuelle lokale URL:",
+        "portSettings.save": "Speichern",
+        "portSettings.error": "Bitte einen Port zwischen 1 und 65535 eingeben.",
+        "portSettings.success": "Port {{port}} gespeichert. Neustart erforderlich.",
+        "maxTestCases.title": "Maximale Anzahl Testfälle",
+        "maxTestCases.label": "Obergrenze pro Generierung",
+        "maxTestCases.description": "Standard ist <strong>{{default}}</strong>. Verhindert, dass eine Generierung unbegrenzt viele Testfälle erzeugt.",
+        "maxTestCases.currentLimit": "Aktuell gewählte Obergrenze:",
+        "maxTestCases.save": "Speichern",
+        "maxTestCases.success": "Obergrenze auf {{count}} Testfälle gesetzt. Wird ab der nächsten Generierung angewendet.",
+        "maxTestCases.error": "Ungültiger Wert.",
+        "themeSwitcher.normal": "☀️ Normal",
+        "themeSwitcher.dark": "🌙 Dark",
+        "themeSwitcher.steampunk": "⚙️ Steampunk",
+        "themeSwitcher.rainbow": "🌈 Rainbow",
+        "themeSwitcher.heavyMetal": "🤘 Heavy Metal",
+        "themeSwitcher.system": "🖥️ System (OS)",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock('../../api/client', () => ({
   backupApi: {
     create: vi.fn(),
@@ -86,7 +154,7 @@ describe('SettingsPage', () => {
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /Ja mach/i })).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: /Vorher Backup/i })).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: /Upsi nein/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /Ups nein/i })).toBeInTheDocument();
   });
 
   it('triggers backup before database reset when choosing backup option', async () => {
@@ -127,7 +195,7 @@ describe('SettingsPage', () => {
     render(<SettingsPage />);
 
     await user.click(screen.getByRole('button', { name: /Datenbank zuruecksetzen|Datenbank loeschen/i }));
-    await user.click(screen.getByRole('button', { name: /Upsi nein/i }));
+    await user.click(screen.getByRole('button', { name: /Ups nein/i }));
 
     expect(screen.queryByRole('dialog', { name: /Datenbank wirklich zuruecksetzen\?/i })).not.toBeInTheDocument();
     // reset should not have been called - only create might have been called for backup

@@ -1,6 +1,8 @@
 ﻿// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
+// REQ-6005: i18n
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../store/projectStore";
 import CategoryTree from "../components/CategoryTree";
 import TestCasePanel from "../components/TestCasePanel";
@@ -18,6 +20,7 @@ import { useToastStore } from "../components/Toast";
 type RightTab = "generate" | "rules" | "generations" | "decision";
 
 export default function ProjectDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const projectId = Number(id);
@@ -54,7 +57,7 @@ export default function ProjectDetailPage() {
         setConflict(
           {
             type: 'version_conflict',
-            message: (d.message as string) ?? 'Diese Ressource wurde zwischenzeitlich geaendert',
+            message: (d.message as string) ?? t('projectDetail.invalidId'),
             clientVersion: d.client_version as number,
             serverVersion: d.server_version as number,
           },
@@ -68,7 +71,7 @@ export default function ProjectDetailPage() {
   }
 
   if (!id || isNaN(projectId)) {
-    return <div className="p-8 text-red-500">Ungültige Projekt-ID</div>;
+    return <div className="p-8 text-red-500">{t('projectDetail.invalidId')}</div>;
   }
 
   // REQ-3045: Theme-Tokens statt hartkodierter Light-Farben, damit Frames dem aktiven Theme folgen
@@ -91,7 +94,7 @@ export default function ProjectDetailPage() {
       <header className="bg-theme-surface border-b border-theme-border px-6 py-3 flex items-center gap-4">
         <button onClick={() => navigate("/projects")}
           className="text-theme-text-secondary hover:text-theme-text text-sm flex items-center gap-1">
-          &larr; Projekte
+          {t('projectDetail.backToProjects')}
         </button>
         {renaming ? (
           <form
@@ -99,18 +102,18 @@ export default function ProjectDetailPage() {
             onSubmit={(e) => { e.preventDefault(); if (nameDraft.trim()) saveName(nameDraft.trim(), project?.version); }}
           >
             <input
-              aria-label="Projektname"
+              aria-label={t('projectDetail.projectNameLabel')}
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
               className="px-2 py-1 text-sm rounded border border-theme-border bg-theme-bg text-theme-text"
             />
-            <button type="submit" className="text-sm text-theme-accent">Speichern</button>
-            <button type="button" className="text-sm text-theme-text-secondary" onClick={() => setRenaming(false)}>Abbrechen</button>
+            <button type="submit" className="text-sm text-theme-accent">{t('projectDetail.saveName')}</button>
+            <button type="button" className="text-sm text-theme-text-secondary" onClick={() => setRenaming(false)}>{t('projectDetail.cancelRename')}</button>
           </form>
         ) : (
           <>
             <h1 className="text-base font-bold text-theme-text">
-              G.R.E.A.T. &ndash; Projekt {projectName}
+              {t('projectDetail.title', { name: projectName })}
             </h1>
             {project && (
               <button
@@ -118,7 +121,7 @@ export default function ProjectDetailPage() {
                 className="text-sm text-theme-text-secondary hover:text-theme-text"
                 onClick={() => { setNameDraft(project.name); setRenaming(true); }}
               >
-                Umbenennen
+                {t('projectDetail.rename')}
               </button>
             )}
           </>
@@ -130,7 +133,7 @@ export default function ProjectDetailPage() {
         {/* Linke Spalte: Kategorienbaum */}
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-4 overflow-auto">
           <h2 className="text-base font-semibold text-theme-text mb-3">
-            Kategorien &amp; Werte
+            {t('projectDetail.categoriesTitle')}
           </h2>
           <CategoryTree projectId={projectId} />
         </div>
@@ -138,7 +141,7 @@ export default function ProjectDetailPage() {
         {/* Mittlere Spalte: Regeln-Visualisierung (REQ-NEU) */}
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm overflow-hidden flex flex-col min-h-0 hidden lg:flex">
           <h2 className="text-xs font-semibold text-theme-text-secondary uppercase tracking-wide px-3 pt-3 mb-1">
-            Regel-Verbindungen
+            {t('projectDetail.ruleConnections')}
           </h2>
           <div className="flex-1 overflow-hidden px-1 pb-1">
             <RuleVisualization projectId={projectId} />
@@ -149,16 +152,16 @@ export default function ProjectDetailPage() {
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm flex flex-col min-h-0">
           <div className="flex border-b border-theme-border px-4 pt-3">
             <button onClick={() => setRightTab("generate")} className={tabClass("generate")}>
-              Testfall-Generierung
+              {t('projectDetail.tabGenerate')}
             </button>
             <button onClick={() => setRightTab("rules")} className={tabClass("rules")}>
-              Regeln
+              {t('projectDetail.tabRules')}
             </button>
             <button onClick={() => setRightTab("generations")} className={tabClass("generations")}>
-              Generierte Testfälle
+              {t('projectDetail.tabGenerations')}
             </button>
             <button onClick={() => setRightTab("decision")} className={tabClass("decision")}>
-              Entscheidungstabelle
+              {t('projectDetail.tabDecision')}
             </button>
           </div>
 

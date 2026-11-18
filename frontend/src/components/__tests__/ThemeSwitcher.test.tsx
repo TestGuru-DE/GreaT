@@ -2,6 +2,24 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ThemeSwitcher } from '../ThemeSwitcher'
 
+// REQ-6005: i18n mock for ThemeSwitcher tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const tr: Record<string, string> = {
+        "themeSwitcher.normal": "☀️ Normal",
+        "themeSwitcher.dark": "🌙 Dark",
+        "themeSwitcher.steampunk": "⚙️ Steampunk",
+        "themeSwitcher.rainbow": "🌈 Rainbow",
+        "themeSwitcher.heavyMetal": "🤘 Heavy Metal",
+        "themeSwitcher.system": "🖥️ System (OS)",
+      };
+      return tr[key] ?? key;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 describe('ThemeSwitcher', () => {
   beforeEach(() => {
     localStorage.clear()

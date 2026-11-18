@@ -4,6 +4,52 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import RulesPanel from "../RulesPanel";
 import { rulesApi, categoriesApi, valuesApi } from "../../api/client";
 
+// REQ-6005: i18n mock for RulesPanel tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "rulesPanel.loading": "Lade Regeln...",
+        "rulesPanel.needTwoCategories": "Mindestens zwei Kategorien erforderlich um Regeln anzulegen.",
+        "rulesPanel.createTitle": "Neue Regel anlegen",
+        "rulesPanel.typeLabel": "Regeltyp",
+        "rulesPanel.ifCategoryLabel": "Wenn Kategorie",
+        "rulesPanel.valueLabel": "Wert",
+        "rulesPanel.thenCategoryLabelExclude": "Paar-Kategorie",
+        "rulesPanel.thenCategoryLabel": "Dann Kategorie",
+        "rulesPanel.thenValueLabelCombine": "Erlaubte Werte (Mehrfachauswahl)",
+        "rulesPanel.saveBtn": "Regel speichern",
+        "rulesPanel.ruleCount": "{{count}} Regel{{count, select, 1 {} other {n}}}",
+        "rulesPanel.noRules": "Noch keine Regeln angelegt.",
+        "rulesPanel.ifLabel": "Wenn",
+        "rulesPanel.thenLabel": "Dann",
+        "rulesPanel.excludeLabel": "Nicht mit",
+        "rulesPanel.conflictWarning": "⚠️ Regelwiderspruch mit Regel #{{ids}}",
+        "rulesPanel.deleteConfirm": "Regel löschen?",
+        "rulesPanel.deleteTitle": "Regel löschen",
+        "rulesPanel.saved": "Regel gespeichert.",
+        "rulesPanel.saveError": "Fehler beim Speichern.",
+        "rulesPanel.conflictWith": "Regelwiderspruch mit Regel #{{ids}}",
+        "rulesPanel.typeLabels.exclude": "Verboten (Paar nicht gemeinsam)",
+        "rulesPanel.typeLabels.dependency": "Abhängig (Wenn/Dann)",
+        "rulesPanel.typeLabels.combine": "Kombinieren (Fan-out)",
+      };
+      let v = tr[key] ?? key;
+      if (params) {
+        // Handle i18next pluralization: {{count, select, 1 {} other {n}}}
+        if (v.includes("{{count, select, 1 {} other {n}}}") && params.count === 1) {
+          v = v.replace(/\{\{count, select, 1 \{\} other \{n\}\}\}/, "");
+        } else if (v.includes("{{count, select, 1 {} other {n}}}")) {
+          v = v.replace(/\{\{count, select, 1 \{\} other \{n\}\}\}/, "n");
+        }
+        v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      }
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock("../../api/client", () => ({
   rulesApi: {
     list: vi.fn(),

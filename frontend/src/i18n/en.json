@@ -35,7 +35,19 @@
     "save": "Save",
     "delete": "Delete",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "create": "Create",
+    "rename": "Rename",
+    "edit": "Edit",
+    "search": "Search",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "undo": "Undo",
+    "redo": "Redo",
+    "linked": "linked"
   },
   "errors": {
     "invalidCredentials": "Invalid credentials",
@@ -43,6 +55,533 @@
     "sessionExpired": "Session expired, please log in again",
     "internalError": "Internal server error",
     "passwordChangeRequired": "Password change required",
-    "tooManyAttempts": "Too many attempts. Please try again later."
+    "tooManyAttempts": "Too many attempts. Please try again later.",
+    "unknown": "Unknown error"
+  },
+  "home": {
+    "title": "G.R.E.A.T.",
+    "subtitle": "Georg's Radically Simple Automated Testcase Designer",
+    "footer": "v1.8.0 &middot; F1 for help",
+    "tiles": {
+      "projects": {
+        "label": "Projects",
+        "description": "Manage and edit test projects"
+      },
+      "dataclasses": {
+        "label": "Data Classes",
+        "description": "Equivalence classes and templates"
+      },
+      "generations": {
+        "label": "Generations",
+        "description": "Generate and export test cases"
+      },
+      "settings": {
+        "label": "Settings",
+        "description": "Theme, limits and data backup"
+      },
+      "changePassword": {
+        "label": "Change Password",
+        "description": "Security settings"
+      },
+      "apiDocs": {
+        "label": "API Docs",
+        "description": "OpenAPI interface"
+      }
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "newProject": "New project...",
+    "createBtn": "Create",
+    "createBtnLoading": "...",
+    "loading": "Loading projects...",
+    "empty": "No projects yet.",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "invertSelection": "Invert selection",
+    "selected": "{{count}} selected",
+    "bulkDelete": "Delete",
+    "bulkDeleteChecking": "Checking...",
+    "deselectAllBtn": "Clear selection",
+    "open": "Open",
+    "delete": "Delete",
+    "deleteSuccess": "Project \"{{name}}\" deleted.",
+    "bulkDeleteSuccess": "{{count}} project(s) deleted.",
+    "duplicateName": "A project with this name already exists.",
+    "id": "ID",
+    "name": "Name",
+    "actions": "Actions",
+    "selectCheckbox": "Select all"
+  },
+  "projectDetail": {
+    "invalidId": "Invalid project ID",
+    "backToProjects": "&larr; Projects",
+    "title": "G.R.E.A.T. &ndash; Project {{name}}",
+    "rename": "Rename",
+    "saveName": "Save",
+    "cancelRename": "Cancel",
+    "categoriesTitle": "Categories &amp; Values",
+    "ruleConnections": "Rule Connections",
+    "tabGenerate": "Test Case Generation",
+    "tabRules": "Rules",
+    "tabGenerations": "Generated Test Cases",
+    "tabDecision": "Decision Table",
+    "projectNameLabel": "Project name"
+  },
+  "generations": {
+    "title": "All Generations",
+    "loading": "Loading generations...",
+    "empty": "No generations yet.",
+    "deleteConfirm": "Delete generation?",
+    "deleteSuccess": "Generation deleted.",
+    "renameTitle": "Double-click to rename",
+    "columns": {
+      "name": "Name",
+      "project": "Project",
+      "strategy": "Strategy",
+      "testcases": "Test Cases",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "actions": {
+      "edit": "✏️",
+      "json": "JSON",
+      "excel": "Excel",
+      "csv": "CSV",
+      "delete": "🗑️"
+    }
+  },
+  "generationsPanel": {
+    "loading": "Loading generations...",
+    "empty": "No generations for this project yet.",
+    "emptyHint": "Switch to the \"Test Case Generation\" tab to create one.",
+    "renameTitle": "Double-click to rename",
+    "deleteConfirm": "Delete generation?",
+    "editTitle": "Rename",
+    "deleteTitle": "Delete"
+  },
+  "dataClasses": {
+    "title": "🗂️ Data Class Library",
+    "tabMine": "📁 My Data Classes ({{count}})",
+    "tabSystem": "📋 Examples ({{count}})",
+    "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
+    "importExport": "Import / Export:",
+    "exportBtn": "📤 Export",
+    "importBtn": "📥 Import (JSON)",
+    "newCategory": "+ Create new category",
+    "newCategoryPlaceholder": "Name of new category...",
+    "createBtn": "Create",
+    "cancelBtn": "Cancel",
+    "loading": "Loading...",
+    "emptyMine": "No own data classes yet",
+    "emptyMineHint": "Click \"+ Create new category\" to get started",
+    "bugMagnetDesc": "Example classes from <strong>Bug Magnet</strong> – the author is responsible for the content.",
+    "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
+    "importing": "⏳ Importing...",
+    "refresh": "🔄 Refresh",
+    "importBtn": "📥 Import",
+    "emptySystem": "No example data yet – click \"Import\".",
+    "errorCreate": "Error creating: {{error}}",
+    "errorAddValue": "Error adding: {{error}}",
+    "errorDelete": "Error deleting: {{error}}",
+    "errorImport": "Error importing: {{error}}",
+    "importSuccess": "✅ {{count}} classes imported",
+    "bugMagnetImportSuccess": "✅ {{count}} nodes imported",
+    "bugMagnetImportError": "❌ Import failed: {{error}}"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "description": "Choose a theme for the interface. The setting is saved automatically."
+    },
+    "backup": {
+      "title": "Data Backup",
+      "create": {
+        "title": "Create backup",
+        "passwordPlaceholder": "Password (optional, for encryption)",
+        "downloadBtn": "Download backup",
+        "downloadBtnLoading": "Loading..."
+      },
+      "restore": {
+        "title": "Restore backup",
+        "passwordPlaceholder": "Password (if encrypted)",
+        "restoreBtn": "Restore",
+        "restoreBtnLoading": "Processing...",
+        "success": "OK {{count}} projects restored",
+        "error": "Error: {{message}}"
+      }
+    },
+    "database": {
+      "title": "Database",
+      "description": "All projects, categories, values and generations will be completely reset to the initial state.",
+      "resetBtn": "Reset database",
+      "dialog": {
+        "title": "Really reset database?",
+        "confirm": "Are you sure? You will delete everything.",
+        "warning": "Resetting removes all projects, categories, values, rules and generations from the database.",
+        "yesDoIt": "Yes, do it",
+        "backupFirst": "Backup first",
+        "cancel": "Oops, no"
+      },
+      "resetSuccessAdmin": "OK Database has been reset.\n\nA default admin was created:\nUsername: {{username}}\n\nPlease change the password after login!",
+      "resetSuccess": "OK Database has been reset. Your session remains active.",
+      "resetError": "Error: {{message}}"
+    },
+    "dataclasses": {
+      "title": "Data Classes",
+      "description": "Import example classes from Bug Magnet Git.<br /><span class=\"text-xs text-theme-text-muted\">The author is responsible for the content.</span>",
+      "source": "github.com/gojko/bugmagnet/blob/master/template/config.json",
+      "importing": "Importing...",
+      "refresh": "Refresh",
+      "importBtn": "Import",
+      "importSuccess": "OK Import completed ({{count}} nodes)",
+      "importError": "Error: {{message}}"
+    }
+  },
+  "changePassword": {
+    "title": "Change Password",
+    "success": "Password changed. Redirecting...",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "minLength": "At least {{count}} characters",
+    "changeBtn": "Change",
+    "errors": {
+      "tooShort": "The new password must be at least {{count}} characters long.",
+      "mismatch": "The new passwords do not match.",
+      "currentInvalid": "The current password is incorrect.",
+      "isDefault": "This password is a known default password and is not allowed.",
+      "tooLong": "The new password is too long.",
+      "tooManyAttempts": "Too many attempts. Please wait a moment."
+    }
+  },
+  "help": {
+    "toc": "Table of Contents",
+    "chapters": {
+      "info": "Info & License",
+      "firstSteps": "1. Getting Started",
+      "manageProjects": "2. Managing Projects",
+      "categoriesValues": "3. Categories & Values",
+      "decisionTable": "4. Decision Table",
+      "rulesClassic": "5. Rules (classic)",
+      "testcaseGeneration": "6. Test Case Generation",
+      "riskCoverage": "7. Risk Coverage",
+      "export": "8. Export",
+      "dataclasses": "9. Data Classes",
+      "settings": "10. Settings",
+      "usersRoles": "11. Users & Roles",
+      "keyboardNav": "12. Keyboard Navigation",
+      "glossary": "13. Glossary",
+      "faq": "14. FAQ",
+      "apiIntegration": "15. API Integration"
+    }
+  },
+  "staleDataWarning": {
+    "title": "This view is outdated",
+    "messageModifiedBy": "This data has been modified by {{user}}.",
+    "messageGeneral": "This data has been modified by another person.",
+    "lastModified": "Last modified: {{date}}",
+    "reload": "Reload",
+    "overwrite": "Overwrite anyway",
+    "confirmOverwrite": {
+      "title": "Confirm overwrite",
+      "message": "You are about to overwrite someone else's changes. This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Overwrite anyway"
+    }
+  },
+  "errorBoundary": {
+    "title": "An error has occurred",
+    "message": "The application could not be loaded correctly.",
+    "unknownError": "Unknown error",
+    "reload": "Reload page"
+  },
+  "deleteProjectDialog": {
+    "titleSingle": "Delete project",
+    "titleMultiple": "Delete projects",
+    "messageSingle": "The project <strong>{{name}}</strong> has",
+    "messageMultiple": "{{count}} of the selected projects have",
+    "generationsLinked": "{{count}} {{count, select, 1 {generation} other {generations}}} linked.",
+    "warning": "Deleting will permanently remove all linked generations and test cases.",
+    "confirm": "Yes – delete everything",
+    "showSingle": "Show (generations of the project)",
+    "showMultiple": "Show: {{name}}",
+    "cancel": "No – cancel"
+  },
+  "themeSwitcher": {
+    "normal": "☀️ Normal",
+    "dark": "🌙 Dark",
+    "steampunk": "⚙️ Steampunk",
+    "rainbow": "🌈 Rainbow",
+    "heavyMetal": "🤘 Heavy Metal",
+    "system": "🖥️ System (OS)"
+  },
+  "portSettings": {
+    "title": "Port Setting",
+    "label": "Preferred port",
+    "description": "Default is <strong>8000</strong>. <strong>5173</strong> remains the dev option only. A server restart is required after a change.",
+    "currentUrl": "Current local URL:",
+    "save": "Save",
+    "error": "Please enter a port between 1 and 65535.",
+    "success": "Port {{port}} saved. Restart required."
+  },
+  "maxTestCases": {
+    "title": "Maximum Number of Test Cases",
+    "label": "Limit per generation",
+    "description": "Default is <strong>{{default}}</strong>. Prevents a generation from creating an unlimited number of test cases.",
+    "currentLimit": "Currently selected limit:",
+    "save": "Save",
+    "success": "Limit set to {{count}} test cases. Applied from the next generation.",
+    "error": "Invalid value."
+  },
+  "userManagement": {
+    "title": "User Management",
+    "createUser": "Create new user",
+    "createSuccess": "User created successfully",
+    "roleChanged": "Role changed successfully",
+    "activated": "User is now active",
+    "deactivated": "User is now inactive",
+    "deleted": "User \"{{username}}\" deleted successfully",
+    "passwordChanged": "Password changed successfully",
+    "columns": {
+      "username": "Username",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "roles": {
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "status": {
+      "active": "active",
+      "inactive": "inactive"
+    },
+    "actions": {
+      "changePassword": "Change password",
+      "delete": "Delete",
+      "deactivate": "deactivate",
+      "activate": "activate"
+    },
+    "createDialog": {
+      "title": "Create new user",
+      "username": "Username",
+      "usernamePlaceholder": "Username",
+      "password": "Password",
+      "passwordPlaceholder": "Password",
+      "role": "Role",
+      "create": "Create",
+      "createLoading": "...",
+      "cancel": "Cancel"
+    },
+    "deleteDialog": {
+      "title": "Delete user",
+      "confirm": "Do you really want to delete user <strong>{{username}}</strong>?",
+      "warning": "This action cannot be undone.",
+      "confirmBtn": "Yes – delete",
+      "cancel": "Cancel"
+    },
+    "passwordDialog": {
+      "title": "Change password for {{username}}",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "New Password",
+      "change": "Change",
+      "cancel": "Cancel"
+    }
+  },
+  "categoryTree": {
+    "loading": "Loading categories...",
+    "newCategoryPlaceholder": "Enter new category...",
+    "newValuePlaceholder": "New value... (Enter)",
+    "noCategories": "No categories yet",
+    "noCategoriesHint": "Enter a name above and click +",
+    "noValues": "No values yet",
+    "valuesCount": "{{count}} values",
+    "loadValues": "Load values (click)",
+    "keyboardHelp": {
+      "newCategory": "Alt+N: New category",
+      "delete": "DEL: Delete",
+      "rename": "F2/Double-click: Rename",
+      "contextMenu": "Right-click: Context menu",
+      "sort": "Drag: Sort",
+      "undo": "Ctrl+Z: Undo",
+      "redo": "Ctrl+Y: Redo"
+    },
+    "contextMenu": {
+      "rename": "Rename (F2)",
+      "typeNormal": "Type: Normal",
+      "typeCause": "Type: Cause",
+      "typeEffect": "Type: Effect",
+      "addValue": "Add value",
+      "applyDataClass": "Apply data class...",
+      "bva": "Boundary Value Analysis...",
+      "delete": "Delete",
+      "deleteCategoryConfirm": "Delete category?",
+      "deleteValueConfirm": "Delete value?",
+      "setDefault": "★ Mark as default",
+      "unsetDefault": "✕ Remove default"
+    },
+    "categoryType": {
+      "normal": "Normal",
+      "ergebnis": "Result",
+      "ursache": "Cause",
+      "wirkung": "Effect"
+    },
+    "toast": {
+      "categoryCreated": "Category created",
+      "categoryDeleted": "Category deleted",
+      "categoryRenamed": "Category renamed",
+      "categoryTypeChanged": "Category type changed",
+      "valueAdded": "Value added",
+      "valueDeleted": "Value deleted",
+      "valueRenamed": "Value renamed",
+      "orderSaved": "Order saved",
+      "errorCreate": "Error creating",
+      "errorDelete": "Error deleting",
+      "errorRename": "Error renaming",
+      "errorTypeChange": "Error changing type",
+      "errorAdd": "Error adding",
+      "errorSort": "Error sorting",
+      "error": "Error",
+      "valuesApplied": "{{count}} values applied",
+      "boundaryValuesAdded": "{{count}} boundary values added"
+    }
+  },
+  "rulesPanel": {
+    "loading": "Loading rules...",
+    "needTwoCategories": "At least two categories required to create rules.",
+    "createTitle": "Create new rule",
+    "typeLabel": "Rule type",
+    "ifCategoryLabel": "If category",
+    "valueLabel": "Value",
+    "thenCategoryLabelExclude": "Pair category",
+    "thenCategoryLabel": "Then category",
+    "thenValueLabelCombine": "Allowed values (multiple selection)",
+    "saveBtn": "Save rule",
+    "ruleCount": "{{count}} rule{{count, select, 1 {} other {s}}}",
+    "noRules": "No rules created yet.",
+    "ifLabel": "If",
+    "thenLabel": "Then",
+    "excludeLabel": "Not with",
+    "conflictWarning": "⚠️ Rule conflict with rule #{{ids}}",
+    "deleteConfirm": "Delete rule?",
+    "deleteTitle": "Delete rule",
+    "saved": "Rule saved.",
+    "saveError": "Error saving.",
+    "conflictWith": "Rule conflict with rule #{{ids}}",
+    "typeLabels": {
+      "exclude": "Forbidden (pair not together)",
+      "dependency": "Dependent (If/Then)",
+      "combine": "Combine (fan-out)"
+    }
+  },
+  "decisionTableHelp": {
+    "title": "📋 Decision Table – Help",
+    "close": "Close",
+    "back": "← Back",
+    "next": "Next →",
+    "done": "Got it ✓",
+    "step1": {
+      "title": "Step 1: Create categories",
+      "content": "Create at least <strong>one cause</strong> and <strong>one effect</strong>.",
+      "cause": "Cause (Condition): A condition that can occur (e.g. \"User is logged in\")",
+      "effect": "Effect (Action): An action or result (e.g. \"Access granted\")",
+      "warning": "⚠️ The \"Decision Table\" button is only active when BOTH types exist!"
+    },
+    "step2": {
+      "title": "Step 2: Assign values (optional)",
+      "content": "By default, the table uses <strong>Y/N</strong> (Yes/No) for causes.",
+      "customValues": "You can also create your own values for causes (Extended Entry), e.g.:",
+      "textMode": "For effects, you can activate <strong>text mode</strong> to enter free-text values."
+    },
+    "step3": {
+      "title": "Step 3: Generate table",
+      "content": "Click the <strong>\"📋 Decision Table\"</strong> button:",
+      "firstClick": "First click: Activates the mode",
+      "secondClick": "Second click (\"⚡ Generate\"): Creates the table",
+      "info": "The table shows all possible combinations of your causes (2^N rules).",
+      "tip": "💡 With 3 causes = 2³ = 8 rules. With 5 causes = 2⁵ = 32 rules."
+    },
+    "step4": {
+      "title": "Step 4: Fill in effects",
+      "content": "For each rule, enter which effects occur:",
+      "x": "<strong>X</strong> = This effect occurs",
+      "dash": "<strong>—</strong> = This effect does not occur (Don't Care)",
+      "dot": "<strong>·</strong> = Not yet defined",
+      "textMode": "In <strong>text mode</strong> you can enter free-text values instead of X/—."
+    },
+    "step5": {
+      "title": "Step 5: Add constraints",
+      "content": "Constraints describe logical relationships between causes or effects:",
+      "exclusive": "<strong>E (Exclusive):</strong> At most one cause can be true",
+      "oneOnlyOne": "<strong>O (One-and-Only-One):</strong> Exactly one cause must be true",
+      "inclusive": "<strong>I (Inclusive):</strong> At least one cause must be true",
+      "requires": "<strong>R (Requires):</strong> If cause A is true, then cause B too",
+      "mask": "<strong>M (Mask):</strong> If effect A is active, then effect B is blocked"
+    },
+    "step6": {
+      "title": "Step 6: Check and optimize",
+      "content": "Use the <strong>\"📦 Collapse\"</strong> and <strong>\"🔍 Check\"</strong> buttons:",
+      "collapse": "<strong>Collapse:</strong> Automatically merges redundant rules (Collapsing)",
+      "check": "<strong>Check:</strong> Shows whether the table is complete, has contradictions or gaps",
+      "legend": "✅ Green = Complete | 🟡 Yellow = Overlaps | 🔴 Red = Gaps"
+    }
+  },
+  "dataNodeTree": {
+    "loading": "Loading...",
+    "noNodes": "No nodes yet",
+    "addChild": "Sub-item",
+    "addValue": "Value",
+    "delete": "Delete",
+    "deleteConfirm": "Delete node and all sub-items?",
+    "errorCreate": "Error creating: {{error}}",
+    "errorDelete": "Error deleting: {{error}}",
+    "errorAddValue": "Error adding: {{error}}",
+    "category": "Category",
+    "group": "Group",
+    "class": "Class",
+    "valuesCount": "{{count}} values",
+    "childPlaceholder": "Name of group/class...",
+    "valuePlaceholder": "New value...",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "value": "Value"
+  },
+  "dataNodeApplyDialog": {
+    "title": "Apply data class to: {{categoryName}}",
+    "search": "Search...",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "success": "{{count}} values applied",
+    "loading": "Loading data classes...",
+    "empty": "No data classes available."
+  },
+  "bvaDialog": {
+    "title": "Boundary Value Analysis: {{categoryName}}",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "applying": "Applying...",
+    "loading": "Loading...",
+    "success": "{{count}} boundary values added",
+    "category": "Category",
+    "numberline": "Number line",
+    "preview": "Preview ({{count}} values)"
+  },
+  "undoRedo": {
+    "undo": "Undo",
+    "redo": "Redo",
+    "undoTitle": "Undo (Ctrl+Z)",
+    "redoTitle": "Redo (Ctrl+Y)"
+  },
+  "contextMenu": {
+    "rename": "Rename (F2)",
+    "delete": "Delete"
+  },
+  "toast": {
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning"
   }
 }

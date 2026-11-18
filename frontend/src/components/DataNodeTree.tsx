@@ -1,5 +1,7 @@
 ﻿// REQ-4018: Hierarchische Datenklassen - Baumansicht
+// REQ-6005: i18n
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { DataNode } from '../types';
 
 interface Props {
@@ -11,11 +13,11 @@ interface Props {
   onRename?: (nodeId: number, name: string) => void;
 }
 
-function getNodeLabel(node: DataNode, depth: number): string {
+function getNodeLabel(node: DataNode, depth: number, t: (key: string) => string): string {
   const hasChildren = node.children.length > 0;
-  if (!hasChildren) return 'Klasse';
-  if (depth === 0) return 'Kategorie';
-  return 'Gruppe';
+  if (!hasChildren) return t('dataNodeTree.class');
+  if (depth === 0) return t('dataNodeTree.category');
+  return t('dataNodeTree.group');
 }
 
 export function DataNodeTree({
@@ -26,6 +28,7 @@ export function DataNodeTree({
   onDelete,
   onRename,
 }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [addingChild, setAddingChild] = useState<number | null>(null);
   const [childName, setChildName] = useState('');
@@ -43,7 +46,7 @@ export function DataNodeTree({
   return (
     <ul className={`space-y-1 ${depth > 0 ? 'ml-4 border-l border-theme-border pl-3' : ''}`}>
       {nodes.map((node) => {
-        const label = getNodeLabel(node, depth);
+        const label = getNodeLabel(node, depth, t);
         const isExpanded = expanded.has(node.id);
         const hasContent = node.children.length > 0 || node.values.length > 0;
 
@@ -55,7 +58,7 @@ export function DataNodeTree({
                 <button
                   onClick={() => toggleExpand(node.id)}
                   className="text-theme-text-muted w-4 text-xs"
-                  aria-label={isExpanded ? 'Zuklappen' : 'Aufklappen'}
+                  aria-label={isExpanded ? t('dataNodeTree.collapse') : t('dataNodeTree.expand')}
                 >
                   {isExpanded ? '▼' : '▶'}
                 </button>
@@ -72,7 +75,7 @@ export function DataNodeTree({
               {/* Wert-Count */}
               {node.values.length > 0 && (
                 <span className="text-xs text-theme-text-muted">
-                  {node.values.length} Werte
+                  {t('dataNodeTree.valuesCount', { count: node.values.length })}
                 </span>
               )}
 
@@ -80,21 +83,21 @@ export function DataNodeTree({
               {!node.is_system && (
                 <div className="hidden group-hover:flex gap-1">
                   <button
-                    title="Untergruppe hinzufügen"
+                    title={t('dataNodeTree.addChild')}
                     onClick={() => { setAddingChild(node.id); setAddingValue(null); }}
                     className="text-xs px-1.5 py-0.5 rounded bg-primary-600 text-white hover:bg-opacity-90"
                   >
-                    + Gruppe
+                    + {t('dataNodeTree.group')}
                   </button>
                   <button
-                    title="Wert hinzufügen"
+                    title={t('dataNodeTree.addValue')}
                     onClick={() => { setAddingValue(node.id); setAddingChild(null); }}
                     className="text-xs px-1.5 py-0.5 rounded bg-theme-surface border border-theme-border text-theme-text hover:bg-theme-border"
                   >
-                    + Wert
+                    + {t('dataNodeTree.value')}
                   </button>
                   <button
-                    title="Löschen"
+                    title={t('dataNodeTree.delete')}
                     onClick={() => onDelete?.(node.id)}
                     className="text-xs px-1.5 py-0.5 rounded text-red-500 hover:bg-red-50"
                   >
@@ -123,7 +126,7 @@ export function DataNodeTree({
                       setAddingChild(null); 
                     }
                   }}
-                  placeholder="Name der Gruppe/Klasse..."
+                  placeholder={t('dataNodeTree.childPlaceholder')}
                   className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
                 />
                 <button 
@@ -166,7 +169,7 @@ export function DataNodeTree({
                       setAddingValue(null); 
                     }
                   }}
-                  placeholder="Neuer Wert..."
+                  placeholder={t('dataNodeTree.valuePlaceholder')}
                   className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
                 />
                 <button 

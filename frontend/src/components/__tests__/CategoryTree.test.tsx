@@ -8,6 +8,67 @@ import CategoryTree from "../CategoryTree";
 import { useCategoryStore } from "../../store/categoryStore";
 import { datanodesApi } from "../../api/client";
 
+// REQ-6005: i18n mock for CategoryTree tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "categoryTree.newCategoryPlaceholder": "Neue Kategorie eingeben...",
+        "categoryTree.newValuePlaceholder": "Neuer Wert... (Enter)",
+        "categoryTree.noCategories": "Noch keine Kategorien",
+        "categoryTree.noCategoriesHint": "Gib oben einen Namen ein und klicke +",
+        "categoryTree.noValues": "Noch keine Werte",
+        "categoryTree.valuesCount": "{{count}} Werte",
+        "categoryTree.loadValues": "Werte laden (klick)",
+        "categoryTree.contextMenu.rename": "Umbenennen (F2)",
+        "categoryTree.contextMenu.typeNormal": "Typ: Normal",
+        "categoryTree.contextMenu.typeCause": "Typ: Ursache",
+        "categoryTree.contextMenu.typeEffect": "Typ: Wirkung",
+        "categoryTree.contextMenu.addValue": "Wert hinzufügen",
+        "categoryTree.contextMenu.applyDataClass": "Datenklasse anwenden...",
+        "categoryTree.contextMenu.bva": "Grenzwertanalyse...",
+        "categoryTree.contextMenu.delete": "Löschen",
+        "categoryTree.contextMenu.setDefault": "★ Als Default markieren",
+        "categoryTree.contextMenu.unsetDefault": "✕ Default entfernen",
+        "categoryTree.categoryType.normal": "Normal",
+        "categoryTree.categoryType.ergebnis": "Ergebnis",
+        "categoryTree.categoryType.ursache": "Ursache",
+        "categoryTree.categoryType.wirkung": "Wirkung",
+        "dataNodeApplyDialog.title": "Datenklasse anwenden auf: {{categoryName}}",
+        "dataNodeApplyDialog.apply": "Übernehmen",
+        "dataNodeApplyDialog.cancel": "Abbrechen",
+        "dataNodeApplyDialog.search": "Suche...",
+        "dataNodeTree.category": "Kategorie",
+        "dataNodeTree.group": "Gruppe",
+        "dataNodeTree.class": "Klasse",
+        "dataNodeTree.addChild": "Unterpunkt",
+        "dataNodeTree.addValue": "Wert",
+        "dataNodeTree.value": "Wert",
+        "dataNodeTree.valuePlaceholder": "Neuer Wert...",
+        "dataNodeTree.childPlaceholder": "Name der Gruppe/Klasse...",
+        "dataNodeTree.delete": "Löschen",
+        "dataNodeTree.deleteConfirm": "Knoten und alle Unterpunkte löschen?",
+        "dataNodeTree.expand": "Aufklappen",
+        "dataNodeTree.collapse": "Zuklappen",
+        "dataNodeTree.valuesCount": "{{count}} Werte",
+        "contextMenu.rename": "Umbenennen (F2)",
+        "contextMenu.delete": "Löschen",
+        "bvaDialog.title": "Grenzwertanalyse: {{categoryName}}",
+        "bvaDialog.cancel": "Abbrechen",
+        "bvaDialog.apply": "Anwenden",
+        "undoRedo.undo": "Rückgängig",
+        "undoRedo.redo": "Wiederholen",
+        "undoRedo.undoTitle": "Rückgängig (Strg+Z)",
+        "undoRedo.redoTitle": "Wiederholen (Strg+Y)",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock("../../store/categoryStore", () => ({
   useCategoryStore: vi.fn(),
 }));
@@ -72,7 +133,7 @@ describe("CategoryTree - REQ-4019 Refresh nach Dialog-Schluss", () => {
     render(<CategoryTree projectId={5} />);
     expandCategory();
 
-    fireEvent.click(screen.getByTitle("Grenzwertanalyse (BVA)"));
+    fireEvent.click(screen.getByTitle("Grenzwertanalyse..."));
     expect(screen.getByTestId("bva-dialog-mock")).toBeInTheDocument();
 
     fetchValues.mockClear();
@@ -86,7 +147,7 @@ describe("CategoryTree - REQ-4019 Refresh nach Dialog-Schluss", () => {
     render(<CategoryTree projectId={5} />);
     expandCategory();
 
-    fireEvent.click(screen.getByTitle("Grenzwertanalyse (BVA)"));
+    fireEvent.click(screen.getByTitle("Grenzwertanalyse..."));
     fetchValues.mockClear();
     fireEvent.click(screen.getByText("MockAnwenden"));
 

@@ -2,8 +2,10 @@
 // REQ-4011: Datensicherung & Wiederherstellung
 // REQ-4012: BugMagnet-Import
 // REQ-4025: Benutzerverwaltung
+// REQ-6005: i18n
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { PortSettingsCard } from '../components/PortSettingsCard'
 import { MaxTestCasesSettingsCard } from '../components/MaxTestCasesSettingsCard' // REQ-4018
@@ -11,6 +13,7 @@ import UserManagement from '../components/UserManagement' // REQ-4025
 import { backupApi, datanodesApi } from '../api/client'
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [backupPassword, setBackupPassword] = useState('')
   const [restorePassword, setRestorePassword] = useState('')
   const [restoreFile, setRestoreFile] = useState<File | null>(null)
@@ -49,11 +52,11 @@ export default function SettingsPage() {
     setRestoreStatus(null)
     try {
       const data = await backupApi.restore(restoreFile, restorePassword || undefined)
-      setRestoreStatus(`OK ${data.projects_restored} Projekte wiederhergestellt`)
+      setRestoreStatus(t('settings.backup.restore.success', { count: data.projects_restored }))
       setRestoreFile(null)
       setRestorePassword('')
     } catch (e: any) {
-      setRestoreStatus(`Fehler: ${e.message}`)
+      setRestoreStatus(t('settings.backup.restore.error', { message: e.message }))
     } finally {
       setIsLoading(false)
     }
@@ -78,18 +81,15 @@ export default function SettingsPage() {
       if (data.default_admin_created) {
         const username = data.default_admin_username || "admin";
         setResetStatus(
-          `OK Datenbank wurde zurueckgesetzt.\n\n` +
-          `Ein Standard-Admin wurde erstellt:\n` +
-          `Benutzername: ${username}\n\n` +
-          `Bitte aendere das Passwort nach dem Login!`
+          t('settings.database.resetSuccessAdmin', { username })
         )
       } else {
         setResetStatus(
-          'OK Datenbank wurde zurueckgesetzt. Deine Session bleibt aktiv.'
+          t('settings.database.resetSuccess')
         )
       }
     } catch (error) {
-      setResetStatus(`Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
+      setResetStatus(t('settings.database.resetError', { message: error instanceof Error ? error.message : t('errors.unknown') }))
     }
   }
 
@@ -110,9 +110,9 @@ export default function SettingsPage() {
     try {
       const d = await datanodesApi.importBugMagnet()
       setBugmagnetImported(true)
-      setImportStatus(`OK Import abgeschlossen (${d.nodes_created} Knoten)`)
+      setImportStatus(t('settings.dataclasses.importSuccess', { count: d.nodes_created }))
     } catch (e) {
-      setImportStatus(`Fehler: ${e instanceof Error ? e.message : 'Unbekannter Fehler'}`)
+      setImportStatus(t('settings.dataclasses.importError', { message: e instanceof Error ? e.message : t('errors.unknown') }))
     } finally {
       setImporting(false)
     }
@@ -120,28 +120,28 @@ export default function SettingsPage() {
 
   return (
     <main className="max-w-2xl mx-auto px-6 py-12 bg-theme-bg">
-      <h1 className="text-2xl font-bold text-theme-text mb-6">Einstellungen</h1>
+      <h1 className="text-2xl font-bold text-theme-text mb-6">{t('settings.title')}</h1>
 
       <PortSettingsCard />
       <MaxTestCasesSettingsCard />
 
       <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-3">Erscheinungsbild</h2>
+        <h2 className="text-lg font-semibold text-theme-text mb-3">{t('settings.appearance.title')}</h2>
         <p className="text-sm text-theme-text-secondary mb-4">
-          Waehle ein Theme fuer die Oberflaeche. Die Einstellung wird automatisch gespeichert.
+          {t('settings.appearance.description')}
         </p>
         <ThemeSwitcher />
       </section>
 
       <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">Datensicherung</h2>
+        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.backup.title')}</h2>
         <div className="space-y-4">
           <div className="border border-theme-border rounded-lg p-4">
-            <h3 className="font-medium text-theme-text mb-3">Sicherung erstellen</h3>
+            <h3 className="font-medium text-theme-text mb-3">{t('settings.backup.create.title')}</h3>
             <div className="space-y-2">
               <input
                 type="password"
-                placeholder="Passwort (optional, fuer Verschluesselung)"
+                placeholder={t('settings.backup.create.passwordPlaceholder')}
                 value={backupPassword}
                 onChange={e => setBackupPassword(e.target.value)}
                 className="w-full px-3 py-2 rounded border border-theme-border bg-theme-bg text-theme-text placeholder-theme-text-muted"
@@ -151,13 +151,13 @@ export default function SettingsPage() {
                 disabled={isLoading}
                 className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover disabled:opacity-50 text-theme-accent-text rounded transition"
               >
-                {isLoading ? 'L?dt...' : 'Sicherung herunterladen'}
+                {isLoading ? t('settings.backup.create.downloadBtnLoading') : t('settings.backup.create.downloadBtn')}
               </button>
             </div>
           </div>
 
           <div className="border border-theme-border rounded-lg p-4">
-            <h3 className="font-medium text-theme-text mb-3">Sicherung wiederherstellen</h3>
+            <h3 className="font-medium text-theme-text mb-3">{t('settings.backup.restore.title')}</h3>
             <div className="space-y-2">
               <input
                 type="file"
@@ -167,7 +167,7 @@ export default function SettingsPage() {
               />
               <input
                 type="password"
-                placeholder="Passwort (falls verschluesselt)"
+                placeholder={t('settings.backup.restore.passwordPlaceholder')}
                 value={restorePassword}
                 onChange={e => setRestorePassword(e.target.value)}
                 className="w-full px-3 py-2 rounded border border-theme-border bg-theme-bg text-theme-text placeholder-theme-text-muted"
@@ -177,7 +177,7 @@ export default function SettingsPage() {
                 disabled={!restoreFile || isLoading}
                 className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover disabled:opacity-50 text-theme-accent-text rounded transition"
               >
-                {isLoading ? 'Verarbeitet...' : 'Wiederherstellen'}
+                {isLoading ? t('settings.backup.restore.restoreBtnLoading') : t('settings.backup.restore.restoreBtn')}
               </button>
               {restoreStatus && (
                 <p className="text-sm text-theme-text mt-2 p-2 bg-theme-bg rounded border border-theme-border">
@@ -190,10 +190,10 @@ export default function SettingsPage() {
       </section>
 
       <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">Datenbank</h2>
+        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.database.title')}</h2>
         <div className="space-y-3">
           <p className="text-sm text-theme-text-secondary">
-            Alle Projekte, Kategorien, Werte und Generierungen werden vollstaendig auf den Startzustand zurueckgesetzt.
+            {t('settings.database.description')}
           </p>
           <button
             type="button"
@@ -201,7 +201,7 @@ export default function SettingsPage() {
             disabled={isLoading}
             className="px-4 py-2 bg-theme-danger hover:opacity-90 disabled:opacity-50 text-theme-accent-text rounded transition"
           >
-            Datenbank zuruecksetzen
+            {t('settings.database.resetBtn')}
           </button>
           {resetStatus && (
             <p className="text-sm text-theme-text p-2 bg-theme-bg border border-theme-border rounded whitespace-pre-line">{resetStatus}</p>
@@ -210,27 +210,27 @@ export default function SettingsPage() {
       </section>
 
       {resetDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-label="Datenbank wirklich zuruecksetzen?">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-label={t('settings.database.dialog.title')}>
           <div className="bg-theme-surface rounded-2xl shadow-xl max-w-md w-full mx-4 p-6 border border-theme-border">
-            <h3 className="text-lg font-semibold text-theme-text mb-3">Datenbank wirklich zuruecksetzen?</h3>
+            <h3 className="text-lg font-semibold text-theme-text mb-3">{t('settings.database.dialog.title')}</h3>
             <p className="text-sm text-theme-text-secondary mb-2">
-              Bist du sicher? Du loescht damit alles.
+              {t('settings.database.dialog.confirm')}
             </p>
             <p className="text-sm text-theme-warning bg-theme-bg border-2 border-theme-warning rounded-lg px-3 py-2 mb-5">
-              Das Zuruecksetzen entfernt alle Projekte, Kategorien, Werte, Regeln und Generierungen von der Datenbank.
+              {t('settings.database.dialog.warning')}
             </p>
 
             <div className="flex flex-col gap-2">
               <button type="button" onClick={() => handleDatabaseReset('confirm')} className="w-full px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm">
-                Ja mach
+                {t('settings.database.dialog.yesDoIt')}
               </button>
 
               <button type="button" onClick={() => handleDatabaseReset('backup')} className="w-full px-4 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-surface-hover text-sm">
-                Vorher Backup
+                {t('settings.database.dialog.backupFirst')}
               </button>
 
               <button type="button" onClick={() => { setResetDialogOpen(false); setResetStatus(null); }} className="w-full px-4 py-2 border border-theme-border text-theme-text-muted rounded-lg hover:bg-theme-surface-hover text-sm mt-1">
-                Upsi nein
+                {t('settings.database.dialog.cancel')}
               </button>
             </div>
           </div>
@@ -238,17 +238,14 @@ export default function SettingsPage() {
       )}
 
       <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">Datenklassen</h2>
+        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.dataclasses.title')}</h2>
         <div className="space-y-3">
-          <p className="text-sm text-theme-text-secondary">
-            Beispielklassen importieren von Bug Magnet Git.<br />
-            <span className="text-xs text-theme-text-muted">Fuer die Inhalte ist der Urheber verantwortlich.</span>
-          </p>
+          <p className="text-sm text-theme-text-secondary" dangerouslySetInnerHTML={{ __html: t('settings.dataclasses.description') }} />
           <a href="https://github.com/gojko/bugmagnet/blob/master/template/config.json" target="_blank" rel="noopener noreferrer" className="text-xs text-theme-accent hover:underline block">
-            github.com/gojko/bugmagnet/blob/master/template/config.json
+            {t('settings.dataclasses.source')}
           </a>
           <button onClick={handleBugMagnetImport} disabled={importing} className="px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover disabled:opacity-50 text-theme-accent-text rounded transition">
-            {importing ? 'Importiere...' : bugmagnetImported ? 'Aktualisieren' : 'Importieren'}
+            {importing ? t('settings.dataclasses.importing') : bugmagnetImported ? t('settings.dataclasses.refresh') : t('settings.dataclasses.importBtn')}
           </button>
           {importStatus && <p className="text-sm text-theme-text p-2 bg-theme-bg border border-theme-border rounded">{importStatus}</p>}
         </div>
