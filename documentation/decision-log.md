@@ -1507,6 +1507,43 @@ async def update_category(
 | **E-Mail-Authentifizierung** | EPIC-18 ist fuer lokale Teams ohne E-Mail-Infrastructure |
 | **OAuth2-Provider (Google, GitHub)** | Out of Scope – nur lokale Authentifizierung (REQ-4001: "lokale OAuth2/JWT-Nutzer") |
 | **Vollstaendiges Audit-Log (alle Aenderungen)** | REQ-4024 verlangt explizit nur "letzten Aenderer"; voller Audit-Trail ist REQ-4003 (Phase 5+) |
+
+---
+
+## ADR-019 – Testmodell als Datei (YAML/JSON) (REQ-6013)
+
+**Datum:** 2026-11-18
+**Status:** Accepted
+**Betroffene REQs:** REQ-6013
+
+**Kontext:**
+REQ-6013 verlangt, dass das Testmodell eines Projekts als versionierbare Datei
+(YAML oder JSON) exportiert und importiert werden kann. Das Modell soll neben dem
+Quellcode im Git liegen, per Pull Request geprueft werden koennen und zwischen
+G.R.E.A.T.-Instanzen uebertragbar sein.
+
+**Entscheidung:**
+- Neues Modul `src/app/model_io/` mit Pydantic-Modellen als Single Source of Truth
+- JSON-Schema automatisch aus Pydantic generiert (`model_json_schema()`)
+- YAML: PyYAML safe_load/safe_dump, custom Dumper ohne Aliases, Blockstil, sort_keys=False
+- JSON: json.dumps mit sort_keys=False, ensure_ascii=False, indent=2
+- Referenzen innerhalb der Datei ueber Namen (Kategoriename, Wertname), nicht IDs
+- Deterministisch: zweimal exportiert = byte-identisch (gleiche Inhalte)
+- API-Endpunkte unter `/api/v1/projects/` (neuer Prefix fuer v1-API)
+- Groessenlimit 5 MB fuer Import
+
+**Alternativen:**
+1. Backup-Format v2.0 wiederverwenden – abgelehnt: Backup enthaelt Generierungen und Zeitstempel
+2. XML-Format – abgelehnt: YAML/JSON sind Git-freundlicher und besser lesbar
+3. Binaries (MessagePack, Protocol Buffers) – abgelehnt: nicht menschenlesbar, schlechter fuer Git-Diffs
+
+**Konsequenzen:**
+- PyYAML als neue Dependency (bereits installiert, MIT-Lizenz)
+- JSON-Schema-Datei unter `schemas/great-model.v1.schema.json`
+- Neue API-Endpunkte koennen in Phase 5 erweitert werden (z.B. Migration aelterer Schema-Versionen)
+- Existing Backup-Format (v2.0) bleibt unveraendert (REQ-6013: "Keine Verhaltensaenderung des Backups")
+
+**Entscheider:** GREAT Senior Developer Agent
 | **Version auf allen Tabellen** | `generations`, `testcase_values`, `rules`, `dataclasses` werden nicht von Nutzern direkt bearbeitet; Overhead ohne Nutzen |
 | **Pessimistic Locking (SELECT FOR UPDATE)** | ADR-012 hat Optimistic Concurrency entschieden; Pessimistic Locking waere ein Konflikt mit ADR-012 |
 | **Row-Level Security (PostgreSQL RLS)** | SQLite hat keine RLS; Cross-DB-Kompatibilitaet erfordert App-Level-Filterung |
@@ -1881,3 +1918,55 @@ Migrationsweg eingesetzt.
 - `src/db/migrations/env.py` verwendet `DATABASE_URL` aus `app.config`
 - Massgeblicher Migrationsweg bleibt `_migrate_db()` in `main.py`
 - Alembic bleibt als Option fuer zukuenftige Migrationen erhalten
+
+---
+
+## ADR-019 – Exporter-Registry fuer Testmanagement-Formate (REQ-6011)
+
+**Datum:** 2026-11-18
+**Status:** Accepted
+
+**Kontext:**
+REQ-6011 verlangt Export in 8 Formaten: Gherkin, pytest, JSON Data-Driven, Robot Framework,
+Xray CSV, TestRail CSV, Azure DevOps CSV und Markdown. Bisher existieren nur CSV/JSON/XLSX
+Exporte in `api_generate.py` als monolithische Funktionen.
+
+**Entscheidung:**
+- Neues Modul `src/app/exporters/` mit Registry-Pattern
+- `BaseExporter` (ABC) mit `name`, `file_extension`, `media_type`, `render()`
+- Registry in `__init__.py`: `register_exporter()` / `get_exporter(name)`
+- Ein Exporter pro Datei, auto-registriert bei Import
+- API-Route: `GET /api/generations/{gen_id}/export/{format}`
+- `generation_view` Dict als einheitliches Interface zwischen API und Exportern
+- Formel-Schutz via bestehende `export_utils.escape_spreadsheet_value()`
+- Determinismus: `?deterministic=true` fixiert Datum auf 1970-01-01
+- Sortierung der Testfaelle nach TC-ID (alphabetisch)
+
+**Abgelehnte Alternativen:**
+
+| Alternative | Grund der Ablehnung |
+|---|---|
+| **Monolithische Funktionen in api_generate.py** | 8+ Funktionen mit je 100+ Zeilen; schwer testbar; keine Wiederverwendbarkeit |
+| **Strategy-Pattern mit Dependency Injection** | Overengineering fuer 8 Exporter; Registry-Pattern ist einfacher |
+| **Template-Engine (Jinja2)** | Neue Dependency; CSV/Code-Export sind strukturiert, nicht templated |
+| **Separater Microservice** | Export ist synchron und klein; kein Bedarf fuer separate Deployment |
+
+**Konsequenzen:**
+
+| Bereich | Auswirkung |
+|---|---|
+| **Neue Dateien** | `src/app/exporters/{base,gherkin,pytest_exporter,json_data_driven,robot,xray_csv,testrail_csv,azuredevops_csv,markdown,`__init__`}.py` |
+| **API** | Neuer Endpunkt `GET /api/generations/{gen_id}/export/{format}` mit Query-Params `lang`, `deterministic`, `values` |
+| **Tests** | `tests/test_export_formats.py` (21 Tests), `tests/golden/export/` (8 Golden-Files) |
+| **Dependencies** | Keine neuen Dependencies (außer `gherkin-official` als Test-Dependency, planned) |
+| **Regression** | 1092 Tests bestanden (1 vorbestehend flaky) |
+
+**Geaenderte Dateien:**
+- `src/app/exporters/` – NEU (9 Dateien)
+- `src/app/routers/api_generate.py` – Neuer Export-Endpunkt
+- `tests/test_export_formats.py` – NEU (21 Tests)
+- `tests/golden/export/` – NEU (8 Golden-Files)
+- `userstorys und basisinfos/requirements_v1.1.md` – REQ-6011 Status: Implemented
+
+**Entscheider:** GREAT Senior Developer Agent
+**Abhaengigkeiten:** REQ-6011, ADR-001 (Python/FastAPI), B-05 (Formel-Schutz)

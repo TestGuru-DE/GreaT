@@ -1,6 +1,7 @@
 ﻿// REQ-1203: Typsicherer API-Client fuer alle FastAPI-Endpunkte
 // REQ-1209, REQ-1213: Rename + Reorder Endpunkte
 // B-43: Token-Refresh + ApiError-Interceptor
+// REQ-6005: Accept-Language Header basierend auf i18n-Sprache
 import axios from "axios";
 import type {
   Project, ProjectCreate,
@@ -21,6 +22,23 @@ const authClient = axios.create({
   baseURL: "/auth",
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
+});
+
+// REQ-6005: Accept-Language Header basierend auf aktueller i18n-Sprache
+import i18n from "../i18n";
+
+function getAcceptLanguage(): string {
+  return i18n?.language ?? "de";
+}
+
+api.interceptors.request.use((config) => {
+  config.headers["Accept-Language"] = getAcceptLanguage();
+  return config;
+});
+
+authClient.interceptors.request.use((config) => {
+  config.headers["Accept-Language"] = getAcceptLanguage();
+  return config;
 });
 
 let refreshPromise: Promise<void> | null = null;

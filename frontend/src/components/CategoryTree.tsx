@@ -1,7 +1,9 @@
 ﻿// REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
+// REQ-6005: i18n
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useCategoryStore } from "../store/categoryStore";
 import { categoriesApi } from "../api/client";
 import { renameApi, reorderApi, categoryPropertiesApi } from "../api/client";
@@ -22,6 +24,7 @@ interface CtxState {
 }
 
 export default function CategoryTree({ projectId }: Props) {
+  const { t } = useTranslation();
   const {
     categories, values, loading, error,
     fetchCategories, createCategory, deleteCategory,
@@ -60,10 +63,10 @@ export default function CategoryTree({ projectId }: Props) {
         toggleExpand(cat.id);
       },
       onDelete: () => {
-        if (confirm("Kategorie löschen?")) {
+        if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm"))) {
           deleteCategory(cat.id)
-            .then(() => { toast.add("Kategorie gelöscht"); setSelectedCatId(null); })
-            .catch(() => toast.add("Fehler beim Löschen", "error"));
+            .then(() => { toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
+            .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       },
       onRename: () => startEditCat(cat.id, cat.name),
@@ -76,16 +79,16 @@ export default function CategoryTree({ projectId }: Props) {
     "delete": () => {
       // Bug-Fix: DEL löscht gewählten Wert ODER gewählte Kategorie
       if (selectedValId) {
-        if (confirm("Wert löschen?")) {
+        if (confirm(t("categoryTree.contextMenu.deleteValueConfirm"))) {
           deleteValue(selectedValId.catId, selectedValId.valId)
-            .then(() => { toast.add("Wert gelöscht"); setSelectedValId(null); })
-            .catch(() => toast.add("Fehler beim Löschen", "error"));
+            .then(() => { toast.add(t("categoryTree.toast.valueDeleted")); setSelectedValId(null); })
+            .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       } else if (selectedCatId) {
-        if (confirm("Kategorie löschen?")) {
+        if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm"))) {
           deleteCategory(selectedCatId)
-            .then(() => { toast.add("Kategorie gelöscht"); setSelectedCatId(null); })
-            .catch(() => toast.add("Fehler beim Löschen", "error"));
+            .then(() => { toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
+            .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       }
     },
@@ -105,18 +108,18 @@ export default function CategoryTree({ projectId }: Props) {
     const isResult = newCatKind === "ergebnis";
     try {
       await createCategory(projectId, newCatName.trim(), kind, isResult);
-      toast.add("Kategorie angelegt");
+      toast.add(t("categoryTree.toast.categoryCreated"));
       setNewCatName("");
       setNewCatKind("normal");
-    } catch { toast.add("Fehler beim Anlegen", "error"); }
+    } catch { toast.add(t("categoryTree.toast.errorCreate"), "error"); }
   };
 
   const changeCategoryType = async (catId: number, type: "standard" | "cause" | "effect") => {
     try {
       await categoryPropertiesApi.updateCategoryType(catId, type);
       await fetchCategories(projectId);
-      toast.add("Kategorie-Typ geaendert");
-    } catch { toast.add("Fehler beim Aendern des Typs", "error"); }
+      toast.add(t("categoryTree.toast.categoryTypeChanged"));
+    } catch { toast.add(t("categoryTree.toast.errorTypeChange"), "error"); }
   };
 
   const handleAddValue = async (catId: number) => {
@@ -124,9 +127,9 @@ export default function CategoryTree({ projectId }: Props) {
     if (!val) return;
     try {
       await createValue(catId, val);
-      toast.add("Wert hinzugefuegt");
+      toast.add(t("categoryTree.toast.valueAdded"));
       setNewValue((s) => ({ ...s, [catId]: "" }));
-    } catch { toast.add("Fehler beim Hinzufuegen", "error"); }
+    } catch { toast.add(t("categoryTree.toast.errorAdd"), "error"); }
   };
 
   // Inline-Edit Kategorie (REQ-1213)
@@ -138,8 +141,8 @@ export default function CategoryTree({ projectId }: Props) {
     try {
       await renameApi.category(catId, editingCatName.trim());
       await fetchCategories(projectId);
-      toast.add("Kategorie umbenannt");
-    } catch { toast.add("Fehler beim Umbenennen", "error"); }
+      toast.add(t("categoryTree.toast.categoryRenamed"));
+    } catch { toast.add(t("categoryTree.toast.errorRename"), "error"); }
     setEditingCat(null);
   };
 
@@ -152,8 +155,8 @@ export default function CategoryTree({ projectId }: Props) {
     try {
       await renameApi.value(valId, editingValName.trim());
       await fetchValues(catId);
-      toast.add("Wert umbenannt");
-    } catch { toast.add("Fehler beim Umbenennen", "error"); }
+      toast.add(t("categoryTree.toast.valueRenamed"));
+    } catch { toast.add(t("categoryTree.toast.errorRename"), "error"); }
     setEditingVal(null);
   };
 
@@ -175,8 +178,8 @@ export default function CategoryTree({ projectId }: Props) {
     try {
       await reorderApi.categories(projectId, newOrder);
       await fetchCategories(projectId);
-      toast.add("Reihenfolge gespeichert");
-    } catch { toast.add("Fehler beim Sortieren", "error"); }
+      toast.add(t("categoryTree.toast.orderSaved"));
+    } catch { toast.add(t("categoryTree.toast.errorSort"), "error"); }
     setDragOverId(null);
   };
 
@@ -195,31 +198,31 @@ export default function CategoryTree({ projectId }: Props) {
     if (ctx.type === "category") {
       const cat = categories.find((c) => c.id === ctx.id);
       return [
-        { label: "Umbenennen (F2)", action: () => startEditCat(ctx.id, cat?.name ?? "") },
+        { label: t("categoryTree.contextMenu.rename"), action: () => startEditCat(ctx.id, cat?.name ?? "") },
         // REQ-5002: Typ nachtraeglich aendern
-        { label: "Typ: Normal", action: () => changeCategoryType(ctx.id, "standard") },
-        { label: "Typ: Ursache", action: () => changeCategoryType(ctx.id, "cause") },
-        { label: "Typ: Wirkung", action: () => changeCategoryType(ctx.id, "effect") },
-        { label: "Wert hinzufügen", action: () => {
+        { label: t("categoryTree.contextMenu.typeNormal"), action: () => changeCategoryType(ctx.id, "standard") },
+        { label: t("categoryTree.contextMenu.typeCause"), action: () => changeCategoryType(ctx.id, "cause") },
+        { label: t("categoryTree.contextMenu.typeEffect"), action: () => changeCategoryType(ctx.id, "effect") },
+        { label: t("categoryTree.contextMenu.addValue"), action: () => {
           setExpanded((s) => ({ ...s, [ctx.id]: true }));
           if (!values[ctx.id]) fetchValues(ctx.id);
         }},
         { label: "", separator: true, action: () => {} },
-        { label: "Datenklasse anwenden...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataNodeDialog({ id: c.id, name: c.name }); } },
-        { label: "Grenzwertanalyse...", action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
+        { label: t("categoryTree.contextMenu.applyDataClass"), action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setDataNodeDialog({ id: c.id, name: c.name }); } },
+        { label: t("categoryTree.contextMenu.bva"), action: () => { const c = categories.find((c) => c.id === ctx.id); if (c) setBvaDialogOpen({ id: c.id, name: c.name }); } },
         { label: "", separator: true, action: () => {} },
-        { label: "Löschen", danger: true, action: () => {
-          if (confirm("Kategorie löschen?"))
+        { label: t("categoryTree.contextMenu.delete"), danger: true, action: () => {
+          if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm")))
             deleteCategory(ctx.id)
-              .then(() => toast.add("Kategorie gelöscht"))
-              .catch(() => toast.add("Fehler", "error"));
+              .then(() => toast.add(t("categoryTree.toast.categoryDeleted")))
+              .catch(() => toast.add(t("categoryTree.toast.error"), "error"));
         }},
       ];
     }
     const currentVal = (values[ctx.catId!] ?? []).find((v) => v.id === ctx.id);
     const isDefault = currentVal?.is_default === true;
     return [
-      { label: isDefault ? "✕ Default entfernen" : "★ Als Default markieren", action: async () => {
+      { label: isDefault ? t("categoryTree.contextMenu.unsetDefault") : t("categoryTree.contextMenu.setDefault"), action: async () => {
         const catId = ctx.catId!;
         if (isDefault) {
           await categoriesApi.unsetDefault(ctx.id);
@@ -228,19 +231,19 @@ export default function CategoryTree({ projectId }: Props) {
         }
         fetchValues(catId);
       }},
-      { label: "Umbenennen (F2)", action: () => {
+      { label: t("categoryTree.contextMenu.rename"), action: () => {
         if (currentVal) startEditVal(ctx.catId!, ctx.id, currentVal.value);
       }},
-      { label: "Löschen", danger: true, action: () => {
-        if (confirm("Wert löschen?"))
+      { label: t("categoryTree.contextMenu.delete"), danger: true, action: () => {
+        if (confirm(t("categoryTree.contextMenu.deleteValueConfirm")))
           deleteValue(ctx.catId!, ctx.id)
-            .then(() => toast.add("Wert gelöscht"))
-            .catch(() => toast.add("Fehler", "error"));
+            .then(() => toast.add(t("categoryTree.toast.valueDeleted")))
+            .catch(() => toast.add(t("categoryTree.toast.error"), "error"));
       }},
     ];
   };
 
-  if (loading) return <p className="text-slate-400 text-sm animate-pulse">Lade Kategorien...</p>;
+  if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t('categoryTree.loading')}</p>;
   if (error) return <p className="text-red-500 text-sm">{error}</p>;
 
   return (
@@ -255,17 +258,17 @@ export default function CategoryTree({ projectId }: Props) {
 
       {/* Neue Kategorie */}
       <form onSubmit={handleAddCategory} className="flex gap-2 mb-4">
-        <select aria-label="Kategorie-Typ" value={newCatKind}
+        <select aria-label={t('categoryTree.categoryType.normal')} value={newCatKind}
           onChange={(e) => setNewCatKind(e.target.value as typeof newCatKind)}
           className="px-2 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
-          <option value="normal">Normal</option>
-          <option value="ergebnis">Ergebnis</option>
-          <option value="ursache">Ursache</option>
-          <option value="wirkung">Wirkung</option>
+          <option value="normal">{t('categoryTree.categoryType.normal')}</option>
+          <option value="ergebnis">{t('categoryTree.categoryType.ergebnis')}</option>
+          <option value="ursache">{t('categoryTree.categoryType.ursache')}</option>
+          <option value="wirkung">{t('categoryTree.categoryType.wirkung')}</option>
         </select>
         <input ref={newCatRef} value={newCatName}
           onChange={(e) => setNewCatName(e.target.value)}
-          placeholder="Neue Kategorie eingeben..."
+          placeholder={t('categoryTree.newCategoryPlaceholder')}
           className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400"
         />
         <button type="submit" disabled={!newCatName.trim()}
@@ -277,14 +280,14 @@ export default function CategoryTree({ projectId }: Props) {
       {categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-slate-400">
           <span className="text-4xl mb-2">+</span>
-          <p className="text-sm">Noch keine Kategorien</p>
-          <p className="text-xs mt-1">Gib oben einen Namen ein und klicke +</p>
+          <p className="text-sm">{t('categoryTree.noCategories')}</p>
+          <p className="text-xs mt-1">{t('categoryTree.noCategoriesHint')}</p>
         </div>
       ) : (
         <ul 
           className="space-y-1.5" 
           role="listbox" 
-          aria-label="Kategorien"
+          aria-label={t('projectDetail.categoriesTitle')}
           tabIndex={0}
         >
           {categories.map((cat, idx) => (
@@ -332,13 +335,13 @@ export default function CategoryTree({ projectId }: Props) {
                   )}
                   {/* REQ-5002/REQ-4016: Kategorie-Typ visuell anzeigen */}
                   {cat.category_type === "cause" && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5" title="Ursache">U</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ursache')}>U</span>
                   )}
                   {cat.category_type === "effect" && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5" title="Wirkung">W</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.wirkung')}>W</span>
                   )}
                   {cat.is_result && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-purple-100 text-purple-700 rounded-full px-1.5 py-0.5" title="Ergebnis">E</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-purple-100 text-purple-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ergebnis')}>E</span>
                   )}
                   {/* Werte-Zaehler Badge (Bugfix: '-' wenn noch nicht geladen) */}
                   <span
@@ -349,7 +352,7 @@ export default function CategoryTree({ projectId }: Props) {
                       }
                     }}
                     className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal cursor-pointer hover:bg-slate-300 transition-colors"
-                    title={values[cat.id] ? `${(values[cat.id]).length} Werte` : "Werte laden (klick)"}
+                    title={values[cat.id] ? t('categoryTree.valuesCount', { count: (values[cat.id]).length }) : t('categoryTree.loadValues')}
                   >
                     {values[cat.id] ? (values[cat.id]).length : "…"}
                   </span>
@@ -358,12 +361,12 @@ export default function CategoryTree({ projectId }: Props) {
                   {/* BUG-1 Fix: BVA-Button direkt sichtbar */}
                   <button
                     onClick={(e) => { e.stopPropagation(); setBvaDialogOpen({ id: cat.id, name: cat.name }); }}
-                    title="Grenzwertanalyse (BVA)"
+                    title={t('categoryTree.contextMenu.bva')}
                     className="text-slate-400 hover:text-sky-600 text-xs px-1.5 py-0.5 rounded hover:bg-sky-50 transition-colors"
                   >
                     ≈
                   </button>
-                  <span className="text-slate-300 text-xs select-none cursor-grab" title="Ziehen zum Sortieren">
+                  <span className="text-slate-300 text-xs select-none cursor-grab" title={t('categoryTree.keyboardHelp.sort')}>
                     :::
                   </span>
                 </span>
@@ -374,7 +377,7 @@ export default function CategoryTree({ projectId }: Props) {
                 <div className="px-3 py-2 bg-white border-t border-slate-100">
                   <ul className="space-y-0.5 mb-2">
                     {(values[cat.id] ?? []).length === 0 ? (
-                      <li className="text-slate-400 text-xs italic py-1">Noch keine Werte</li>
+                      <li className="text-slate-400 text-xs italic py-1">{t('categoryTree.noValues')}</li>
                     ) : (
                       (values[cat.id] ?? []).map((v) => (
                         <li key={v.id}
@@ -398,7 +401,7 @@ export default function CategoryTree({ projectId }: Props) {
                                 onDoubleClick={() => startEditVal(cat.id, v.id, v.value)}
                                 className={"text-slate-700 flex-1 truncate " +
                                   (v.risk_weight > 2 ? "text-orange-700 font-medium" : "")}>
-                                {v.is_default && <span className="mr-1 text-amber-500 font-bold" title="Default-Wert (Lineare Expansion)">★</span>}
+                                {v.is_default && <span className="mr-1 text-amber-500 font-bold" title={t('categoryTree.contextMenu.setDefault')}>★</span>}
                                 {v.value}
                                 {v.risk_weight > 2 && (
                                   <span className="ml-1 text-xs bg-orange-100 text-orange-600 rounded px-1">
@@ -406,7 +409,7 @@ export default function CategoryTree({ projectId }: Props) {
                                   </span>
                                 )}
                                 {v.allowed === false && (
-                                  <span className="ml-1 text-xs bg-red-100 text-red-600 rounded px-1 font-bold" title="Fehlerwert (nicht erlaubt)">✕</span>
+                                  <span className="ml-1 text-xs bg-red-100 text-red-600 rounded px-1 font-bold" title={t('categoryTree.keyboardHelp.delete')}>✕</span>
                                 )}
                               </span>
                               <div className="flex items-center gap-1 transition-opacity">
@@ -414,7 +417,7 @@ export default function CategoryTree({ projectId }: Props) {
                                 <input
                                   type="number" min={1} max={10}
                                   value={v.risk_weight}
-                                  title="Risiko (1-10)"
+                                  title={t('categoryTree.keyboardHelp.delete')}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={async (e) => {
                                     const rw = Math.max(1, Math.min(10, Number(e.target.value)));
@@ -425,7 +428,7 @@ export default function CategoryTree({ projectId }: Props) {
                                 />
                                 <select
                                   value={v.vtype ?? "string"}
-                                  title="Datentyp"
+                                  title={t('categoryTree.categoryType.normal')}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={async (e) => {
                                     await categoriesApi.updateProperties(v.id, { vtype: e.target.value });
@@ -433,14 +436,14 @@ export default function CategoryTree({ projectId }: Props) {
                                   }}
                                   className="text-xs border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
                                 >
-                                  {["string","number","date","time","boolean","email","text"].map((t) => (
-                                    <option key={t} value={t}>{t}</option>
+                                  {["string","number","date","time","boolean","email","text"].map((t2) => (
+                                    <option key={t2} value={t2}>{t2}</option>
                                   ))}
                                 </select>
                                 <input
                                   type="checkbox"
                                   checked={v.allowed === false}
-                                  title="Fehlerwert"
+                                  title={t('categoryTree.keyboardHelp.delete')}
                                   onClick={(e) => e.stopPropagation()}
                                   onChange={async (e) => {
                                     await categoriesApi.updateProperties(v.id, { allowed: !e.target.checked });
@@ -450,8 +453,8 @@ export default function CategoryTree({ projectId }: Props) {
                                 />
                               </div>
                               <button onClick={() => deleteValue(cat.id, v.id)
-                                .then(() => toast.add("Wert gelöscht"))
-                                .catch(() => toast.add("Fehler", "error"))}
+                                .then(() => toast.add(t("categoryTree.toast.valueDeleted")))
+                                .catch(() => toast.add(t("categoryTree.toast.error"), "error"))}
                                 className="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 text-xs ml-2 transition-opacity">
                                 x
                               </button>
@@ -466,7 +469,7 @@ export default function CategoryTree({ projectId }: Props) {
                     <input value={newValue[cat.id] ?? ""}
                       onChange={(e) => setNewValue((s) => ({ ...s, [cat.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddValue(cat.id); } }}
-                      placeholder="Neuer Wert... (Enter)"
+                      placeholder={t('categoryTree.newValuePlaceholder')}
                       className="flex-1 px-2 py-1 text-xs rounded border border-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-400"
                     />
                     <button onClick={() => handleAddValue(cat.id)}
@@ -491,7 +494,7 @@ export default function CategoryTree({ projectId }: Props) {
             for (const v of values) {
               await createValue(catId, v);
             }
-            toast.add(`${values.length} Werte uebernommen`);
+            toast.add(t('categoryTree.toast.valuesApplied', { count: values.length }));
             fetchValues(catId);
             setDataNodeDialog(null);
           }}
@@ -511,7 +514,7 @@ export default function CategoryTree({ projectId }: Props) {
             setBvaDialogOpen(null);
           }}
           onApply={(newValues) => {
-            toast.add(`${newValues.length} Grenzwerte hinzugefügt`);
+            toast.add(t('categoryTree.toast.boundaryValuesAdded', { count: newValues.length }));
             if (expanded[bvaDialogOpen.id]) fetchValues(bvaDialogOpen.id);
             setBvaDialogOpen(null);
           }}
@@ -525,9 +528,9 @@ export default function CategoryTree({ projectId }: Props) {
 
       {/* Tastatur-Hilfe */}
       <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 space-y-0.5">
-        <p>Alt+N: Neue Kategorie &nbsp; DEL: Löschen &nbsp; F2/Doppelklick: Umbenennen</p>
-        <p>Rechtsklick: Kontextmenü &nbsp; Ziehen: Sortieren</p>
-        <p>Strg+Z: Rückgängig &nbsp; Strg+Y: Wiederholen</p>
+        <p>{t('categoryTree.keyboardHelp.newCategory')} &nbsp; {t('categoryTree.keyboardHelp.delete')} &nbsp; {t('categoryTree.keyboardHelp.rename')}</p>
+        <p>{t('categoryTree.keyboardHelp.contextMenu')} &nbsp; {t('categoryTree.keyboardHelp.sort')}</p>
+        <p>{t('categoryTree.keyboardHelp.undo')} &nbsp; {t('categoryTree.keyboardHelp.redo')}</p>
       </div>
     </div>
   );

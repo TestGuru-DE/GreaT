@@ -85,8 +85,9 @@ def pytest_runtest_setup(item):
         login_rate_limiter,
         first_start_hint_rate_limiter,
         password_change_rate_limiter,
+        token_rate_limiter,
     )
-    for limiter in (login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter):
+    for limiter in (login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter, token_rate_limiter):
         limiter._requests.clear()
 
 
@@ -181,6 +182,20 @@ def _purge_datanodes_per_test():
     try:
         db.query(DataNodeValue).delete(synchronize_session=False)
         db.query(DataNode).delete(synchronize_session=False)
+        db.commit()
+    finally:
+        db.close()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _purge_api_tokens_per_test():
+    """REQ-6012: API-Tokens je Test entfernen (vor User-Cleanup wegen FK)."""
+    from app.database import SessionLocal
+    from app.models.auth import ApiToken
+    db = SessionLocal()
+    try:
+        db.query(ApiToken).delete(synchronize_session=False)
         db.commit()
     finally:
         db.close()

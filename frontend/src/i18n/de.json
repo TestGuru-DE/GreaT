@@ -1,0 +1,626 @@
+{
+  "nav": {
+    "home": "Home",
+    "projects": "Projekte",
+    "dataclasses": "Datenklassen",
+    "generations": "Generierungen",
+    "settings": "Einstellungen",
+    "changePassword": "Passwort aendern",
+    "help": "Hilfe (F1)",
+    "apiDocs": "API-Docs",
+    "logout": "Logout",
+    "logoutTitle": "Abmelden ({{username}})"
+  },
+  "login": {
+    "title": "G.R.E.A.T. &ndash; Anmelden",
+    "username": "Benutzername",
+    "password": "Passwort",
+    "defaultUser": "Standardbenutzer: {{username}}",
+    "defaultPassword": "Standardpasswort: {{password}} (bitte nach der ersten Anmeldung aendern)",
+    "submitLoading": "Anmelden...",
+    "submit": "Anmelden",
+    "errorInvalid": "Ungültige Anmeldedaten"
+  },
+  "language": {
+    "switcher": {
+      "de": "DE",
+      "en": "EN",
+      "label": "Sprache wechseln"
+    }
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Fehler",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Loeschen",
+    "confirm": "Bestaetigen",
+    "close": "Schließen",
+    "back": "Zurueck",
+    "next": "Weiter",
+    "create": "Erstellen",
+    "rename": "Umbenennen",
+    "edit": "Bearbeiten",
+    "search": "Suchen",
+    "yes": "Ja",
+    "no": "Nein",
+    "ok": "OK",
+    "undo": "Rueckgaengig",
+    "redo": "Wiederholen",
+    "linked": "verknüpft"
+  },
+  "errors": {
+    "invalidCredentials": "Ungültige Anmeldedaten",
+    "accountDeactivated": "Konto ist deaktiviert",
+    "sessionExpired": "Sitzung abgelaufen, bitte neu anmelden",
+    "internalError": "Interner Serverfehler",
+    "passwordChangeRequired": "Passwortwechsel erforderlich",
+    "tooManyAttempts": "Zu viele Versuche. Bitte versuche es spaeter erneut.",
+    "unknown": "Unbekannter Fehler"
+  },
+  "home": {
+    "title": "G.R.E.A.T.",
+    "subtitle": "Georgs Radikal Einfacher Automatisierter TestcaseDesigner",
+    "footer": "v1.8.0 &middot; F1 fuer Hilfe",
+    "tiles": {
+      "projects": {
+        "label": "Projekte",
+        "description": "Testprojekte verwalten und bearbeiten"
+      },
+      "dataclasses": {
+        "label": "Datenklassen",
+        "description": "Aequivalenzklassen und Vorlagen"
+      },
+      "generations": {
+        "label": "Generierungen",
+        "description": "Testfaelle generieren und exportieren"
+      },
+      "settings": {
+        "label": "Einstellungen",
+        "description": "Theme, Limits und Datensicherung"
+      },
+      "changePassword": {
+        "label": "Passwort aendern",
+        "description": "Sicherheits-einstellungen"
+      },
+      "apiDocs": {
+        "label": "API-Docs",
+        "description": "OpenAPI-Schnittstelle"
+      }
+    }
+  },
+  "projects": {
+    "title": "Projekte",
+    "newProject": "Neues Projekt...",
+    "createBtn": "Anlegen",
+    "createBtnLoading": "...",
+    "loading": "Lade Projekte...",
+    "empty": "Noch keine Projekte vorhanden.",
+    "selectAll": "Alle markieren",
+    "deselectAll": "Keinen markieren",
+    "invertSelection": "Markierung umkehren",
+    "selected": "{{count}} ausgewählt",
+    "bulkDelete": "Löschen",
+    "bulkDeleteChecking": "Prüfe...",
+    "deselectAllBtn": "Auswahl aufheben",
+    "open": "Öffnen",
+    "delete": "Löschen",
+    "deleteSuccess": "Projekt \"{{name}}\" gelöscht.",
+    "bulkDeleteSuccess": "{{count}} Projekt(e) gelöscht.",
+    "duplicateName": "Ein Projekt mit diesem Namen existiert bereits.",
+    "id": "ID",
+    "name": "Name",
+    "actions": "Aktionen",
+    "selectCheckbox": "Alle auswählen"
+  },
+  "projectDetail": {
+    "invalidId": "Ungültige Projekt-ID",
+    "backToProjects": "&larr; Projekte",
+    "title": "G.R.E.A.T. &ndash; Projekt {{name}}",
+    "rename": "Umbenennen",
+    "saveName": "Speichern",
+    "cancelRename": "Abbrechen",
+    "categoriesTitle": "Kategorien &amp; Werte",
+    "ruleConnections": "Regel-Verbindungen",
+    "tabGenerate": "Testfall-Generierung",
+    "tabRules": "Regeln",
+    "tabGenerations": "Generierte Testfälle",
+    "tabDecision": "Entscheidungstabelle",
+    "projectNameLabel": "Projektname"
+  },
+  "generations": {
+    "title": "Alle Generierungen",
+    "loading": "Lade Generierungen...",
+    "empty": "Noch keine Generierungen vorhanden.",
+    "deleteConfirm": "Generierung löschen?",
+    "deleteSuccess": "Generierung gelöscht.",
+    "renameTitle": "Doppelklick zum Umbenennen",
+    "columns": {
+      "name": "Name",
+      "project": "Projekt",
+      "strategy": "Strategie",
+      "testcases": "Testfälle",
+      "date": "Datum",
+      "actions": "Aktionen"
+    },
+    "actions": {
+      "edit": "✏️",
+      "json": "JSON",
+      "excel": "Excel",
+      "csv": "CSV",
+      "delete": "🗑️"
+    }
+  },
+  "generationsPanel": {
+    "loading": "Lade Generierungen...",
+    "empty": "Noch keine Generierungen für dieses Projekt.",
+    "emptyHint": "Wechsle zum Tab 'Testfall-Generierung', um eine zu erstellen.",
+    "renameTitle": "Doppelklick zum Umbenennen",
+    "deleteConfirm": "Generierung löschen?",
+    "editTitle": "Umbenennen",
+    "deleteTitle": "Löschen"
+  },
+  "dataClasses": {
+    "title": "🗂️ Datenklassen-Bibliothek",
+    "tabMine": "📁 Meine Datenklassen ({{count}})",
+    "tabSystem": "📋 Beispiele ({{count}})",
+    "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
+    "importExport": "Import / Export:",
+    "exportBtn": "📤 Exportieren",
+    "importBtn": "📥 Importieren (JSON)",
+    "newCategory": "+ Neue Kategorie anlegen",
+    "newCategoryPlaceholder": "Name der neuen Kategorie...",
+    "createBtn": "Anlegen",
+    "cancelBtn": "Abbrechen",
+    "loading": "Lade...",
+    "emptyMine": "Noch keine eigenen Datenklassen",
+    "emptyMineHint": "Klicke auf \"+ Neue Kategorie anlegen\" um zu starten",
+    "bugMagnetDesc": "Beispielklassen von <strong>Bug Magnet</strong> – für die Inhalte ist der Urheber verantwortlich.",
+    "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
+    "importing": "⏳ Importiere...",
+    "refresh": "🔄 Aktualisieren",
+    "importBtn": "📥 Importieren",
+    "emptySystem": "Noch keine Beispieldaten – klicke auf \"Importieren\".",
+    "errorCreate": "Fehler beim Anlegen: {{error}}",
+    "errorAddValue": "Fehler beim Hinzufügen: {{error}}",
+    "errorDelete": "Fehler beim Löschen: {{error}}",
+    "errorImport": "Fehler beim Import: {{error}}",
+    "importSuccess": "✅ {{count}} Klassen importiert",
+    "bugMagnetImportSuccess": "✅ {{count}} Knoten importiert",
+    "bugMagnetImportError": "❌ Import fehlgeschlagen: {{error}}"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "appearance": {
+      "title": "Erscheinungsbild",
+      "description": "Waehle ein Theme fuer die Oberflaeche. Die Einstellung wird automatisch gespeichert."
+    },
+    "backup": {
+      "title": "Datensicherung",
+      "create": {
+        "title": "Sicherung erstellen",
+        "passwordPlaceholder": "Passwort (optional, fuer Verschluesselung)",
+        "downloadBtn": "Sicherung herunterladen",
+        "downloadBtnLoading": "Lädt..."
+      },
+      "restore": {
+        "title": "Sicherung wiederherstellen",
+        "passwordPlaceholder": "Passwort (falls verschluesselt)",
+        "restoreBtn": "Wiederherstellen",
+        "restoreBtnLoading": "Verarbeitet...",
+        "success": "OK {{count}} Projekte wiederhergestellt",
+        "error": "Fehler: {{message}}"
+      }
+    },
+    "database": {
+      "title": "Datenbank",
+      "description": "Alle Projekte, Kategorien, Werte und Generierungen werden vollstaendig auf den Startzustand zurueckgesetzt.",
+      "resetBtn": "Datenbank zuruecksetzen",
+      "dialog": {
+        "title": "Datenbank wirklich zuruecksetzen?",
+        "confirm": "Bist du sicher? Du loescht damit alles.",
+        "warning": "Das Zuruecksetzen entfernt alle Projekte, Kategorien, Werte, Regeln und Generierungen von der Datenbank.",
+        "yesDoIt": "Ja mach",
+        "backupFirst": "Vorher Backup",
+        "cancel": "Ups nein"
+      },
+      "resetSuccessAdmin": "OK Datenbank wurde zurueckgesetzt.\n\nEin Standard-Admin wurde erstellt:\nBenutzername: {{username}}\n\nBitte aendere das Passwort nach dem Login!",
+      "resetSuccess": "OK Datenbank wurde zurueckgesetzt. Deine Session bleibt aktiv.",
+      "resetError": "Fehler: {{message}}"
+    },
+    "dataclasses": {
+      "title": "Datenklassen",
+      "description": "Beispielklassen importieren von Bug Magnet Git.<br /><span class=\"text-xs text-theme-text-muted\">Fuer die Inhalte ist der Urheber verantwortlich.</span>",
+      "source": "github.com/gojko/bugmagnet/blob/master/template/config.json",
+      "importing": "Importiere...",
+      "refresh": "Aktualisieren",
+      "importBtn": "Importieren",
+      "importSuccess": "OK Import abgeschlossen ({{count}} Knoten)",
+      "importError": "Fehler: {{message}}"
+    }
+  },
+  "changePassword": {
+    "title": "Passwort ändern",
+    "success": "Passwort wurde geändert. Sie werden weitergeleitet...",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Neues Passwort wiederholen",
+    "minLength": "Mindestens {{count}} Zeichen",
+    "changeBtn": "Ändern",
+    "errors": {
+      "tooShort": "Das neue Passwort muss mindestens {{count}} Zeichen lang sein.",
+      "mismatch": "Die neuen Passwörter stimmen nicht überein.",
+      "currentInvalid": "Das aktuelle Passwort ist falsch.",
+      "isDefault": "Dieses Passwort ist ein bekanntes Standardpasswort und nicht erlaubt.",
+      "tooLong": "Das neue Passwort ist zu lang.",
+      "tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment."
+    }
+  },
+  "help": {
+    "toc": "Inhaltsverzeichnis",
+    "chapters": {
+      "info": "Info & Lizenz",
+      "firstSteps": "1. Erste Schritte",
+      "manageProjects": "2. Projekte verwalten",
+      "categoriesValues": "3. Kategorien & Werte",
+      "decisionTable": "4. Entscheidungstabelle",
+      "rulesClassic": "5. Regeln (klassisch)",
+      "testcaseGeneration": "6. Testfall-Generierung",
+      "riskCoverage": "7. Risikoabdeckung",
+      "export": "8. Export",
+      "dataclasses": "9. Datenklassen",
+      "settings": "10. Einstellungen",
+      "usersRoles": "11. Benutzer & Rollen",
+      "keyboardNav": "12. Tastaturnavigation",
+      "glossary": "13. Glossar",
+      "faq": "14. FAQ",
+      "apiIntegration": "15. API-Einbindung"
+    }
+  },
+  "staleDataWarning": {
+    "title": "Diese Ansicht ist veraltet",
+    "messageModifiedBy": "Diese Daten wurden zwischenzeitlich von {{user}} geaendert.",
+    "messageGeneral": "Diese Daten wurden zwischenzeitlich von einer anderen Person geaendert.",
+    "lastModified": "Letzte Aenderung: {{date}}",
+    "reload": "Neu laden",
+    "overwrite": "Trotzdem ueberschreiben",
+    "confirmOverwrite": {
+      "title": "Ueberschreiben bestaetigen",
+      "message": "Du bist dabei, die Aenderungen einer anderen Person zu ueberschreiben. Diese Aktion kann nicht rueckgaengig gemacht werden.",
+      "cancel": "Abbrechen",
+      "confirm": "Trotzdem ueberschreiben"
+    }
+  },
+  "errorBoundary": {
+    "title": "Ein Fehler ist aufgetreten",
+    "message": "Die Anwendung konnte nicht korrekt geladen werden.",
+    "unknownError": "Unbekannter Fehler",
+    "reload": "Seite neu laden"
+  },
+  "deleteProjectDialog": {
+    "titleSingle": "Projekt löschen",
+    "titleMultiple": "Projekte löschen",
+    "messageSingle": "Das Projekt <strong>{{name}}</strong> hat",
+    "messageMultiple": "{{count}} der ausgewählten Projekte haben",
+    "generationsLinked": "{{count}} {{count, select, 1 {Generierung} other {Generierungen}}} verknüpft.",
+    "warning": "Beim Löschen werden alle verknüpften Generierungen und Testfälle unwiderruflich entfernt.",
+    "confirm": "Ja – alles löschen",
+    "showSingle": "Anzeigen (Generierungen des Projekts)",
+    "showMultiple": "Anzeigen: {{name}}",
+    "cancel": "Nein – abbrechen"
+  },
+  "themeSwitcher": {
+    "normal": "☀️ Normal",
+    "dark": "🌙 Dark",
+    "steampunk": "⚙️ Steampunk",
+    "rainbow": "🌈 Rainbow",
+    "heavyMetal": "🤘 Heavy Metal",
+    "system": "🖥️ System (OS)"
+  },
+  "portSettings": {
+    "title": "Port-Einstellung",
+    "label": "Bevorzugter Port",
+    "description": "Standard ist <strong>8000</strong>. <strong>5173</strong> bleibt nur die Dev-Option. Nach einer Aenderung muss der Server neu gestartet werden.",
+    "currentUrl": "Aktuelle lokale URL:",
+    "save": "Speichern",
+    "error": "Bitte einen Port zwischen 1 und 65535 eingeben.",
+    "success": "Port {{port}} gespeichert. Neustart erforderlich."
+  },
+  "maxTestCases": {
+    "title": "Maximale Anzahl Testfälle",
+    "label": "Obergrenze pro Generierung",
+    "description": "Standard ist <strong>{{default}}</strong>. Verhindert, dass eine Generierung unbegrenzt viele Testfälle erzeugt.",
+    "currentLimit": "Aktuell gewählte Obergrenze:",
+    "save": "Speichern",
+    "success": "Obergrenze auf {{count}} Testfälle gesetzt. Wird ab der nächsten Generierung angewendet.",
+    "error": "Ungültiger Wert."
+  },
+  "userManagement": {
+    "title": "Benutzerverwaltung",
+    "createUser": "Neuen Nutzer anlegen",
+    "createSuccess": "Nutzer erfolgreich erstellt",
+    "roleChanged": "Rolle erfolgreich geaendert",
+    "activated": "Nutzer ist jetzt aktiv",
+    "deactivated": "Nutzer ist jetzt inaktiv",
+    "deleted": "Nutzer \"{{username}}\" erfolgreich geloescht",
+    "passwordChanged": "Passwort erfolgreich geaendert",
+    "columns": {
+      "username": "Benutzername",
+      "role": "Rolle",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "roles": {
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "status": {
+      "active": "aktiv",
+      "inactive": "inaktiv"
+    },
+    "actions": {
+      "changePassword": "Passwort aendern",
+      "delete": "Loeschen",
+      "deactivate": "deaktivieren",
+      "activate": "aktivieren"
+    },
+    "createDialog": {
+      "title": "Neuen Nutzer anlegen",
+      "username": "Benutzername",
+      "usernamePlaceholder": "Benutzername",
+      "password": "Passwort",
+      "passwordPlaceholder": "Passwort",
+      "role": "Rolle",
+      "create": "Erstellen",
+      "createLoading": "...",
+      "cancel": "Abbrechen"
+    },
+    "deleteDialog": {
+      "title": "Nutzer loeschen",
+      "confirm": "Moechtest du den Nutzer <strong>{{username}}</strong> wirklich loeschen?",
+      "warning": "Diese Aktion kann nicht rueckgaengig gemacht werden.",
+      "confirmBtn": "Ja - loeschen",
+      "cancel": "Abbrechen"
+    },
+    "passwordDialog": {
+      "title": "Passwort aendern fuer {{username}}",
+      "newPassword": "Neues Passwort",
+      "newPasswordPlaceholder": "Neues Passwort",
+      "change": "Aendern",
+      "cancel": "Abbrechen"
+    }
+  },
+  "categoryTree": {
+    "loading": "Lade Kategorien...",
+    "newCategoryPlaceholder": "Neue Kategorie eingeben...",
+    "newValuePlaceholder": "Neuer Wert... (Enter)",
+    "noCategories": "Noch keine Kategorien",
+    "noCategoriesHint": "Gib oben einen Namen ein und klicke +",
+    "noValues": "Noch keine Werte",
+    "valuesCount": "{{count}} Werte",
+    "loadValues": "Werte laden (klick)",
+    "keyboardHelp": {
+      "newCategory": "Alt+N: Neue Kategorie",
+      "delete": "DEL: Löschen",
+      "rename": "F2/Doppelklick: Umbenennen",
+      "contextMenu": "Rechtsklick: Kontextmenü",
+      "sort": "Ziehen: Sortieren",
+      "undo": "Strg+Z: Rückgängig",
+      "redo": "Strg+Y: Wiederholen"
+    },
+    "contextMenu": {
+      "rename": "Umbenennen (F2)",
+      "typeNormal": "Typ: Normal",
+      "typeCause": "Typ: Ursache",
+      "typeEffect": "Typ: Wirkung",
+      "addValue": "Wert hinzufügen",
+      "applyDataClass": "Datenklasse anwenden...",
+      "bva": "Grenzwertanalyse...",
+      "delete": "Löschen",
+      "deleteCategoryConfirm": "Kategorie löschen?",
+      "deleteValueConfirm": "Wert löschen?",
+      "setDefault": "★ Als Default markieren",
+      "unsetDefault": "✕ Default entfernen"
+    },
+    "categoryType": {
+      "normal": "Normal",
+      "ergebnis": "Ergebnis",
+      "ursache": "Ursache",
+      "wirkung": "Wirkung"
+    },
+    "toast": {
+      "categoryCreated": "Kategorie angelegt",
+      "categoryDeleted": "Kategorie gelöscht",
+      "categoryRenamed": "Kategorie umbenannt",
+      "categoryTypeChanged": "Kategorie-Typ geaendert",
+      "valueAdded": "Wert hinzugefuegt",
+      "valueDeleted": "Wert gelöscht",
+      "valueRenamed": "Wert umbenannt",
+      "orderSaved": "Reihenfolge gespeichert",
+      "errorCreate": "Fehler beim Anlegen",
+      "errorDelete": "Fehler beim Löschen",
+      "errorRename": "Fehler beim Umbenennen",
+      "errorTypeChange": "Fehler beim Aendern des Typs",
+      "errorAdd": "Fehler beim Hinzufuegen",
+      "errorSort": "Fehler beim Sortieren",
+      "error": "Fehler",
+      "valuesApplied": "{{count}} Werte uebernommen",
+      "boundaryValuesAdded": "{{count}} Grenzwerte hinzugefügt"
+    }
+  },
+  "rulesPanel": {
+    "loading": "Lade Regeln...",
+    "needTwoCategories": "Mindestens zwei Kategorien erforderlich um Regeln anzulegen.",
+    "createTitle": "Neue Regel anlegen",
+    "typeLabel": "Regeltyp",
+    "ifCategoryLabel": "Wenn Kategorie",
+    "valueLabel": "Wert",
+    "thenCategoryLabelExclude": "Paar-Kategorie",
+    "thenCategoryLabel": "Dann Kategorie",
+    "thenValueLabelCombine": "Erlaubte Werte (Mehrfachauswahl)",
+    "saveBtn": "Regel speichern",
+    "ruleCount": "{{count}} Regel{{count, select, 1 {} other {n}}}",
+    "noRules": "Noch keine Regeln angelegt.",
+    "ifLabel": "Wenn",
+    "thenLabel": "Dann",
+    "excludeLabel": "Nicht mit",
+    "conflictWarning": "⚠️ Regelwiderspruch mit Regel #{{ids}}",
+    "deleteConfirm": "Regel löschen?",
+    "deleteTitle": "Regel löschen",
+    "saved": "Regel gespeichert.",
+    "saveError": "Fehler beim Speichern.",
+    "conflictWith": "Regelwiderspruch mit Regel #{{ids}}",
+    "typeLabels": {
+      "exclude": "Verboten (Paar nicht gemeinsam)",
+      "dependency": "Abhängig (Wenn/Dann)",
+      "combine": "Kombinieren (Fan-out)"
+    }
+  },
+  "decisionTableHelp": {
+    "title": "📋 Entscheidungstabelle – Hilfe",
+    "close": "Schliessen",
+    "back": "← Zurueck",
+    "next": "Weiter →",
+    "done": "Verstanden ✓",
+    "step1": {
+      "title": "Schritt 1: Kategorien erstellen",
+      "content": "Erstelle mindestens <strong>eine Ursache</strong> und <strong>eine Wirkung</strong>.",
+      "cause": "Ursache (Condition): Eine Bedingung, die eintreten kann (z.B. \"Benutzer ist angemeldet\")",
+      "effect": "Wirkung (Effect): Eine Aktion oder Ergebnis (z.B. \"Zugriff gewaehrt\")",
+      "warning": "⚠️ Der Button \"Entscheidungstabelle\" ist erst aktiv, wenn BEIDE Typen existieren!"
+    },
+    "step2": {
+      "title": "Schritt 2: Werte zuweisen (optional)",
+      "content": "Standardmaessig verwendet die Tabelle <strong>Y/N</strong> (Ja/Nein) fuer Ursachen.",
+      "customValues": "Du kannst auch eigene Werte fuer Ursachen erstellen (Extended Entry), z.B.:",
+      "textMode": "Fuer Wirkungen kannst du den <strong>Text-Modus</strong> aktivieren, um freitextliche Werte einzugeben."
+    },
+    "step3": {
+      "title": "Schritt 3: Tabelle generieren",
+      "content": "Klicke auf den Button <strong>\"📋 Entscheidungstabelle\"</strong>:",
+      "firstClick": "Erster Klick: Aktiviert den Modus",
+      "secondClick": "Zweiter Klick (\"⚡ Generieren\"): Erstellt die Tabelle",
+      "info": "Die Tabelle zeigt alle moeglichen Kombinationen deiner Ursachen (2^N Regeln).",
+      "tip": "💡 Bei 3 Ursachen = 2³ = 8 Regeln. Bei 5 Ursachen = 2⁵ = 32 Regeln."
+    },
+    "step4": {
+      "title": "Schritt 4: Wirkungen ausfuellen",
+      "content": "Fuer jede Regel trage ein, welche Wirkungen eintreten:",
+      "x": "<strong>X</strong> = Diese Wirkung tritt ein",
+      "dash": "<strong>—</strong> = Diese Wirkung tritt nicht ein (Don't Care)",
+      "dot": "<strong>·</strong> = Noch nicht festgelegt",
+      "textMode": "Im <strong>Text-Modus</strong> kannst du statt X/— auch freitextliche Werte eingeben."
+    },
+    "step5": {
+      "title": "Schritt 5: Constraints hinzufuegen",
+      "content": "Constraints beschreiben logische Zusammenhaenge zwischen Ursachen oder Wirkungen:",
+      "exclusive": "<strong>E (Exclusive):</strong> Maximal eine Ursache kann wahr sein",
+      "oneOnlyOne": "<strong>O (One-and-Only-One):</strong> Genau eine Ursache muss wahr sein",
+      "inclusive": "<strong>I (Inclusive):</strong> Mindestens eine Ursache muss wahr sein",
+      "requires": "<strong>R (Requires):</strong> Wenn Ursache A wahr, dann auch Ursache B",
+      "mask": "<strong>M (Mask):</strong> Wenn Wirkung A aktiv, dann Wirkung B blockiert"
+    },
+    "step6": {
+      "title": "Schritt 6: Pruefen und optimieren",
+      "content": "Nutze die Buttons <strong>\"📦 Zusammenfassen\"</strong> und <strong>\"🔍 Pruefen\"</strong>:",
+      "collapse": "<strong>Zusammenfassen:</strong> Fasst redundante Regeln automatisch zusammen (Collapsing)",
+      "check": "<strong>Pruefen:</strong> Zeigt an, ob die Tabelle vollstaendig ist, ob Widersprueche oder Luecken existieren",
+      "legend": "✅ Gruen = Vollstaendig | 🟡 Gelb = Uberschneidungen | 🔴 Rot = Luecken"
+    }
+  },
+  "dataNodeTree": {
+    "loading": "Lade...",
+    "noNodes": "Noch keine Knoten",
+    "addChild": "Unterpunkt",
+    "addValue": "Wert",
+    "delete": "Loeschen",
+    "deleteConfirm": "Knoten und alle Unterpunkte löschen?",
+    "errorCreate": "Fehler beim Anlegen: {{error}}",
+    "errorDelete": "Fehler beim Löschen: {{error}}",
+    "errorAddValue": "Fehler beim Hinzufügen: {{error}}",
+    "category": "Kategorie",
+    "group": "Gruppe",
+    "class": "Klasse",
+    "valuesCount": "{{count}} Werte",
+    "childPlaceholder": "Name der Gruppe/Klasse...",
+    "valuePlaceholder": "Neuer Wert...",
+    "expand": "Aufklappen",
+    "collapse": "Zuklappen",
+    "value": "Wert"
+  },
+  "dataNodeApplyDialog": {
+    "title": "Datenklasse anwenden auf: {{categoryName}}",
+    "search": "Suche...",
+    "apply": "Übernehmen",
+    "cancel": "Abbrechen",
+    "success": "{{count}} Werte übernommen",
+    "loading": "Lade Datenklassen...",
+    "empty": "Keine Datenklassen vorhanden."
+  },
+  "bvaDialog": {
+    "title": "Grenzwertanalyse: {{categoryName}}",
+    "cancel": "Abbrechen",
+    "apply": "Anwenden",
+    "applying": "Wird angewendet...",
+    "loading": "Lade...",
+    "success": "{{count}} Grenzwerte hinzugefügt",
+    "category": "Kategorie",
+    "numberline": "Zahlenstrahl",
+    "preview": "Vorschau ({{count}} Werte)"
+  },
+  "undoRedo": {
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "undoTitle": "Rückgängig (Strg+Z)",
+    "redoTitle": "Wiederholen (Strg+Y)"
+  },
+  "contextMenu": {
+    "rename": "Umbenennen (F2)",
+    "delete": "Löschen"
+  },
+  "toast": {
+    "success": "Erfolg",
+    "error": "Fehler",
+    "warning": "Warnung"
+  },
+  "modelExport": {
+    "button": "Modell exportieren",
+    "yaml": "Als YAML exportieren",
+    "json": "Als JSON exportieren",
+    "loading": "Exportiert...",
+    "error": "Export fehlgeschlagen: {{error}}",
+    "success": "Modell exportiert"
+  },
+  "modelImport": {
+    "title": "Modell importieren",
+    "button": "Modell importieren",
+    "fileSelect": "Datei auswaehlen",
+    "dragDrop": "Datei hierher ziehen oder klicken",
+    "acceptedFormats": ".yaml oder .json (max. 5 MB)",
+    "mode": "Import-Modus",
+    "modeNew": "Neues Projekt erstellen",
+    "modeUpdate": "Bestehendes Projekt aktualisieren",
+    "projectSelect": "Projekt auswaehlen",
+    "previewTitle": "Aenderungsvorschau",
+    "previewLoading": "Aenderungsvorschau wird geladen...",
+    "noChanges": "Keine Aenderungen erkannt.",
+    "added": "hinzugefuegt",
+    "modified": "geaendert",
+    "removed": "entfernt",
+    "categories": "Kategorien",
+    "values": "Werte",
+    "rules": "Regeln",
+    "warning": "Bei Aktualisierung werden bestehende Daten teilweise ersetzt. Generierungen bleiben unveraendert.",
+    "confirm": "Modell importieren",
+    "confirmLoading": "Importiert...",
+    "cancel": "Abbrechen",
+    "errorFileTooLarge": "Datei zu gross. Maximum: 5 MB.",
+    "errorInvalidFormat": "Ungültiges Dateiformat. Nur .yaml oder .json.",
+    "errorImport": "Import fehlgeschlagen: {{error}}",
+    "errorValidation": "Validierungsfehler:",
+    "errorPreview": "Aenderungsvorschau fehlgeschlagen: {{error}}",
+    "successNew": "Projekt \"{{name}}\" erstellt.",
+    "successUpdate": "Projekt \"{{name}}\" aktualisiert."
+  }
+}

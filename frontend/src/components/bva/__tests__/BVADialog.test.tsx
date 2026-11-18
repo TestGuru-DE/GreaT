@@ -4,6 +4,29 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BVADialog } from "../BVADialog";
 
+// REQ-6005: i18n mock for BVADialog tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "bvaDialog.title": "Grenzwertanalyse: {{categoryName}}",
+        "bvaDialog.cancel": "Abbrechen",
+        "bvaDialog.apply": "Anwenden",
+        "bvaDialog.applying": "Wird angewendet...",
+        "bvaDialog.loading": "Lade...",
+        "bvaDialog.success": "{{count}} Grenzwerte hinzugefügt",
+        "bvaDialog.category": "Kategorie",
+        "bvaDialog.numberline": "Zahlenstrahl",
+        "bvaDialog.preview": "Vorschau ({{count}} Werte)",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock("../../../api/bva", () => ({
   bvaApi: {
     generateMultiRange: vi.fn().mockResolvedValue({ values: ["10"], category_id: 1 }),

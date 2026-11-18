@@ -1,4 +1,5 @@
 ﻿import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'great-preferred-port';
 const DEFAULT_PORT = 8000;
@@ -17,7 +18,9 @@ function parsePort(value: string): number | null {
   return parsed;
 }
 
+// REQ-6005: i18n
 export function PortSettingsCard() {
+  const { t } = useTranslation();
   const [portText, setPortText] = useState(() => String(readStoredPort()));
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,22 +30,22 @@ export function PortSettingsCard() {
   function handleSave() {
     const normalized = parsePort(portText);
     if (normalized === null) {
-      setError('Bitte einen Port zwischen 1 und 65535 eingeben.');
+      setError(t('portSettings.error'));
       setStatus(null);
       return;
     }
 
     localStorage.setItem(STORAGE_KEY, String(normalized));
     setError(null);
-    setStatus(`Port ${normalized} gespeichert. Neustart erforderlich.`);
+    setStatus(t('portSettings.success', { port: normalized }));
   }
 
   return (
     <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-      <h2 className="text-lg font-semibold text-theme-text mb-4">Port-Einstellung</h2>
+      <h2 className="text-lg font-semibold text-theme-text mb-4">{t('portSettings.title')}</h2>
       <div className="space-y-3 max-w-xl">
         <label className="block text-sm font-medium text-theme-text-secondary" htmlFor="preferred-port">
-          Bevorzugter Port
+          {t('portSettings.label')}
         </label>
         <input
           id="preferred-port"
@@ -53,18 +56,16 @@ export function PortSettingsCard() {
           onChange={(e) => setPortText(e.target.value)}
           className="w-full px-4 py-2 border border-theme-border rounded-lg bg-theme-bg text-theme-text"
         />
-        <p className="text-sm text-theme-text-secondary">
-          Standard ist <strong>8000</strong>. <strong>5173</strong> bleibt nur die Dev-Option. Nach einer Aenderung muss der Server neu gestartet werden.
-        </p>
+        <p className="text-sm text-theme-text-secondary" dangerouslySetInnerHTML={{ __html: t('portSettings.description') }} />
         <p className="text-xs text-theme-text-muted">
-          Aktuelle lokale URL: <span className="font-mono">http://localhost:{previewPort ?? DEFAULT_PORT}</span>
+          {t('portSettings.currentUrl')} <span className="font-mono">http://localhost:{previewPort ?? DEFAULT_PORT}</span>
         </p>
         <button
           type="button"
           onClick={handleSave}
           className="px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover text-theme-accent-text rounded transition"
         >
-          Speichern
+          {t('portSettings.save')}
         </button>
         {error && <p className="text-sm text-theme-danger">{error}</p>}
         {status && <p className="text-sm text-theme-success">{status}</p>}
@@ -72,4 +73,3 @@ export function PortSettingsCard() {
     </section>
   );
 }
-

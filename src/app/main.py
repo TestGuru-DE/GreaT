@@ -3,14 +3,16 @@
 # REQ-1202: React-Frontend wird als StaticFiles ausgeliefert (Production Build)
 # REQ-4007: GREAT_PORT Umgebungsvariable für portierbare Konfiguration
 # REQ-4009: Strukturiertes Logging via structlog
+# REQ-6012: API-Tokens mit Bearer-Auth, /api/v1/-Alias, OpenAPI Security-Scheme
 import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, FileResponse, JSONResponse
+from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 
 from .config import GREAT_PORT, GREAT_HOST, CORS_ORIGINS
@@ -26,8 +28,10 @@ from .routers import (
     api_decision_table,
     api_sharing,
     api_users,
+    api_model,
     auth,
 )
+from .routers import api_tokens  # REQ-6012
 from .system_dataclasses import seed_system_dataclasses
 from .seed_example import seed_example_project
 from .bootstrap import ensure_first_admin, backfill_default_password_flags
@@ -40,6 +44,9 @@ FRONTEND_DIST = Path(__file__).parent.parent.parent / "frontend" / "dist"
 # REQ-4009: Logging initialisieren
 setup_logging()
 log = get_logger("great.api")
+
+# REQ-6012: HTTPBearer Security-Scheme fuer OpenAPI
+http_bearer_security = HTTPBearer(auto_error=False)
 
 
 @asynccontextmanager
@@ -66,7 +73,39 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="G.R.E.A.T. API", version=__version__, lifespan=lifespan)
+# REQ-6012: OpenAPI mit HTTPBearer Security-Scheme
+app = FastAPI(
+    title="G.R.E.A.T. API",
+    version=__version__,
+    lifespan=lifespan,
+    # REQ-6012: Security-Scheme fuer Bearer-Token
+    security=[],  # Global leer; pro-Endpoint ueber dependencies
+)
+
+# REQ-6012: Manuelles Security-Schema fuer OpenAPI
+app.openapi_tags = [{"name": "api-tokens", "description": "REQ-6012: API-Token Management"}]
+
+
+def custom_openapi():
+    """REQ-6012: Fuegt HTTPBearer Security-Scheme zum OpenAPI-Schema hinzu."""
+    if app.openapi_schema:
+        return app.openapi_schema
+    # Use parent's openapi() to avoid recursion
+    from fastapi import FastAPI
+    openapi_schema = FastAPI.openapi(app)
+    openapi_schema["components"]["securitySchemes"] = {
+        "HTTPBearer": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "great_pat_...",
+            "description": "REQ-6012: API-Token fuer CI und Testwerkzeuge. Format: great_pat_<random>",
+        }
+    }
+    app.openapi_schema = openapi_schema
+    return openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 @app.exception_handler(Exception)
@@ -86,6 +125,35 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
 )
+
+
+# REQ-6012: Rate-Limit-Middleware fuer API-Tokens
+@app.middleware("http")
+async def api_token_rate_limiter(request: Request, call_next):
+    """REQ-6012: Rate-Limit pro API-Token (600/Min, konfigurierbar).
+
+    In-Memory: dokumentiert als MVP; in Production: Redis-basiert.
+    """
+    from .auth_deps import _extract_bearer_token
+    from .rate_limiter import token_rate_limiter
+
+    raw_token = _extract_bearer_token(request)
+    if raw_token:
+        # Use first 16 chars as key (matches DB prefix for uniqueness)
+        rate_key = raw_token[:16]
+        is_limited, retry_after = token_rate_limiter.is_rate_limited(rate_key)
+        if is_limited:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "detail": "Rate-Limit fuer API-Token ueberschritten",
+                    "code": "rate_limit_exceeded",
+                },
+                headers={"Retry-After": str(retry_after)},
+            )
+
+    response = await call_next(request)
+    return response
 
 
 # REQ-4009: Request/Response-Logging Middleware
@@ -146,12 +214,23 @@ def _add_token_version_column(conn) -> None:
         conn.exec_driver_sql("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0")
 
 
+def _add_language_column(conn) -> None:
+    """REQ-6005: Spalte users.language idempotent ergaenzen."""
+    cols = conn.exec_driver_sql("PRAGMA table_info('users')").fetchall()
+    if not cols:
+        return
+    have = {c[1] for c in cols}
+    if "language" not in have:
+        conn.exec_driver_sql("ALTER TABLE users ADD COLUMN language VARCHAR(2)")
+
+
 def _migrate_db() -> None:
     if engine.url.get_backend_name() != "sqlite":
         return
     with engine.begin() as conn:
         _add_default_password_active_column(conn)
         _add_token_version_column(conn)
+        _add_language_column(conn)
         cols = conn.exec_driver_sql("PRAGMA table_info('values')").fetchall()
         have = {c[1] for c in cols}
         if "allowed" not in have:
@@ -206,7 +285,21 @@ app.include_router(api_decision_table.router)  # Entscheidungstabelle (Prefix /a
 app.include_router(api_sharing.router)  # Projektfreigaben (Prefix /api/sharing)
 app.include_router(api_users.router)  # REQ-4025: Benutzerverwaltung (Prefix /api/users, Admin)
 app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /api/users/{id}/password)
+app.include_router(api_model.router)  # REQ-6013: Modell-Export/Import (Prefix /api/v1/projects)
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
+
+# REQ-6012: API-Token Management
+app.include_router(api_tokens.router)  # /api/v1/api-tokens
+app.include_router(api_tokens.admin_router)  # /api/v1/admin/api-tokens
+
+# ---------------------------------------------------------------------------
+# REQ-6012: /api/v1/-Alias (gleiche Implementierung wie /api/)
+# ---------------------------------------------------------------------------
+
+app.include_router(api_projects.router, prefix="/api/v1")
+app.include_router(api_generate.router, prefix="/api/v1")
+app.include_router(api_dataclasses.router, prefix="/api/v1")
+app.include_router(api_datanodes.router, prefix="/api/v1")
 
 # ---------------------------------------------------------------------------
 # Komfort-Redirects (muessen VOR dem SPA-Fallback definiert werden)

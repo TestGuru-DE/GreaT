@@ -1,5 +1,6 @@
 ﻿// REQ-4001: Zustand Store fuer Authentifizierungszustand
 // REQ-4028: passwordChangeRequired State und changePassword Action
+// REQ-6005: Sprachpraferenz
 import { create } from "zustand";
 import { authApi } from "../api/authApi";
 import type { UserInfo } from "../api/authApi";
@@ -9,15 +10,17 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   passwordChangeRequired: boolean;
+  language: "de" | "en" | null;
 
   // Actions
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
-  
+
   refresh: () => Promise<void>;
   setPasswordChangeRequired: (value: boolean) => void;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  setLanguage: (lang: "de" | "en") => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -25,6 +28,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   error: null,
   passwordChangeRequired: false,
+  language: null,
 
   login: async (username: string, password: string) => {
     set({ isLoading: true, error: null });
@@ -34,7 +38,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await authApi.me();
       // REQ-4028 AK-1: password_change_required aus /auth/me auslesen
       const requiresChange = !!user.password_change_required;
-      set({ user, isLoading: false, passwordChangeRequired: requiresChange });
+      // REQ-6005: Sprache vom Server laden
+      const lang = user.language as "de" | "en" | null;
+      set({ user, isLoading: false, passwordChangeRequired: requiresChange, language: lang });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       set({ error: message, isLoading: false });
@@ -55,9 +61,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await authApi.me();
       // REQ-4028 AK-1: password_change_required aus /auth/me auslesen
       const requiresChange = !!user.password_change_required;
-      set({ user, passwordChangeRequired: requiresChange });
+      // REQ-6005: Sprache vom Server laden
+      const lang = user.language as "de" | "en" | null;
+      set({ user, passwordChangeRequired: requiresChange, language: lang });
     } catch {
-      set({ user: null, passwordChangeRequired: false });
+      set({ user: null, passwordChangeRequired: false, language: null });
     }
   },
 
@@ -86,6 +94,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       const message = e instanceof Error ? e.message : String(e);
       set({ error: message, isLoading: false });
       throw e;
+    }
+  },
+
+  // REQ-6005: Sprachpraferenz speichern
+  setLanguage: async (lang: "de" | "en") => {
+    try {
+      await authApi.setLanguage(lang);
+      set({ language: lang });
+    } catch {
+      // Silent fail – Sprache funktioniert lokal trotzdem
+      throw new Error("Failed to save language preference");
     }
   },
 }));

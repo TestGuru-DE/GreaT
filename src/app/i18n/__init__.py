@@ -1,0 +1,1 @@
+# REQ-6005: Backend i18n fuer Fehlermeldungen

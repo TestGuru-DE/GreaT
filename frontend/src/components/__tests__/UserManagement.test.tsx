@@ -4,6 +4,60 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import UserManagement from "../UserManagement";
 import { useAuthStore } from "../../store/authStore";
 
+// REQ-6005: i18n mock for UserManagement tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "userManagement.title": "Benutzerverwaltung",
+        "userManagement.createUser": "Neuen Nutzer anlegen",
+        "userManagement.createSuccess": "Nutzer erfolgreich erstellt",
+        "userManagement.roleChanged": "Rolle erfolgreich geaendert",
+        "userManagement.activated": "Nutzer ist jetzt aktiv",
+        "userManagement.deactivated": "Nutzer ist jetzt inaktiv",
+        "userManagement.deleted": "Nutzer \"{{username}}\" erfolgreich geloescht",
+        "userManagement.passwordChanged": "Passwort erfolgreich geaendert",
+        "userManagement.columns.username": "Benutzername",
+        "userManagement.columns.role": "Rolle",
+        "userManagement.columns.status": "Status",
+        "userManagement.columns.actions": "Aktionen",
+        "userManagement.roles.admin": "Admin",
+        "userManagement.roles.editor": "Editor",
+        "userManagement.roles.viewer": "Viewer",
+        "userManagement.status.active": "aktiv",
+        "userManagement.status.inactive": "inaktiv",
+        "userManagement.actions.changePassword": "Passwort aendern",
+        "userManagement.actions.delete": "Loeschen",
+        "userManagement.actions.deactivate": "deaktivieren",
+        "userManagement.actions.activate": "aktivieren",
+        "userManagement.createDialog.title": "Neuen Nutzer anlegen",
+        "userManagement.createDialog.username": "Benutzername",
+        "userManagement.createDialog.usernamePlaceholder": "Benutzername",
+        "userManagement.createDialog.password": "Passwort",
+        "userManagement.createDialog.passwordPlaceholder": "Passwort",
+        "userManagement.createDialog.role": "Rolle",
+        "userManagement.createDialog.create": "Erstellen",
+        "userManagement.createDialog.createLoading": "...",
+        "userManagement.createDialog.cancel": "Abbrechen",
+        "userManagement.deleteDialog.title": "Nutzer loeschen",
+        "userManagement.deleteDialog.confirm": "Moechtest du den Nutzer <strong>{{username}}</strong> wirklich loeschen?",
+        "userManagement.deleteDialog.warning": "Diese Aktion kann nicht rueckgaengig gemacht werden.",
+        "userManagement.deleteDialog.confirmBtn": "Ja - loeschen",
+        "userManagement.deleteDialog.cancel": "Abbrechen",
+        "userManagement.passwordDialog.title": "Passwort aendern fuer {{username}}",
+        "userManagement.passwordDialog.newPassword": "Neues Passwort",
+        "userManagement.passwordDialog.newPasswordPlaceholder": "Neues Passwort",
+        "userManagement.passwordDialog.change": "Aendern",
+        "userManagement.passwordDialog.cancel": "Abbrechen",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 // Mock useAuthStore
 vi.mock("../../store/authStore", () => ({
   useAuthStore: vi.fn(),

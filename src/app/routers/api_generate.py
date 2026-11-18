@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..auth_deps import require_api_capable, require_writer
+from ..auth_deps import require_api_capable, require_writer, require_scope
 from ..api_types import DbId
 from .. import models, schemas
 from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
@@ -54,8 +54,14 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
             engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
     return RuleEngine(engine_rules)
 
-@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer)])
-def generate(pid: DbId, payload: schemas.GenerateRequest, db: Session = Depends(get_db)):
+@router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer), Depends(require_scope("generate"))])
+def generate(
+    pid: DbId,
+    payload: schemas.GenerateRequest,
+    db: Session = Depends(get_db),
+    export: Optional[str] = None,  # REQ-6012: Komfort-Endpunkt (csv/json)
+    persist: bool = True,          # REQ-6012: persist=false = keine dauerhafte Generierung
+):
     import time as _time
 
     project = db.get(models.Project, pid)
@@ -663,4 +669,119 @@ def export_generation_xlsx(gen_id: DbId, db: Session = Depends(get_db)):
         content=buffer.read(),
         media_type=mime,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ---------------------------------------------------------------------------
+# REQ-6011: Exporte fuer Testmanagement/Automatisierung
+# ---------------------------------------------------------------------------
+
+from ..exporters import get_exporter
+
+
+@router.get("/generations/{gen_id}/export/{format}")
+def export_generation_format(
+    gen_id: DbId,
+    format: str,
+    lang: str = Query("en", description="Sprache (de/en) fuer Gherkin"),
+    deterministic: bool = Query(False, description="Deterministischer Export (fixes Datum)"),
+    values: str | None = Query(None, description="Komma-separierte TC-Namen (Teilmengen-Auswahl)"),
+    db: Session = Depends(get_db),
+):
+    """REQ-6011: Export generation in various formats.
+
+    Supported formats: gherkin, pytest, json-data-driven, robot,
+    xray-csv, testrail-csv, azuredevops-csv, markdown.
+    """
+    exporter = get_exporter(format)
+    if not exporter:
+        raise HTTPException(404, f"Unknown export format: {format}")
+
+    gen = db.get(models.Generation, gen_id)
+    if not gen:
+        raise HTTPException(status_code=404, detail="Generierung nicht gefunden")
+
+    project = db.get(models.Project, gen.project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+
+    categories = (
+        db.query(models.Category)
+        .filter(models.Category.project_id == gen.project_id)
+        .order_by(models.Category.order_index, models.Category.id)
+        .all()
+    )
+    name_by_id = {c.id: c.name for c in categories}
+    cat_names = [c.name for c in categories]
+    result_cats = [c.name for c in categories if c.is_result]
+
+    testcases_db = (
+        db.query(models.TestCase)
+        .filter(models.TestCase.generation_id == gen_id)
+        .order_by(models.TestCase.id)
+        .all()
+    )
+
+    # REQ-3063: Fehlerwerte
+    error_values = load_error_values(db, gen.project_id)
+
+    # Teilmengen-Auswahl
+    if values:
+        allowed_names = {v.strip() for v in values.split(",")}
+        testcases_db = [tc for tc in testcases_db if tc.name in allowed_names]
+
+    # generation_view aufbauen
+    from ..version import __version__
+
+    testcases_out: list[dict] = []
+    for tc in testcases_db:
+        vals = (
+            db.query(models.TestCaseValue)
+            .filter(models.TestCaseValue.testcase_id == tc.id)
+            .order_by(models.TestCaseValue.id)
+            .all()
+        )
+        assignments = {}
+        for v in vals:
+            cat_name = name_by_id.get(v.category_id)
+            if cat_name is None and v.category_name:
+                cat_name = v.category_name
+            elif cat_name is None:
+                cat_name = f"cat#{v.category_id}"
+            assignments[cat_name] = v.value
+
+        has_error = any(val in error_values for val in assignments.values() if val)
+        testcases_out.append({
+            "id": tc.id,
+            "name": tc.name,
+            "assignments": assignments,
+            "has_error_value": has_error,
+        })
+
+    generation_view = {
+        "project_name": project.name,
+        "project_id": gen.project_id,
+        "generation_id": gen.id,
+        "strategy": gen.strategy,
+        "name": gen.name or "",
+        "created_at": gen.created_at.strftime("%Y-%m-%d") if gen.created_at else "",
+        "version": __version__,
+        "categories": cat_names,
+        "result_categories": result_cats,
+        "error_values": sorted(error_values),
+        "testcases": testcases_out,
+    }
+
+    options = {
+        "lang": lang,
+        "deterministic": deterministic,
+    }
+
+    content = exporter.render(generation_view, options)
+    return Response(
+        content=content,
+        media_type=exporter.media_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="generation_{gen.id}{exporter.file_extension}"',
+        },
     )

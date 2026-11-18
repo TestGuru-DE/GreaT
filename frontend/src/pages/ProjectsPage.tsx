@@ -1,6 +1,8 @@
 ﻿// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
+// REQ-6005: i18n
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../store/projectStore";
 import { generateApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
@@ -9,6 +11,7 @@ import type { Project } from "../types";
 import DeleteProjectDialog from "../components/DeleteProjectDialog";
 
 export default function ProjectsPage() {
+  const { t } = useTranslation();
   const { projects, loading, error, fetchProjects, createProject, deleteProject, bulkDeleteForce } =
     useProjectStore();
   const [newName, setNewName] = useState("");
@@ -45,7 +48,7 @@ export default function ProjectsPage() {
     } catch (e: unknown) {
       if (e instanceof ApiError) {
         if (e.status === 409) {
-          setMsg({ text: 'Ein Projekt mit diesem Namen existiert bereits.', ok: false });
+          setMsg({ text: t('projects.duplicateName'), ok: false });
         } else {
           useToastStore.getState().add(e.message, 'error');
         }
@@ -111,7 +114,7 @@ export default function ProjectsPage() {
   const handleDeleteSingle = (project: Project) => {
     confirmDelete([project], async () => {
       await deleteProject(project.id);
-      setMsg({ text: `Projekt "${project.name}" gelöscht.`, ok: true });
+      setMsg({ text: t('projects.deleteSuccess', { name: project.name }), ok: true });
     });
   };
 
@@ -124,7 +127,7 @@ export default function ProjectsPage() {
       try {
         const ids = targets.map((p) => p.id);
         const res = await bulkDeleteForce(ids);
-        setMsg({ text: `${res.deleted} Projekt(e) gelöscht.`, ok: true });
+        setMsg({ text: t('projects.bulkDeleteSuccess', { count: res.deleted }), ok: true });
         setSelected(new Set());
         await fetchProjects();
       } finally {
@@ -154,17 +157,17 @@ export default function ProjectsPage() {
 
       <main className="max-w-3xl mx-auto px-6 py-8">
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4 text-theme-text">Projekte</h2>
+          <h2 className="text-lg font-semibold mb-4 text-theme-text">{t('projects.title')}</h2>
           <form onSubmit={handleCreate} className="flex gap-3 mb-6">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Neues Projekt..."
+              placeholder={t('projects.newProject')}
               className="flex-1 px-3 py-2 rounded-lg border border-theme-border bg-theme-bg text-theme-text text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent"
             />
             <button type="submit" disabled={creating || !newName.trim()}
               className="px-4 py-2 bg-theme-accent text-theme-accent-text text-sm rounded-lg hover:bg-theme-accent-hover disabled:opacity-50">
-              {creating ? "..." : "Anlegen"}
+              {creating ? t('projects.createBtnLoading') : t('projects.createBtn')}
             </button>
           </form>
 
@@ -181,13 +184,13 @@ export default function ProjectsPage() {
           {projects.length > 0 && (
             <div className="mb-2 flex gap-2 items-center px-1">
               <button onClick={toggleAll} className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover">
-                {selected.size === projects.length ? "Keinen markieren" : "Alle markieren"}
+                {selected.size === projects.length ? t('projects.deselectAll') : t('projects.selectAll')}
               </button>
               <button
                 onClick={() => setSelected(new Set(projects.filter((p) => !selected.has(p.id)).map((p) => p.id)))}
                 className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover"
               >
-                Markierung umkehren
+                {t('projects.invertSelection')}
               </button>
             </div>
           )}
@@ -195,21 +198,21 @@ export default function ProjectsPage() {
           {/* Bulk-Aktions-Toolbar */}
           {selected.size > 0 && (
             <div className="mb-3 flex gap-2 items-center px-3 py-2 bg-theme-surface border-2 border-theme-accent rounded-lg">
-              <span className="text-sm text-theme-accent font-medium">{selected.size} ausgewählt</span>
+              <span className="text-sm text-theme-accent font-medium">{t('projects.selected', { count: selected.size })}</span>
               <button onClick={handleBulkDelete} disabled={working}
                 className="px-3 py-1 text-sm bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 disabled:opacity-50 ml-2">
-                {working ? "Prüfe..." : "Löschen"}
+                {working ? t('projects.bulkDeleteChecking') : t('projects.bulkDelete')}
               </button>
               <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-theme-text-secondary hover:text-theme-text">
-                Auswahl aufheben
+                {t('projects.deselectAllBtn')}
               </button>
             </div>
           )}
 
           {loading ? (
-            <p className="text-theme-text-muted text-sm">Lade Projekte...</p>
+            <p className="text-theme-text-muted text-sm">{t('projects.loading')}</p>
           ) : projects.length === 0 ? (
-            <p className="text-theme-text-muted text-sm">Noch keine Projekte vorhanden.</p>
+            <p className="text-theme-text-muted text-sm">{t('projects.empty')}</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -218,11 +221,11 @@ export default function ProjectsPage() {
                     <input type="checkbox"
                       checked={selected.size === projects.length && projects.length > 0}
                       onChange={toggleAll}
-                      className="rounded" title="Alle auswählen" />
+                      className="rounded" title={t('projects.selectCheckbox')} />
                   </th>
-                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-12">ID</th>
-                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium">Name</th>
-                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-40">Aktionen</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-12">{t('projects.id')}</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium">{t('projects.name')}</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-40">{t('projects.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -236,9 +239,9 @@ export default function ProjectsPage() {
                     <td className="px-4 py-2 font-medium text-theme-text">{p.name}</td>
                     <td className="px-4 py-2">
                       <button onClick={() => navigate("/projects/" + p.id)}
-                        className="text-theme-accent hover:underline text-sm mr-3">Öffnen</button>
+                        className="text-theme-accent hover:underline text-sm mr-3">{t('projects.open')}</button>
                       <button onClick={() => handleDeleteSingle(p)} disabled={working}
-                        className="text-theme-danger hover:opacity-80 text-sm disabled:opacity-50">Löschen</button>
+                        className="text-theme-danger hover:opacity-80 text-sm disabled:opacity-50">{t('projects.delete')}</button>
                     </td>
                   </tr>
                 ))}

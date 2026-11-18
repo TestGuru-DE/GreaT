@@ -1,19 +1,22 @@
 ﻿import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { THEMES, getTheme, setTheme, type ThemeName } from '../lib/theme'
 
 // REQ-3045 (Sofort-Fix): Label wieder schlichtes "Normal" - "(HSV)" war
 // irrefuehrend, da die aktuelle Ziel-Palette (Hintergrund blau, Schrift weiss,
 // Akzent ROT) keine Hamburger-SV-Vereinsfarben (Blau/Weiss, kein Rot) mehr sind.
-const THEME_LABELS: Record<ThemeName, string> = {
-  'normal': '☀️ Normal',
-  'dark': '🌙 Dark',
-  'steampunk': '⚙️ Steampunk',
-  'rainbow': '🌈 Rainbow',
-  'heavy-metal': '🤘 Heavy Metal',
-  'system': '🖥️ System (OS)',
+// REQ-6005: i18n
+const THEME_KEYS: Record<ThemeName, string> = {
+  'normal': 'themeSwitcher.normal',
+  'dark': 'themeSwitcher.dark',
+  'steampunk': 'themeSwitcher.steampunk',
+  'rainbow': 'themeSwitcher.rainbow',
+  'heavy-metal': 'themeSwitcher.heavyMetal',
+  'system': 'themeSwitcher.system',
 }
 
 export function ThemeSwitcher() {
+  const { t } = useTranslation()
   const [current, setCurrent] = useState<ThemeName>(getTheme())
 
   function handleSelect(theme: ThemeName) {
@@ -35,7 +38,7 @@ export function ThemeSwitcher() {
               : 'bg-theme-surface text-theme-text-secondary hover:bg-theme-surface-hover hover:text-theme-text'
           }`}
         >
-          {THEME_LABELS[theme]}
+          {t(THEME_KEYS[theme])}
         </button>
       ))}
     </div>

@@ -1,16 +1,13 @@
 ﻿// REQ-1216 + REQ-3003 + REQ-3004: Regeleditor und Regelanzeige in React
+// REQ-6005: i18n
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
 import type { Category } from "../types";
 
 interface Props { projectId: number; }
 
-const TYPE_LABELS: Record<string, string> = {
-  exclude:    "Verboten (Paar nicht gemeinsam)",
-  dependency: "Abhängig (Wenn/Dann)",
-  combine:    "Kombinieren (Fan-out)",
-};
 const TYPE_BADGE: Record<string, string> = {
   exclude:    "bg-red-50 text-red-600 border border-red-200",
   dependency: "bg-violet-50 text-violet-600 border border-violet-200",
@@ -20,6 +17,7 @@ const TYPE_BADGE: Record<string, string> = {
 type RuleWithConflict = Rule & { conflict_with?: number[] };
 
 export default function RulesPanel({ projectId }: Props) {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<RuleWithConflict[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [catValues, setCatValues] = useState<Record<number, string[]>>({});
@@ -93,18 +91,18 @@ export default function RulesPanel({ projectId }: Props) {
       });
       setRules((prev) => [...prev, created]);
       if (created.conflict_with && created.conflict_with.length > 0) {
-        setMsg({ text: `Regelwiderspruch mit Regel #${created.conflict_with.join(", #")}`, type: "warn" });
+        setMsg({ text: t('rulesPanel.conflictWith', { ids: created.conflict_with.join(", #") }), type: "warn" });
       } else {
-        setMsg({ text: "Regel gespeichert.", type: "ok" });
+        setMsg({ text: t('rulesPanel.saved'), type: "ok" });
       }
       setTimeout(() => setMsg(null), 4000);
     } catch {
-      setMsg({ text: "Fehler beim Speichern.", type: "error" });
+      setMsg({ text: t('rulesPanel.saveError'), type: "error" });
     }
   };
 
   const handleDelete = async (rid: number) => {
-    if (!confirm("Regel löschen?")) return;
+    if (!confirm(t("rulesPanel.deleteConfirm"))) return;
     await rulesApi.delete(projectId, rid);
     setRules((prev) => prev.filter((r) => r.id !== rid));
   };
@@ -118,10 +116,10 @@ export default function RulesPanel({ projectId }: Props) {
     }));
   };
 
-  if (loading) return <p className="text-slate-400 text-sm animate-pulse">Lade Regeln...</p>;
+  if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t('rulesPanel.loading')}</p>;
   if (categories.length < 2) return (
     <div className="text-center py-8 text-slate-400">
-      <p className="text-sm">Mindestens zwei Kategorien erforderlich um Regeln anzulegen.</p>
+      <p className="text-sm">{t('rulesPanel.needTwoCategories')}</p>
     </div>
   );
 
@@ -132,7 +130,7 @@ export default function RulesPanel({ projectId }: Props) {
     <div className="flex flex-col gap-5">
       {/* Regel anlegen – REQ-3003 */}
       <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Neue Regel anlegen</h3>
+        <h3 className="text-sm font-semibold text-slate-700 mb-3">{t('rulesPanel.createTitle')}</h3>
 
         {msg && (
           <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${
@@ -147,14 +145,18 @@ export default function RulesPanel({ projectId }: Props) {
         <div className="grid grid-cols-1 gap-3">
           {/* Typ */}
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">Regeltyp</label>
+            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.typeLabel')}</label>
             <select
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
               className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
             >
-              {Object.entries(TYPE_LABELS).map(([val, label]) => (
-                <option key={val} value={val}>{label}</option>
+              {[
+                { val: 'exclude', key: 'rulesPanel.typeLabels.exclude' },
+                { val: 'dependency', key: 'rulesPanel.typeLabels.dependency' },
+                { val: 'combine', key: 'rulesPanel.typeLabels.combine' },
+              ].map(({ val, key }) => (
+                <option key={val} value={val}>{t(key)}</option>
               ))}
             </select>
           </div>
@@ -162,7 +164,7 @@ export default function RulesPanel({ projectId }: Props) {
           {/* Wenn-Block */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Wenn Kategorie</label>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.ifCategoryLabel')}</label>
               <select
                 value={form.if_cat}
                 onChange={(e) => setForm((f) => ({ ...f, if_cat: Number(e.target.value) }))}
@@ -172,7 +174,7 @@ export default function RulesPanel({ projectId }: Props) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">Wert</label>
+              <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.valueLabel')}</label>
               <select
                 value={form.if_val}
                 onChange={(e) => setForm((f) => ({ ...f, if_val: e.target.value }))}
@@ -187,7 +189,7 @@ export default function RulesPanel({ projectId }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">
-                {form.type === "exclude" ? "Paar-Kategorie" : "Dann Kategorie"}
+                {form.type === "exclude" ? t('rulesPanel.thenCategoryLabelExclude') : t('rulesPanel.thenCategoryLabel')}
               </label>
               <select
                 value={form.then_cat}
@@ -199,7 +201,7 @@ export default function RulesPanel({ projectId }: Props) {
             </div>
             <div>
               <label className="text-xs font-medium text-slate-500 mb-1 block">
-                {form.type === "combine" ? "Erlaubte Werte (Mehrfachauswahl)" : "Wert"}
+                {form.type === "combine" ? t('rulesPanel.thenValueLabelCombine') : t('rulesPanel.valueLabel')}
               </label>
               {form.type === "combine" ? (
                 <div className="flex flex-wrap gap-1 p-2 border border-slate-300 rounded-lg bg-white min-h-[34px]">
@@ -234,7 +236,7 @@ export default function RulesPanel({ projectId }: Props) {
             onClick={handleCreate}
             className="w-full py-2 bg-sky-600 text-white text-sm font-medium rounded-xl hover:bg-sky-700 transition-colors"
           >
-            Regel speichern
+            {t('rulesPanel.saveBtn')}
           </button>
         </div>
       </div>
@@ -242,10 +244,10 @@ export default function RulesPanel({ projectId }: Props) {
       {/* Regelanzeige */}
       <div>
         <h3 className="text-sm font-semibold text-slate-700 mb-2">
-          {rules.length} Regel{rules.length !== 1 ? "n" : ""}
+          {t('rulesPanel.ruleCount', { count: rules.length })}
         </h3>
         {rules.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-4">Noch keine Regeln angelegt.</p>
+          <p className="text-xs text-slate-400 text-center py-4">{t('rulesPanel.noRules')}</p>
         ) : (
           <ul className="space-y-2">
             {rules.map((rule) => {
@@ -259,7 +261,7 @@ export default function RulesPanel({ projectId }: Props) {
                   }`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-black uppercase tracking-wide">Wenn</span>
+                      <span className="text-xs font-semibold text-black uppercase tracking-wide">{t('rulesPanel.ifLabel')}</span>
                       <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.if_category_id)}
                       </span>
@@ -270,7 +272,7 @@ export default function RulesPanel({ projectId }: Props) {
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">
                       <span className="text-xs font-semibold text-black uppercase tracking-wide">
-                        {rule.type === "exclude" ? "Nicht mit" : "Dann"}
+                        {rule.type === "exclude" ? t('rulesPanel.excludeLabel') : t('rulesPanel.thenLabel')}
                       </span>
                       <span className="px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700 rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.then_category_id)}
@@ -288,7 +290,7 @@ export default function RulesPanel({ projectId }: Props) {
                     </div>
                     {hasConflict && (
                       <p className="text-xs text-amber-600 mt-1">
-                        ⚠️ Regelwiderspruch mit Regel #{rule.conflict_with!.join(", #")}
+                        {t('rulesPanel.conflictWarning', { ids: rule.conflict_with!.join(", #") })}
                       </p>
                     )}
                   </div>
@@ -299,7 +301,7 @@ export default function RulesPanel({ projectId }: Props) {
                     <button
                       onClick={() => handleDelete(rule.id)}
                       className="text-slate-300 hover:text-red-500 transition-colors text-lg leading-none"
-                      title="Regel löschen"
+                      title={t('rulesPanel.deleteTitle')}
                     >
                       ×
                     </button>

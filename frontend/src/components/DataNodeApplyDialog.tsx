@@ -1,7 +1,9 @@
 ﻿// REQ-4018: Dialog "Datenklasse anwenden auf: <Kategorie>" (DataNode-Baum)
 // Laedt den hierarchischen Datenklassen-Baum, der Nutzer waehlt Werte aus
 // und uebernimmt sie als Werte der Kategorie.
+// REQ-6005: i18n
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { datanodesApi } from "../api/client";
 import type { DataNode } from "../types";
 
@@ -24,6 +26,7 @@ function collectValues(nodes: DataNode[], depth = 0): { key: string; label: stri
 }
 
 export default function DataNodeApplyDialog({ categoryName, onClose, onApply }: Props) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<ReturnType<typeof collectValues>>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -55,12 +58,12 @@ export default function DataNodeApplyDialog({ categoryName, onClose, onApply }: 
     <div role="dialog" aria-modal="true" aria-labelledby="dn-apply-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-theme-surface rounded-2xl shadow-xl max-w-lg w-full mx-4 p-6 border border-theme-border">
         <h2 id="dn-apply-title" className="text-lg font-semibold text-theme-text">
-          Datenklasse anwenden auf: {categoryName}
+          {t('dataNodeApplyDialog.title', { categoryName })}
         </h2>
         <div className="mt-4 max-h-80 overflow-auto">
-          {loading && <p className="text-sm text-theme-text-muted">Lade Datenklassen...</p>}
+          {loading && <p className="text-sm text-theme-text-muted">{t('dataNodeApplyDialog.loading')}</p>}
           {!loading && items.length === 0 && (
-            <p className="text-sm text-theme-text-muted">Keine Datenklassen vorhanden.</p>
+            <p className="text-sm text-theme-text-muted">{t('dataNodeApplyDialog.empty')}</p>
           )}
           <ul>
             {items.map((item) => (
@@ -83,14 +86,14 @@ export default function DataNodeApplyDialog({ categoryName, onClose, onApply }: 
         </div>
         <div className="mt-4 flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-theme-text-muted bg-theme-surface-hover rounded-md border border-theme-border">
-            Abbrechen
+            {t('dataNodeApplyDialog.cancel')}
           </button>
           <button
             onClick={apply}
             disabled={selected.size === 0}
             className="px-4 py-2 text-sm font-medium text-theme-accent-text bg-theme-accent rounded-md disabled:opacity-50"
           >
-            Uebernehmen
+            {t('dataNodeApplyDialog.apply')}
           </button>
         </div>
       </div>

@@ -1,11 +1,14 @@
 ﻿// REQ-3009: Generierungen-Tab im Projektdetail
+// REQ-6005: i18n
 import { useEffect, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { generateApi } from "../api/client";
 import type { GenerationSummary } from "../api/client";
 
 interface Props { projectId: number; }
 
 export default function GenerationsPanel({ projectId }: Props) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<GenerationSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -24,7 +27,7 @@ export default function GenerationsPanel({ projectId }: Props) {
   useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (gid: number) => {
-    if (!confirm("Generierung löschen?")) return;
+    if (!confirm(t("generationsPanel.deleteConfirm"))) return;
     await generateApi.deleteGeneration(gid);
     setItems((prev) => prev.filter((g) => g.id !== gid));
   };
@@ -42,14 +45,14 @@ export default function GenerationsPanel({ projectId }: Props) {
     window.open(`/api/generations/${gid}/export/${fmt}`, "_blank");
   };
 
-  if (loading) return <p className="text-sm text-slate-400">Lade Generierungen...</p>;
+  if (loading) return <p className="text-sm text-slate-400">{t('generationsPanel.loading')}</p>;
 
   if (items.length === 0) {
     return (
       <div className="text-center py-12 text-slate-400">
         <p className="text-3xl mb-2">📋</p>
-        <p>Noch keine Generierungen für dieses Projekt.</p>
-        <p className="text-xs mt-1">Wechsle zum Tab „Testfall-Generierung", um eine zu erstellen.</p>
+        <p>{t('generationsPanel.empty')}</p>
+        <p className="text-xs mt-1">{t('generationsPanel.emptyHint')}</p>
       </div>
     );
   }
@@ -71,7 +74,7 @@ export default function GenerationsPanel({ projectId }: Props) {
               <span
                 className="text-sm font-medium text-slate-700 cursor-pointer hover:text-sky-600 block truncate"
                 onDoubleClick={() => startEdit(g)}
-                title="Doppelklick zum Umbenennen"
+                title={t('generationsPanel.renameTitle')}
               >
                 {g.name}
               </span>
@@ -81,11 +84,11 @@ export default function GenerationsPanel({ projectId }: Props) {
             </p>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <button onClick={() => startEdit(g)} title="Umbenennen" className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">✏️</button>
+            <button onClick={() => startEdit(g)} title={t('generationsPanel.editTitle')} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100">✏️</button>
             <button onClick={() => handleExport(g.id, "json")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">JSON</button>
             <button onClick={() => handleExport(g.id, "xlsx")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">Excel</button>
             <button onClick={() => handleExport(g.id, "csv")} className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black">CSV</button>
-            <button onClick={() => handleDelete(g.id)} title="Löschen" className="text-xs px-2 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50">🗑️</button>
+            <button onClick={() => handleDelete(g.id)} title={t('generationsPanel.deleteTitle')} className="text-xs px-2 py-1 border border-red-200 text-red-500 rounded hover:bg-red-50">🗑️</button>
           </div>
         </div>
       ))}

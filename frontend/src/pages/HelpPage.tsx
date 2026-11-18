@@ -1,6 +1,8 @@
 ﻿// In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
 // Erreichbar via: TopNav "?"-Button oder F1-Taste
+// REQ-6005: i18n for chapter labels and UI elements
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import handbookContent from '../docs/handbuch.md?raw';
@@ -49,23 +51,24 @@ const SCREENSHOT_MAP: Record<string, string> = {
 
 // Kapitel-Liste fuer Sidebar-Navigation
 // IDs MUESSEN mit extractId(Heading-Text) uebereinstimmen!
-const CHAPTERS = [
-  { id: 'info', label: 'Info & Lizenz' },
-  { id: '1-erste-schritte', label: '1. Erste Schritte' },
-  { id: '2-projekte-verwalten', label: '2. Projekte verwalten' },
-  { id: '3-kategorien-werte', label: '3. Kategorien & Werte' },
-  { id: '4-entscheidungstabelle', label: '4. Entscheidungstabelle' },
-  { id: '5-regeln-klassisch', label: '5. Regeln (klassisch)' },
-  { id: '6-testfall-generierung', label: '6. Testfall-Generierung' },
-  { id: '7-risikoabdeckung', label: '7. Risikoabdeckung' },
-  { id: '8-export', label: '8. Export' },
-  { id: '9-datenklassen', label: '9. Datenklassen' },
-  { id: '10-einstellungen', label: '10. Einstellungen' },
-  { id: '11-benutzer-rollen', label: '11. Benutzer & Rollen' },
-  { id: '12-tastaturnavigation-shortcuts', label: '12. Tastaturnavigation' },
-  { id: '13-glossar', label: '13. Glossar' },
-  { id: '14-haeufige-fragen-faq', label: '14. FAQ' },
-  { id: '15-api-einbindung-fuer-entwickler', label: '15. API-Einbindung' },
+// REQ-6005: i18n keys for chapter labels
+const CHAPTER_KEYS = [
+  { id: 'info', key: 'help.chapters.info' },
+  { id: '1-erste-schritte', key: 'help.chapters.firstSteps' },
+  { id: '2-projekte-verwalten', key: 'help.chapters.manageProjects' },
+  { id: '3-kategorien-werte', key: 'help.chapters.categoriesValues' },
+  { id: '4-entscheidungstabelle', key: 'help.chapters.decisionTable' },
+  { id: '5-regeln-klassisch', key: 'help.chapters.rulesClassic' },
+  { id: '6-testfall-generierung', key: 'help.chapters.testcaseGeneration' },
+  { id: '7-risikoabdeckung', key: 'help.chapters.riskCoverage' },
+  { id: '8-export', key: 'help.chapters.export' },
+  { id: '9-datenklassen', key: 'help.chapters.dataclasses' },
+  { id: '10-einstellungen', key: 'help.chapters.settings' },
+  { id: '11-benutzer-rollen', key: 'help.chapters.usersRoles' },
+  { id: '12-tastaturnavigation-shortcuts', key: 'help.chapters.keyboardNav' },
+  { id: '13-glossar', key: 'help.chapters.glossary' },
+  { id: '14-haeufige-fragen-faq', key: 'help.chapters.faq' },
+  { id: '15-api-einbindung-fuer-entwickler', key: 'help.chapters.apiIntegration' },
 ];
 
 // INFO-Section als Markdown
@@ -111,7 +114,7 @@ function extractText(children: React.ReactNode): string {
 }
 
 // Helper: Erzeugt eine ID aus dem Heading-Text
-// Muss mit den IDs in CHAPTERS uebereinstimmen!
+// Muss mit den IDs in CHAPTER_KEYS uebereinstimmen!
 function extractId(children: React.ReactNode): string {
   const text = extractText(children);
   return text
@@ -142,6 +145,7 @@ function extractId(children: React.ReactNode): string {
 }
 
 export default function HelpPage() {
+  const { t } = useTranslation();
   const [activeChapter, setActiveChapter] = useState('info');
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -197,9 +201,9 @@ export default function HelpPage() {
     <div className="flex min-h-[calc(100vh-80px)]">
       {/* Sidebar Navigation */}
       <aside className="w-64 flex-shrink-0 bg-theme-surface border-r border-theme-border p-4 overflow-y-auto max-h-[calc(100vh-80px)]">
-        <h2 className="text-sm font-bold text-theme-accent mb-3">Inhaltsverzeichnis</h2>
+        <h2 className="text-sm font-bold text-theme-accent mb-3">{t('help.toc')}</h2>
         <nav className="space-y-1">
-          {CHAPTERS.map((chapter) => (
+          {CHAPTER_KEYS.map((chapter) => (
             <button
               key={chapter.id}
               onClick={() => setActiveChapter(chapter.id)}
@@ -209,7 +213,7 @@ export default function HelpPage() {
                   : 'text-theme-text-secondary hover:text-theme-text hover:bg-theme-surface-hover'
               }`}
             >
-              {chapter.label}
+              {t(chapter.key)}
             </button>
           ))}
         </nav>

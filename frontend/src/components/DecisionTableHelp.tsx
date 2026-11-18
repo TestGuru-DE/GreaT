@@ -1,154 +1,121 @@
 ﻿/**
  * REQ-5000: Entscheidungstabelle Hilfe-Dialog
  * Erklaert dem User schrittweise, wie die Entscheidungstabelle funktioniert.
+ * REQ-6005: i18n
  */
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface HelpDialogProps {
   onClose: () => void;
 }
 
 export default function HelpDialog({ onClose }: HelpDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   const steps = [
     {
-      title: "Schritt 1: Kategorien erstellen",
+      titleKey: "decisionTableHelp.step1.title",
       icon: "📂",
       content: (
         <div className="space-y-2">
-          <p>
-            Erstelle mindestens <strong>eine Ursache</strong> und <strong>eine Wirkung</strong>:
-          </p>
+          <p dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step1.content') }} />
           <ul className="list-disc pl-5 space-y-1 text-sm">
             <li>
-              <span className="text-blue-600 font-medium">Ursache (Condition):</span> Eine
-              Bedingung, die eintreten kann (z.B. "Benutzer ist angemeldet")
+              <span className="text-blue-600 font-medium">{t('decisionTableHelp.step1.cause')}</span>
             </li>
             <li>
-              <span className="text-green-600 font-medium">Wirkung (Effect):</span> Eine Aktion oder
-              Ergebnis (z.B. "Zugriff gewaehrt")
+              <span className="text-green-600 font-medium">{t('decisionTableHelp.step1.effect')}</span>
             </li>
           </ul>
           <div className="bg-amber-50 border border-amber-200 rounded p-2 text-sm text-amber-800">
-            ⚠️ Der Button "Entscheidungstabelle" ist erst aktiv, wenn BEIDE Typen existieren!
+            {t('decisionTableHelp.step1.warning')}
           </div>
         </div>
       ),
     },
     {
-      title: "Schritt 2: Werte zuweisen (optional)",
+      titleKey: "decisionTableHelp.step2.title",
       icon: "🏷️",
       content: (
         <div className="space-y-2">
-          <p>
-            Standardmaessig verwendet die Tabelle <strong>Y/N</strong> (Ja/Nein) fuer Ursachen.
-          </p>
+          <p dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step2.content') }} />
           <p className="text-sm">
-            Du kannst auch eigene Werte fuer Ursachen erstellen (Extended Entry), z.B.:
+            {t('decisionTableHelp.step2.customValues')}
           </p>
           <ul className="list-disc pl-5 space-y-1 text-sm">
             <li>Größe: S, M, L, XL</li>
             <li>Farbe: Rot, Gruen, Blau</li>
           </ul>
-          <p className="text-sm">
-            Fuer Wirkungen kannst du den <strong>Text-Modus</strong> aktivieren, um freitextliche
-            Werte einzugeben.
-          </p>
+          <p className="text-sm" dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step2.textMode') }} />
         </div>
       ),
     },
     {
-      title: "Schritt 3: Tabelle generieren",
+      titleKey: "decisionTableHelp.step3.title",
       icon: "⚡",
       content: (
         <div className="space-y-2">
-          <p>Klicke auf den Button <strong>"📋 Entscheidungstabelle"</strong>:</p>
+          <p dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step3.content') }} />
           <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>Erster Klick: Aktiviert den Modus</li>
-            <li>Zweiter Klick ("⚡ Generieren"): Erstellt die Tabelle</li>
+            <li>{t('decisionTableHelp.step3.firstClick')}</li>
+            <li>{t('decisionTableHelp.step3.secondClick')}</li>
           </ul>
           <p className="text-sm">
-            Die Tabelle zeigt alle moeglichen Kombinationen deiner Ursachen (2^N Regeln).
+            {t('decisionTableHelp.step3.info')}
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-blue-800">
-            💡 Bei 3 Ursachen = 2³ = 8 Regeln. Bei 5 Ursachen = 2⁵ = 32 Regeln.
+            {t('decisionTableHelp.step3.tip')}
           </div>
         </div>
       ),
     },
     {
-      title: "Schritt 4: Wirkungen ausfuellen",
+      titleKey: "decisionTableHelp.step4.title",
       icon: "✏️",
       content: (
         <div className="space-y-2">
-          <p>Fuer jede Regel trage ein, welche Wirkungen eintreten:</p>
+          <p>{t('decisionTableHelp.step4.content')}</p>
           <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>
-              <strong>X</strong> = Diese Wirkung tritt ein
-            </li>
-            <li>
-              <strong>—</strong> = Diese Wirkung tritt nicht ein (Don't Care)
-            </li>
-            <li>
-              <strong>·</strong> = Noch nicht festgelegt
-            </li>
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step4.x') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step4.dash') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step4.dot') }} />
           </ul>
-          <p className="text-sm">
-            Im <strong>Text-Modus</strong> kannst du statt X/— auch freitextliche Werte eingeben.
-          </p>
+          <p className="text-sm" dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step4.textMode') }} />
         </div>
       ),
     },
     {
-      title: "Schritt 5: Constraints hinzufuegen",
+      titleKey: "decisionTableHelp.step5.title",
       icon: "🔒",
       content: (
         <div className="space-y-2">
           <p>
-            Constraints beschreiben logische Zusammenhaenge zwischen Ursachen oder Wirkungen:
+            {t('decisionTableHelp.step5.content')}
           </p>
           <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>
-              <strong>E (Exclusive):</strong> Maximal eine Ursache kann wahr sein
-            </li>
-            <li>
-              <strong>O (One-and-Only-One):</strong> Genau eine Ursache muss wahr sein
-            </li>
-            <li>
-              <strong>I (Inclusive):</strong> Mindestens eine Ursache muss wahr sein
-            </li>
-            <li>
-              <strong>R (Requires):</strong> Wenn Ursache A wahr, dann auch Ursache B
-            </li>
-            <li>
-              <strong>M (Mask):</strong> Wenn Wirkung A aktiv, dann Wirkung B blockiert
-            </li>
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step5.exclusive') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step5.oneOnlyOne') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step5.inclusive') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step5.requires') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step5.mask') }} />
           </ul>
         </div>
       ),
     },
     {
-      title: "Schritt 6: Pruefen und optimieren",
+      titleKey: "decisionTableHelp.step6.title",
       icon: "🔍",
       content: (
         <div className="space-y-2">
-          <p>
-            Nutze die Buttons <strong>"📦 Zusammenfassen"</strong> und{" "}
-            <strong>"🔍 Pruefen"</strong>:
-          </p>
+          <p dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step6.content') }} />
           <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>
-              <strong>Zusammenfassen:</strong> Fasst redundante Regeln automatisch zusammen
-              (Collapsing)
-            </li>
-            <li>
-              <strong>Pruefen:</strong> Zeigt an, ob die Tabelle vollstaendig ist, ob
-              Widersprueche oder Luecken existieren
-            </li>
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step6.collapse') }} />
+            <li dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step6.check') }} />
           </ul>
           <div className="bg-green-50 border border-green-200 rounded p-2 text-sm text-green-800">
-            ✅ Gruen = Vollstaendig | 🟡 Gelb = Uberschneidungen | 🔴 Rot = Luecken
+            {t('decisionTableHelp.step6.legend')}
           </div>
         </div>
       ),
@@ -160,11 +127,11 @@ export default function HelpDialog({ onClose }: HelpDialogProps) {
       <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[85vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-slate-200">
-          <h2 className="text-lg font-bold text-slate-800">📋 Entscheidungstabelle – Hilfe</h2>
+          <h2 className="text-lg font-bold text-slate-800">{t('decisionTableHelp.title')}</h2>
           <button
             onClick={onClose}
             className="text-slate-400 hover:text-slate-600 text-xl"
-            aria-label="Schliessen"
+            aria-label={t('decisionTableHelp.close')}
           >
             ✕
           </button>
@@ -182,7 +149,7 @@ export default function HelpDialog({ onClose }: HelpDialogProps) {
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-2xl">{steps[step].icon}</span>
-            <h3 className="text-base font-semibold text-slate-700">{steps[step].title}</h3>
+            <h3 className="text-base font-semibold text-slate-700">{t(steps[step].titleKey)}</h3>
           </div>
           <div className="text-sm text-slate-600">{steps[step].content}</div>
         </div>
@@ -194,7 +161,7 @@ export default function HelpDialog({ onClose }: HelpDialogProps) {
             disabled={step === 0}
             className="px-4 py-2 text-sm text-slate-600 hover:text-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            ← Zurueck
+            {t('decisionTableHelp.back')}
           </button>
           <span className="text-xs text-slate-400">
             {step + 1} / {steps.length}
@@ -204,14 +171,14 @@ export default function HelpDialog({ onClose }: HelpDialogProps) {
               onClick={() => setStep(step + 1)}
               className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
-              Weiter →
+              {t('decisionTableHelp.next')}
             </button>
           ) : (
             <button
               onClick={onClose}
               className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
-              Verstanden ✓
+              {t('decisionTableHelp.done')}
             </button>
           )}
         </div>

@@ -6,6 +6,33 @@ import { MemoryRouter } from "react-router-dom";
 import ChangePasswordPage from "../ChangePasswordPage";
 import { useAuthStore } from "../../store/authStore";
 
+// REQ-6005: i18n mock for ChangePasswordPage tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "changePassword.title": "Passwort ändern",
+        "changePassword.success": "Passwort wurde geändert. Sie werden weitergeleitet...",
+        "changePassword.currentPassword": "Aktuelles Passwort",
+        "changePassword.newPassword": "Neues Passwort",
+        "changePassword.confirmPassword": "Neues Passwort wiederholen",
+        "changePassword.minLength": "Mindestens {{count}} Zeichen",
+        "changePassword.changeBtn": "Ändern",
+        "changePassword.errors.tooShort": "Das neue Passwort muss mindestens {{count}} Zeichen lang sein.",
+        "changePassword.errors.mismatch": "Die neuen Passwörter stimmen nicht überein.",
+        "changePassword.errors.currentInvalid": "Das aktuelle Passwort ist falsch.",
+        "changePassword.errors.isDefault": "Dieses Passwort ist ein bekanntes Standardpasswort und nicht erlaubt.",
+        "changePassword.errors.tooLong": "Das neue Passwort ist zu lang.",
+        "changePassword.errors.tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock("../../store/authStore", () => ({
   useAuthStore: vi.fn(),
 }));

@@ -1,6 +1,7 @@
 ﻿// BUGFIX: Error Boundary - verhindert schwarzen Bildschirm bei Render-Fehlern
 // REQ-4001, REQ-1208, REQ-2001
 // B-45: Theme-Tokens statt hartkodierter Farben
+// REQ-6005: i18n
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -30,10 +31,10 @@ export default class ErrorBoundary extends Component<Props, State> {
           <div className="max-w-md w-full bg-theme-surface border-2 border-theme-danger rounded-2xl p-6 text-center">
             <div className="text-4xl mb-4">⚠️</div>
             <h2 className="text-lg font-bold text-theme-danger mb-2">
-              Ein Fehler ist aufgetreten
+              {this.props.fallback ? "" : "Ein Fehler ist aufgetreten"}
             </h2>
             <p className="text-sm text-theme-text-secondary mb-4">
-              Die Anwendung konnte nicht korrekt geladen werden.
+              {this.props.fallback ? "" : "Die Anwendung konnte nicht korrekt geladen werden."}
             </p>
             <pre className="text-xs text-left bg-theme-bg rounded-lg p-3 text-theme-text-muted overflow-auto max-h-48">
               {this.state.error?.message || "Unbekannter Fehler"}

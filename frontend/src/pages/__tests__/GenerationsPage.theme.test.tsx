@@ -4,6 +4,36 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import GenerationsPage from "../GenerationsPage";
 import { projectsApi, generateApi } from "../../api/client";
 
+// REQ-6005: i18n mock for GenerationsPage theme tests
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string, params?: Record<string, unknown>) => {
+      const tr: Record<string, string> = {
+        "generations.title": "Alle Generierungen",
+        "generations.loading": "Lade Generierungen...",
+        "generations.empty": "Noch keine Generierungen vorhanden.",
+        "generations.deleteConfirm": "Generierung löschen?",
+        "generations.renameTitle": "Doppelklick zum Umbenennen",
+        "generations.columns.name": "Name",
+        "generations.columns.project": "Projekt",
+        "generations.columns.strategy": "Strategie",
+        "generations.columns.testcases": "Testfälle",
+        "generations.columns.date": "Datum",
+        "generations.columns.actions": "Aktionen",
+        "generations.actions.edit": "✏️",
+        "generations.actions.json": "JSON",
+        "generations.actions.excel": "Excel",
+        "generations.actions.csv": "CSV",
+        "generations.actions.delete": "🗑️",
+      };
+      let v = tr[key] ?? key;
+      if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
+      return v;
+    },
+    i18n: { language: "de" },
+  }),
+}));
+
 vi.mock("../../api/client", () => ({
   projectsApi: {
     list: vi.fn(),
