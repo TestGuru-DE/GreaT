@@ -1,6 +1,6 @@
 ﻿// REQ-4001: Auth-API-Calls (JWT-Tokens in httpOnly-Cookies)
 // Cookies werden automatisch vom Browser mitgesendet (withCredentials: true)
-import api from "./client";
+import { authClient } from "./client";
 
 export interface AuthResponse {
   user_id: number;
@@ -22,28 +22,28 @@ export const authApi = {
     const formData = new URLSearchParams();
     formData.append("username", username);
     formData.append("password", password);
-    const { data } = await api.post<AuthResponse>("/auth/login", formData, {
+    const { data } = await authClient.post<AuthResponse>("/login", formData, {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     });
     return data;
   },
 
   logout: async (): Promise<void> => {
-    await api.post("/auth/logout");
+    await authClient.post("/logout");
   },
 
   refresh: async (): Promise<void> => {
-    await api.post("/auth/refresh");
+    await authClient.post("/refresh");
   },
 
   me: async (): Promise<UserInfo> => {
-    const { data } = await api.get<UserInfo>("/auth/me");
+    const { data } = await authClient.get<UserInfo>("/me");
     return data;
   },
 
   // REQ-4027 AK-6: Statusabfrage fuer Erststart-Hinweis (ohne Authentifizierung)
   getFirstStartHint: async (): Promise<{ show_hint: boolean }> => {
-    const { data } = await api.get<{ show_hint: boolean }>("/auth/first-start-hint");
+    const { data } = await authClient.get<{ show_hint: boolean }>("/first-start-hint");
     return data;
   },
 
@@ -52,7 +52,7 @@ export const authApi = {
     currentPassword: string,
     newPassword: string
   ): Promise<{ message: string }> => {
-    const { data } = await api.post<{ message: string }>("/auth/change-password", {
+    const { data } = await authClient.post<{ message: string }>("/change-password", {
       current_password: currentPassword,
       new_password: newPassword,
     });

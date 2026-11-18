@@ -1,7 +1,7 @@
 # G.R.E.A.T.
 
 **Georgs Radikal Einfacher Automatisierter TestcaseDesigner**  
-**Version 1.8.0** – In-App-Hilfe & Bugfixes (2026-11-12)
+**Version 1.9.0** – Sicherheit, Validierung & Code-Archivierung (2026-11-17)
 
 Open-Source-Tool fuer strukturiertes Testfall-Design nach ISTQB-Methodik.  
 Unterstuetzt Aequivalenzklassen, Grenzwertanalyse, Pairwise und weitere Kombinatorik-Strategien.

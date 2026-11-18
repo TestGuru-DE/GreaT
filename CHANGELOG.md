@@ -4,12 +4,60 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ## [Unreleased]
 
+---
+
+## [1.9.0] – 2026-11-17 – Sicherheit, Validierung & Code-Archivierung
+
 ### ✨ Neue Features
 - **REQ-3034**: Generierte Testfälle werden absteigend nach kumuliertem Risiko-Score sortiert (Summe der `risk_weight` aller zugewiesenen Werte je Testfall). Testfälle mit Fehlerwerten behalten weiterhin Vorrang (REQ-3018/BUG-5) und werden unabhängig von ihrem Risiko-Score ans Ende der Liste sortiert.
 - **REQ-3063**: **Fehlerwert-Kennzeichnung in allen Export-Formaten** (CSV, JSON, Excel). Neue Spalte "Fehlerwert" (JA/NEIN) bzw. `has_error_value` (true/false) markiert Testfälle, die mindestens einen Wert mit `allowed=False` enthalten.
-- **REQ-4018**: Neue Einstellung "Maximale Anzahl Testfälle" (Default 1000) begrenzt die Anzahl generierter Testfälle pro Kombination, wenn kein expliziter `limit`-Wert im Request angegeben ist. Konfigurierbar über die Umgebungsvariable `GREAT_MAX_TESTCASES` (Backend) sowie über eine neue Karte auf der Einstellungen-Seite (Frontend, lokal gespeichert, ohne Server-Neustart wirksam).
-- **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts. Risikoakzeptanz durch Projektinhaber (RISK-S-016, Score 20, gemildert durch REQ-4028).
+- **REQ-4018**: Neue Einstellung "Maximale Anzahl Testfälle" (Default 1000) begrenzt die Anzahl generierter Testfälle pro Kombination, wenn kein expliziter `limit`-Wert im Request angegeben ist. Konfigurierbar über `GREAT_MAX_TESTCASES` (Backend) sowie Einstellungen-Seite (Frontend, lokal gespeichert).
+- **REQ-4027**: Erststart-Hinweis auf Login-Seite: Bei Erstanmeldung zeigt die Login-Seite das Standardpasswort des Default-Admin-Accounts.
 - **REQ-4028**: Pflicht-Passwortwechsel nach Erstanmeldung fuer Default-Admin. Selbst-Passwortwechsel fuer alle Benutzerrollen (Admin/Editor/Viewer).
+
+### 🐛 Bugfixes
+- **B-01**: Projektliste zeigt allen Rollen alle Projekte
+- **B-02**: `all` bei zu vielen Kombinationen → 422 `too_many_combinations`
+- **B-03**: `limit` max. 100.000; `t_strength` < 1 → 422
+- **B-04**: Doppelte Namen → 409, leere/zu lange Namen → 422
+- **B-05**: CSV/XLSX-Export schützt Formeln mit Apostroph
+- **B-06**: Sitzungen enden bei Passwortwechsel, Deaktivierung, Rollenwechsel
+- **B-07**: Passwort ändern nur noch für Admins
+- **B-08**: Login-Rate-Limit zählt nur Fehlversuche
+- **B-09**: Backup-Passwort nicht mehr per URL; neues `POST /api/backup`; Backup-Format 2.0
+- **B-13**: Ungültige IDs → 422, fehlende Eltern-Ressourcen → 404
+- **B-15**: `risk_weight` 1–10 auch beim Anlegen
+- **B-16**: `risk_weight` 1–10 auch beim Anlegen
+- **B-17**: Neues Zeitlimit für Generierung
+- **B-18**: Generierungshistorie unveränderlich (category_name-Schnappschuss)
+- **B-19..B-26**: Regeln validieren (Wert-Existenz, gleiche Kategorie, Duplikate, unreachable values)
+- **B-27..B-50**: Diverse Backend- und Frontend-Bugfixes
+
+### ⚠️ Verhaltensänderungen (wichtig für API-Nutzer)
+- `GenerateResponse` mit neuen Feldern: `total_possible`, `truncated`, `rules_applied`, `rule_count`, `warnings`
+- `DELETE /api/projects/{pid}` mit Generierungen nur mit `?force=true`
+- `/whoami` und `/auth/*-only` Debug-Endpunkte entfernt
+- BugMagnet-Import: Dataclasses-Variante deprecated, Datanodes kanonisch
+- Frontend: Alle API-Calls über einheitliche axios-Schicht (Token-Refresh überall)
+
+### 🔒 Sicherheit
+- Token-Versioning: Sitzungen enden bei Passwortwechsel, Deaktivierung, Rollenwechsel
+- Striktere Passwortregeln (Min. 12 Zeichen, Variety-Check, Common-Passwords)
+- Admin-angelegte Nutzer müssen Passwort beim ersten Login ändern
+- Refresh-Token: `is_active` + `token_version` geprüft
+- Login-Rate-Limiter: IP + username, nur Fehlversuche
+
+### 📦 Entfernt / Archiviert
+- Desktop-Altcode "TaNoS v5.4" (PySide6) und GeTeCaDe-Backend archiviert
+- Debug-Auth-Endpunkte (`/auth/admin-only`, `/auth/editor-or-admin`, etc.) entfernt
+- HTMX/Jinja2-Templates archiviert
+- Port-Eingabe in Einstellungen entfernt (Konfiguration via `.env`)
+- Totcode: DataNodePicker, ResultCellEditor, handlers.ts, dataclassApi, bulkDelete, clearError
+
+### ⚙️ Neue Konfigurationsvariablen
+- `JWT_SECRET_KEY` / `JWT_REFRESH_SECRET_KEY` (B-25, in Production zwingend)
+- `GREAT_COOKIE_SECURE` (B-26, `true` bei HTTPS, `false` für lokale Entwicklung)
+- `GREAT_MAX_TESTCASES` (REQ-4018, Default 1000)
 
 ---
 
