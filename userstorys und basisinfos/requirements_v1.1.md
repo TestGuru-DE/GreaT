@@ -3012,7 +3012,7 @@ Methodik-Erweiterungen: Logische Constraints (Mehrbedingungs-Regeln), Testfall-V
 ### REQ-6001 | Logische Constraints (Mehrbedingungs-Regeln)
 **Titel:** Regeln mit mehreren Bedingungen über beliebig viele Kategorien (UND/ODER/NICHT)
 **Prioritaet:** Must
-**Status:** Implemented (Slice 1: API CRUD+Validate, AK-1,2,9; AK-3,4,5,6,7,8,10: Phase 3)
+**Status:** Implemented (Slice 1: API CRUD+Validate, AK-1,2,9; Slice 2: Backup/Model-Export/Import + Delete-Invalidation, AK-10; AK-3,4,5,6,7,8: Phase 3)
 **Phase:** 5, Release v1.11.0
 **Epic:** EPIC-21 (Methodik-Release)
 **User Story:**

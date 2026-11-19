@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app import models
 from app.logging_config import get_logger
 
-from .models import GreatModel, ModelCategory, ModelRule, ModelValue
+from .models import GreatModel, ModelCategory, ModelConstraint, ModelRule, ModelValue
 
 log = get_logger(__name__)
 
@@ -87,14 +87,56 @@ def export_model(db: Session, project_id: int) -> GreatModel:
     from .models import ModelDecisionConstraint
 
     decision_constraints = []
-    constraints = db.query(DecisionTableConstraint).filter(
+    constraints_dt = db.query(DecisionTableConstraint).filter(
         DecisionTableConstraint.project_id == project_id
     ).all()
-    for dc in constraints:
+    for dc in constraints_dt:
         decision_constraints.append(ModelDecisionConstraint(
             constraint_type=dc.constraint_type,
             targets=dc.targets or {},
             description=dc.description,
+        ))
+
+    # REQ-6001 AK-10: Constraints export (IDs -> Namen)
+    import json as json_mod
+    # Wert-ID -> Name Mapping
+    val_id_to_name: dict[int, str] = {}
+    for cat in project.categories:
+        for val in cat.values:
+            val_id_to_name[val.id] = val.value
+
+    def _resolve_expression(expr: dict) -> dict:
+        """Konvertiert category_id/value_id in category_name/value_name."""
+        if not isinstance(expr, dict):
+            return expr
+        resolved = {}
+        for k, v in expr.items():
+            if k == "category_id" and isinstance(v, int):
+                resolved[k] = cat_id_to_name.get(v, f"unknown_{v}")
+            elif k == "value_id" and isinstance(v, int):
+                resolved[k] = val_id_to_name.get(v, f"unknown_{v}")
+            elif k == "value_ids" and isinstance(v, list):
+                resolved[k] = [val_id_to_name.get(vid, f"unknown_{vid}") for vid in v]
+            elif isinstance(v, dict):
+                resolved[k] = _resolve_expression(v)
+            elif isinstance(v, list):
+                resolved[k] = [_resolve_expression(item) if isinstance(item, dict) else item for item in v]
+            else:
+                resolved[k] = v
+        return resolved
+
+    constraint_models = []
+    for c in db.query(models.Constraint).filter(
+        models.Constraint.project_id == project_id
+    ).all():
+        # expression_json is stored as JSON string
+        expr_raw = json_mod.loads(c.expression_json) if c.expression_json else {}
+        expr_resolved = _resolve_expression(expr_raw)
+        constraint_models.append(ModelConstraint(
+            name=c.name,
+            kind=c.kind,
+            expression=expr_resolved,
+            is_valid=c.is_valid,
         ))
 
     result = GreatModel(
@@ -103,6 +145,7 @@ def export_model(db: Session, project_id: int) -> GreatModel:
         categories=categories,
         rules=rules,
         decision_constraints=decision_constraints,
+        constraints=constraint_models,
     )
 
     log.info("model_exported", project_id=project_id, project_name=project.name)
