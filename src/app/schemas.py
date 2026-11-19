@@ -547,6 +547,7 @@ class ConstraintRead(BaseModel):
     is_valid: bool
     created_at: str
     updated_at: str
+    warnings: List[str] = []  # REQ-6001 AK-8: Widerspruchswarnungen
 
     model_config = ConfigDict(from_attributes=True)
 
