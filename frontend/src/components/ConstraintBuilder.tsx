@@ -659,8 +659,13 @@ export default function ConstraintBuilder({ projectId }: Props) {
         const created = await logicalConstraintsApi.create(projectId, payload);
         setConstraints((prev) => [...prev, created]);
       }
+      // Reset form state first (without clearing msg)
+      setEditingId(null);
+      setName("");
+      setKind("forbid");
+      setConditionNodes([]);
+      setConsequenceNodes([]);
       setMsg({ text: t("constraintBuilder.saved"), type: "ok" });
-      resetForm();
       setTimeout(() => setMsg(null), 4000);
     } catch {
       setMsg({ text: t("constraintBuilder.saveError"), type: "error" });
