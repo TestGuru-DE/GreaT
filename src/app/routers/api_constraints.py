@@ -451,3 +451,138 @@ def validate_constraint_ast(
         leaf_count=leaf_count,
         depth=depth,
     )
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/projects/{project_id}/constraints/convert-from-rule/{rule_id}
+# ---------------------------------------------------------------------------
+
+@router.post("/projects/{project_id}/constraints/convert-from-rule/{rule_id}",
+             response_model=schemas.ConstraintRead,
+             status_code=201,
+             dependencies=[Depends(require_writer)])
+def convert_rule_to_constraint(
+    project_id: int,
+    rule_id: int,
+    db: Session = Depends(get_db),
+):
+    """REQ-6001 AK-9: Bestehende Regel in Constraint umwandeln.
+
+    Mapping:
+    - exclude → forbid (condition: cat=val)
+    - dependency → implies (condition: if_cat=if_val, consequence: then_cat=then_val)
+    - combine → implies (condition: if_cat=if_val, consequence: then_cat IN [values])
+    """
+    project = db.query(models.Project).filter(models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+
+    rule = db.query(models.Rule).filter(
+        models.Rule.id == rule_id,
+        models.Rule.project_id == project_id,
+    ).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Regel nicht gefunden")
+
+    # Mapping: exclude → forbid, dependency/combine → implies
+    if rule.type == "exclude":
+        kind = "forbid"
+        expression = {
+            "op": "eq",
+            "category_id": rule.if_category_id,
+            "value_id": None,  # wird unten gesetzt
+        }
+        # value_id aus if_value finden
+        val = db.query(models.Value).filter(
+            models.Value.category_id == rule.if_category_id,
+            models.Value.value == rule.if_value,
+        ).first()
+        if not val:
+            raise HTTPException(status_code=400, detail=f"Wert '{rule.if_value}' nicht gefunden")
+        expression["value_id"] = val.id
+
+        constraint = models.Constraint(
+            project_id=project_id,
+            name=f"{rule.type} (als Constraint)",
+            kind=kind,
+            expression_json=json.dumps({"kind": kind, "condition": expression}, ensure_ascii=False),
+            is_valid=True,
+        )
+    elif rule.type == "dependency":
+        kind = "implies"
+        # if_value finden
+        val_if = db.query(models.Value).filter(
+            models.Value.category_id == rule.if_category_id,
+            models.Value.value == rule.if_value,
+        ).first()
+        if not val_if:
+            raise HTTPException(status_code=400, detail=f"Wert '{rule.if_value}' nicht gefunden")
+
+        # then_value finden
+        val_then = db.query(models.Value).filter(
+            models.Value.category_id == rule.then_category_id,
+            models.Value.value == rule.then_value,
+        ).first()
+        if not val_then:
+            raise HTTPException(status_code=400, detail=f"Wert '{rule.then_value}' nicht gefunden")
+
+        ast_dict = {
+            "kind": kind,
+            "condition": {"op": "eq", "category_id": rule.if_category_id, "value_id": val_if.id},
+            "consequence": {"op": "eq", "category_id": rule.then_category_id, "value_id": val_then.id},
+        }
+        constraint = models.Constraint(
+            project_id=project_id,
+            name=f"{rule.type} (als Constraint)",
+            kind=kind,
+            expression_json=json.dumps(ast_dict, ensure_ascii=False),
+            is_valid=True,
+        )
+    elif rule.type == "combine":
+        kind = "implies"
+        # if_value finden
+        val_if = db.query(models.Value).filter(
+            models.Value.category_id == rule.if_category_id,
+            models.Value.value == rule.if_value,
+        ).first()
+        if not val_if:
+            raise HTTPException(status_code=400, detail=f"Wert '{rule.if_value}' nicht gefunden")
+
+        # then_values_json parsen
+        allowed = json.loads(rule.then_values_json or "[]")
+        if not allowed:
+            raise HTTPException(status_code=400, detail="combine-Regel hat keine Zielwerte")
+
+        # value_ids fuer allowed Werte finden
+        val_thens = db.query(models.Value).filter(
+            models.Value.category_id == rule.then_category_id,
+            models.Value.value.in_(allowed),
+        ).all()
+        if len(val_thens) != len(allowed):
+            raise HTTPException(status_code=400, detail="Nicht alle Zielwerte gefunden")
+
+        ast_dict = {
+            "kind": kind,
+            "condition": {"op": "eq", "category_id": rule.if_category_id, "value_id": val_if.id},
+            "consequence": {
+                "op": "in",
+                "category_id": rule.then_category_id,
+                "value_ids": [v.id for v in val_thens],
+            },
+        }
+        constraint = models.Constraint(
+            project_id=project_id,
+            name=f"{rule.type} (als Constraint)",
+            kind=kind,
+            expression_json=json.dumps(ast_dict, ensure_ascii=False),
+            is_valid=True,
+        )
+    else:
+        raise HTTPException(status_code=400, detail=f"Unbekannter Regeltyp: {rule.type}")
+
+    db.add(constraint)
+    db.commit()
+    db.refresh(constraint)
+
+    log.info("Rule %d converted to constraint %d", rule_id, constraint.id)
+    return _constraint_to_read(constraint)
