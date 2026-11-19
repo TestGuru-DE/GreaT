@@ -110,6 +110,7 @@ def _export_data(db: Session) -> dict:
             "dataclasses": [],
             "data_nodes": [],
             "decision_constraints": [],
+            "constraints": [],
         }
 
         # Kategorien
@@ -205,16 +206,56 @@ def _export_data(db: Session) -> dict:
 
         # Decision Constraints
         from app.models.decision_table_constraint import DecisionTableConstraint
-        constraints = db.query(DecisionTableConstraint).filter(
+        constraints_dt = db.query(DecisionTableConstraint).filter(
             DecisionTableConstraint.project_id == p.id
         ).all()
-        for dc in constraints:
+        for dc in constraints_dt:
             dc_data: dict = {
                 "constraint_type": dc.constraint_type,
                 "targets": dc.targets,
                 "description": dc.description,
             }
             proj_data["decision_constraints"].append(dc_data)
+
+        # REQ-6001 AK-10: Constraints export (IDs -> Namen)
+        import json as json_mod
+        # Wert-ID -> Name Mapping
+        val_id_to_name: dict[int, str] = {}
+        for cat in p.categories:
+            for val in cat.values:
+                val_id_to_name[val.id] = val.value
+
+        def _resolve_expr(expr: dict) -> dict:
+            if not isinstance(expr, dict):
+                return expr
+            resolved = {}
+            for k, v in expr.items():
+                if k == "category_id" and isinstance(v, int):
+                    resolved[k] = cat_id_to_name.get(v, f"unknown_{v}")
+                elif k == "value_id" and isinstance(v, int):
+                    resolved[k] = val_id_to_name.get(v, f"unknown_{v}")
+                elif k == "value_ids" and isinstance(v, list):
+                    resolved[k] = [val_id_to_name.get(vid, f"unknown_{vid}") for vid in v]
+                elif isinstance(v, dict):
+                    resolved[k] = _resolve_expr(v)
+                elif isinstance(v, list):
+                    resolved[k] = [_resolve_expr(item) if isinstance(item, dict) else item for item in v]
+                else:
+                    resolved[k] = v
+            return resolved
+
+        for c in db.query(models.Constraint).filter(
+            models.Constraint.project_id == p.id
+        ).all():
+            expr_raw = json_mod.loads(c.expression_json) if c.expression_json else {}
+            expr_resolved = _resolve_expr(expr_raw)
+            c_data: dict = {
+                "name": c.name,
+                "kind": c.kind,
+                "expression": expr_resolved,
+                "is_valid": c.is_valid,
+            }
+            proj_data["constraints"].append(c_data)
 
         result["projects"].append(proj_data)
 
@@ -390,6 +431,89 @@ def _restore_data(db: Session, backup: schemas.BackupSchema) -> int:
                 description=dc_data.description,
             )
             db.add(dc)
+
+        # REQ-6001 AK-10: Constraints restore (Namen -> IDs)
+        # Kategorie-Namen -> IDs mappen
+        cat_name_to_id_r: dict[str, int] = {}
+        for cat in project.categories:
+            cat_name_to_id_r[cat.name] = cat.id
+
+        # (Kategoriename, Wertname) -> Wert-ID mappen
+        catval_to_id_r: dict[tuple[str, str], int] = {}
+        for cat in project.categories:
+            for val in cat.values:
+                catval_to_id_r[(cat.name, val.value)] = val.id
+
+        def _resolve_expr_backup(expr: dict, parent_cat: str | None = None) -> dict:
+            if not isinstance(expr, dict):
+                return expr
+            resolved = {}
+            current_cat = parent_cat
+            for k, v in expr.items():
+                if k == "category_id" and isinstance(v, str):
+                    # Im Backup ist category_id als Name gespeichert
+                    cat_id = cat_name_to_id_r.get(v)
+                    if cat_id is not None:
+                        resolved["category_id"] = cat_id
+                        current_cat = v
+                    else:
+                        resolved["category_id"] = None
+                    continue
+                if k == "value_id" and isinstance(v, str) and current_cat:
+                    val_id = catval_to_id_r.get((current_cat, v))
+                    resolved["value_id"] = val_id if val_id else None
+                    continue
+                if k == "value_ids" and isinstance(v, list) and current_cat:
+                    val_ids = []
+                    for vn in v:
+                        vid = catval_to_id_r.get((current_cat, vn))
+                        val_ids.append(vid if vid else None)
+                    resolved["value_ids"] = val_ids
+                    continue
+                if isinstance(v, dict):
+                    child = _resolve_expr_backup(v, current_cat)
+                    resolved[k] = child
+                    # Wenn das Kind eine category_id hat, aktualisiere current_cat
+                    if isinstance(child, dict) and "category_id" in child and isinstance(child["category_id"], int):
+                        for cn, cid in cat_name_to_id_r.items():
+                            if cid == child["category_id"]:
+                                current_cat = cn
+                                break
+                elif isinstance(v, list):
+                    resolved[k] = [_resolve_expr_backup(item, current_cat) if isinstance(item, dict) else item for item in v]
+                else:
+                    resolved[k] = v
+            return resolved
+
+        def _has_none_ids(e) -> bool:
+            if not isinstance(e, dict):
+                return False
+            if "category_id" in e and e["category_id"] is None:
+                return True
+            if "value_id" in e and e["value_id"] is None:
+                return True
+            if "value_ids" in e and isinstance(e["value_ids"], list) and None in e["value_ids"]:
+                return True
+            for v in e.values():
+                if _has_none_ids(v):
+                    return True
+            return False
+
+        for c_data in proj_data.constraints:
+            expr_raw = c_data.expression
+            if not isinstance(expr_raw, dict):
+                continue
+            expr_resolved = _resolve_expr_backup(expr_raw)
+            has_invalid = _has_none_ids(expr_resolved)
+            import json as json_mod_b
+            c = models.Constraint(
+                project_id=project.id,
+                name=c_data.name,
+                kind=c_data.kind,
+                expression_json=json_mod_b.dumps(expr_resolved, ensure_ascii=False),
+                is_valid=c_data.is_valid and not has_invalid,
+            )
+            db.add(c)
 
         restored += 1
 

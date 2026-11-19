@@ -96,6 +96,31 @@ class ModelDecisionConstraint(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# REQ-6001 AK-10: Logischer Constraint (Referenzen ueber Namen, nicht IDs)
+# ---------------------------------------------------------------------------
+
+class ModelConstraint(BaseModel):
+    """REQ-6001: Logischer Constraint fuer Modell-Export/Import.
+
+    expression verwendet category_name und value_name statt IDs,
+    analog zu ModelRule.
+    """
+    name: str = Field(min_length=1, max_length=300)
+    kind: str = Field(description="'forbid' oder 'implies'")
+    expression: Dict[str, Any] = Field(default_factory=dict, description="JSON-AST mit category_name/value_name")
+    is_valid: bool = Field(default=True)
+
+    model_config = ConfigDict(frozen=False, populate_by_name=True)
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, v: str) -> str:
+        if v not in ("forbid", "implies"):
+            raise ValueError(f"kind must be 'forbid' or 'implies', got '{v}'")
+        return v
+
+
+# ---------------------------------------------------------------------------
 # Hauptmodell
 # ---------------------------------------------------------------------------
 
@@ -112,6 +137,10 @@ class GreatModel(BaseModel):
     decision_constraints: List[ModelDecisionConstraint] = Field(
         default_factory=list,
         alias="decisionConstraints",
+    )
+    constraints: List[ModelConstraint] = Field(
+        default_factory=list,
+        alias="constraints",
     )
 
     model_config = ConfigDict(

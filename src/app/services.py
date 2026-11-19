@@ -530,6 +530,8 @@ def force_delete_category(db: Session, cid: int) -> int:
         {models.TestCaseValue.category_id: None},
         synchronize_session=False
     )
+    # REQ-6001 AK-10: Constraints, die diese Kategorie referenzieren, als ungueltig markieren
+    _invalidate_constraints_for_category(db, pid, cid)
     db.query(models.Value).filter(models.Value.category_id == cid).delete(synchronize_session=False)
     db.delete(cat)
     return pid
@@ -540,12 +542,74 @@ def force_delete_value(db: Session, vid: int) -> int:
     if not v:
         return 0
     cid = v.category_id
+    pid = db.get(models.Category, cid).project_id if db.get(models.Category, cid) else None
+    # REQ-6001 AK-10: Constraints, die diesen Wert referenzieren, als ungueltig markieren
+    if pid:
+        _invalidate_constraints_for_value(db, pid, vid)
     db.query(models.TestCaseValue).filter(
         models.TestCaseValue.category_id == cid,
         models.TestCaseValue.value == v.value,
     ).delete(synchronize_session=False)
     db.delete(v)
     return cid
+
+
+def _invalidate_constraints_for_category(db: Session, project_id: int, category_id: int) -> None:
+    """Setzt alle Constraints auf is_valid=False, die category_id im expression referenzieren."""
+    import json as json_mod
+    for c in db.query(models.Constraint).filter(
+        models.Constraint.project_id == project_id,
+        models.Constraint.is_valid == True,
+    ).all():
+        expr = json_mod.loads(c.expression_json) if c.expression_json else {}
+        if _expression_refs_category(expr, category_id):
+            c.is_valid = False
+
+
+def _invalidate_constraints_for_value(db: Session, project_id: int, value_id: int) -> None:
+    """Setzt alle Constraints auf is_valid=False, die value_id im expression referenzieren."""
+    import json as json_mod
+    for c in db.query(models.Constraint).filter(
+        models.Constraint.project_id == project_id,
+        models.Constraint.is_valid == True,
+    ).all():
+        expr = json_mod.loads(c.expression_json) if c.expression_json else {}
+        if _expression_refs_value(expr, value_id):
+            c.is_valid = False
+
+
+def _expression_refs_category(expr: dict, category_id: int) -> bool:
+    """Prueft rekursiv, ob category_id im expression vorkommt."""
+    if not isinstance(expr, dict):
+        return False
+    if expr.get("category_id") == category_id:
+        return True
+    for v in expr.values():
+        if isinstance(v, dict) and _expression_refs_category(v, category_id):
+            return True
+        if isinstance(v, list):
+            for item in v:
+                if isinstance(item, dict) and _expression_refs_category(item, category_id):
+                    return True
+    return False
+
+
+def _expression_refs_value(expr: dict, value_id: int) -> bool:
+    """Prueft rekursiv, ob value_id im expression vorkommt (value_id oder in value_ids)."""
+    if not isinstance(expr, dict):
+        return False
+    if expr.get("value_id") == value_id:
+        return True
+    if isinstance(expr.get("value_ids"), list) and value_id in expr["value_ids"]:
+        return True
+    for v in expr.values():
+        if isinstance(v, dict) and _expression_refs_value(v, value_id):
+            return True
+        if isinstance(v, list):
+            for item in v:
+                if isinstance(item, dict) and _expression_refs_value(item, value_id):
+                    return True
+    return False
 
 
 # ---------------------------------------------------------------------------

@@ -2244,3 +2244,41 @@ def upgrade():
 ADR-014 (Entscheidungstabelle-Schema, als Praezedens fuer JSON-in-DB),
 ADR-015 (Multi-User-DB-Schema, String-Enum-Praezedens),
 REQ-0800 (Pairwise, dreiwertige Evaluierung)
+
+---
+
+## ADR-025 – Constraints in Backup und Modell-Export/Import (REQ-6001 AK-10)
+
+**Datum:** 2026-11-19
+**Status:** Accepted
+
+**Kontext:**
+REQ-6001 AK-10 verlangt, dass Constraints im Backup (Format 2.x) und in der Modell-Datei
+(REQ-6013) gesichert werden. Bei Umbenennung von Kategorien/Werten passen sich Constraints
+automatisch an. Bei Loeschen wird ein Hinweis angezeigt und Constraints werden als
+'ungueltig' markiert.
+
+**Entscheidung:**
+- **ModelConstraint** in `model_io/models.py`: Pydantic-Modell mit `name`, `kind`,
+  `expression` (dict mit category_name/value_name statt IDs), `is_valid`
+- **GreatModel** um `constraints: List[ModelConstraint]` erweitert
+- **exporter.py**: Constraints aus DB lesen, category_id/value_id zu Namen konvertieren
+- **applier.py**: Constraints aus GreatModel lesen, Namen zurueck zu IDs mappen,
+  bei ungueltigen Referenzen `is_valid=False` setzen
+- **api_backup.py**: `_export_data` und `_restore_data` um Constraints erweitern
+- **schemas.py**: `BackupConstraintSchema` und `BackupProjectSchema.constraints`
+- **services.py**: `_invalidate_constraints_for_category` und
+  `_invalidate_constraints_for_value` setzen betroffene Constraints auf `is_valid=False`
+
+**Begründung:**
+- Konsistenz mit bestehendem Regel-Export (Namen statt IDs)
+- Keine stillen Datenverluste bei Loeschvorgaengen
+- Roundtrip-Garantie: export -> import -> gleiche Daten
+
+**Konsequenzen:**
+- Backup-Format 2.x um `constraints` erweitert (abwaerts kompatibel durch default_factory=list)
+- Modell-Import markiert Constraints mit ungueltigen Referenzen als `is_valid=False`
+- Delete-Funktionen in services.py invalidate betroffene Constraints
+
+**Entscheider:** GREAT Senior Developer Agent
+**Abhaengigkeiten:** REQ-6001, REQ-6013, ADR-020

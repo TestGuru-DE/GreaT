@@ -463,6 +463,14 @@ class BackupDecisionConstraintSchema(BaseModel):
     description: str | None = None
 
 
+class BackupConstraintSchema(BaseModel):
+    """REQ-6001 AK-10: Constraint im Backup-Format (Namen statt IDs)."""
+    name: str
+    kind: str
+    expression: dict
+    is_valid: bool = True
+
+
 class BackupProjectSchema(BaseModel):
     name: str
     categories: list[BackupCategorySchema] = []
@@ -471,6 +479,7 @@ class BackupProjectSchema(BaseModel):
     dataclasses: list[BackupDataClassSchema] = []
     data_nodes: list[BackupDataNodeSchema] = []
     decision_constraints: list[BackupDecisionConstraintSchema] = []
+    constraints: list[BackupConstraintSchema] = []
 
 
 class BackupSchema(BaseModel):
