@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import List
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -23,6 +23,7 @@ from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..constraints.ast_parser import validate_ast, count_leaf_nodes, MAX_LEAF_NODES
+from ..constraints.evaluator_3vl import check_unsatisfiable
 
 log = logging.getLogger("great.api.constraints")
 
@@ -47,7 +48,101 @@ def _constraint_to_read(c: models.Constraint) -> schemas.ConstraintRead:
         is_valid=c.is_valid,
         created_at=c.created_at.isoformat() if c.created_at else "",
         updated_at=c.updated_at.isoformat() if c.updated_at else "",
+        warnings=[],  # Default leer; wird bei POST/PUT durch check_unsatisfiable gefuellt
     )
+
+
+def _load_categories_with_values(project_id: int, db: Session) -> Dict[int, dict]:
+    """Ladet alle Kategorien mit Werten eines Projekts als Dict.
+
+    Returns:
+        {category_id: {"name": str, "values": {value_id: value_name}}}
+    """
+    result: Dict[int, dict] = {}
+    categories = (
+        db.query(models.Category)
+        .filter(models.Category.project_id == project_id)
+        .all()
+    )
+    for cat in categories:
+        values = (
+            db.query(models.Value)
+            .filter(models.Value.category_id == cat.id)
+            .all()
+        )
+        result[cat.id] = {
+            "name": cat.name,
+            "values": {v.id: v.value for v in values},
+        }
+    return result
+
+
+def _load_existing_constraints(project_id: int, db: Session) -> List[dict]:
+    """Ladet alle gueltigen Constraints eines Projekts als AST-Liste."""
+    constraints = (
+        db.query(models.Constraint)
+        .filter(
+            models.Constraint.project_id == project_id,
+            models.Constraint.is_valid == True,  # noqa: E712
+        )
+        .all()
+    )
+    return [_parse_expression(c.expression_json) for c in constraints
+            if c.expression_json]
+
+
+def _run_unsatisfiable_check(
+    project_id: int,
+    new_constraint_ast: dict,
+    exclude_constraint_id: Optional[int] = None,
+    db: Optional[Session] = None,
+) -> List[str]:
+    """REQ-6001 AK-8: Fuehrt die Widerspruchspruefung aus.
+
+    Args:
+        project_id: Projekt-ID
+        new_constraint_ast: Neues Constraint-AST
+        exclude_constraint_id: Wenn gesetzt, wird dieses Constraint aus
+            den bestehenden Constraints ausgeschlossen (fuer PUT-Updates)
+        db: DB-Session (wird fuer Kategorien/Constraints geladen)
+
+    Returns:
+        Liste von Warnstrings (leer wenn keine Warnung)
+    """
+    if db is None:
+        return []
+
+    try:
+        categories = _load_categories_with_values(project_id, db)
+        existing = _load_existing_constraints(project_id, db)
+
+        # Bei PUT: das aktualisierte Constraint aus der bestehenden Liste entfernen
+        if exclude_constraint_id is not None:
+            existing = [
+                c for c in existing
+                if json.loads(c.get("expression_json", "{}") if isinstance(c, models.Constraint) else "{}").get("_id") != exclude_constraint_id
+            ]
+            # Einfacher: alle existing Constraints laden und das mit exclude_id entfernen
+            # Da wir JSON-ASTs haben, muessen wir anders vorgehen
+            # Die existing-Liste enthaelt bereits geparste ASTs ohne ID-Info
+            # -> Wir laden die Constraints mit ID und filtern
+            existing_raw = (
+                db.query(models.Constraint)
+                .filter(
+                    models.Constraint.project_id == project_id,
+                    models.Constraint.is_valid == True,  # noqa: E712
+                    models.Constraint.id != exclude_constraint_id,
+                )
+                .all()
+            )
+            existing = [_parse_expression(c.expression_json) for c in existing_raw
+                       if c.expression_json]
+
+        is_unsat, warnings = check_unsatisfiable(categories, new_constraint_ast, existing)
+        return warnings
+    except Exception as e:
+        log.warning("Unsatisfiable check failed: %s", e)
+        return []
 
 
 # ---------------------------------------------------------------------------
@@ -139,8 +234,15 @@ def create_constraint(
     db.commit()
     db.refresh(constraint)
 
-    log.info("Constraint created: id=%d, project=%d, name=%s", constraint.id, project_id, payload.name)
-    return _constraint_to_read(constraint)
+    # REQ-6001 AK-8: Widerspruchspruefung
+    warnings = _run_unsatisfiable_check(project_id, ast_dict, db=db)
+
+    log.info("Constraint created: id=%d, project=%d, name=%s, warnings=%d",
+             constraint.id, project_id, payload.name, len(warnings))
+
+    result = _constraint_to_read(constraint)
+    result.warnings = warnings
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -254,8 +356,31 @@ def update_constraint(
     db.commit()
     db.refresh(constraint)
 
-    log.info("Constraint updated: id=%d", constraint_id)
-    return _constraint_to_read(constraint)
+    # REQ-6001 AK-8: Widerspruchspruefung (nur wenn expression geaendert)
+    warnings: List[str] = []
+    if payload.expression is not None or payload.consequence is not None:
+        # Neuestes AST fuer Pruefung bauen
+        existing_ast = json.loads(constraint.expression_json) if constraint.expression_json else {}
+        check_ast = {
+            "kind": payload.kind or constraint.kind,
+            "condition": payload.expression if payload.expression is not None else existing_ast.get("condition", {}),
+        }
+        if (payload.kind or constraint.kind) == "implies":
+            if payload.consequence is not None:
+                check_ast["consequence"] = payload.consequence
+            elif existing_ast.get("consequence") is not None:
+                check_ast["consequence"] = existing_ast["consequence"]
+        warnings = _run_unsatisfiable_check(
+            project_id, check_ast,
+            exclude_constraint_id=constraint_id,
+            db=db,
+        )
+
+    log.info("Constraint updated: id=%d, warnings=%d", constraint_id, len(warnings))
+
+    result = _constraint_to_read(constraint)
+    result.warnings = warnings
+    return result
 
 
 # ---------------------------------------------------------------------------
