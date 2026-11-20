@@ -86,6 +86,48 @@ function createOrGroup(): BuilderGroup {
   return { _type: "group", op: "or", children: [] };
 }
 
+// Convert AST (ConstraintNode) back to BuilderNode for editing
+function astToBuilderNode(node: ConstraintNode): BuilderNode {
+  if (!node) {
+    // Fallback: should not happen, but return a dummy atom
+    return { _type: "atom", op: "eq", category_id: 0, value_id: 0, value_ids: [] };
+  }
+  switch (node.op) {
+    case "eq":
+    case "ne":
+    case "in":
+    case "not_in": {
+      const atom = node as ConstraintAtom;
+      return {
+        _type: "atom",
+        op: atom.op as BuilderOp,
+        category_id: atom.category_id,
+        value_id: atom.value_id,
+        value_ids: atom.value_ids ?? [],
+      };
+    }
+    case "and":
+    case "or": {
+      const group = node as ConstraintGroup;
+      return {
+        _type: "group",
+        op: group.op as GroupOp,
+        children: (group.args ?? []).map((arg) => astToBuilderNode(arg)),
+      };
+    }
+    case "not": {
+      const notNode = node as ConstraintNot;
+      return {
+        _type: "not",
+        child: astToBuilderNode(notNode.arg),
+      };
+    }
+    default:
+      // Unknown operator - return a dummy atom
+      return { _type: "atom", op: "eq", category_id: 0, value_id: 0, value_ids: [] };
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /*  Text rendering (AK-4)                                              */
 /* ------------------------------------------------------------------ */
@@ -591,10 +633,22 @@ export default function ConstraintBuilder({ projectId }: Props) {
     setEditingId(c.id);
     setName(c.name);
     setKind(c.kind);
-    // Simplified: start with empty condition/consequence; full round-trip editing
-    // would require AST->Builder conversion (complex, done in v2)
-    setConditionNodes([]);
-    setConsequenceNodes([]);
+
+    // Convert AST back to builder nodes for editing
+    // Key: buildAST wraps multiple nodes in an AND-group, so we unwrap it
+    const unwrapAST = (node: ConstraintNode | undefined | null): BuilderNode[] => {
+      if (!node) return [];
+      const builder = astToBuilderNode(node);
+      // If the top-level is an AND/OR group, use its children directly
+      // (mirrors how buildAST wraps multiple nodes)
+      if (builder._type === "group" && (builder.op === "and" || builder.op === "or")) {
+        return builder.children;
+      }
+      return [builder];
+    };
+
+    setConditionNodes(unwrapAST(c.expression));
+    setConsequenceNodes(unwrapAST(c.consequence));
     setMsg(null);
   }, []);
 
@@ -656,8 +710,9 @@ export default function ConstraintBuilder({ projectId }: Props) {
           setMsg({ text: t("constraintBuilder.validationError", { errors: validation.errors.join("; ") }), type: "error" });
           return;
         }
-      } catch {
+      } catch (validationErr: unknown) {
         // Validation endpoint might not exist yet; proceed with save
+        console.warn("[ConstraintBuilder] Validation failed, proceeding with save:", validationErr);
       }
 
       if (editingId) {
@@ -675,8 +730,36 @@ export default function ConstraintBuilder({ projectId }: Props) {
       setConsequenceNodes([]);
       setMsg({ text: t("constraintBuilder.saved"), type: "ok" });
       setTimeout(() => setMsg(null), 4000);
-    } catch {
-      setMsg({ text: t("constraintBuilder.saveError"), type: "error" });
+    } catch (err: unknown) {
+      console.error("[ConstraintBuilder] Save failed:", err);
+
+      // Extract detailed error from axios response
+      let userMessage = t("constraintBuilder.saveError");
+
+      // Axios error structure
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosErr = err as { response?: { data?: { message?: string; errors?: string[] }; status?: number } };
+        const data = axiosErr.response?.data;
+        const status = axiosErr.response?.status;
+
+        if (data?.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+          userMessage = t("constraintBuilder.validationError", { errors: data.errors.join("; ") });
+        } else if (data?.message) {
+          userMessage = data.message;
+        } else if (status === 400) {
+          userMessage = "Speicherfehler: Ungueltiger Constraint. Bitte pruefe Bedingung und Folge.";
+        } else if (status === 404) {
+          userMessage = "Projekt nicht gefunden.";
+        } else if (status === 401 || status === 403) {
+          userMessage = "Nicht autorisiert. Bitte erneut anmelden.";
+        } else {
+          userMessage = `Speicherfehler (HTTP ${status}). Bitte versuche es erneut.`;
+        }
+      } else if (err instanceof Error) {
+        userMessage = `Fehler: ${err.message}`;
+      }
+
+      setMsg({ text: userMessage, type: "error" });
     }
   };
 
