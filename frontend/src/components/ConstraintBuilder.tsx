@@ -600,12 +600,20 @@ export default function ConstraintBuilder({ projectId }: Props) {
 
   // Build AST from builder state
   const buildAST = useCallback((): { condition: ConstraintNode | null; consequence: ConstraintNode | null } => {
-    const cond = conditionNodes.length > 0
-      ? builderToAST({ _type: "group", op: "and", children: conditionNodes }, catValues)
-      : null;
-    const cons = consequenceNodes.length > 0
-      ? builderToAST({ _type: "group", op: "and", children: consequenceNodes }, catValues)
-      : null;
+    // FIX: Bei nur 1 Bedingung: nutze sie direkt (keine AND-Gruppe)
+    // Bei >1 Bedingungen: wickle in AND-Gruppe
+    const cond = conditionNodes.length === 0
+      ? null
+      : conditionNodes.length === 1
+        ? builderToAST(conditionNodes[0], catValues)
+        : builderToAST({ _type: "group", op: "and", children: conditionNodes }, catValues);
+    
+    const cons = consequenceNodes.length === 0
+      ? null
+      : consequenceNodes.length === 1
+        ? builderToAST(consequenceNodes[0], catValues)
+        : builderToAST({ _type: "group", op: "and", children: consequenceNodes }, catValues);
+    
     return { condition: cond, consequence: cons };
   }, [conditionNodes, consequenceNodes, catValues]);
 
