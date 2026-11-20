@@ -1,5 +1,5 @@
 // REQ-6001: Tests fuer ConstraintBuilder User-Workflows
-// Prueft: buildAST-Fix, Fehlermeldungen, Editieren
+// Prueft: buildAST-Fix, Fehlermeldungen, Editieren, GUI-Anzeige
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
@@ -350,6 +350,54 @@ describe("ConstraintBuilder - User Workflows", () => {
         }));
       });
     });
+
+    it("sollte AND-Gruppe 2+2 korrekt laden und anzeigen (Postbeispiel)", async () => {
+      const existingConstraint = makeMockConstraint(
+        1,
+        "brief",
+        "implies",
+        {
+          op: "and",
+          args: [
+            { op: "eq", category_id: 1, value_id: 10 },
+            { op: "eq", category_id: 2, value_id: 20 },
+          ],
+        } as any,
+        {
+          op: "and",
+          args: [
+            { op: "eq", category_id: 3, value_id: 30 },
+            { op: "eq", category_id: 4, value_id: 40 },
+          ],
+        } as any
+      );
+      vi.mocked(logicalConstraintsApi.list).mockResolvedValue([existingConstraint]);
+
+      render(<ConstraintBuilder projectId={1} />);
+      await waitFor(() => {
+        expect(screen.getByText("brief")).toBeInTheDocument();
+      });
+
+      // Bearbeiten
+      const editButtons = screen.getAllByText("\u270f\ufe0f");
+      fireEvent.click(editButtons[0]);
+      await waitFor(() => {
+        expect(screen.getByText("Bearbeiten")).toBeInTheDocument();
+      });
+
+      // Name muss geladen sein
+      const nameInput = screen.getByPlaceholderText("Constraint-Name...") as HTMLInputElement;
+      expect(nameInput.value).toBe("brief");
+
+      // Keine "(leere Bedingung)" - beide Bereiche muessen gefuellt sein
+      expect(screen.queryByText("(leere Bedingung)")).not.toBeInTheDocument();
+
+      // Textdarstellung muss die echten Werte zeigen (nicht "?")
+      await waitFor(() => {
+        const matches = screen.getAllByText(/Gewicht.*Briefumschlag.*THEN.*Deutschland/i);
+        expect(matches.length).toBeGreaterThanOrEqual(1);
+      });
+    });
   });
 
   describe("Fehlerbehandlung", () => {
@@ -432,7 +480,6 @@ describe("ConstraintBuilder - User Workflows", () => {
 
       // Pruefe dass eine Fehlermeldung angezeigt wird (nicht der rohe Axios-Fehler)
       await waitFor(() => {
-        // Die Fehlermeldung sollte entweder die spezifische API-Nachricht oder eine generische sein
         expect(screen.getByText(/(implies-Constraints brauchen|Fehler beim Speichern|Speicherfehler)/i)).toBeInTheDocument();
       });
     });

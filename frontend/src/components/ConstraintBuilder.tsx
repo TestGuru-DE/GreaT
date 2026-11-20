@@ -633,9 +633,22 @@ export default function ConstraintBuilder({ projectId }: Props) {
     setEditingId(c.id);
     setName(c.name);
     setKind(c.kind);
+
     // Convert AST back to builder nodes for editing
-    setConditionNodes(c.expression ? [astToBuilderNode(c.expression)] : []);
-    setConsequenceNodes(c.consequence ? [astToBuilderNode(c.consequence)] : []);
+    // Key: buildAST wraps multiple nodes in an AND-group, so we unwrap it
+    const unwrapAST = (node: ConstraintNode | undefined | null): BuilderNode[] => {
+      if (!node) return [];
+      const builder = astToBuilderNode(node);
+      // If the top-level is an AND/OR group, use its children directly
+      // (mirrors how buildAST wraps multiple nodes)
+      if (builder._type === "group" && (builder.op === "and" || builder.op === "or")) {
+        return builder.children;
+      }
+      return [builder];
+    };
+
+    setConditionNodes(unwrapAST(c.expression));
+    setConsequenceNodes(unwrapAST(c.consequence));
     setMsg(null);
   }, []);
 
