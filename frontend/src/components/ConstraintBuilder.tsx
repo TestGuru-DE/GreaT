@@ -182,6 +182,23 @@ function buildTextPreview(
   return `IF ${condText || "(?)" } THEN ${consText || "(?)"}`;
 }
 
+// Extract condition/consequence from a constraint, handling both formats:
+// 1. Correct: { expression: condition, consequence: consequence }
+// 2. Nested (backend bug): { expression: { kind, condition, consequence }, consequence: null }
+function extractConstraintAST(c: LogicalConstraint): { condition: ConstraintNode | null; consequence: ConstraintNode | null } {
+  let expr = c.expression;
+  let cons = c.consequence ?? null;
+
+  // Check if expression is actually a wrapped constraint object
+  if (expr && typeof expr === "object" && "condition" in expr && "consequence" in expr) {
+    const wrapped = expr as Record<string, ConstraintNode>;
+    expr = wrapped.condition ?? null;
+    cons = wrapped.consequence ?? null;
+  }
+
+  return { condition: expr, consequence: cons };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
@@ -634,23 +651,12 @@ export default function ConstraintBuilder({ projectId }: Props) {
     setName(c.name);
     setKind(c.kind);
 
-    // BUGFIX: Backend returns nested structure:
-    // { expression: { kind, condition, consequence }, consequence: null }
-    // We need to extract condition/consequence from expression if it's nested
-    let expr = c.expression;
-    let cons = c.consequence;
-
-    // Check if expression is actually a wrapped constraint object
-    if (expr && typeof expr === "object" && "condition" in expr && "consequence" in expr) {
-      const wrapped = expr as Record<string, ConstraintNode>;
-      expr = wrapped.condition;
-      cons = wrapped.consequence;
-      console.log("[ConstraintBuilder] Unwrapped nested AST from expression");
-    }
+    // Extract condition/consequence, handling both correct and nested backend formats
+    const { condition, consequence } = extractConstraintAST(c);
 
     console.log("[ConstraintBuilder] startEdit AST:", JSON.stringify({
-      expression: expr,
-      consequence: cons,
+      expression: condition,
+      consequence: consequence,
     }, null, 2));
 
     // Convert AST back to builder nodes for editing
@@ -667,8 +673,8 @@ export default function ConstraintBuilder({ projectId }: Props) {
       return [builder];
     };
 
-    setConditionNodes(unwrapAST(expr));
-    setConsequenceNodes(unwrapAST(cons));
+    setConditionNodes(unwrapAST(condition));
+    setConsequenceNodes(unwrapAST(consequence));
     setMsg(null);
   }, []);
 
@@ -965,7 +971,10 @@ export default function ConstraintBuilder({ projectId }: Props) {
                       )}
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5 truncate">
-                      {buildTextPreview(c.kind, c.expression, c.consequence ?? null, categories, catValues)}
+                      {(() => {
+                        const { condition, consequence } = extractConstraintAST(c);
+                        return buildTextPreview(c.kind, condition, consequence, categories, catValues);
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
