@@ -461,3 +461,78 @@ export const logicalConstraintsApi = {
   validate: (projectId: number, data: ConstraintCreatePayload) =>
     api.post<ConstraintValidateResponse>(`/v1/projects/${projectId}/constraints/validate`, data).then((r) => r.data),
 };
+
+// ============================================================================
+// REQ-6008: Coverage API
+// ============================================================================
+
+export interface CoverageStat {
+  t: number;
+  covered: number;
+  possible: number;
+  percentage: number;
+  excluded_by_rules: number;
+}
+
+export interface HeatmapPair {
+  cat_a: string;
+  cat_b: string;
+  coverage_pct: number;
+  covered: number;
+  possible: number;
+}
+
+export interface HeatmapOverview {
+  categories: string[];
+  pairs: HeatmapPair[];
+}
+
+export interface UncoveredTuple {
+  categories: string[];
+  values: string[];
+}
+
+export interface CoverageResponse {
+  generation_id: number;
+  coverage_1wise: CoverageStat;
+  coverage_2wise: CoverageStat;
+  coverage_3wise?: CoverageStat | null;
+  heatmap: HeatmapOverview;
+  uncovered_tuples_2wise: UncoveredTuple[];
+  cached: boolean;
+}
+
+export interface HeatmapCellData {
+  count: number;
+  status: "covered" | "uncovered" | "excluded";
+  testcase_ids: number[];
+}
+
+export interface HeatmapResponse {
+  cat_a: string;
+  cat_b: string;
+  rows: string[];
+  cols: string[];
+  cells: Record<string, HeatmapCellData>;
+}
+
+export const coverageApi = {
+  getCoverage: (generationId: number, t: number = 2) =>
+    api.get<CoverageResponse>(`/generations/${generationId}/coverage`, { params: { t } }).then((r) => r.data),
+
+  getHeatmap: (generationId: number, catA: string, catB: string, _options?: Record<string, unknown>) =>
+    api.get<HeatmapResponse>(`/generations/${generationId}/coverage/pair`, { params: { a: catA, b: catB } }).then((r) => r.data),
+
+  getUncoveredTuples: (generationId: number, t: number = 2, format: "json" | "csv" = "json") => {
+    if (format === "csv") {
+      return api.get(`/generations/${generationId}/coverage/missing`, {
+        params: { t, format: "csv" },
+        responseType: "blob",
+      }).then((r) => r.data);
+    }
+    return api.get<{ generation_id: number; t: number; tuples: UncoveredTuple[]; total: number }>(
+      `/generations/${generationId}/coverage/missing`,
+      { params: { t, format: "json" } }
+    ).then((r) => r.data);
+  },
+};

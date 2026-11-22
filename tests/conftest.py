@@ -217,6 +217,15 @@ def _purge_constraints_per_test():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _clear_coverage_cache_per_test():
+    """REQ-6008: Coverage-Cache je Test leeren."""
+    from app.routers.api_coverage import _coverage_cache
+    _coverage_cache.clear()
+    yield
+    _coverage_cache.clear()
+
+
 # ---------------------------------------------------------------------------
 # T-6: Test-Router fuer Debug-Auth-Endpunkte (nur in Tests)
 # ---------------------------------------------------------------------------

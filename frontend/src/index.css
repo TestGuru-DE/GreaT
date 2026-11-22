@@ -116,3 +116,328 @@
   --color-warning: #ff8c00;
   color-scheme: dark;
 }
+
+/* ============================================================================
+ * REQ-6008: Coverage Heatmap & Overview Styles
+ * ============================================================================ */
+
+.coverage-heatmap {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius, 8px);
+  background: var(--color-surface);
+}
+
+.coverage-heatmap-loading,
+.coverage-heatmap-error {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.coverage-heatmap-error {
+  color: var(--color-danger);
+}
+
+.coverage-heatmap-selectors {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.coverage-heatmap-selectors label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.coverage-heatmap-selectors select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.coverage-heatmap-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.coverage-heatmap-grid {
+  overflow-x: auto;
+}
+
+.coverage-heatmap-corner {
+  /* Empty corner cell */
+}
+
+.coverage-heatmap-header {
+  padding: 0.5rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-align: center;
+  border-bottom: 2px solid var(--color-border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverage-heatmap-row-header {
+  padding: 0.5rem;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-align: right;
+  border-right: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverage-heatmap-cell {
+  padding: 0.5rem;
+  text-align: center;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+}
+
+.coverage-heatmap-cell:hover {
+  opacity: 0.8;
+}
+
+.coverage-heatmap-cell-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.coverage-heatmap-gap-hint {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--color-warning);
+  color: var(--color-text-primary);
+  border-radius: var(--radius, 8px);
+  font-size: 0.875rem;
+}
+
+.coverage-heatmap-gap-hint p {
+  margin: 0.25rem 0;
+}
+
+.coverage-heatmap-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.75rem;
+}
+
+.coverage-heatmap-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.coverage-heatmap-legend-swatch {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* ============================================================================
+ * REQ-6008: Coverage Overview Matrix Styles
+ * ============================================================================ */
+
+.coverage-overview {
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius, 8px);
+  background: var(--color-surface);
+}
+
+.coverage-overview-loading,
+.coverage-overview-error {
+  padding: 1rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.coverage-overview-error {
+  color: var(--color-danger);
+}
+
+.coverage-overview-summary {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.coverage-overview-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+}
+
+.coverage-overview-stat-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.coverage-overview-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.coverage-overview-stat-detail {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.coverage-overview-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.coverage-overview-tile {
+  padding: 0.75rem;
+  border-radius: var(--radius, 8px);
+  cursor: pointer;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  transition: transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.coverage-overview-tile:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.coverage-overview-tile-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverage-overview-tile-pct {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.coverage-overview-tile-detail {
+  font-size: 0.625rem;
+  opacity: 0.8;
+}
+
+.coverage-overview-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.coverage-overview-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius, 8px);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s;
+}
+
+.coverage-overview-btn:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.coverage-overview-btn.uncovered {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.coverage-overview-btn.export {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.coverage-overview-uncovered {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: var(--color-bg);
+  border-radius: var(--radius, 8px);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.coverage-overview-uncovered h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.coverage-overview-uncovered-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.coverage-overview-uncovered-item {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.coverage-overview-uncovered-pair {
+  white-space: nowrap;
+}
+
+.coverage-overview-uncovered-more {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  padding: 0.5rem 0;
+}
+
+.coverage-overview-heatmap-detail {
+  margin-top: 1rem;
+}
+
+.coverage-overview-back {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius, 8px);
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.coverage-overview-back:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
