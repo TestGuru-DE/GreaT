@@ -1951,36 +1951,14 @@ damit ich gezielt mehr Abdeckung erhalte ohne den gesamten Testumfang unverhaelt
 ### REQ-3037 | Seed-basierte Kombinatorik
 **Titel:** Vorgegebene Testfaelle beibehalten und algorithmisch ergaenzen
 **Prioritaet:** Could
-**Status:** Planned
-**Phase:** 3, Sprint 6+
-**User Story:**
-Als Tester
-moechte ich vorhandene oder manuell definierte Testfaelle als feste Seeds verwenden und nur die fehlende Abdeckung automatisch ergaenzen lassen
-damit manuelle Fachfaelle und algorithmische Ergaenzung kombiniert werden koennen.
-**Akzeptanzkriterien:**
-- Bestehende Testfaelle koennen als Seeds markiert werden
-- Generierung behaelt Seeds unveraendert bei
-- System ergaenzt nur zusaetzliche Faelle zur gewaehlten Zielabdeckung
-- Ergebnis zeigt getrennt an: Seed-Faelle und ergaenzte Faelle
-**Abhaengigkeiten:** REQ-3016, REQ-0800, REQ-3009
+**Status:** Superseded by REQ-6009
 
 ---
 
 ### REQ-3038 | Coverage-Gap-Closure
 **Titel:** Fehlende Tupel nach einer Generierung gezielt nacherzeugen
 **Prioritaet:** Could
-**Status:** Planned
-**Phase:** 3, Sprint 6+
-**User Story:**
-Als Tester
-moechte ich nach einer Generierung gezielt nur noch fehlende kombinatorische Luecken schliessen lassen
-damit ich eine bestehende Generation inkrementell verbessern kann statt komplett neu zu starten.
-**Akzeptanzkriterien:**
-- System identifiziert nicht abgedeckte Tupel der gewaehlten Staerke
-- Nutzer kann eine "Luecken schliessen"-Aktion ausloesen
-- Neu erzeugte Zusatzfaelle respektieren aktive Regeln
-- Ergebnisbericht nennt geschlossene und weiterhin unmoegliche Luecken
-**Abhaengigkeiten:** REQ-3031, REQ-3005, REQ-3036
+**Status:** Superseded by REQ-6009
 
 ---
 
@@ -2005,7 +1983,7 @@ damit ich skalierbar hohe Abdeckungsziele mit kontrollierbarem Testumfang erreic
 - Systematische Tupel-Reduktion nicht vorhanden (= bereits optimal kombiniert)
 - Ungueltige Kombinationen werden pruefbar ausgeschlossen (nicht als "Dead Test Case" markiert)
 **Abhaengigkeiten:** REQ-3040, REQ-3005, REQ-3031, REQ-0800, REQ-0806
-**Blockiert:** REQ-3036, REQ-3037, REQ-3038
+**Blockiert:** REQ-3036
 
 ---
 
@@ -2029,7 +2007,7 @@ damit vermieden wird, dass ungueltige Kombinationen erzeugt und danach gefiltert
 - Regeln (REQ-0806) werden als Boolean-Constraints in Generierungs-Baum propagiert
 - Tote Werte (REQ-3015) werden nicht in Tupel-Generation beruecksichtigt
 **Abhaengigkeiten:** REQ-3005, REQ-3004, REQ-0806, REQ-3015
-**Blockiert:** REQ-3039, REQ-3032, REQ-3036, REQ-3037, REQ-3038
+**Blockiert:** REQ-3039, REQ-3032, REQ-3036
 
 ---
 

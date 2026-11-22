@@ -226,6 +226,21 @@ def _clear_coverage_cache_per_test():
     _coverage_cache.clear()
 
 
+@pytest.fixture(autouse=True)
+def _purge_seed_sets_per_test():
+    """REQ-6009: Seed-Saetze und Seed-Cases je Test entfernen."""
+    from app.database import SessionLocal
+    from app.models.seed import SeedCase, SeedSet
+    db = SessionLocal()
+    try:
+        db.query(SeedCase).delete(synchronize_session=False)
+        db.query(SeedSet).delete(synchronize_session=False)
+        db.commit()
+    finally:
+        db.close()
+    yield
+
+
 # ---------------------------------------------------------------------------
 # T-6: Test-Router fuer Debug-Auth-Endpunkte (nur in Tests)
 # ---------------------------------------------------------------------------

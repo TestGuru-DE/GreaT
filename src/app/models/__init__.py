@@ -7,6 +7,7 @@ from sqlalchemy import Boolean, String
 # REQ-4023: Import User first (ProjectMembership references it), then ProjectMembership
 from .auth import User  # noqa: F401
 from .project_membership import ProjectMembership  # noqa: F401
+from .seed import SeedSet, SeedCase  # noqa: F401  # REQ-6009
 
 
 class Project(Base):
@@ -26,6 +27,7 @@ class Project(Base):
     memberships = relationship("ProjectMembership", back_populates="project", cascade="all, delete-orphan")  # REQ-4023
     rules = relationship("Rule", back_populates="project", cascade="all, delete-orphan")
     constraints = relationship("Constraint", back_populates="project", cascade="all, delete-orphan")  # REQ-6001
+    seed_sets = relationship("SeedSet", back_populates="project", cascade="all, delete-orphan")  # REQ-6009
 
 class Category(Base):
     __tablename__ = "categories"
@@ -74,9 +76,11 @@ class Generation(Base):
     name = Column(String(300), nullable=True)  # REQ-2004: Editierbarer Name
     version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), 
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc),
                         onupdate=lambda: datetime.now(timezone.utc), nullable=False)
     coverage_meta = Column(Text, nullable=True)  # JSON-String (optional)ing (optional)
+    # REQ-6009: Referenz auf Seed-Satz (optional)
+    seed_set_id = Column(Integer, ForeignKey("seed_sets.id", ondelete="SET NULL"), nullable=True)
     # REQ-4024: Audit-Trail
     last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     last_modified_at = Column(DateTime, nullable=True)
@@ -90,6 +94,8 @@ class TestCase(Base):
     generation_id = Column(Integer, ForeignKey("generations.id", ondelete="CASCADE"), nullable=False)
     name = Column(String(200), nullable=False)
     version = Column(Integer, default=0, server_default="0", nullable=False)  # REQ-4021
+    # REQ-6009: Herkunft (seed | supplemented | generated)
+    origin = Column(String(20), nullable=True)
     # REQ-4024: Audit-Trail
     last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     last_modified_at = Column(DateTime, nullable=True)
