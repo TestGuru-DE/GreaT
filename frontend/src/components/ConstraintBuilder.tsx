@@ -634,10 +634,23 @@ export default function ConstraintBuilder({ projectId }: Props) {
     setName(c.name);
     setKind(c.kind);
 
-    // Debug: log the AST structure
+    // BUGFIX: Backend returns nested structure:
+    // { expression: { kind, condition, consequence }, consequence: null }
+    // We need to extract condition/consequence from expression if it's nested
+    let expr = c.expression;
+    let cons = c.consequence;
+
+    // Check if expression is actually a wrapped constraint object
+    if (expr && typeof expr === "object" && "condition" in expr && "consequence" in expr) {
+      const wrapped = expr as Record<string, ConstraintNode>;
+      expr = wrapped.condition;
+      cons = wrapped.consequence;
+      console.log("[ConstraintBuilder] Unwrapped nested AST from expression");
+    }
+
     console.log("[ConstraintBuilder] startEdit AST:", JSON.stringify({
-      expression: c.expression,
-      consequence: c.consequence,
+      expression: expr,
+      consequence: cons,
     }, null, 2));
 
     // Convert AST back to builder nodes for editing
@@ -654,8 +667,8 @@ export default function ConstraintBuilder({ projectId }: Props) {
       return [builder];
     };
 
-    setConditionNodes(unwrapAST(c.expression));
-    setConsequenceNodes(unwrapAST(c.consequence));
+    setConditionNodes(unwrapAST(expr));
+    setConsequenceNodes(unwrapAST(cons));
     setMsg(null);
   }, []);
 
