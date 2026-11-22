@@ -112,6 +112,9 @@ class GenerateRequest(BaseModel):
     limit: Optional[int] = Field(default=None, ge=1, le=100000)
     apply_rules: bool = False  # REQ-3005
     t_strength: Optional[int] = Field(default=None, ge=1, le=10)
+    # REQ-6009: Seeds
+    seed_set_id: Optional[int] = None  # Referenz auf gespeicherten Seed-Satz
+    seeds: Optional[List[dict]] = None  # Inline-Seed-Liste [{"A": "a1", "B": null}, ...]
 
     @field_validator("t_strength", mode="before")
     @classmethod
@@ -129,6 +132,11 @@ class GenerateResponse(BaseModel):
     rules_applied: bool = False
     rule_count: int = 0
     warnings: List[str] = []
+    # REQ-6009: Seed-Generierung
+    seeds_count: int = 0
+    supplemented_count: int = 0
+    coverage_before: float = 0.0
+    coverage_after: float = 0.0
 
 class TestCaseOut(BaseModel):
     id: int
@@ -136,6 +144,7 @@ class TestCaseOut(BaseModel):
     assignments: Dict[str, str]
     has_error_value: bool = False  # REQ-3063: Flag für Fehlerwert-Markierung
     risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
+    origin: Optional[str] = None  # REQ-6009: "seed" | "supplemented" | "generated"
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -674,3 +683,149 @@ class UncoveredTupleResponse(BaseModel):
     t: int
     tuples: List[dict]
     total: int
+
+
+# ============================================================================
+# REQ-6009: Seed-Saetze und Seed-Testfaelle
+# ============================================================================
+
+MAX_SEEDS_PER_SET = 10000
+
+
+class SeedCaseCreate(BaseModel):
+    """REQ-6009: Einzelner Seed-Testfall (Assignment als JSON)."""
+    assignment: Dict[str, Optional[str]]  # {"A": "a1", "B": None, ...}
+    order_index: int = 0
+
+    @field_validator("assignment")
+    @classmethod
+    def assignment_not_empty(cls, v: Dict[str, Optional[str]]) -> Dict[str, Optional[str]]:
+        if not v:
+            raise ValueError("Assignment darf nicht leer sein.")
+        return v
+
+
+class SeedCaseRead(BaseModel):
+    """REQ-6009: Seed-Testfall zum Lesen."""
+    id: int
+    seed_set_id: int
+    assignment: Dict[str, Optional[str]]
+    order_index: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @classmethod
+    def from_orm(cls, obj):
+        import json as json_mod
+        data = obj.__dict__.copy()
+        data["assignment"] = json_mod.loads(obj.assignment_json)
+        data.pop("assignment_json", None)
+        return cls(**data)
+
+
+class SeedSetCreate(BaseModel):
+    """REQ-6009: Seed-Satz anlegen."""
+    name: str = Field(min_length=1, max_length=300)
+    seeds: List[Dict[str, Optional[str]]] = []
+
+    @field_validator("name")
+    @classmethod
+    def name_not_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
+        return v.strip()
+
+    @field_validator("seeds")
+    @classmethod
+    def seeds_max_count(cls, v: List[Dict[str, Optional[str]]]) -> List[Dict[str, Optional[str]]]:
+        if len(v) > MAX_SEEDS_PER_SET:
+            raise ValueError(f"Maximal {MAX_SEEDS_PER_SET} Seeds pro Satz erlaubt.")
+        return v
+
+
+class SeedSetUpdate(BaseModel):
+    """REQ-6009: Seed-Satz aktualisieren (teilweise)."""
+    name: Optional[str] = None
+    seeds: Optional[List[Dict[str, Optional[str]]]] = None
+
+    @field_validator("name")
+    @classmethod
+    def name_not_whitespace(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
+        return v.strip() if v else v
+
+    @field_validator("seeds")
+    @classmethod
+    def seeds_max_count(cls, v: Optional[List[Dict[str, Optional[str]]]]) -> Optional[List[Dict[str, Optional[str]]]]:
+        if v is not None and len(v) > MAX_SEEDS_PER_SET:
+            raise ValueError(f"Maximal {MAX_SEEDS_PER_SET} Seeds pro Satz erlaubt.")
+        return v
+
+
+class SeedSetRead(BaseModel):
+    """REQ-6009: Seed-Satz zum Lesen."""
+    id: int
+    project_id: int
+    name: str
+    created_at: str
+    updated_at: str
+    seed_cases: List[SeedCaseRead] = []
+    seed_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SeedSetListRead(BaseModel):
+    """REQ-6009: Kurzinfo fuer Uebersicht."""
+    id: int
+    name: str
+    seed_count: int
+    created_at: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SeedCSVImportResponse(BaseModel):
+    """REQ-6009: Antwort nach CSV-Import."""
+    seed_set_id: int
+    seed_count: int
+    warnings: List[str] = []
+
+
+class SeedGenerateResponse(BaseModel):
+    """REQ-6009: Antwort nach Seed-Generierung."""
+    generation_id: int
+    count: int
+    seeds_count: int
+    supplemented_count: int
+    coverage_before: float
+    coverage_after: float
+    warnings: List[str] = []
+    report: dict = {}
+
+
+class GapFillRequest(BaseModel):
+    """REQ-6009: Lueckenschluss-Request."""
+    strategy: str = "pairwise"
+    t_strength: Optional[int] = Field(default=None, ge=1, le=10)
+    apply_rules: bool = False
+
+    @field_validator("t_strength", mode="before")
+    @classmethod
+    def resolve_t_strength(cls, v):
+        if v is None:
+            return 2
+        return v
+
+
+class GapFillResponse(BaseModel):
+    """REQ-6009: Antwort nach Lueckenschluss."""
+    new_generation_id: int
+    old_generation_id: int
+    count: int
+    supplemented_count: int
+    coverage_before: float
+    coverage_after: float
+    warnings: List[str] = []
+    report: dict = {}

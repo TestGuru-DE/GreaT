@@ -183,48 +183,70 @@ def generate(
     if payload.apply_rules:
         rule_engine = _build_rule_engine(db, pid)
 
-    cases = generate_cases(
-        catmap, payload.strategy, db=db, project_id=pid,
-        t_strength=t_strength, rule_engine=rule_engine, deadline=deadline,
-    )
+    # REQ-6009: Seed-Generierung oder normale Generierung
+    seeds_count = 0
+    supplemented_count = 0
+    coverage_before = 0.0
+    coverage_after = 0.0
+    warnings: list[str] = []
+    rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
 
-    # Nach Generierung pruefen, ob Timeout erreicht wurde
-    if _time.time() > deadline:
-        raise HTTPException(
-            status_code=408,
-            detail=f"Generierung hat Timeout von {timeout}s ueberschritten.",
+    if payload.seed_set_id or payload.seeds:
+        # Seed-Generierung
+        from ..services_seed import generate_with_seeds
+
+        cases, report, seed_warnings = generate_with_seeds(
+            db, pid, payload.seed_set_id, payload.seeds,
+            payload.strategy, t_strength, rule_engine, deadline,
+        )
+        warnings.extend(seed_warnings)
+        seeds_count = report.seeds_count
+        supplemented_count = report.supplemented_count
+        coverage_before = report.coverage_before
+        coverage_after = report.coverage_after
+    else:
+        # Normale Generierung
+        cases = generate_cases(
+            catmap, payload.strategy, db=db, project_id=pid,
+            t_strength=t_strength, rule_engine=rule_engine, deadline=deadline,
         )
 
-    # B-20/B-21: Regeln anwenden (ersetzt rule_engine.apply mit apply_business_rules)
-    rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
-    warnings: list[str] = []
+        # Nach Generierung pruefen, ob Timeout erreicht wurde
+        if _time.time() > deadline:
+            raise HTTPException(
+                status_code=408,
+                detail=f"Generierung hat Timeout von {timeout}s ueberschritten.",
+            )
 
-    if payload.apply_rules:
-        cases, unreachable_warnings = apply_business_rules(pid, cases, db, catmap=catmap)
-        warnings.extend(unreachable_warnings)
-    elif rule_count > 0:
-        # B-21: Warnung wenn Regeln existieren aber nicht angewendet
-        rule_word = "Regeln" if rule_count > 1 else "Regel"
-        warnings.append(f"Das Projekt hat {rule_count} {rule_word}, sie wurden nicht angewendet (apply_rules=false).")
-    else:
-        # Fallback: existing behavior when no rules exist
-        if rule_engine is not None:
-            cases = rule_engine.apply(cases)
+        # B-20/B-21: Regeln anwenden
+        if payload.apply_rules:
+            cases, unreachable_warnings = apply_business_rules(pid, cases, db, catmap=catmap)
+            warnings.extend(unreachable_warnings)
+        elif rule_count > 0:
+            rule_word = "Regeln" if rule_count > 1 else "Regel"
+            warnings.append(f"Das Projekt hat {rule_count} {rule_word}, sie wurden nicht angewendet (apply_rules=false).")
+        else:
+            if rule_engine is not None:
+                cases = rule_engine.apply(cases)
 
-    # REQ-3034: Zuerst nach Risiko absteigend sortieren (von Generierung getrennt)
-    category_risk_map = load_categories_values_weighted(db, pid)
-    cases = sort_by_risk_descending(cases, category_risk_map)
+        # REQ-3034: Risiko-Sortierung
+        category_risk_map = load_categories_values_weighted(db, pid)
+        cases = sort_by_risk_descending(cases, category_risk_map)
 
-    # BUG-5/REQ-3018: Fehlerwert-Testfaelle ans Ende sortieren
-    error_values = load_error_values(db, pid)
-    cases = sort_testcases_error_last(cases, error_values)
+        # BUG-5/REQ-3018: Fehlerwert-Sortierung
+        error_values = load_error_values(db, pid)
+        cases = sort_testcases_error_last(cases, error_values)
 
     # REQ-4018: Maximale Anzahl Testfaelle respektieren.
     effective_limit = payload.limit if payload.limit is not None else get_max_testcases()
     truncated = len(cases) > effective_limit
     cases = cases[:effective_limit]
 
-    gen = models.Generation(project_id=pid, strategy=payload.strategy)
+    gen = models.Generation(
+        project_id=pid,
+        strategy=payload.strategy,
+        seed_set_id=payload.seed_set_id,  # REQ-6009
+    )
     db.add(gen)
     db.flush()
 
@@ -236,11 +258,18 @@ def generate(
     )
 
     for idx, assignment in enumerate(cases, start=1):
-        tc = models.TestCase(generation_id=gen.id, name=f"TC_{idx}")
+        origin = assignment.get("origin")  # REQ-6009
+        tc = models.TestCase(
+            generation_id=gen.id,
+            name=f"TC_{idx}",
+            origin=origin,  # REQ-6009: "seed" | "supplemented" | "generated"
+        )
         db.add(tc)
         db.flush()
 
-        persisted_assignment = dict(assignment)
+        persisted_assignment = {
+            k: v for k, v in assignment.items() if k != "origin"
+        }
         for cat in categories:
             if cat.is_result and cat.name not in persisted_assignment:
                 persisted_assignment[cat.name] = ""
@@ -267,6 +296,10 @@ def generate(
         rules_applied=payload.apply_rules,
         rule_count=rule_count,
         warnings=warnings,
+        seeds_count=seeds_count,
+        supplemented_count=supplemented_count,
+        coverage_before=coverage_before,
+        coverage_after=coverage_after,
     )
 
 
@@ -342,6 +375,7 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             "assignments": assignments,
             "has_error_value": has_error,
             "risk_coverage": float(risk_coverage),
+            "origin": tc.origin,  # REQ-6009
         })
 
     # REQ-3051: Generierungsweite Risikoabdeckung berechnen
