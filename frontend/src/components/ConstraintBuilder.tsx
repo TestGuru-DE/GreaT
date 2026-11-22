@@ -182,6 +182,23 @@ function buildTextPreview(
   return `IF ${condText || "(?)" } THEN ${consText || "(?)"}`;
 }
 
+// Extract condition/consequence from a constraint, handling both formats:
+// 1. Correct: { expression: condition, consequence: consequence }
+// 2. Nested (backend bug): { expression: { kind, condition, consequence }, consequence: null }
+function extractConstraintAST(c: LogicalConstraint): { condition: ConstraintNode | null; consequence: ConstraintNode | null } {
+  let expr = c.expression;
+  let cons = c.consequence ?? null;
+
+  // Check if expression is actually a wrapped constraint object
+  if (expr && typeof expr === "object" && "condition" in expr && "consequence" in expr) {
+    const wrapped = expr as Record<string, ConstraintNode>;
+    expr = wrapped.condition ?? null;
+    cons = wrapped.consequence ?? null;
+  }
+
+  return { condition: expr, consequence: cons };
+}
+
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
@@ -634,11 +651,20 @@ export default function ConstraintBuilder({ projectId }: Props) {
     setName(c.name);
     setKind(c.kind);
 
+    // Extract condition/consequence, handling both correct and nested backend formats
+    const { condition, consequence } = extractConstraintAST(c);
+
+    console.log("[ConstraintBuilder] startEdit AST:", JSON.stringify({
+      expression: condition,
+      consequence: consequence,
+    }, null, 2));
+
     // Convert AST back to builder nodes for editing
     // Key: buildAST wraps multiple nodes in an AND-group, so we unwrap it
     const unwrapAST = (node: ConstraintNode | undefined | null): BuilderNode[] => {
       if (!node) return [];
       const builder = astToBuilderNode(node);
+      console.log("[ConstraintBuilder] unwrapAST result:", JSON.stringify(builder, null, 2));
       // If the top-level is an AND/OR group, use its children directly
       // (mirrors how buildAST wraps multiple nodes)
       if (builder._type === "group" && (builder.op === "and" || builder.op === "or")) {
@@ -647,8 +673,8 @@ export default function ConstraintBuilder({ projectId }: Props) {
       return [builder];
     };
 
-    setConditionNodes(unwrapAST(c.expression));
-    setConsequenceNodes(unwrapAST(c.consequence));
+    setConditionNodes(unwrapAST(condition));
+    setConsequenceNodes(unwrapAST(consequence));
     setMsg(null);
   }, []);
 
@@ -945,7 +971,10 @@ export default function ConstraintBuilder({ projectId }: Props) {
                       )}
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5 truncate">
-                      {buildTextPreview(c.kind, c.expression, c.consequence ?? null, categories, catValues)}
+                      {(() => {
+                        const { condition, consequence } = extractConstraintAST(c);
+                        return buildTextPreview(c.kind, condition, consequence, categories, catValues);
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
