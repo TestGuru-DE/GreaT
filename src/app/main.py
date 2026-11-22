@@ -30,6 +30,7 @@ from .routers import (
     api_users,
     api_model,
     api_constraints,  # REQ-6001: Logische Constraints
+    api_coverage,     # REQ-6008: Abdeckungsanzeige
     auth,
 )
 from .routers import api_tokens  # REQ-6012
@@ -288,6 +289,7 @@ app.include_router(api_users.router)  # REQ-4025: Benutzerverwaltung (Prefix /ap
 app.include_router(api_users.password_router)  # REQ-4025: Passwort-Reset (PUT /api/users/{id}/password)
 app.include_router(api_model.router)  # REQ-6013: Modell-Export/Import (Prefix /api/v1/projects)
 app.include_router(api_constraints.router, prefix="/api/v1")  # REQ-6001: Logische Constraints (Prefix /api/v1/projects)
+app.include_router(api_coverage.router, prefix="/api")          # REQ-6008: Abdeckungsanzeige
 app.include_router(auth.router)  # REQ-4001: Login/JWT (Prefix /auth)
 
 # REQ-6012: API-Token Management
@@ -302,6 +304,7 @@ app.include_router(api_projects.router, prefix="/api/v1")
 app.include_router(api_generate.router, prefix="/api/v1")
 app.include_router(api_dataclasses.router, prefix="/api/v1")
 app.include_router(api_datanodes.router, prefix="/api/v1")
+app.include_router(api_coverage.router, prefix="/api/v1")  # REQ-6008: v1-Alias
 
 # ---------------------------------------------------------------------------
 # Komfort-Redirects (muessen VOR dem SPA-Fallback definiert werden)

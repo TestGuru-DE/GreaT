@@ -183,6 +183,7 @@ class GenerationSummary(BaseModel):
     name: str
     created_at: str
     testcase_count: int
+    coverage_2wise_pct: Optional[float] = None  # REQ-6008: 2-wise Coverage %
     model_config = ConfigDict(from_attributes=True)
 
 # REQ-2002: Bulk-Delete
@@ -600,3 +601,76 @@ class ConstraintValidateResponse(BaseModel):
     warnings: List[str] = []
     leaf_count: int = 0
     depth: int = 0
+
+
+# ============================================================================
+# REQ-6008: Coverage Schemas
+# ============================================================================
+
+class CoverageStat(BaseModel):
+    """t-wise Abdeckungsstatistik."""
+    t: int
+    covered: int
+    possible: int
+    percentage: float
+    excluded_by_rules: int = 0
+
+
+class HeatmapPair(BaseModel):
+    """Ein Kategorienpaar in der Uebersichtsmatrix."""
+    cat_a: str
+    cat_b: str
+    coverage_pct: float
+    covered: int
+    possible: int
+
+
+class HeatmapOverview(BaseModel):
+    """Uebersicht aller Kategorienpaare mit Abdeckungsgrad."""
+    categories: List[str]
+    pairs: List[HeatmapPair]
+
+
+class CoverageResponse(BaseModel):
+    """Response fuer GET /api/generations/{gid}/coverage.
+    
+    Enthalt 1-wise und 2-wise Coverage, Uebersicht aller Kategorienpaare,
+    unabgedeckte Tupel und optional 3-wise (bei ?t=3).
+    """
+    generation_id: int
+    coverage_1wise: CoverageStat
+    coverage_2wise: CoverageStat
+    coverage_3wise: Optional[CoverageStat] = None
+    heatmap: HeatmapOverview
+    uncovered_tuples_2wise: List[dict] = []
+    cached: bool = False
+
+
+class HeatmapCellData(BaseModel):
+    """Einzelne Zelle in der Heatmap."""
+    count: int
+    status: str  # "covered" | "uncovered" | "excluded"
+    testcase_ids: List[int] = []
+
+
+class HeatmapResponse(BaseModel):
+    """Response fuer GET /api/generations/{gid}/coverage/pair.
+    
+    Detail-Heatmap fuer zwei Kategorien.
+    """
+    cat_a: str
+    cat_b: str
+    rows: List[str]
+    cols: List[str]
+    cells: Dict[str, HeatmapCellData]
+
+
+class UncoveredTupleResponse(BaseModel):
+    """Response fuer GET /api/generations/{gid}/coverage/missing.
+    
+    Liste unabgedeckter Tupel, sortiert und filterbar.
+    """
+    generation_id: int
+    t: int
+    tuples: List[dict]
+    total: int

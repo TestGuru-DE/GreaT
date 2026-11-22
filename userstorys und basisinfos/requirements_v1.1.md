@@ -1721,7 +1721,7 @@ Als Tester moechte ich mehrere Grenzwertbereiche in einer Kategorie definieren k
 ### REQ-3031 | Kombinatorische Abdeckungsanzeige
 **Titel:** N-Wise-Coverage-Metrik nach Generierung
 **Prioritaet:** Should
-**Status:** Planned
+**Status:** Superseded by REQ-6008
 **Phase:** 3, Sprint 6
 **User Story:**
 Als Tester
@@ -3072,6 +3072,164 @@ damit ich das Werkzeug ohne Sprachbarriere nutzen kann und das Open-Source-Proje
 
 ---
 
+### REQ-6006 | Klassifikationsbaum-Ansicht
+**Titel:** Testmodell als Klassifikationsbaum mit darunterliegender Testfallmatrix darstellen und bearbeiten
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 5, Release v1.11.0
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester, der mit der Klassifikationsbaummethode arbeitet,
+moechte ich mein Testmodell als Baum (Testobjekt → Klassifikationen → Klassen) mit der Testfallmatrix darunter sehen,
+damit ich das Modell in der gewohnten Notation prüfen, im Team besprechen und in Dokumentationen verwenden kann.
+**Akzeptanzkriterien:**
+- Neuer Tab „Klassifikationsbaum" in der Projektansicht, zusätzlich zur bestehenden Kategorien-/Werte-Ansicht. Beide zeigen **dasselbe Modell**.
+- Darstellung:
+  - **Wurzel** = Projektname (Testobjekt)
+  - **Klassifikationen** = Kategorien (rechteckig)
+  - **Klassen** = Werte als Blätter darunter
+- Markierung von Ergebnis-Kategorien, Fehlerwerten und Default-Werten durch Symbol **und** Beschriftung, nicht nur Farbe.
+- **Testfallmatrix** unter dem Baum: eine Zeile je Testfall der gewählten Generierung, ein Punkt (●) in der Spalte der jeweils gewählten Klasse. Spalten exakt unter den Klassen ausgerichtet. Auswahl der Generierung per Liste.
+- **Bearbeiten im Baum:**
+  - Klassifikation/Klasse hinzufügen, umbenennen (Doppelklick/F2) und löschen (Entf, mit Rückfrage)
+  - Reihenfolge per Ziehen ändern
+  - Änderungen wirken sofort im Modell, mit Undo/Redo wie in der Kategorien-Ansicht (REQ-3053)
+- **Manuelle Testfälle in der Matrix:** neue Zeile anlegen und per Klick je Klassifikation eine Klasse wählen. Speichern erzeugt eine Generierung `manual` (REQ-3016) oder einen Seed-Satz (REQ-6009).
+- Regelverstöße einer manuellen Zeile werden sofort markiert (REQ-6001/Regeln).
+- **Zoom** (Strg+Mausrad, Knöpfe +/−/Einpassen) und waagerechtes Scrollen. Bis 30 Klassifikationen × 20 Klassen bleibt die Ansicht flüssig (< 200 ms je Interaktion).
+- **Export des Baums** als SVG und PNG, wahlweise mit oder ohne Matrix, z. B. für Testkonzepte.
+- Darstellung in allen Themes lesbar (Kontrast ≥ 4,5:1).
+- Optionale Verfeinerung (Unterklassifikationen) ist Gegenstand von REQ-6016. Ohne REQ-6016 ist der Baum zweistufig.
+**TDD-Hinweis:**
+- Zuerst Unit-Tests für die Layout-Berechnung (Positionen und Spaltenbreiten; keine Überlappung bei 30 × 20).
+- Dann Vitest-Tests für Bearbeiten (hinzufügen, umbenennen, löschen) gegen gemockte API.
+- Dann Test „Matrixpunkt entspricht Zuordnung".
+- Dann Playwright-Test mit Screenshot.
+**Abhaengigkeiten:** REQ-3016, REQ-3053, REQ-6005; optional REQ-6009, REQ-6016
+**Blockiert:** REQ-6016
+
+---
+
+### REQ-6007 | Grenzwertanalyse für Datum, Uhrzeit und Stringlängen
+**Titel:** BVA nach ISTQB nicht nur für Zahlen, sondern auch für Datum, Uhrzeit, Datum+Uhrzeit und Zeichenkettenlängen
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 5, Release v1.11.0
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester
+moechte ich für Datums-, Uhrzeit- und Textfelder Gültigkeitsbereiche angeben und die Grenzwerte automatisch erzeugen lassen,
+damit ich die häufigsten Fehlerquellen (Monatsende, Schaltjahr, Mitternacht, Feldlänge) systematisch abdecke.
+**Akzeptanzkriterien:**
+- Der bestehende BVA-Dialog (REQ-3041/REQ-3064, Multi-Range) bietet einen **Datentyp**: Zahl (bisher), **Datum**, **Uhrzeit**, **Datum+Uhrzeit**, **Stringlänge**. Die 2-, 3- und 4-Punkt-Methode gilt für alle Typen unverändert nach ISTQB.
+- **Datum:**
+  - Eingabe von Min/Max je Bereich (Datumsauswahl oder Eingabe), Schrittweite **1 Tag**. Mehrere Bereiche (gültig/ungültig) wie bei Zahlen.
+  - Optionale **Zusatzwerte** per Ankreuzfeld:
+    - 29.02. eines Schaltjahrs im Bereich
+    - 29.02. eines Nicht-Schaltjahrs (ungültig)
+    - Monatsenden 30./31.
+    - Jahreswechsel 31.12./01.01.
+    - ungültiges Datum (z. B. 31.04.)
+  - Diese Zusatzwerte werden nur erzeugt, wenn sie im bzw. an einem Bereich liegen.
+  - **Ausgabeformat** wählbar: ISO `JJJJ-MM-TT` (Standard) oder `TT.MM.JJJJ`. Der Wert-Datentyp (`vtype`) wird auf `date` gesetzt.
+- **Uhrzeit:**
+  - Min/Max mit wählbarer Schrittweite (Sekunde oder Minute).
+  - Zusatzwerte: `00:00`, `23:59(:59)`, `24:00` (ungültig), Mitternachtsübergang bei Bereichen über Mitternacht (z. B. 22:00–02:00 wird korrekt als zusammenhängend behandelt).
+  - Format `HH:MM` oder `HH:MM:SS`. `vtype` = `time`.
+- **Datum+Uhrzeit:** Kombination beider Typen; Grenzwerte an den Bereichsgrenzen mit der kleinsten gewählten Einheit. Optionale Zeitzonenangabe (ISO 8601 mit Offset) als Formatoption.
+- **Stringlänge:**
+  - Min/Max-Länge.
+  - Erzeugt Werte mit den Längen nach gewählter Methode, z. B. bei 2-Punkt: min−1, min, max, max+1. Zusätzlich optional: Länge 0 (leer), nur Leerzeichen, führende/abschließende Leerzeichen.
+  - **Zeichenvorrat** wählbar: Buchstaben, Buchstaben+Ziffern, inkl. Umlaute/ß, inkl. Sonderzeichen, Unicode (z. B. Emoji, Zeichen außerhalb der BMP).
+  - Lange Werte (über 500 Zeichen, dem Limit für Werte) werden **symbolisch** gespeichert, z. B. `<STR len=1001 charset=alnum>`. Die echte Zeichenkette entsteht beim Export bzw. in der Testdaten-Konkretisierung (REQ-6010). Kurze Werte werden direkt als Text gespeichert.
+- Werte außerhalb gültiger Bereiche werden als Fehlerwert markiert (wie bisher bei Zahlen). Die Visualisierung (REQ-4015) zeigt Datum/Uhrzeit/Längen auf einer passenden Achse.
+- Ungültige Eingaben im Dialog (Min > Max, überlappende Bereiche, ungültiges Datum) werden sofort mit Meldung verhindert.
+- API: bestehender Endpunkt `POST /api/categories/{cid}/bva/ranges` mit neuem Feld `type` (`number` als Standard, abwärtskompatibel) und typspezifischen Optionen.
+**TDD-Hinweis:**
+- Zuerst Unit-Tests in `src/combinatorics/boundary_value.py` je Typ und Methode (2/3/4 Punkte), dabei Grenzfälle explizit:
+  - Schaltjahr 2024/2100/2000
+  - Monatsende
+  - Bereich über Mitternacht
+  - Länge 0
+  - Länge > 500 → symbolischer Wert
+  - Unicode-Längenzählung in Codepoints
+- Dann API-Tests, dann Vitest für Dialog-Validierung.
+**Abhaengigkeiten:** REQ-3035, REQ-3041, REQ-3064, REQ-4015; REQ-6010 (Auflösung symbolischer Strings)
+**Blockiert:** REQ-6003 (Abbildung `minLength`/`format: date`)
+
+---
+
+### REQ-6008 | Abdeckungsanzeige als Matrix/Heatmap
+**Titel:** Kombinatorische Abdeckung (1-, 2-, 3-wise) einer Generierung messen und als Matrix/Heatmap darstellen
+**Prioritaet:** Should
+**Status:** Planned
+**Phase:** 5, Release v1.11.0
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester
+moechte ich nach einer Generierung sehen, wie vollständig die Wertepaare (und optional -tripel) abgedeckt sind und welche Kombinationen fehlen oder durch Regeln unmöglich sind,
+damit ich die kombinatorische Qualität meiner Testfälle objektiv beurteilen und begründen kann.
+**Akzeptanzkriterien:**
+- **Kennzahlen** je Generierung:
+  - 1-wise-Abdeckung (jeder Wert mindestens einmal)
+  - 2-wise-Abdeckung (Paare)
+  - optional 3-wise (Tripel), jeweils in % und als „abgedeckt / möglich"
+- „Möglich" berücksichtigt Regeln und Constraints (REQ-6001): Unmögliche Tupel zählen nicht zum Nenner und werden separat gezählt.
+- **Heatmap-Ansicht:**
+  - Auswahl zweier Kategorien (A, B) → Matrix mit Werten von A als Zeilen und Werten von B als Spalten.
+  - Jede Zelle zeigt die **Anzahl** der Testfälle mit diesem Paar.
+  - Farbintensität nach Anzahl; Zustand „nicht abgedeckt" und „durch Regel ausgeschlossen" mit eigenem Muster/Symbol (✕ bzw. ⊘), nicht nur Farbe.
+- **Übersichtsmatrix** aller Kategorienpaare: kleine Kacheln mit Abdeckungsgrad je Paar; Klick öffnet die Detail-Heatmap.
+- **Klick auf eine Zelle** listet die zugehörigen Testfälle (Sprung in die Testfall-Ansicht mit Filter). Bei Lücken erscheint der Hinweis „Mit REQ-6009 Lücken schließen" als Aktion.
+- **Liste nicht abgedeckter Tupel** (sortiert, filterbar, exportierbar als CSV).
+- Kennzahlen erscheinen kompakt auch in der Generierungsübersicht (Spalte „2-wise %").
+- Die Abdeckung wird beim Generieren berechnet und gespeichert. Bei älteren Generierungen wird sie beim ersten Abruf berechnet.
+- Leistung: 2-wise für 30 Kategorien × 10 Werte × 1.000 Testfälle in < 3 s. 3-wise nur auf Anforderung und mit Größenprüfung (Abbruch über 5 Mio. möglichen Tripeln mit Hinweis).
+- Farbskala barrierearm (farbenblind-tauglich) und in allen Themes lesbar; Legende immer sichtbar.
+**TDD-Hinweis:** Zuerst Unit-Tests für `coverage.py`:
+- kleine Modelle mit von Hand berechneten Werten
+- Regeln, die Paare ausschließen
+- Ergebnis-Kategorien werden ignoriert
+- Fehlerwerte werden mitgezählt
+- 3-wise
+
+Dann API-Test, dann Vitest für Heatmap (Zellwerte, Symbole), dann Performance-Test.
+**Abhaengigkeiten:** REQ-6001, REQ-4016, REQ-3018; Historie-Schnappschuss aus v1.9.0
+**Blockiert:** REQ-6009
+
+---
+
+### REQ-6009 | Pflicht-Testfälle (Seeds) und Lückenschluss
+**Titel:** Vorgegebene Testfälle beibehalten und nur die fehlende Abdeckung ergänzen; Lücken bestehender Generierungen nachträglich schließen
+**Prioritaet:** Must
+**Status:** Planned
+**Phase:** 5, Release v1.11.0
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester
+moechte ich fachlich wichtige oder bereits vorhandene Testfälle als Pflicht-Testfälle vorgeben und das Werkzeug nur noch die fehlende kombinatorische Abdeckung ergänzen lassen,
+damit ich bestehende Testsuiten weiterverwenden kann und nicht bei jeder Generierung von vorn beginne.
+**Akzeptanzkriterien:**
+- **Seeds festlegen**, auf drei Wegen:
+  1. Testfälle einer bestehenden Generierung auswählen und als Seeds übernehmen.
+  2. Seeds manuell zusammenstellen (Zeileneditor mit Auswahlliste je Kategorie, vgl. REQ-3016).
+  3. Seeds per CSV importieren (Spalten = Kategorienamen; unbekannte Werte werden gemeldet).
+- Seeds dürfen **unvollständig** sein (leere Zelle = „beliebig"). Das Werkzeug füllt sie passend auf.
+- Seeds werden pro Projekt als „Seed-Satz" gespeichert (Name, Liste). Mehrere Seed-Sätze sind möglich.
+- Bei der Generierung mit Pairwise, T-Wise, Each Choice oder Linear kann ein Seed-Satz gewählt werden. Ergebnis:
+  - Alle Seeds sind unverändert enthalten (vervollständigte Seeds mit gekennzeichneter Auffüllung).
+  - Zusätzliche Testfälle schließen nur die noch fehlende Abdeckung der gewählten Stärke.
+  - Seeds, die gegen Regeln/Constraints verstoßen, werden **nicht** stillschweigend entfernt, sondern mit Warnung markiert. Der Nutzer entscheidet: „trotzdem behalten" oder „ausschließen".
+- In der Testfall-Ansicht und in Exporten sind Seed-Fälle und ergänzte Fälle unterscheidbar (Spalte „Herkunft": Seed / ergänzt).
+- **Lückenschluss für bestehende Generierungen:** Aktion „Lücken schließen" auf einer Generierung erzeugt eine **neue** Generierung = alte Testfälle + Ergänzung. Die alte bleibt unverändert (unveränderliche Historie).
+- Ergebnisbericht: Anzahl Seeds, Anzahl ergänzter Fälle, vorher/nachher-Abdeckung, unmögliche Tupel (durch Regeln ausgeschlossen).
+- Grenzen: höchstens 10.000 Seeds je Satz; Größenprüfung und Zeitbudget wie bei der normalen Generierung.
+**TDD-Hinweis:** Zuerst Property-Test: zufälliges Modell + zufällige Seeds → alle Seeds enthalten, Paarabdeckung 100 % (außer regelbedingt unmöglich), Ergebnis nicht größer als Seeds + reine Pairwise-Generierung. Dann Tests für unvollständige Seeds, regelwidrige Seeds, CSV-Import, Lückenschluss erzeugt neue Generierung.
+**Abhaengigkeiten:** REQ-3016, REQ-6008 (gemeinsame Abdeckungsberechnung), REQ-6001; schnelles Pairwise aus v1.9.0
+**Blockiert:** –
+
+---
+
 ### REQ-6011 | Exporte fuer Testmanagement- und Automatisierungswerkzeuge
 **Titel:** Generierte Testfaelle in Formaten fuer BDD, Testautomatisierung und gaengige Testmanagement-Systeme exportieren
 **Prioritaet:** Must
@@ -3199,3 +3357,32 @@ damit das Modell neben dem Quellcode im Git liegt, per Pull Request geprueft wer
 - Das JSON-Schema selbst wird im Test gegen die Beispieldateien geprueft.
 **Abhaengigkeiten:** Backup-Format 2.0 aus v1.9.0 (gleiche Datenabdeckung), WP-04-Eindeutigkeit aus v1.9.0
 **Blockiert:** REQ-6003, REQ-6014
+
+---
+
+### REQ-6016 | Hierarchische Klassen (Verfeinerung im Klassifikationsbaum)
+**Titel:** Klassen durch Unter-Klassifikationen verfeinern
+**Prioritaet:** Could
+**Status:** Planned
+**Phase:** 5, Release v1.11.0 (optional, kann auf ein spaeteres Release verschoben werden)
+**Epic:** EPIC-21 (Methodik-Release)
+**User Story:**
+Als Tester, der mit der Klassifikationsbaummethode arbeitet,
+moechte ich eine Klasse (z. B. „Kreditkarte") durch weitere Klassifikationen verfeinern (z. B. „Kartentyp: Visa, Mastercard"), die nur gelten, wenn diese Klasse gewählt ist,
+damit ich abhängige Parameter natürlich modellieren kann, ohne viele Ausschlussregeln schreiben zu müssen.
+**Akzeptanzkriterien:**
+- Ein Wert kann eine oder mehrere **Unter-Kategorien** haben, maximal 3 Ebenen tief.
+- **Generierung:** Eine Unter-Kategorie wird nur belegt, wenn ihr Eltern-Wert im Testfall gewählt ist. Sonst steht dort „—" (nicht anwendbar) und es zählt nicht als Lücke.
+- **Abdeckung (REQ-6008)** zählt Paare mit Unter-Kategorien nur in Kombination mit dem Eltern-Wert als „möglich".
+- Funktioniert für Each Choice, Linear, All, Pairwise und T-Wise. MC/DC und Entscheidungstabelle ignorieren Unter-Kategorien mit Hinweis.
+- **Bearbeitung** im Klassifikationsbaum (REQ-6006): „Verfeinern" per Kontextmenü an einer Klasse. In der Kategorien-Ansicht werden Unter-Kategorien eingerückt unter ihrem Eltern-Wert angezeigt.
+- Export: Unter-Kategorien sind eigene Spalten. „Nicht anwendbar" wird als leere Zelle bzw. `null` (JSON) ausgegeben.
+- Regeln und Constraints (REQ-6001) können Unter-Kategorien referenzieren.
+- Modell-Datei (REQ-6013) und Backup bilden die Hierarchie ab.
+- Bestehende flache Projekte bleiben unverändert gültig.
+**TDD-Hinweis:**
+- Zuerst eine Spezifikation durch den Combinatorics Expert: Abbildung als implizite Constraints („Unter-Kategorie gesetzt ⇔ Eltern-Wert gewählt").
+- Dann Property-Tests: Kein Testfall enthält einen Unter-Wert ohne passenden Eltern-Wert; Paarabdeckung der möglichen Paare 100 %.
+- Dann API- und UI-Tests.
+**Abhaengigkeiten:** REQ-6006, REQ-6001, REQ-6008
+**Blockiert:** –

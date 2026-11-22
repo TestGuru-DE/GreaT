@@ -164,3 +164,57 @@ export interface LogicalConstraint {
   created_at: string;
   updated_at: string;
 }
+
+// ============================================================================
+// REQ-6008: Coverage Types
+// ============================================================================
+
+export interface CoverageStat {
+  t: number;
+  covered: number;
+  possible: number;
+  percentage: number;
+  excluded_by_rules: number;
+}
+
+export interface HeatmapPair {
+  cat_a: string;
+  cat_b: string;
+  coverage_pct: number;
+  covered: number;
+  possible: number;
+}
+
+export interface HeatmapOverview {
+  categories: string[];
+  pairs: HeatmapPair[];
+}
+
+export interface UncoveredTuple {
+  categories: string[];
+  values: string[];
+}
+
+export interface CoverageResponse {
+  generation_id: number;
+  coverage_1wise: CoverageStat;
+  coverage_2wise: CoverageStat;
+  coverage_3wise?: CoverageStat | null;
+  heatmap: HeatmapOverview;
+  uncovered_tuples_2wise: UncoveredTuple[];
+  cached: boolean;
+}
+
+export interface HeatmapCellData {
+  count: number;
+  status: "covered" | "uncovered" | "excluded";
+  testcase_ids: number[];
+}
+
+export interface HeatmapResponse {
+  cat_a: string;
+  cat_b: string;
+  rows: string[];
+  cols: string[];
+  cells: Record<string, HeatmapCellData>;
+}
