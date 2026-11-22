@@ -654,17 +654,11 @@ export default function ConstraintBuilder({ projectId }: Props) {
     // Extract condition/consequence, handling both correct and nested backend formats
     const { condition, consequence } = extractConstraintAST(c);
 
-    console.log("[ConstraintBuilder] startEdit AST:", JSON.stringify({
-      expression: condition,
-      consequence: consequence,
-    }, null, 2));
-
     // Convert AST back to builder nodes for editing
     // Key: buildAST wraps multiple nodes in an AND-group, so we unwrap it
     const unwrapAST = (node: ConstraintNode | undefined | null): BuilderNode[] => {
       if (!node) return [];
       const builder = astToBuilderNode(node);
-      console.log("[ConstraintBuilder] unwrapAST result:", JSON.stringify(builder, null, 2));
       // If the top-level is an AND/OR group, use its children directly
       // (mirrors how buildAST wraps multiple nodes)
       if (builder._type === "group" && (builder.op === "and" || builder.op === "or")) {

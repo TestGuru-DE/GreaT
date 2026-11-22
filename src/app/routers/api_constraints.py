@@ -38,13 +38,21 @@ def _parse_expression(expression_json: str) -> dict:
 
 
 def _constraint_to_read(c: models.Constraint) -> schemas.ConstraintRead:
-    """Konvertiert ein Constraint-Modell ins Read-Schema."""
+    """Konvertiert ein Constraint-Modell ins Read-Schema.
+
+    Extrahiert condition und consequence aus dem gespeicherten AST,
+    damit das Frontend flache Felder erhaelt:
+    - expression = condition (nicht das komplette AST)
+    - consequence = consequence (nur bei 'implies')
+    """
+    ast_dict = _parse_expression(c.expression_json)
     return schemas.ConstraintRead(
         id=c.id,
         project_id=c.project_id,
         name=c.name,
         kind=c.kind,
-        expression=_parse_expression(c.expression_json),
+        expression=ast_dict.get("condition", {}),
+        consequence=ast_dict.get("consequence"),
         is_valid=c.is_valid,
         created_at=c.created_at.isoformat() if c.created_at else "",
         updated_at=c.updated_at.isoformat() if c.updated_at else "",
