@@ -547,12 +547,17 @@ class ConstraintUpdate(BaseModel):
 
 
 class ConstraintRead(BaseModel):
-    """Response-Schema fuer ein Constraint."""
+    """Response-Schema fuer ein Constraint.
+
+    expression: nur die condition (kein verschachteltes AST)
+    consequence: nur bei 'implies'-Constraints
+    """
     id: int
     project_id: int
     name: str
     kind: str
-    expression: dict
+    expression: dict  # condition-AST (nicht das komplette Constraint-AST)
+    consequence: Optional[dict] = None  # nur bei 'implies'
     is_valid: bool
     created_at: str
     updated_at: str
@@ -562,10 +567,14 @@ class ConstraintRead(BaseModel):
 
     @classmethod
     def from_orm(cls, obj):
-        # Custom serialization: parse expression_json from string to dict
+        # Custom serialization: parse expression_json and extract condition/consequence
         import json
         data = obj.__dict__.copy()
-        data['expression'] = json.loads(obj.expression_json) if obj.expression_json else {}
+        ast_dict = json.loads(obj.expression_json) if obj.expression_json else {}
+        # Extract condition as expression (flat structure for frontend)
+        data['expression'] = ast_dict.get('condition', {})
+        # Extract consequence as separate field
+        data['consequence'] = ast_dict.get('consequence')
         data.pop('expression_json', None)
         return cls(**data)
 

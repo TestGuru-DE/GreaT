@@ -37,7 +37,10 @@ class TestRuleToConstraintConversion:
         assert resp.status_code == 201
         data = resp.json()
         assert data["kind"] == "forbid"
-        assert "condition" in data["expression"]
+        # expression ist jetzt direkt die condition (flaches Format)
+        assert data["expression"]["op"] == "eq"
+        assert data["expression"]["category_id"] == cat1["id"]
+        assert data.get("consequence") is None  # forbid hat keine consequence
 
     def test_convert_dependency_to_implies(self, auth_client):
         """dependency-Regel → implies-Constraint."""
@@ -64,7 +67,10 @@ class TestRuleToConstraintConversion:
         assert resp.status_code == 201
         data = resp.json()
         assert data["kind"] == "implies"
-        assert "consequence" in data["expression"]
+        # expression ist die condition, consequence ist separates Feld
+        assert data["expression"]["op"] == "eq"
+        assert data["consequence"]["op"] == "eq"
+        assert data["consequence"]["category_id"] == cat2["id"]
 
     def test_convert_combine_to_implies(self, auth_client):
         """combine-Regel → implies-Constraint mit IN."""
@@ -92,7 +98,9 @@ class TestRuleToConstraintConversion:
         assert resp.status_code == 201
         data = resp.json()
         assert data["kind"] == "implies"
-        assert data["expression"]["consequence"]["op"] == "in"
+        # consequence ist separates Feld mit IN-Operator
+        assert data["consequence"]["op"] == "in"
+        assert len(data["consequence"]["value_ids"]) == 2
 
     def test_convert_nonexistent_rule_returns_404(self, auth_client):
         """Nicht-existentes Regel-ID → 404."""
