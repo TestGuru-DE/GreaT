@@ -7,7 +7,7 @@ REQ-1213: Rename-Endpunkte
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field as PydanticField, field_validator
+from pydantic import BaseModel, ConfigDict, Field as PydanticField, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -233,6 +233,20 @@ def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(
     ).first()
     if exists:
         raise HTTPException(status_code=409, detail=f"Ein Wert '{payload.value}' existiert in dieser Kategorie bereits.")
+    # REQ-6016: Validate parent_value_id if provided
+    parent_value_id = payload.parent_value_id
+    if parent_value_id is not None:
+        parent = db.get(models.Value, parent_value_id)
+        if not parent or parent.category_id != cid:
+            raise HTTPException(status_code=400, detail="parent_value_id gehoert nicht zu dieser Kategorie.")
+        # REQ-6016: Max 3 levels deep
+        depth = 0
+        current = parent
+        while current.parent_value_id is not None:
+            depth += 1
+            if depth >= 3:
+                raise HTTPException(status_code=400, detail="Maximale Hierarchie-Tiefe (3 Ebenen) erreicht.")
+            current = db.get(models.Value, current.parent_value_id)
     # REQ-3008: Erster Wert einer Kategorie ist automatisch Default
     existing_count = db.query(models.Value).filter(models.Value.category_id == cid).count()
     v = models.Value(
@@ -240,6 +254,7 @@ def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(
         value=payload.value,
         risk_weight=payload.risk_weight,
         is_default=(existing_count == 0),
+        parent_value_id=parent_value_id,
     )
     db.add(v)
     db.commit()
@@ -370,6 +385,110 @@ def unset_default_value(vid: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(val)
     return val
+
+
+# ---------------------------------------------------------------------------
+# REQ-6016: Hierarchische Klassen (Verfeinerung)
+# ---------------------------------------------------------------------------
+
+class RefineRequest(BaseModel):
+    """REQ-6016: Request zum Erstellen einer Unter-Kategorie (Verfeinerung)."""
+    name: str = PydanticField(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def name_not_whitespace(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
+        return v.strip()
+
+
+class HierarchyNode(BaseModel):
+    """REQ-6016: Rekursiver Knoten in der Hierarchie."""
+    id: int
+    value: str
+    children: list["HierarchyNode"] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+HierarchyNode.model_rebuild()
+
+
+class CategoryHierarchyResponse(BaseModel):
+    """REQ-6016: Response fuer Hierarchie-Endpunkt."""
+    category_id: int
+    category_name: str
+    roots: list[HierarchyNode] = []
+
+
+@router.post("/categories/{cid}/refine", response_model=schemas.CategoryRead, dependencies=[Depends(require_writer)])
+def refine_category(cid: DbId, payload: RefineRequest, db: Session = Depends(get_db)):
+    """REQ-6016: Unter-Kategorie (Verfeinerung) fuer einen Wert erstellen.
+
+    Erstellt eine neue Kategorie als 'Unter-Kategorie' eines bestehenden Werts.
+    Die neue Kategorie gehoert zum selben Projekt wie die Eltern-Kategorie.
+    """
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+
+    # Check if a category with this name already exists in the project
+    exists = db.query(models.Category).filter(
+        models.Category.project_id == cat.project_id,
+        func.lower(models.Category.name) == payload.name.lower()
+    ).first()
+    if exists:
+        raise HTTPException(status_code=409, detail=f"Eine Kategorie mit dem Namen '{payload.name}' existiert in diesem Projekt bereits.")
+
+    # Create the new sub-category
+    max_order = db.query(func.max(models.Category.order_index)).filter(
+        models.Category.project_id == cat.project_id
+    ).scalar() or -1
+
+    new_cat = models.Category(
+        project_id=cat.project_id,
+        name=payload.name,
+        order_index=max_order + 1,
+    )
+    db.add(new_cat)
+    db.commit()
+    db.refresh(new_cat)
+    return new_cat
+
+
+@router.get("/categories/{cid}/hierarchy", response_model=CategoryHierarchyResponse)
+def get_category_hierarchy(cid: DbId, db: Session = Depends(get_db)):
+    """REQ-6016: Hierarchie einer Kategorie abrufen (Werte mit child_values)."""
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+
+    # Get all values for this category
+    all_values = db.query(models.Value).filter(
+        models.Value.category_id == cid
+    ).all()
+
+    # Build hierarchy: find root values (no parent) and their children
+    val_map = {v.id: v for v in all_values}
+
+    def build_tree(value_id: int) -> HierarchyNode:
+        val = val_map.get(value_id)
+        if not val:
+            return HierarchyNode(id=value_id, value="unknown")
+        children = [build_tree(cv.id) for cv in val.child_values if cv.id in val_map]
+        return HierarchyNode(id=val.id, value=val.value, children=children)
+
+    roots = []
+    for v in all_values:
+        if v.parent_value_id is None:
+            roots.append(build_tree(v.id))
+
+    return CategoryHierarchyResponse(
+        category_id=cid,
+        category_name=cat.name,
+        roots=roots,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -723,6 +842,144 @@ def generate_multi_range_bva_for_category(
 
     db.commit()
     return BvaMultiRangeResponse(values=values, category_id=cid)
+
+
+# ---------------------------------------------------------------------------
+# REQ-6007: Extended BVA for date, time, datetime, string length
+# ---------------------------------------------------------------------------
+
+@router.post("/categories/{cid}/bva/extended", response_model=schemas.BVAExtendedResponse, dependencies=[Depends(require_writer)])
+def generate_extended_bva_for_category(
+    cid: DbId,
+    payload: schemas.BVAExtendedRequest,
+    db: Session = Depends(get_db),
+):
+    """REQ-6007: Erweiterte BVA mit Datentypen (Datum, Uhrzeit, Stringlaenge).
+
+    Unterstuetzt type: 'number', 'date', 'time', 'datetime', 'strlen'.
+    Typspezifische Optionen ueber 'options'-Feld.
+    """
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+
+    bva_type = payload.type
+    points = payload.points
+    options = payload.options or {}
+    results_list = []
+
+    try:
+        if bva_type == "number":
+            # Bestehende Logik fuer Zahlen
+            from ..services import apply_multi_range_bva_to_parameter
+            results = apply_multi_range_bva_to_parameter(
+                [{"min_val": r.min_val, "max_val": r.max_val, "allowed": r.allowed}
+                 for r in payload.ranges],
+                points,
+            )
+            for item in results:
+                results_list.append(schemas.BVAExtendedResult(
+                    value=item["name"],
+                    is_error=item["is_error"],
+                    vtype="number",
+                    label="",
+                ))
+
+        elif bva_type == "date":
+            from combinatorics.boundary_value import generate_bva_date
+            for r in payload.ranges:
+                bva_vals = generate_bva_date(
+                    min_date=r.min_val,
+                    max_date=r.max_val,
+                    points=points,
+                    fmt=options.get("format", "iso"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "time":
+            from combinatorics.boundary_value import generate_bva_time
+            for r in payload.ranges:
+                bva_vals = generate_bva_time(
+                    min_time=r.min_val,
+                    max_time=r.max_val,
+                    points=points,
+                    fmt=options.get("format", "HH:MM"),
+                    step=options.get("step", "minute"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "datetime":
+            from combinatorics.boundary_value import generate_bva_datetime
+            for r in payload.ranges:
+                bva_vals = generate_bva_datetime(
+                    min_dt=r.min_val,
+                    max_dt=r.max_val,
+                    points=points,
+                    step=options.get("step", "minute"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "strlen":
+            from combinatorics.boundary_value import generate_bva_strlen
+            for r in payload.ranges:
+                try:
+                    min_len = int(r.min_val)
+                    max_len = int(r.max_val)
+                except ValueError as exc:
+                    raise BVAError(f"Stringlaengen muessen Zahlen sein: {exc}") from exc
+                bva_vals = generate_bva_strlen(
+                    min_len=min_len,
+                    max_len=max_len,
+                    points=points,
+                    charset=options.get("charset", "alpha"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        else:
+            raise BVAError(f"Unbekannter BVA-Typ: {bva_type!r}")
+
+    except BVAError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Werte in DB speichern
+    for item in results_list:
+        db.add(models.Value(
+            category_id=cid,
+            value=item.value,
+            risk_weight=1,
+            allowed=not item.is_error,
+        ))
+    db.commit()
+
+    return schemas.BVAExtendedResponse(values=results_list, category_id=cid)
 
 
 # ---------------------------------------------------------------------------

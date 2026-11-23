@@ -3091,7 +3091,7 @@ damit ich das Modell in der gewohnten Notation prüfen, im Team besprechen und i
 ### REQ-6007 | Grenzwertanalyse für Datum, Uhrzeit und Stringlängen
 **Titel:** BVA nach ISTQB nicht nur für Zahlen, sondern auch für Datum, Uhrzeit, Datum+Uhrzeit und Zeichenkettenlängen
 **Prioritaet:** Must
-**Status:** Planned
+**Status:** In Progress
 **Phase:** 5, Release v1.11.0
 **Epic:** EPIC-21 (Methodik-Release)
 **User Story:**

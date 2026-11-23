@@ -596,7 +596,15 @@
     "success": "{{count}} boundary values added",
     "category": "Category",
     "numberline": "Number line",
-    "preview": "Preview ({{count}} values)"
+    "preview": "Preview ({{count}} values)",
+    "dataType": {
+      "label": "Data Type",
+      "number": "Number",
+      "date": "Date",
+      "time": "Time",
+      "datetime": "Date+Time",
+      "stringLength": "String Length"
+    }
   },
   "undoRedo": {
     "undo": "Undo",
@@ -727,5 +735,26 @@
       "excel": "Excel",
       "json": "JSON"
     }
+  },
+  "classificationTree": {
+    "project": "Project",
+    "zoomOut": "Zoom Out",
+    "zoomIn": "Zoom In",
+    "fit": "Fit",
+    "addCategory": "Category",
+    "newCategory": "New Category",
+    "deleteConfirm": "Delete category?",
+    "refine": "Refine...",
+    "refineDialog": {
+      "title": "Create refinement: {{valueName}}",
+      "namePlaceholder": "Name of sub-category...",
+      "create": "Create",
+      "cancel": "Cancel",
+      "success": "Sub-category \"{{name}}\" created.",
+      "error": "Error creating: {{error}}",
+      "maxDepth": "Maximum hierarchy depth (3 levels) reached."
+    },
+    "subCategory": "Sub-Category",
+    "hierarchy": "Hierarchy"
   }
 }

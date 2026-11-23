@@ -66,9 +66,14 @@ def calculate_coverage(
     t: int,
     rule_engine=None,
     result_category_names: Optional[List[str]] = None,
+    hierarchy=None,
 ) -> CoverageResult:
     """
     Berechnet die t-wise Abdeckung einer Testfallmenge.
+
+    REQ-6016: Optional hierarchy-Parameter fuer hierarchische Klassen.
+    Paare mit Unter-Kategorien werden nur in Kombination mit dem
+    Eltern-Wert als "moeglich" gezahlt.
 
     Args:
         testcases: Liste von {category_name: value_name}
@@ -76,6 +81,7 @@ def calculate_coverage(
         t: Strength (1, 2, 3, ...)
         rule_engine: Optional RuleEngine-Instanz
         result_category_names: Liste von Ergebnis-Kategorienamen (werden ignoriert)
+        hierarchy: Optional HierarchyDescriptor fuer REQ-6016
 
     Returns:
         CoverageResult mit covered, possible, percentage, excluded_by_rules, uncovered_tuples
@@ -123,7 +129,7 @@ def calculate_coverage(
 
     # Alle moeglichen t-wise Tupel generieren
     all_possible, excluded = _get_all_tuples(
-        cat_names, active_cats, t, rule_engine
+        cat_names, active_cats, t, rule_engine, hierarchy
     )
 
     # Abgedeckte Tupel ermitteln
@@ -159,9 +165,14 @@ def compute_heatmap(
     testcases: List[Dict[str, str]],
     categories: Dict[str, List[str]],
     rule_engine=None,
+    hierarchy=None,
 ) -> HeatmapResult:
     """
     Berechnet eine Heatmap-Matrix fuer zwei Kategorien.
+
+    REQ-6016: Optional hierarchy-Parameter fuer hierarchische Klassen.
+    Zellen mit Unter-Kategorien werden als "excluded" markiert, wenn
+    der Eltern-Wert nicht aktiv ist.
 
     Args:
         cat_a: Name der Zeilen-Kategorie
@@ -169,6 +180,7 @@ def compute_heatmap(
         testcases: Liste von {category_name: value_name}
         categories: {category_name: [value1, value2, ...]}
         rule_engine: Optional RuleEngine-Instanz
+        hierarchy: Optional HierarchyDescriptor fuer REQ-6016
 
     Returns:
         HeatmapResult mit rows, cols, cells, uncovered_tuples
@@ -194,7 +206,16 @@ def compute_heatmap(
 
             partial_tc = {cat_a: row_val, cat_b: col_val}
 
-            if rule_engine is not None and not rule_engine.is_combination_valid(partial_tc):
+            # REQ-6016: Hierarchie-Check
+            hierarchy_excluded = False
+            if hierarchy is not None:
+                hierarchy_excluded = _is_hierarchy_excluded(
+                    partial_tc, cat_a, cat_b, hierarchy
+                )
+
+            if hierarchy_excluded:
+                status = "excluded"
+            elif rule_engine is not None and not rule_engine.is_combination_valid(partial_tc):
                 status = "excluded"
             elif count > 0:
                 status = "covered"
@@ -226,18 +247,28 @@ def _get_all_tuples(
     active_cats: Dict[str, List[str]],
     t: int,
     rule_engine=None,
+    hierarchy=None,
 ) -> Tuple[set, set]:
     """
     Generiert alle moeglichen t-wise Tupel und trennt sie in
     "moeglich" (nicht durch Regeln ausgeschlossen) und "excluded".
+
+    REQ-6016: Bei Hierarchie werden Tupel ausgeschlossen, bei denen
+    eine Unter-Kategorie einen Wert ungleich "-" hat, waehrend der
+    Eltern-Wert nicht aktiv ist.
 
     Returns:
         (possible_set, excluded_set)
     """
     all_tuples = _generate_all_tuples(cat_names, active_cats, t)
 
+    # REQ-6016: Hierarchie-Filter anwenden
+    if hierarchy is not None:
+        all_tuples = _filter_hierarchy_tuples(all_tuples, hierarchy)
+
     if rule_engine is None:
-        return all_tuples, set()
+        excluded_from_rules = set()
+        return all_tuples, excluded_from_rules
 
     possible = set()
     excluded = set()
@@ -277,6 +308,118 @@ def _generate_all_tuples(
                 result.add(tup)
 
     return result
+
+
+def _filter_hierarchy_tuples(
+    tuples: set,
+    hierarchy,
+) -> set:
+    """
+    REQ-6016: Filtert Tupel, die gegen Hierarchie-Constraints verstoßen.
+
+    Ein Tupel ist ungültig, wenn es eine Kind-Kategorie C mit Wert W enthält,
+    wobei W != "-" (N/A), aber der Eltern-Wert P nicht im Tupel enthalten ist
+    oder ein anderer Wert als P hat.
+
+    Args:
+        tuples: Set von frozenset((cat, val), ...) Tupeln
+        hierarchy: HierarchyDescriptor
+
+    Returns:
+        Gefiltertes Set mit nur gültigen Tupeln
+    """
+    if not hierarchy.parent_value_id:
+        return tuples
+
+    result = set()
+
+    for tup in tuples:
+        # Tupel als Dict umwandeln für einfache Abfrage
+        tc_dict = dict(tup)
+
+        valid = True
+        for child_cat, parent_val in hierarchy.parent_value_id.items():
+            if child_cat not in tc_dict:
+                # Kind-Kategorie nicht im Tupel — OK
+                continue
+
+            child_val = tc_dict[child_cat]
+            parent_cat = hierarchy.get_parent_category(child_cat)
+
+            if parent_cat is None:
+                continue
+
+            if parent_cat in tc_dict:
+                parent_val_in_tc = tc_dict[parent_cat]
+                if parent_val_in_tc == parent_val:
+                    # Eltern aktiv → Kind darf NICHT "-" sein
+                    if child_val == "-":
+                        valid = False
+                        break
+                else:
+                    # Eltern nicht aktiv → Kind MUSS "-" sein
+                    if child_val != "-":
+                        valid = False
+                        break
+            else:
+                # Eltern-Kategorie nicht im Tupel (z.B. bei t-wise < n)
+                # Kind darf nur "-" sein (konservativ: ausschließen)
+                if child_val != "-":
+                    valid = False
+                    break
+
+        if valid:
+            result.add(tup)
+
+    return result
+
+
+def _is_hierarchy_excluded(
+    partial_tc: Dict[str, str],
+    cat_a: str,
+    cat_b: str,
+    hierarchy,
+) -> bool:
+    """
+    REQ-6016: Prueft ob ein 2-Tupel (cat_a, cat_b) durch Hierarchie
+    ausgeschlossen ist.
+
+    Args:
+        partial_tc: {cat_a: val_a, cat_b: val_b}
+        cat_a: Erste Kategorie
+        cat_b: Zweite Kategorie
+        hierarchy: HierarchyDescriptor
+
+    Returns:
+        True wenn Paar durch Hierarchie ausgeschlossen
+    """
+    if not hierarchy.parent_value_id:
+        return False
+
+    val_a = partial_tc.get(cat_a)
+    val_b = partial_tc.get(cat_b)
+
+    # Fall 1: cat_a ist Kind, cat_b ist Eltern
+    if cat_a in hierarchy.parent_value_id:
+        parent_val = hierarchy.parent_value_id[cat_a]
+        parent_cat = hierarchy.get_parent_category(cat_a)
+        if parent_cat == cat_b:
+            if val_b != parent_val and val_a != "-":
+                return True
+            if val_b == parent_val and val_a == "-":
+                return True
+
+    # Fall 2: cat_b ist Kind, cat_a ist Eltern
+    if cat_b in hierarchy.parent_value_id:
+        parent_val = hierarchy.parent_value_id[cat_b]
+        parent_cat = hierarchy.get_parent_category(cat_b)
+        if parent_cat == cat_a:
+            if val_a != parent_val and val_b != "-":
+                return True
+            if val_a == parent_val and val_b == "-":
+                return True
+
+    return False
 
 
 def _get_covered_tuples(

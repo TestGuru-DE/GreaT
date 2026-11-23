@@ -116,13 +116,19 @@ export const categoriesApi = {
     api.post<Category>("/projects/" + projectId + "/categories", data).then((r) => r.data),
   delete: (categoryId: number) =>
     api.delete<{ok: boolean}>("/categories/" + categoryId).then((r) => r.data),
-  
+
   updateProperties: (valueId: number, props: { risk_weight?: number; vtype?: string; allowed?: boolean }) =>
     api.patch<Value>("/values/" + valueId + "/properties", props).then((r) => r.data),
   setDefault: (valueId: number) =>
     api.patch<Value>("/values/" + valueId + "/set-default").then((r) => r.data),
   unsetDefault: (valueId: number) =>
     api.patch<Value>("/values/" + valueId + "/unset-default").then((r) => r.data),
+
+  // REQ-6016: Hierarchische Klassen
+  refine: (categoryId: number, name: string) =>
+    api.post<Category>("/categories/" + categoryId + "/refine", { name }).then((r) => r.data),
+  getHierarchy: (categoryId: number) =>
+    api.get<import("../types").CategoryHierarchyResponse>("/categories/" + categoryId + "/hierarchy").then((r) => r.data),
 };
 
 // --- Werte ---
