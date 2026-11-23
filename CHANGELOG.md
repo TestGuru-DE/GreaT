@@ -6,6 +6,29 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ---
 
+## [1.11.0] – 2026-11-23 – Methodik: Constraints, Coverage, Seeds, BVA, Klassifikationsbaum, Hierarchie
+
+### ✨ Neue Features
+- **REQ-6001**: **Logische Constraints** – ConstraintBuilder im Frontend, API CRUD+Validate, Live-Validierung, Edit-Fix fuer bestehende Constraints
+- **REQ-6008**: **Abdeckungsanzeige als Heatmap** – coverage.py erweitert, 3 API-Endpoints, CoverageHeatmap-Komponente, Okabe-Ito Farbschema, hierarchie-aware
+- **REQ-6009**: **Pflicht-Testfaelle (Seeds) + Lueckenschluss** – Backend: seed-Logik in combinatorics/, API-Endpunkte, 92 Tests; Frontend: Seed-Dialog, Lueckenschluss-UI, 62 Tests; Gesamt 154 Tests
+- **REQ-6007**: **Grenzwertanalyse fuer Datum, Uhrzeit, Stringlaenge** – BVA erweitert: 2/3/4-Punkt-Methode fuer alle Typen, symbolische Werte (>500 Zeichen), Unicode-Codepoints, API mit type-Feld, 98 Tests
+- **REQ-6006**: **Klassifikationsbaum-Ansicht** – SVG-Baum (Wurzel → Kategorien → Werte), Testfallmatrix darunter, Zoom (Strg+Mausrad/+/-/Einpassen), Bearbeiten (Doppelklick/F2, Entf, +Kategorie), Export SVG/PNG, 18 Tests
+- **REQ-6016**: **Hierarchische Klassen (Verfeinerung)** – HierarchyDescriptor, max 3 Ebenen, enforce_hierarchy() Post-Processing, DependencyRule + ForbiddenRule Constraints, RefineDialog im Klassifikationsbaum, 15 Tests
+
+### 🔧 Technical
+- **Backend**: Neue Module `hierarchy.py`, `hierarchy_constraints.py`, `symbolic_values.py`; coverage.py erweitert; boundary_value.py erweitert (date/time/datetime/strlen)
+- **Frontend**: Neue Komponenten `ClassificationTreeView`, `ClassificationTreeMatrix`, `ClassificationTreeTab`, `CoverageHeatmap`, `RefineDialog`; bva-extended.ts; i18n ~120 neue Keys
+- **API**: Neue Endpunkte `/categories/{cid}/refine`, `/categories/{cid}/hierarchy`, `/categories/{cid}/bva/extended`, Coverage-Endpoints
+- **Tests**: 308+ neue Tests (154 REQ-6009, 98 REQ-6007, 18 REQ-6006, 15 REQ-6016, 76 REQ-6008, 35 REQ-6001)
+
+### 📊 Test-Coverage
+- Backend: 489+ Tests (vorher ~340)
+- Frontend: 729 Tests (vorher ~527)
+- Build: TypeScript + Vite OK
+
+---
+
 ## [1.9.0] – 2026-11-17 – Sicherheit, Validierung & Code-Archivierung
 
 ### ✨ Neue Features
