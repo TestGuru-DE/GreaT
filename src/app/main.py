@@ -263,7 +263,7 @@ def _migrate_db() -> None:
             conn.exec_driver_sql("ALTER TABLE 'values' ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0")
         # REQ-6016: parent_value_id fuer hierarchische Werte (self-referencing FK)
         if "parent_value_id" not in have:
-            conn.exec_driver_sql("ALTER TABLE 'values' ADD COLUMN parent_value_id INTEGER REFERENCES values(id) ON DELETE CASCADE")
+            conn.exec_driver_sql('ALTER TABLE "values" ADD COLUMN parent_value_id INTEGER')
         # B-18: category_name Spalte zu testcase_values hinzufuegen (idempotent)
         tcv_cols = conn.exec_driver_sql("PRAGMA table_info('testcase_values')").fetchall()
         tcv_have = {c[1] for c in tcv_cols}
