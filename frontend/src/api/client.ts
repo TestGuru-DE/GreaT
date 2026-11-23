@@ -536,3 +536,58 @@ export const coverageApi = {
     ).then((r) => r.data);
   },
 };
+
+// ============================================================================
+// REQ-6009: Seed API
+// ============================================================================
+
+import type {
+  SeedSet,
+  SeedSetList,
+  SeedSetCreate,
+  SeedSetUpdate,
+  SeedCSVImportResponse,
+  GapFillResponse,
+} from "../types";
+
+export const seedApi = {
+  // CRUD
+  list: (projectId: number) =>
+    api.get<{ seed_sets: SeedSetList[] }>(`/projects/${projectId}/seed-sets`).then((r) => r.data.seed_sets),
+
+  create: (projectId: number, data: SeedSetCreate) =>
+    api.post<{ id: number; name: string; seed_count: number; warnings: string[] }>(
+      `/projects/${projectId}/seed-sets`, data
+    ).then((r) => r.data),
+
+  get: (projectId: number, seedSetId: number) =>
+    api.get<SeedSet>(`/projects/${projectId}/seed-sets/${seedSetId}`).then((r) => r.data),
+
+  update: (projectId: number, seedSetId: number, data: SeedSetUpdate) =>
+    api.put<{ id: number; name: string; seed_count: number; warnings: string[] }>(
+      `/projects/${projectId}/seed-sets/${seedSetId}`, data
+    ).then((r) => r.data),
+
+  delete: (projectId: number, seedSetId: number) =>
+    api.delete(`/projects/${projectId}/seed-sets/${seedSetId}`),
+
+  // CSV Import
+  importCsv: (projectId: number, name: string, file: File) => {
+    const fd = new FormData();
+    fd.append("name", name);
+    fd.append("csv_content", file);
+    return api.post<SeedCSVImportResponse>(
+      `/projects/${projectId}/seed-sets/import-csv`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    ).then((r) => r.data);
+  },
+
+  // Gap Fill
+  gapFill: (generationId: number, strategy: string = "pairwise", tStrength: number = 2) =>
+    api.post<GapFillResponse>(
+      `/generations/${generationId}/gap-fill`,
+      {},
+      { params: { strategy, t_strength: tStrength } }
+    ).then((r) => r.data),
+};
