@@ -726,6 +726,144 @@ def generate_multi_range_bva_for_category(
 
 
 # ---------------------------------------------------------------------------
+# REQ-6007: Extended BVA for date, time, datetime, string length
+# ---------------------------------------------------------------------------
+
+@router.post("/categories/{cid}/bva/extended", response_model=schemas.BVAExtendedResponse, dependencies=[Depends(require_writer)])
+def generate_extended_bva_for_category(
+    cid: DbId,
+    payload: schemas.BVAExtendedRequest,
+    db: Session = Depends(get_db),
+):
+    """REQ-6007: Erweiterte BVA mit Datentypen (Datum, Uhrzeit, Stringlaenge).
+
+    Unterstuetzt type: 'number', 'date', 'time', 'datetime', 'strlen'.
+    Typspezifische Optionen ueber 'options'-Feld.
+    """
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+
+    bva_type = payload.type
+    points = payload.points
+    options = payload.options or {}
+    results_list = []
+
+    try:
+        if bva_type == "number":
+            # Bestehende Logik fuer Zahlen
+            from ..services import apply_multi_range_bva_to_parameter
+            results = apply_multi_range_bva_to_parameter(
+                [{"min_val": r.min_val, "max_val": r.max_val, "allowed": r.allowed}
+                 for r in payload.ranges],
+                points,
+            )
+            for item in results:
+                results_list.append(schemas.BVAExtendedResult(
+                    value=item["name"],
+                    is_error=item["is_error"],
+                    vtype="number",
+                    label="",
+                ))
+
+        elif bva_type == "date":
+            from combinatorics.boundary_value import generate_bva_date
+            for r in payload.ranges:
+                bva_vals = generate_bva_date(
+                    min_date=r.min_val,
+                    max_date=r.max_val,
+                    points=points,
+                    fmt=options.get("format", "iso"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "time":
+            from combinatorics.boundary_value import generate_bva_time
+            for r in payload.ranges:
+                bva_vals = generate_bva_time(
+                    min_time=r.min_val,
+                    max_time=r.max_val,
+                    points=points,
+                    fmt=options.get("format", "HH:MM"),
+                    step=options.get("step", "minute"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "datetime":
+            from combinatorics.boundary_value import generate_bva_datetime
+            for r in payload.ranges:
+                bva_vals = generate_bva_datetime(
+                    min_dt=r.min_val,
+                    max_dt=r.max_val,
+                    points=points,
+                    step=options.get("step", "minute"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        elif bva_type == "strlen":
+            from combinatorics.boundary_value import generate_bva_strlen
+            for r in payload.ranges:
+                try:
+                    min_len = int(r.min_val)
+                    max_len = int(r.max_val)
+                except ValueError as exc:
+                    raise BVAError(f"Stringlaengen muessen Zahlen sein: {exc}") from exc
+                bva_vals = generate_bva_strlen(
+                    min_len=min_len,
+                    max_len=max_len,
+                    points=points,
+                    charset=options.get("charset", "alpha"),
+                    extras=options.get("extras"),
+                )
+                for bv in bva_vals:
+                    results_list.append(schemas.BVAExtendedResult(
+                        value=bv.value,
+                        is_error=bv.is_error,
+                        vtype=bv.vtype,
+                        label=bv.label,
+                    ))
+
+        else:
+            raise BVAError(f"Unbekannter BVA-Typ: {bva_type!r}")
+
+    except BVAError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Werte in DB speichern
+    for item in results_list:
+        db.add(models.Value(
+            category_id=cid,
+            value=item.value,
+            risk_weight=1,
+            allowed=not item.is_error,
+        ))
+    db.commit()
+
+    return schemas.BVAExtendedResponse(values=results_list, category_id=cid)
+
+
+# ---------------------------------------------------------------------------
 # REQ-4021/REQ-4024: Projekt aktualisieren mit Optimistic Concurrency + Audit
 # ---------------------------------------------------------------------------
 

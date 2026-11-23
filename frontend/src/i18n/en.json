@@ -596,7 +596,15 @@
     "success": "{{count}} boundary values added",
     "category": "Category",
     "numberline": "Number line",
-    "preview": "Preview ({{count}} values)"
+    "preview": "Preview ({{count}} values)",
+    "dataType": {
+      "label": "Data Type",
+      "number": "Number",
+      "date": "Date",
+      "time": "Time",
+      "datetime": "Date+Time",
+      "stringLength": "String Length"
+    }
   },
   "undoRedo": {
     "undo": "Undo",

@@ -1,4 +1,4 @@
-﻿// REQ-3041: API-Wrapper fuer BVA-Endpoint
+﻿// REQ-3041, REQ-6007: API-Wrapper fuer BVA-Endpunkte
 import api from "./client";
 
 export interface BVARequest {
@@ -25,6 +25,41 @@ export interface BVAResponse {
   category_id: number;
 }
 
+// REQ-6007: Erweiterte BVA-Typen
+export type BVADataType = "number" | "date" | "time" | "datetime" | "strlen";
+
+export interface BVAExtendedRange {
+  min_val: string;
+  max_val: string;
+  allowed: boolean;
+}
+
+export interface BVAExtendedOptions {
+  format?: string;       // "iso" | "de" fuer date; "HH:MM" | "HH:MM:SS" fuer time
+  step?: string;         // "minute" | "second" fuer time/datetime
+  charset?: string;      // "alpha" | "alnum" | "alpha_de" | "special" | "unicode" fuer strlen
+  extras?: Record<string, boolean>;  // Typspezifische Zusatzwerte
+}
+
+export interface BVAExtendedRequest {
+  type: BVADataType;
+  ranges: BVAExtendedRange[];
+  points: 2 | 3 | 4;
+  options?: BVAExtendedOptions;
+}
+
+export interface BVAExtendedResult {
+  value: string;
+  is_error: boolean;
+  vtype: string;
+  label: string;
+}
+
+export interface BVAExtendedResponse {
+  results: BVAExtendedResult[];
+  category_id: number;
+}
+
 export const bvaApi = {
   /**
    * Ruft Backend-Endpoint POST /api/categories/{cid}/bva auf.
@@ -47,13 +82,35 @@ export const bvaApi = {
     const payload = {
       points: params.points,
       ranges: params.ranges.map((range) => ({
-        min_val: range.minVal,
-        max_val: range.maxVal,
+        minVal: range.minVal,
+        maxVal: range.maxVal,
         allowed: range.allowed,
       })),
     };
     const response = await api.post<BVAResponse>(
       `/categories/${categoryId}/bva/ranges`,
+      payload
+    );
+    return response.data;
+  },
+
+  // REQ-6007: Erweiterte BVA mit Datentypen
+  generateExtended: async (
+    categoryId: number,
+    params: BVAExtendedRequest
+  ): Promise<BVAExtendedResponse> => {
+    const payload = {
+      type: params.type,
+      points: params.points,
+      ranges: params.ranges.map((range) => ({
+        min_val: range.min_val,
+        max_val: range.max_val,
+        allowed: range.allowed,
+      })),
+      options: params.options,
+    };
+    const response = await api.post<BVAExtendedResponse>(
+      `/categories/${categoryId}/bva/extended`,
       payload
     );
     return response.data;
