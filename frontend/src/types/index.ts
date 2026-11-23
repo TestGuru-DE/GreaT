@@ -218,3 +218,85 @@ export interface HeatmapResponse {
   cols: string[];
   cells: Record<string, HeatmapCellData>;
 }
+
+// ============================================================================
+// REQ-6009: Seed Types
+// ============================================================================
+
+/** Einzelner Seed-Testfall (Assignment als JSON, null = "any") */
+export interface SeedCase {
+  id: number;
+  assignment: Record<string, string | null>;
+  order_index: number;
+}
+
+/** Seed-Satz zum Erstellen */
+export interface SeedSetCreate {
+  name: string;
+  seeds: Record<string, string | null>[];
+}
+
+/** Seed-Satz zum Aktualisieren (teilweise) */
+export interface SeedSetUpdate {
+  name?: string;
+  seeds?: Record<string, string | null>[];
+}
+
+/** Seed-Satz (vollstaendig mit SeedCases) */
+export interface SeedSet {
+  id: number;
+  project_id: number;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  seed_count: number;
+  seed_cases: SeedCase[];
+}
+
+/** Kurzinfo fuer Uebersicht */
+export interface SeedSetList {
+  id: number;
+  name: string;
+  seed_count: number;
+  created_at: string;
+}
+
+/** Antwort nach CSV-Import */
+export interface SeedCSVImportResponse {
+  id: number;
+  name: string;
+  seed_count: number;
+  warnings: string[];
+}
+
+/** Antwort nach Seed-Generierung */
+export interface SeedGenerateResponse {
+  generation_id: number;
+  count: number;
+  seeds_count: number;
+  supplemented_count: number;
+  coverage_before: number;
+  coverage_after: number;
+  warnings: string[];
+  report: Record<string, unknown>;
+}
+
+/** Lueckenschluss-Request */
+export interface GapFillRequest {
+  strategy: string;
+  t_strength?: number;
+  apply_rules?: boolean;
+}
+
+/** Antwort nach Lueckenschluss */
+export interface GapFillResponse {
+  new_generation_id: number;
+  old_generation_id: number;
+  seed_count: number;
+  supplemented_count: number;
+  total_testcases: number;
+  coverage_before: number;
+  coverage_after: number;
+  impossible_tuples: unknown[][];
+  warnings: string[];
+}
