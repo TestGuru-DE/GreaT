@@ -1,10 +1,10 @@
 # Project Assessment – G.R.E.A.T.
-Version: 1.1
-Phase: 3 – Sprint 9 Abgeschlossen
+Version: 1.11
+Phase: 5 – EPIC-21 Abgeschlossen
 Erstellt: 2026-06-10
-Aktualisiert: 2026-09-04
+Aktualisiert: 2026-11-23
 Erstellt von: Program Manager Agent
-Aktualisiert von: GitHub Copilot CLI
+Aktualisiert von: GREAT Orchestrator
 
 ---
 
@@ -13,16 +13,23 @@ Aktualisiert von: GitHub Copilot CLI
 G.R.E.A.T. (Georg Radikal Einfacher Automatisierter TestcaseDesigner) ist ein browserbasiertes
 Open-Source-Werkzeug für automatisiertes Testfalldesign nach ISTQB-Methoden (Äquivalenzklassen,
 Grenzwertanalyse, Kombinationsverfahren). Das Projekt hat einen funktionierenden MVP in
-Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 3 mit React/TypeScript-Frontend in Entwicklung.
+Python/FastAPI (v5.8.1) mit SQLite-Datenbank und ist in Phase 5 mit React/TypeScript-Frontend in Entwicklung.
 
-**Aktueller Status: v1.5.2 (2026-09-04) – Sprint 9 ABGESCHLOSSEN / Release vorbereitet.**
+**Aktueller Status: v1.11.0 (2026-11-23) – EPIC-21 ABGESCHLOSSEN.**
 
 ### Letztes Release
-- **Version:** v1.5.2
-- **Datum:** 2026-09-04
-- **Neue Features:** BVA-Komma-Bugfix, Sprintabschluss und Release-Vorbereitung
-- **Backend-Tests:** 28 gezielte BVA-/API-Regressionstests (Plus Frontend-BVA-GUI-Suite)
-- **PRs gemergt:** Sprintabschluss-Commit im aktuellen Branch
+- **Version:** v1.11.0
+- **Datum:** 2026-11-23
+- **Neue Features:** EPIC-21 Methodik (6 REQs, 308+ Tests)
+  - REQ-6001: Logische Constraints
+  - REQ-6008: Abdeckungsanzeige Heatmap
+  - REQ-6009: Seeds + Lueckenschluss (154 Tests)
+  - REQ-6007: BVA Datum/Uhrzeit/String (98 Tests)
+  - REQ-6006: Klassifikationsbaum-Ansicht (18 Tests)
+  - REQ-6016: Hierarchische Klassen (15 Tests)
+- **Backend-Tests:** 489+ Tests
+- **Frontend-Tests:** 729 Tests
+- **PRs gemergt:** #78–#84
 
 ### Nächster Termin
 - **Sprint 10:** In Planung (Scope freigegeben 2026-09-01)
