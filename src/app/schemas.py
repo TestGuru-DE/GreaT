@@ -55,6 +55,8 @@ class CategoryRead(BaseModel):
 class ValueCreate(BaseModel):
     value: str
     risk_weight: int = 1
+    # REQ-6016: Parent value for hierarchical refinement
+    parent_value_id: Optional[int] = None
 
     @field_validator("value")
     @classmethod
@@ -84,6 +86,8 @@ class ValueRead(BaseModel):
     allowed: bool = True
     is_error: bool = False  # REQ-4015: Fehlerwert-Flag für BVA
     is_default: bool = False
+    # REQ-6016: Hierarchische Klassen
+    parent_value_id: Optional[int] = None
     model_config = ConfigDict(from_attributes=True)
 
 

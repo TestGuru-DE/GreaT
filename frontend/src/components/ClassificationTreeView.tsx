@@ -1,13 +1,128 @@
 // REQ-6006: Klassifikationsbaum als SVG mit Edit-Funktionen
-import { useCallback, useRef, useState } from "react";
+// REQ-6016: Hierarchische Klassen (Verfeinerung)
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCategoryStore } from "../store/categoryStore";
 import { useProjectStore } from "../store/projectStore";
 import { computeTreeLayout } from "../lib/classificationTreeLayout";
 import type { TreeNode } from "../lib/classificationTreeLayout";
+import { categoriesApi } from "../api/client";
 
 interface Props {
   projectId: number;
+}
+
+// REQ-6016: Refine Dialog Component
+function RefineDialog({
+  categoryId,
+  valueName,
+  onClose,
+  onSuccess,
+}: {
+  categoryId: number;
+  valueName: string;
+  onClose: () => void;
+  onSuccess: (name: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await categoriesApi.refine(categoryId, name.trim());
+      onSuccess(name.trim());
+    } catch (e: any) {
+      setError(e?.message || String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
+      <div
+        className="bg-white rounded-lg shadow-xl p-6 w-96"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold mb-4">
+          {t("classificationTree.refineDialog.title", { valueName })}
+        </h3>
+        <input
+          ref={inputRef}
+          className="w-full px-3 py-2 border border-slate-300 rounded mb-2"
+          placeholder={t("classificationTree.refineDialog.namePlaceholder")}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSubmit();
+            if (e.key === "Escape") onClose();
+          }}
+        />
+        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+        <div className="flex justify-end gap-2">
+          <button
+            className="px-3 py-1 text-sm border border-slate-300 rounded hover:bg-slate-50"
+            onClick={onClose}
+          >
+            {t("classificationTree.refineDialog.cancel")}
+          </button>
+          <button
+            className="px-3 py-1 text-sm bg-sky-600 text-white rounded hover:bg-sky-700 disabled:opacity-50"
+            onClick={handleSubmit}
+            disabled={loading || !name.trim()}
+          >
+            {loading ? "..." : t("classificationTree.refineDialog.create")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// REQ-6016: Context Menu Component
+function ContextMenu({
+  x,
+  y,
+  items,
+  onClose,
+}: {
+  x: number;
+  y: number;
+  items: { label: string; onClick: () => void; danger?: boolean }[];
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed bg-white border border-slate-200 rounded shadow-lg z-50 py-1 min-w-[160px]"
+      style={{ left: x, top: y }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {items.map((item, i) => (
+        <button
+          key={i}
+          className={`w-full text-left px-3 py-1.5 text-sm hover:bg-slate-100 ${
+            item.danger ? "text-red-600" : ""
+          }`}
+          onClick={() => {
+            item.onClick();
+            onClose();
+          }}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export default function ClassificationTreeView({ projectId }: Props) {
@@ -21,7 +136,20 @@ export default function ClassificationTreeView({ projectId }: Props) {
   const [editText, setEditText] = useState("");
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Build layout data
+  // REQ-6016: Refine dialog state
+  const [refineTarget, setRefineTarget] = useState<{
+    categoryId: number;
+    valueName: string;
+  } | null>(null);
+
+  // REQ-6016: Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    node: TreeNode;
+  } | null>(null);
+
+  // Build layout data with hierarchy info
   const layoutCats = categories.map((c) => ({
     id: c.id,
     name: c.name,
@@ -30,6 +158,7 @@ export default function ClassificationTreeView({ projectId }: Props) {
       name: v.value,
       isError: !v.allowed,
       isDefault: v.is_default,
+      parentId: v.parent_value_id ?? null, // REQ-6016
     })),
   }));
 
@@ -75,12 +204,77 @@ export default function ClassificationTreeView({ projectId }: Props) {
     }
   };
 
+  // REQ-6016: Handle refine action
+  const handleRefine = (node: TreeNode) => {
+    if (node.type === "value" && node.categoryId) {
+      setRefineTarget({ categoryId: node.categoryId, valueName: node.label });
+    }
+  };
+
+  // REQ-6016: Context menu handler
+  const handleContextMenu = (e: React.MouseEvent, node: TreeNode) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, node });
+  };
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handler = () => setContextMenu(null);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
+
+  // REQ-6016: Build context menu items
+  const getContextMenuItems = (node: TreeNode) => {
+    const items: { label: string; onClick: () => void; danger?: boolean }[] = [];
+
+    if (node.type === "category" && node.categoryId) {
+      items.push({
+        label: t("categoryTree.contextMenu.rename", { defaultValue: "Umbenennen (F2)" }),
+        onClick: () => startEdit(node),
+      });
+      items.push({
+        label: t("categoryTree.contextMenu.addValue", { defaultValue: "Wert hinzufuegen" }),
+        onClick: () => {}, // TODO: implement
+      });
+      items.push({
+        label: t("categoryTree.contextMenu.delete", { defaultValue: "Loeschen" }),
+        onClick: () => handleDelete(node),
+        danger: true,
+      });
+    }
+
+    if (node.type === "value" && node.categoryId) {
+      // REQ-6016: "Verfeinern" context menu item
+      items.push({
+        label: t("classificationTree.refine", { defaultValue: "Verfeinern..." }),
+        onClick: () => handleRefine(node),
+      });
+      items.push({
+        label: t("contextMenu.rename", { defaultValue: "Umbenennen (F2)" }),
+        onClick: () => startEdit(node),
+      });
+      items.push({
+        label: t("contextMenu.delete", { defaultValue: "Loeschen" }),
+        onClick: () => {}, // TODO: implement value delete
+        danger: true,
+      });
+    }
+
+    return items;
+  };
+
   const nodeColor = (node: TreeNode) => {
     if (node.isResult) return "#f59e0b";
     if (node.isError) return "#ef4444";
     if (node.type === "root") return "#0ea5e9";
     if (node.type === "category") return "#6366f1";
     return "#10b981";
+  };
+
+  // REQ-6016: Check if node is a sub-category (indented)
+  const isSubCategory = (node: TreeNode): boolean => {
+    return node.parentId !== undefined && node.parentId !== null;
   };
 
   return (
@@ -138,7 +332,11 @@ export default function ClassificationTreeView({ projectId }: Props) {
           className="bg-white"
         >
           {layout.nodes.map((node) => (
-            <g key={node.id} data-node-id={node.id}>
+            <g
+              key={node.id}
+              data-node-id={node.id}
+              onContextMenu={(e) => handleContextMenu(e, node)}
+            >
               <rect
                 x={node.x}
                 y={node.y}
@@ -146,9 +344,16 @@ export default function ClassificationTreeView({ projectId }: Props) {
                 height={node.height}
                 rx={node.type === "root" ? 20 : 4}
                 fill={nodeColor(node)}
-                fillOpacity={node.type === "value" ? 0.15 : 0.85}
+                fillOpacity={
+                  node.type === "value"
+                    ? isSubCategory(node)
+                      ? 0.1
+                      : 0.15
+                    : 0.85
+                }
                 stroke={nodeColor(node)}
-                strokeWidth={node.type === "root" ? 2 : 1}
+                strokeWidth={node.type === "root" ? 2 : isSubCategory(node) ? 0.5 : 1}
+                strokeDasharray={isSubCategory(node) ? "3,3" : "none"}
                 onDoubleClick={() => startEdit(node)}
                 className="cursor-pointer"
               />
@@ -162,20 +367,32 @@ export default function ClassificationTreeView({ projectId }: Props) {
                     onBlur={commitEdit}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") commitEdit();
-                      if (e.key === "Escape") { setEditingId(null); setEditText(""); }
+                      if (e.key === "Escape") {
+                        setEditingId(null);
+                        setEditText("");
+                      }
                     }}
                   />
                 </foreignObject>
               ) : (
                 <text
-                  x={node.x + node.width / 2}
+                  x={node.x + (isSubCategory(node) ? 12 : node.width / 2)}
                   y={node.y + node.height / 2}
-                  textAnchor="middle"
+                  textAnchor={isSubCategory(node) ? "start" : "middle"}
                   dominantBaseline="central"
-                  fontSize={node.type === "root" ? 14 : node.type === "category" ? 12 : 11}
+                  fontSize={
+                    node.type === "root"
+                      ? 14
+                      : node.type === "category"
+                        ? 12
+                        : isSubCategory(node)
+                          ? 10
+                          : 11
+                  }
                   fill="currentColor"
                   className="pointer-events-none"
                 >
+                  {isSubCategory(node) && "└ "}
                   {node.label}
                   {node.isResult && " ★"}
                   {node.isError && " ⚠"}
@@ -200,6 +417,29 @@ export default function ClassificationTreeView({ projectId }: Props) {
           ))}
         </svg>
       </div>
+
+      {/* REQ-6016: Refine Dialog */}
+      {refineTarget && (
+        <RefineDialog
+          categoryId={refineTarget.categoryId}
+          valueName={refineTarget.valueName}
+          onClose={() => setRefineTarget(null)}
+          onSuccess={() => {
+            setRefineTarget(null);
+            // TODO: show toast
+          }}
+        />
+      )}
+
+      {/* REQ-6016: Context Menu */}
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={getContextMenuItems(contextMenu.node)}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

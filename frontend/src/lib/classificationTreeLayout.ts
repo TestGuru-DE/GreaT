@@ -1,4 +1,5 @@
 // REQ-6006: Layout-Berechnung fuer Klassifikationsbaum (SVG)
+// REQ-6016: Hierarchische Klassen (Verfeinerung)
 
 export interface TreeNode {
   id: string;
@@ -13,6 +14,8 @@ export interface TreeNode {
   isError?: boolean;
   isDefault?: boolean;
   isResult?: boolean;
+  // REQ-6016: Parent value ID for hierarchical refinement
+  parentId?: number | null;
 }
 
 export interface LayoutResult {
@@ -32,6 +35,8 @@ interface LayoutValue {
   name: string;
   isError?: boolean;
   isDefault?: boolean;
+  // REQ-6016: Parent value ID for hierarchical refinement
+  parentId?: number | null;
 }
 
 const ROOT_HEIGHT = 40;
@@ -108,6 +113,8 @@ export function computeTreeLayout(
         value: val.name,
         isError: val.isError,
         isDefault: val.isDefault,
+        // REQ-6016: Parent value ID for hierarchical refinement
+        parentId: val.parentId ?? null,
       });
     }
 

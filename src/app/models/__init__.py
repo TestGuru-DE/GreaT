@@ -65,8 +65,11 @@ class Value(Base):
     # REQ-4024: Audit-Trail
     last_modified_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     last_modified_at = Column(DateTime, nullable=True)
+    # REQ-6016: Hierarchische Klassen (Verfeinerung)
+    parent_value_id = Column(Integer, ForeignKey("values.id", ondelete="CASCADE"), nullable=True)
 
     category = relationship("Category", back_populates="values")
+    parent_value = relationship("Value", remote_side=[id], backref="child_values")
 
 class Generation(Base):
     __tablename__ = "generations"

@@ -735,5 +735,26 @@
       "excel": "Excel",
       "json": "JSON"
     }
+  },
+  "classificationTree": {
+    "project": "Projekt",
+    "zoomOut": "Verkleinern",
+    "zoomIn": "Vergrössern",
+    "fit": "Einpassen",
+    "addCategory": "Kategorie",
+    "newCategory": "Neue Kategorie",
+    "deleteConfirm": "Kategorie löschen?",
+    "refine": "Verfeinern...",
+    "refineDialog": {
+      "title": "Verfeinerung erstellen: {{valueName}}",
+      "namePlaceholder": "Name der Unter-Kategorie...",
+      "create": "Erstellen",
+      "cancel": "Abbrechen",
+      "success": "Unter-Kategorie \"{{name}}\" erstellt.",
+      "error": "Fehler beim Erstellen: {{error}}",
+      "maxDepth": "Maximale Hierarchie-Tiefe (3 Ebenen) erreicht."
+    },
+    "subCategory": "Unter-Kategorie",
+    "hierarchy": "Hierarchie"
   }
 }

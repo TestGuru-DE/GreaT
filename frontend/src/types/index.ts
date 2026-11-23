@@ -62,11 +62,13 @@ export interface Value {
   vtype: string;       // REQ-3007
   allowed: boolean;    // REQ-3007 (Fehlerwert = !allowed)
   is_default: boolean; // REQ-3008
+  parent_value_id?: number | null; // REQ-6016
 }
 
 export interface ValueCreate {
   value: string;
   risk_weight?: number;
+  parent_value_id?: number | null; // REQ-6016
 }
 
 export interface GenerateRequest {
@@ -299,4 +301,20 @@ export interface GapFillResponse {
   coverage_after: number;
   impossible_tuples: unknown[][];
   warnings: string[];
+}
+
+// ============================================================================
+// REQ-6016: Hierarchische Klassen (Verfeinerung)
+// ============================================================================
+
+export interface HierarchyNode {
+  id: number;
+  value: string;
+  children: HierarchyNode[];
+}
+
+export interface CategoryHierarchyResponse {
+  category_id: number;
+  category_name: string;
+  roots: HierarchyNode[];
 }
