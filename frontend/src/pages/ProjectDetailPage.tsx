@@ -16,12 +16,13 @@ import CauseEffectGraph from "../components/CauseEffectGraph";
 import RuleVisualization from "../components/RuleVisualization";
 import ModelExportDropdown from "../components/ModelExportDropdown";
 import ModelImportDialog from "../components/ModelImportDialog";
+import ClassificationTreeTab from "../components/ClassificationTreeTab";
 import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
 import { useToastStore } from "../components/Toast";
 
-type RightTab = "generate" | "rules" | "constraints" | "generations" | "decision";
+type RightTab = "generate" | "rules" | "constraints" | "generations" | "decision" | "classification";
 
 export default function ProjectDetailPage() {
   const { t } = useTranslation();
@@ -186,6 +187,9 @@ export default function ProjectDetailPage() {
             <button onClick={() => setRightTab("decision")} className={tabClass("decision")}>
               {t('projectDetail.tabDecision')}
             </button>
+            <button onClick={() => setRightTab("classification")} className={tabClass("classification")}>
+              {t('projectDetail.tabClassification', { defaultValue: 'Klassifikationsbaum' })}
+            </button>
           </div>
 
           <div className="flex-1 p-4 flex flex-col min-h-0 overflow-auto">
@@ -199,6 +203,7 @@ export default function ProjectDetailPage() {
                 <CauseEffectGraph projectId={projectId} />
               </div>
             )}
+            {rightTab === "classification" && <ClassificationTreeTab projectId={projectId} />}
           </div>
         </div>
       </div>
