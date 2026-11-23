@@ -287,13 +287,69 @@ class BVAMultiRangeRequest(BaseModel):
     """Request für Multi-Range BVA."""
     ranges: List[BVARangeSchema]
     points: int = Field(default=2, ge=2, le=4)  # 2, 3 oder 4
-    
+
     @field_validator("ranges")
     @classmethod
     def validate_ranges(cls, v: List[BVARangeSchema]) -> List[BVARangeSchema]:
         if not v:
             raise ValueError("Mindestens ein Bereich erforderlich")
         return v
+
+
+# ---------------------------------------------------------------------------
+# REQ-6007: Extended BVA for date, time, datetime, string length
+# ---------------------------------------------------------------------------
+
+class BVAExtendedRangeSchema(BaseModel):
+    """Erweiterter Bereich fuer REQ-6007 mit Datentyp."""
+    min_val: str
+    max_val: str
+    allowed: bool = True
+    type: str = "number"  # 'number', 'date', 'time', 'datetime', 'strlen'
+
+
+class BVAExtendedRequest(BaseModel):
+    """Request fuer erweiterte BVA (REQ-6007).
+
+    Felder:
+    - type: 'number' (Standard), 'date', 'time', 'datetime', 'strlen'
+    - ranges: Liste von Bereichen (min_val/max_val als Strings)
+    - points: 2, 3 oder 4
+    - options: Typspezifische Optionen
+    """
+    type: str = "number"
+    ranges: List[BVAExtendedRangeSchema]
+    points: int = Field(default=2, ge=2, le=4)
+    options: Optional[dict] = None
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: str) -> str:
+        allowed = {"number", "date", "time", "datetime", "strlen"}
+        if v not in allowed:
+            raise ValueError(f"type muss einer sein von: {allowed}, nicht {v!r}")
+        return v
+
+    @field_validator("ranges")
+    @classmethod
+    def validate_ranges(cls, v: List[BVAExtendedRangeSchema]) -> List[BVAExtendedRangeSchema]:
+        if not v:
+            raise ValueError("Mindestens ein Bereich erforderlich")
+        return v
+
+
+class BVAExtendedResult(BaseModel):
+    """Einzelnes Ergebnis der erweiterten BVA."""
+    value: str
+    is_error: bool
+    vtype: str
+    label: str = ""
+
+
+class BVAExtendedResponse(BaseModel):
+    """Response fuer erweiterte BVA (REQ-6007)."""
+    values: List[BVAExtendedResult]
+    category_id: int
 
 
 # REQ-4018: Hierarchische Datenklassen

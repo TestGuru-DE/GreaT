@@ -1,5 +1,4 @@
-﻿// REQ-3041: BVADialog – Modal-Container fuer Grenzwertanalyse
-// REQ-6005: i18n
+﻿// REQ-3041, REQ-6007: BVADialog – Modal-Container fuer Grenzwertanalyse
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { BVAInputPanel } from "./BVAInputPanel";
@@ -9,8 +8,9 @@ import {
   calculateMultiRangeBVAPoints,
   validateMultiRangeBVAConfig,
   type BVAConfig,
+  type BVARangeEntry,
 } from "../../lib/bva-calc";
-import { bvaApi } from "../../api/bva";
+import { bvaApi, type BVADataType, type BVAExtendedOptions } from "../../api/bva";
 
 interface BVADialogProps {
   isOpen: boolean;
@@ -21,6 +21,35 @@ interface BVADialogProps {
   onApply: (values: string[]) => void;
 }
 
+// REQ-6007: Datentyp-Optionen
+const DATA_TYPE_OPTIONS: { value: BVADataType; labelKey: string }[] = [
+  { value: "number", labelKey: "bvaDialog.dataType.number" },
+  { value: "date", labelKey: "bvaDialog.dataType.date" },
+  { value: "time", labelKey: "bvaDialog.dataType.time" },
+  { value: "datetime", labelKey: "bvaDialog.dataType.datetime" },
+  { value: "strlen", labelKey: "bvaDialog.dataType.stringLength" },
+];
+
+// REQ-6007: Standard-Extras pro Datentyp
+function getDefaultExtras(type: BVADataType): Record<string, boolean> {
+  switch (type) {
+    case "date":
+      return { leapYear: false, nonLeapYear: false, monthEnds: false, yearTransition: false, invalidDate: false };
+    case "time":
+      return { midnight: false, endOfDay: false, invalid_2400: false, midnight_crossing: false };
+    case "datetime":
+      return { leapYear: false, midnight: false };
+    case "strlen":
+      return { empty: false, whitespace_only: false, leading_whitespace: false, trailing_whitespace: false };
+    default:
+      return {};
+  }
+}
+
+function createDefaultRanges(_type: BVADataType): BVARangeEntry[] {
+  return [{ id: `range-${Date.now()}`, minVal: "", maxVal: "", allowed: true }];
+}
+
 export function BVADialog({
   isOpen,
   categoryId,
@@ -29,18 +58,37 @@ export function BVADialog({
   onApply,
 }: BVADialogProps) {
   const { t } = useTranslation();
+  const [dataType, setDataType] = useState<BVADataType>("number");
   const [config, setConfig] = useState<BVAConfig>({
     min: "",
     max: "",
     pointsPerBoundary: 2,
     markAsErrorCase: false,
-    ranges: [
-      { id: "range-1", minVal: "", maxVal: "", allowed: true },
-    ],
+    ranges: createDefaultRanges("number"),
   });
+  const [extendedOptions, setExtendedOptions] = useState<BVAExtendedOptions>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  // REQ-6007: Datentyp wechseln
+  const handleDataTypeChange = (newType: BVADataType) => {
+    setDataType(newType);
+    setConfig({
+      min: "",
+      max: "",
+      pointsPerBoundary: config.pointsPerBoundary,
+      markAsErrorCase: false,
+      ranges: createDefaultRanges(newType),
+    });
+    setExtendedOptions({
+      extras: getDefaultExtras(newType),
+      ...(newType === "date" ? { format: "iso" } : {}),
+      ...(newType === "time" ? { format: "HH:MM", step: "minute" } : {}),
+      ...(newType === "datetime" ? { step: "minute" } : {}),
+      ...(newType === "strlen" ? { charset: "alnum" } : {}),
+    });
+  };
 
   // Focus-Trap + ESC
   useEffect(() => {
@@ -77,12 +125,27 @@ export function BVADialog({
     setLoading(true);
 
     try {
-      const response = await bvaApi.generateMultiRange(categoryId, {
-        ranges: config.ranges ?? [],
-        points: config.pointsPerBoundary,
-      });
-
-      onApply(response.values);
+      if (dataType === "number") {
+        // Bestehende Logik fuer Zahlen
+        const response = await bvaApi.generateMultiRange(categoryId, {
+          ranges: config.ranges ?? [],
+          points: config.pointsPerBoundary,
+        });
+        onApply(response.values);
+      } else {
+        // REQ-6007: Erweiterte BVA mit Datentyp
+        const response = await bvaApi.generateExtended(categoryId, {
+          type: dataType,
+          ranges: (config.ranges ?? []).map(r => ({
+            min_val: r.minVal,
+            max_val: r.maxVal,
+            allowed: r.allowed,
+          })),
+          points: config.pointsPerBoundary,
+          options: extendedOptions,
+        });
+        onApply(response.results.map(r => r.value));
+      }
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.unknown'));
@@ -125,6 +188,29 @@ export function BVADialog({
 
         {/* Body */}
         <div className="p-6 space-y-6">
+          {/* REQ-6007: Datentyp-Dropdown */}
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="bva-data-type"
+              className="text-sm font-medium text-slate-700"
+            >
+              {t('bvaDialog.dataType.label')}
+            </label>
+            <select
+              id="bva-data-type"
+              value={dataType}
+              onChange={(e) => handleDataTypeChange(e.target.value as BVADataType)}
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500"
+              aria-label={t('bvaDialog.dataType.label')}
+            >
+              {DATA_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {t(opt.labelKey)}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <BVAInputPanel config={config} onChange={setConfig} />
 
           {/* Visualisierung */}

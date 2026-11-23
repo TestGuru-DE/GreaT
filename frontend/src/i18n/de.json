@@ -596,7 +596,15 @@
     "success": "{{count}} Grenzwerte hinzugefügt",
     "category": "Kategorie",
     "numberline": "Zahlenstrahl",
-    "preview": "Vorschau ({{count}} Werte)"
+    "preview": "Vorschau ({{count}} Werte)",
+    "dataType": {
+      "label": "Datentyp",
+      "number": "Zahl",
+      "date": "Datum",
+      "time": "Uhrzeit",
+      "datetime": "Datum+Uhrzeit",
+      "stringLength": "Stringlänge"
+    }
   },
   "undoRedo": {
     "undo": "Rückgängig",
