@@ -20,11 +20,7 @@ export default function ClassificationTreeMatrix({ categories, projectId }: Prop
   useEffect(() => {
     (async () => {
       try {
-        const resp = await generateApi.listGenerations(projectId);
-        // API gibt { generations: [...] } zurueck, nicht direktes Array
-        const gens = resp.generations ?? resp;
-        // Ensure it's actually an array
-        const list = Array.isArray(gens) ? gens : [];
+        const list = await generateApi.listGenerations(projectId);
         setGenerations(list);
         if (list.length > 0 && !selectedGenId) {
           setSelectedGenId(list[0].id);

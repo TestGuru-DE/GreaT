@@ -35,13 +35,11 @@ vi.mock("react-i18next", () => ({
 describe("ClassificationTreeMatrix", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: API returns { generations: [...] }
-    vi.mocked(generateApi.listGenerations).mockResolvedValue({
-      generations: [
-        { id: 1, name: "pairwise-1", strategy: "pairwise" },
-        { id: 2, name: "each-1", strategy: "each" },
-      ],
-    } as never);
+    // listGenerations now returns a direct array (API client extracts .generations)
+    vi.mocked(generateApi.listGenerations).mockResolvedValue([
+      { id: 1, name: "pairwise-1", strategy: "pairwise" },
+      { id: 2, name: "each-1", strategy: "each" },
+    ] as never);
     vi.mocked(generateApi.getTestcases).mockResolvedValue({
       testcases: [
         { id: 1, name: "TC_1", assignments: { Browser: "Chrome" } },
@@ -82,7 +80,7 @@ describe("ClassificationTreeMatrix", () => {
   });
 
   it("leere generations-Antwort (kein Crash)", async () => {
-    vi.mocked(generateApi.listGenerations).mockResolvedValueOnce({ generations: [] } as never);
+    vi.mocked(generateApi.listGenerations).mockResolvedValueOnce([]);
 
     const { container } = render(
       <ClassificationTreeMatrix
@@ -93,24 +91,6 @@ describe("ClassificationTreeMatrix", () => {
 
     await waitFor(() => {
       expect(container.textContent).toBeTruthy();
-    });
-  });
-
-  it("API-Antwort ohne generations-Key (Fallback zu Array)", async () => {
-    vi.mocked(generateApi.listGenerations).mockResolvedValueOnce([
-      { id: 5, name: "legacy-gen", strategy: "pairwise" },
-    ] as never);
-
-    render(
-      <ClassificationTreeMatrix
-        categories={[{ id: 1, name: "A", order_index: 0 }]}
-        projectId={98}
-      />
-    );
-
-    await waitFor(() => {
-      const select = screen.getByRole("combobox");
-      expect((select as HTMLSelectElement).options.length).toBe(1);
     });
   });
 
