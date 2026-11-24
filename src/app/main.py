@@ -258,6 +258,17 @@ def _migrate_db() -> None:
         gen_have = {c[1] for c in gen_cols}
         if "name" not in gen_have:
             conn.exec_driver_sql("ALTER TABLE 'generations' ADD COLUMN name TEXT")
+        # REQ-6008: coverage_meta fuer Abdeckungsanzeige
+        if "coverage_meta" not in gen_have:
+            conn.exec_driver_sql("ALTER TABLE 'generations' ADD COLUMN coverage_meta TEXT")
+        # REQ-6009: seed_set_id fuer Pflicht-Testfaelle
+        if "seed_set_id" not in gen_have:
+            conn.exec_driver_sql("ALTER TABLE 'generations' ADD COLUMN seed_set_id INTEGER")
+        # REQ-4024: Audit-Trail fuer generations
+        if "last_modified_by" not in gen_have:
+            conn.exec_driver_sql("ALTER TABLE 'generations' ADD COLUMN last_modified_by INTEGER")
+        if "last_modified_at" not in gen_have:
+            conn.exec_driver_sql("ALTER TABLE 'generations' ADD COLUMN last_modified_at DATETIME")
         # REQ-3008: Default-Wert pro Kategorie
         if "is_default" not in have:
             conn.exec_driver_sql("ALTER TABLE 'values' ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0")
@@ -275,6 +286,16 @@ def _migrate_db() -> None:
                 SET category_name = (SELECT name FROM categories WHERE categories.id = testcase_values.category_id)
                 WHERE category_name IS NULL AND category_id IS NOT NULL
             """)
+        # REQ-6009: origin Spalte zu testcases hinzufuegen
+        tc_cols = conn.exec_driver_sql("PRAGMA table_info('testcases')").fetchall()
+        tc_have = {c[1] for c in tc_cols}
+        if "origin" not in tc_have:
+            conn.exec_driver_sql("ALTER TABLE testcases ADD COLUMN origin VARCHAR(20)")
+        # REQ-4024: Audit-Trail fuer testcases
+        if "last_modified_by" not in tc_have:
+            conn.exec_driver_sql("ALTER TABLE testcases ADD COLUMN last_modified_by INTEGER")
+        if "last_modified_at" not in tc_have:
+            conn.exec_driver_sql("ALTER TABLE testcases ADD COLUMN last_modified_at DATETIME")
 
 
 # ---------------------------------------------------------------------------
