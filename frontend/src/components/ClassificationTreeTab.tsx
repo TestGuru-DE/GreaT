@@ -54,8 +54,7 @@ export default function ClassificationTreeTab({ projectId }: Props) {
       {/* Matrix */}
       <ClassificationTreeMatrix
         categories={categories}
-        testcases={[]}
-        generations={[]}
+        projectId={projectId}
       />
     </div>
   );
