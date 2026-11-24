@@ -20,12 +20,14 @@ export default function ClassificationTreeMatrix({ categories, projectId }: Prop
   useEffect(() => {
     (async () => {
       try {
-        const list = await generateApi.listGenerations(projectId);
-        // Ensure list is actually an array
-        const gens = Array.isArray(list) ? list : [];
-        setGenerations(gens);
-        if (gens.length > 0 && !selectedGenId) {
-          setSelectedGenId(gens[0].id);
+        const resp = await generateApi.listGenerations(projectId);
+        // API gibt { generations: [...] } zurueck, nicht direktes Array
+        const gens = resp.generations ?? resp;
+        // Ensure it's actually an array
+        const list = Array.isArray(gens) ? gens : [];
+        setGenerations(list);
+        if (list.length > 0 && !selectedGenId) {
+          setSelectedGenId(list[0].id);
         }
       } catch (e) {
         console.error("Failed to load generations:", e);
