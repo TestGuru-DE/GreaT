@@ -21,11 +21,16 @@ export default function ClassificationTreeMatrix({ categories, projectId }: Prop
     (async () => {
       try {
         const list = await generateApi.listGenerations(projectId);
-        setGenerations(list);
-        if (list.length > 0 && !selectedGenId) {
-          setSelectedGenId(list[0].id);
+        // Ensure list is actually an array
+        const gens = Array.isArray(list) ? list : [];
+        setGenerations(gens);
+        if (gens.length > 0 && !selectedGenId) {
+          setSelectedGenId(gens[0].id);
         }
-      } catch { /* ignore */ }
+      } catch (e) {
+        console.error("Failed to load generations:", e);
+        setGenerations([]);
+      }
     })();
   }, [projectId]);
 
@@ -36,8 +41,12 @@ export default function ClassificationTreeMatrix({ categories, projectId }: Prop
       setLoading(true);
       try {
         const resp = await generateApi.getTestcases(selectedGenId);
+        // TestcasesResponse has testcases array inside
         setTestcases(resp.testcases ?? []);
-      } catch { /* ignore */ } finally {
+      } catch (e) {
+        console.error("Failed to load testcases:", e);
+        setTestcases([]);
+      } finally {
         setLoading(false);
       }
     })();
