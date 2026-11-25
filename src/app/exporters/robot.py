@@ -5,7 +5,7 @@ Space-separated Format (2+ Spaces als Trennzeichen).
 """
 from __future__ import annotations
 
-from .base import BaseExporter
+from .base import BaseExporter, single_line
 
 
 class RobotExporter(BaseExporter):
@@ -18,9 +18,9 @@ class RobotExporter(BaseExporter):
     def render_header(self, project_name: str, gen_id: str, strategy: str,
                       date: str, version: str) -> str:
         return (
-            f"# G.R.E.A.T. Export | Projekt: {project_name} | "
-            f"Generierung: {gen_id} | Strategie: {strategy} | "
-            f"Datum: {date} | Version: {version}\n"
+            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
+            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
+            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
         )
 
     def render(self, generation_view: dict, options: dict) -> bytes:
@@ -83,7 +83,7 @@ class RobotExporter(BaseExporter):
             if cat in result_categories:
                 lines.append("    Should Be Equal As Strings    $" + "{" + varname + "}" + "    Expected Result")
             else:
-                lines.append("    Log    " + cat + ": $" + "{" + varname + "}")
+                lines.append("    Log    " + robot_escape_value(single_line(cat)) + ": $" + "{" + varname + "}")
 
         lines.append("")
         return "\n".join(lines).encode("utf-8")
@@ -105,6 +105,21 @@ def robot_escape_value(value: str) -> str:
     """
     if not value:
         return value
+
+    # BUG A-02: Zeilenumbrueche und Steuerzeichen duerfen keine neue Robot-Zeile
+    # (und damit keine neuen Abschnitte wie *** Settings ***) erzeugen.
+    # Robot kennt die Escape-Sequenzen \n, \r, \t und \xhh.
+    value = (
+        value.replace("\\", "\\\\")
+        .replace("\r", "\\r")
+        .replace("\n", "\\n")
+        .replace("\t", "\\t")
+    )
+    value = "".join(
+        f"\\x{ord(c):02x}" if (ord(c) < 0x20 or c in "\x7f\x85") else
+        f"\\u{ord(c):04x}" if c in "  " else c
+        for c in value
+    )
 
     escaped = value.replace("|", "\\|")
 

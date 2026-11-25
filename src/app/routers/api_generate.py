@@ -893,7 +893,9 @@ def export_generation_format(
         "deterministic": deterministic,
     }
 
-    content = exporter.render(generation_view, options)
+    # BUG A-02: Namen einzeilig machen, bevor sie in Code-/Zeilenformate gelangen
+    from ..exporters.base import sanitize_generation_view
+    content = exporter.render(sanitize_generation_view(generation_view), options)
     return Response(
         content=content,
         media_type=exporter.media_type,

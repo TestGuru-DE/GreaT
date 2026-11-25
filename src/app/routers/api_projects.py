@@ -12,6 +12,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from ..database import get_db
+from ..name_validation import reject_control_chars  # BUG A-02
 from ..auth_deps import require_api_capable, require_writer
 from ..api_types import DbId
 from .. import models, schemas
@@ -137,6 +138,11 @@ def delete_category(cid: DbId, db: Session = Depends(get_db)):
 
 class RenameCategory(BaseModel):
     name: str = PydanticField(min_length=1, max_length=200)
+
+    @field_validator("name")
+    @classmethod
+    def _no_control_chars(cls, v: str) -> str:
+        return reject_control_chars(v)  # BUG A-02
 
 
 class UpdateCategoryProperties(BaseModel):  # REQ-4016 / REQ-5002
@@ -400,7 +406,7 @@ class RefineRequest(BaseModel):
     def name_not_whitespace(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
-        return v.strip()
+        return reject_control_chars(v.strip())  # BUG A-02
 
 
 class HierarchyNode(BaseModel):
@@ -989,6 +995,11 @@ def generate_extended_bva_for_category(
 class ProjectUpdate(BaseModel):
     name: Optional[str] = PydanticField(default=None, min_length=1, max_length=200)
     version: Optional[int] = None
+
+    @field_validator("name")
+    @classmethod
+    def _no_control_chars(cls, v: Optional[str]) -> Optional[str]:
+        return reject_control_chars(v)  # BUG A-02
 
 
 @router.put("/projects/{pid}", response_model=schemas.ProjectRead)

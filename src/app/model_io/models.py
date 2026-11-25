@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from ..name_validation import reject_control_chars  # BUG A-02
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +49,11 @@ class ModelCategory(BaseModel):
     values: List[ModelValue] = Field(default_factory=list)
 
     model_config = ConfigDict(frozen=False, populate_by_name=True)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        return reject_control_chars(v)  # BUG A-02
 
     @field_validator("category_type")
     @classmethod
@@ -132,6 +138,12 @@ class GreatModel(BaseModel):
     """
     schema_version: int = Field(default=1, alias="schemaVersion")
     project_name: str = Field(min_length=1, max_length=200, alias="projectName")
+
+    @field_validator("project_name")
+    @classmethod
+    def validate_project_name(cls, v: str) -> str:
+        return reject_control_chars(v)  # BUG A-02
+
     categories: List[ModelCategory] = Field(default_factory=list)
     rules: List[ModelRule] = Field(default_factory=list)
     decision_constraints: List[ModelDecisionConstraint] = Field(

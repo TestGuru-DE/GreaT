@@ -2,6 +2,7 @@
 import re
 from typing import List, Optional, Dict
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from .name_validation import reject_control_chars  # BUG A-02
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._@-]{3,50}$")
 
@@ -13,7 +14,7 @@ class ProjectCreate(BaseModel):
     def name_not_whitespace(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("Projektname darf nicht leer oder nur Leerzeichen sein.")
-        return v.strip()
+        return reject_control_chars(v.strip())
 
 class ProjectRead(BaseModel):
     id: int
@@ -30,7 +31,7 @@ class CategoryCreate(BaseModel):
     @field_validator("name")
     @classmethod
     def name_not_empty(cls, v: str) -> str:
-        trimmed = v.strip()
+        trimmed = reject_control_chars(v.strip())
         if not trimmed:
             raise ValueError("Kategoriename darf nicht leer sein.")
         if len(trimmed) > 200:
@@ -793,7 +794,7 @@ class SeedSetCreate(BaseModel):
     def name_not_whitespace(cls, v: str) -> str:
         if not v.strip():
             raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
-        return v.strip()
+        return reject_control_chars(v.strip())
 
     @field_validator("seeds")
     @classmethod
@@ -813,7 +814,7 @@ class SeedSetUpdate(BaseModel):
     def name_not_whitespace(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and not v.strip():
             raise ValueError("Name darf nicht leer oder nur Leerzeichen sein.")
-        return v.strip() if v else v
+        return reject_control_chars(v.strip()) if v else v
 
     @field_validator("seeds")
     @classmethod

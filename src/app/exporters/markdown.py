@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from .base import BaseExporter
+from .base import BaseExporter, single_line
 
 
 class MarkdownExporter(BaseExporter):
@@ -19,9 +19,9 @@ class MarkdownExporter(BaseExporter):
     def render_header(self, project_name: str, gen_id: str, strategy: str,
                       date: str, version: str) -> str:
         return (
-            f"<!-- G.R.E.A.T. Export | Projekt: {project_name} | "
-            f"Generierung: {gen_id} | Strategie: {strategy} | "
-            f"Datum: {date} | Version: {version} -->\n"
+            f"<!-- G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
+            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
+            f"Datum: {single_line(date)} | Version: {single_line(version)} -->\n"
         )
 
     def render(self, generation_view: dict, options: dict) -> bytes:
@@ -68,6 +68,9 @@ def escape_pipe(value: str) -> str:
 
 def format_md_value(value: str) -> str:
     """Formatiert einen Wert fuer Markdown (Pipe-Escaping + Backticks bei Sonderzeichen)."""
+    # BUG A-02: Zeilenumbrueche zerstoeren die Tabelle -> <br>; Steuerzeichen entfernen
+    value = value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "<br>")
+    value = single_line(value)
     escaped = escape_pipe(value)
     # Backticks bei Werten mit Anführungszeichen oder Sonderzeichen
     if '"' in value or "'" in value or "`" in value:

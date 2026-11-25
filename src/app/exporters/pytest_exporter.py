@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 
-from .base import BaseExporter
+from .base import BaseExporter, single_line
 
 # Python-Reserved-Worte die nicht als Variablenname verwendet werden duerfen
 PYTHON_RESERVED = {
@@ -35,9 +35,9 @@ class PytestExporter(BaseExporter):
     def render_header(self, project_name: str, gen_id: str, strategy: str,
                       date: str, version: str) -> str:
         return (
-            f"# G.R.E.A.T. Export | Projekt: {project_name} | "
-            f"Generierung: {gen_id} | Strategie: {strategy} | "
-            f"Datum: {date} | Version: {version}\n"
+            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
+            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
+            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
         )
 
     def render(self, generation_view: dict, options: dict) -> bytes:
@@ -130,13 +130,28 @@ def to_python_identifier(name: str) -> str:
 
 
 def escape_python_string(value: str) -> str:
-    """Escapes Zeichen fuer Python-String-Literal (Single-Quotes)."""
-    # Backslash zuerst
-    value = value.replace("\\", "\\\\")
-    # Single-Quote escapen
-    value = value.replace("'", "\\'")
-    # Newlines
-    value = value.replace("\n", "\\n")
-    value = value.replace("\r", "\\r")
-    value = value.replace("\t", "\\t")
-    return value
+    """Escapes Zeichen fuer ein Python-String-Literal in einfachen Anfuehrungszeichen.
+
+    BUG A-02: Neben Backslash, Quote und \\n/\\r/\\t werden alle weiteren Steuer- und
+    Zeilentrennzeichen (\\x00-\\x1f, \\x7f, \\x85, U+2028, U+2029) als Escape-Sequenz
+    ausgegeben. Das Literal bleibt damit immer einzeilig und ergibt exakt den Originalwert.
+    """
+    out = []
+    for ch in value:
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == "'":
+            out.append("\\'")
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ord(ch) < 0x20 or ch in "\x7f\x85":
+            out.append(f"\\x{ord(ch):02x}")
+        elif ch in "  ":
+            out.append(f"\\u{ord(ch):04x}")
+        else:
+            out.append(ch)
+    return "".join(out)
