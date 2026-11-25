@@ -606,6 +606,45 @@
       "time": "Time",
       "datetime": "Date+Time",
       "stringLength": "String Length"
+    },
+    "options": {
+      "title": "Options",
+      "format": "Format",
+      "step": "Step",
+      "charset": "Character set",
+      "extras": "Additional values",
+      "formats": {
+        "iso": "YYYY-MM-DD (ISO)",
+        "de": "DD.MM.YYYY",
+        "HH:MM": "HH:MM",
+        "HH:MM:SS": "HH:MM:SS"
+      },
+      "steps": {
+        "minute": "Minute",
+        "second": "Second"
+      },
+      "charsets": {
+        "alpha": "Letters (a–z)",
+        "alnum": "Letters and digits",
+        "alpha_de": "Letters incl. umlauts",
+        "special": "Special characters",
+        "unicode": "Unicode (incl. emoji)"
+      },
+      "extraLabels": {
+        "leap_year": "Feb 29 in a leap year",
+        "non_leap_year": "Feb 29 in a non-leap year (invalid)",
+        "month_ends": "Month ends",
+        "year_transition": "Year transition",
+        "invalid_date": "Invalid date (e.g. Apr 31)",
+        "midnight": "Midnight (00:00)",
+        "end_of_day": "End of day (23:59)",
+        "invalid_2400": "24:00 (invalid)",
+        "midnight_crossing": "Crossing midnight",
+        "empty": "Empty string",
+        "whitespace_only": "Whitespace only",
+        "leading_whitespace": "Leading whitespace",
+        "trailing_whitespace": "Trailing whitespace"
+      }
     }
   },
   "undoRedo": {

@@ -984,6 +984,9 @@ def generate_extended_bva_for_category(
             value=item.value,
             risk_weight=1,
             allowed=not item.is_error,
+            # BUG C-06: Typ uebernehmen, soweit das Wertmodell ihn kennt
+            # (number/date/time); strlen und datetime bleiben "string".
+            vtype=item.vtype if item.vtype in schemas.VALID_VTYPES else "string",
         ))
     db.commit()
 

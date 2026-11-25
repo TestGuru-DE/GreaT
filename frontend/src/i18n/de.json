@@ -606,6 +606,45 @@
       "time": "Uhrzeit",
       "datetime": "Datum+Uhrzeit",
       "stringLength": "Stringlänge"
+    },
+    "options": {
+      "title": "Optionen",
+      "format": "Format",
+      "step": "Schrittweite",
+      "charset": "Zeichenvorrat",
+      "extras": "Zusatzwerte",
+      "formats": {
+        "iso": "JJJJ-MM-TT (ISO)",
+        "de": "TT.MM.JJJJ",
+        "HH:MM": "HH:MM",
+        "HH:MM:SS": "HH:MM:SS"
+      },
+      "steps": {
+        "minute": "Minute",
+        "second": "Sekunde"
+      },
+      "charsets": {
+        "alpha": "Buchstaben (a–z)",
+        "alnum": "Buchstaben und Ziffern",
+        "alpha_de": "Buchstaben inkl. Umlaute",
+        "special": "Sonderzeichen",
+        "unicode": "Unicode (inkl. Emoji)"
+      },
+      "extraLabels": {
+        "leap_year": "29.02. im Schaltjahr",
+        "non_leap_year": "29.02. im Nicht-Schaltjahr (ungültig)",
+        "month_ends": "Monatsenden",
+        "year_transition": "Jahreswechsel",
+        "invalid_date": "Ungültiges Datum (z. B. 31.04.)",
+        "midnight": "Mitternacht (00:00)",
+        "end_of_day": "Tagesende (23:59)",
+        "invalid_2400": "24:00 (ungültig)",
+        "midnight_crossing": "Übergang über Mitternacht",
+        "empty": "Leerer String",
+        "whitespace_only": "Nur Leerzeichen",
+        "leading_whitespace": "Führendes Leerzeichen",
+        "trailing_whitespace": "Abschließendes Leerzeichen"
+      }
     }
   },
   "undoRedo": {

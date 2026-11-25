@@ -1,17 +1,27 @@
 ﻿// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
 import type { BVAConfig } from "../../lib/bva-calc";
 import { validateBVAConfig, validateMultiRangeBVAConfig } from "../../lib/bva-calc";
+import type { BVADataType } from "../../api/bva";
+import { PLACEHOLDERS, validateExtendedRanges } from "../../lib/bva-extended-input";
 
 interface BVAInputPanelProps {
   config: BVAConfig;
   onChange: (config: BVAConfig) => void;
+  /** BUG C-02: Datentyp bestimmt Pruefung und Platzhalter (Standard: Zahl). */
+  dataType?: BVADataType;
 }
 
-export function BVAInputPanel({ config, onChange }: BVAInputPanelProps) {
+export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInputPanelProps) {
   const hasRanges = Array.isArray(config.ranges) && config.ranges.length > 0;
-  const errors = hasRanges
-    ? validateMultiRangeBVAConfig(config.ranges ?? [])
-    : validateBVAConfig(config);
+  const isNumber = dataType === "number";
+  const errors = !isNumber
+    ? validateExtendedRanges(dataType, config.ranges ?? [])
+    : hasRanges
+      ? validateMultiRangeBVAConfig(config.ranges ?? [])
+      : validateBVAConfig(config);
+  const placeholderMin = isNumber ? "−∞" : PLACEHOLDERS[dataType].min;
+  const placeholderMax = isNumber ? "∞" : PLACEHOLDERS[dataType].max;
+  const inputMode = isNumber || dataType === "strlen" ? "decimal" : "text";
 
   const handleMinChange = (val: string) => {
     onChange({ ...config, min: val });
@@ -65,8 +75,8 @@ export function BVAInputPanel({ config, onChange }: BVAInputPanelProps) {
   };
 
   const rangeSummary = (minVal: string, maxVal: string) => {
-    const minText = minVal.trim() ? minVal : "−∞";
-    const maxText = maxVal.trim() ? maxVal : "∞";
+    const minText = minVal.trim() ? minVal : isNumber ? "−∞" : "?";
+    const maxText = maxVal.trim() ? maxVal : isNumber ? "∞" : "?";
     return `${minText} … ${maxText}`;
   };
 
@@ -114,10 +124,10 @@ export function BVAInputPanel({ config, onChange }: BVAInputPanelProps) {
                     <input
                       id={`bva-range-min-${range.id}`}
                       type="text"
-                      inputMode="decimal"
+                      inputMode={inputMode}
                       value={range.minVal}
                       onChange={(e) => updateRange(idx, { minVal: e.target.value })}
-                      placeholder="−∞"
+                      placeholder={placeholderMin}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       autoFocus={idx === 0}
                     />
@@ -132,10 +142,10 @@ export function BVAInputPanel({ config, onChange }: BVAInputPanelProps) {
                     <input
                       id={`bva-range-max-${range.id}`}
                       type="text"
-                      inputMode="decimal"
+                      inputMode={inputMode}
                       value={range.maxVal}
                       onChange={(e) => updateRange(idx, { maxVal: e.target.value })}
-                      placeholder="∞"
+                      placeholder={placeholderMax}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                     />
                   </div>

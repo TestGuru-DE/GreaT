@@ -11,6 +11,15 @@ import {
   type BVARangeEntry,
 } from "../../lib/bva-calc";
 import { bvaApi, type BVADataType, type BVAExtendedOptions } from "../../api/bva";
+import {
+  CHARSETS,
+  DATE_FORMATS,
+  EXTRAS_BY_TYPE,
+  STEPS,
+  TIME_FORMATS,
+  defaultExtendedOptions,
+  validateExtendedRanges,
+} from "../../lib/bva-extended-input";
 
 interface BVADialogProps {
   isOpen: boolean;
@@ -30,20 +39,11 @@ const DATA_TYPE_OPTIONS: { value: BVADataType; labelKey: string }[] = [
   { value: "strlen", labelKey: "bvaDialog.dataType.stringLength" },
 ];
 
-// REQ-6007: Standard-Extras pro Datentyp
-function getDefaultExtras(type: BVADataType): Record<string, boolean> {
-  switch (type) {
-    case "date":
-      return { leapYear: false, nonLeapYear: false, monthEnds: false, yearTransition: false, invalidDate: false };
-    case "time":
-      return { midnight: false, endOfDay: false, invalid_2400: false, midnight_crossing: false };
-    case "datetime":
-      return { leapYear: false, midnight: false };
-    case "strlen":
-      return { empty: false, whitespace_only: false, leading_whitespace: false, trailing_whitespace: false };
-    default:
-      return {};
-  }
+// BUG C-02: Pruefung passend zum Datentyp (Zahlen-Pruefung blockierte Datum/Uhrzeit)
+function validateRanges(type: BVADataType, ranges: BVARangeEntry[]): string[] {
+  return type === "number"
+    ? validateMultiRangeBVAConfig(ranges)
+    : validateExtendedRanges(type, ranges);
 }
 
 function createDefaultRanges(_type: BVADataType): BVARangeEntry[] {
@@ -81,14 +81,14 @@ export function BVADialog({
       markAsErrorCase: false,
       ranges: createDefaultRanges(newType),
     });
-    setExtendedOptions({
-      extras: getDefaultExtras(newType),
-      ...(newType === "date" ? { format: "iso" } : {}),
-      ...(newType === "time" ? { format: "HH:MM", step: "minute" } : {}),
-      ...(newType === "datetime" ? { step: "minute" } : {}),
-      ...(newType === "strlen" ? { charset: "alnum" } : {}),
-    });
+    setExtendedOptions(defaultExtendedOptions(newType));
   };
+
+  const setOption = (patch: Partial<BVAExtendedOptions>) =>
+    setExtendedOptions((prev) => ({ ...prev, ...patch }));
+
+  const setExtra = (key: string, on: boolean) =>
+    setExtendedOptions((prev) => ({ ...prev, extras: { ...(prev.extras ?? {}), [key]: on } }));
 
   // Focus-Trap + ESC
   useEffect(() => {
@@ -100,8 +100,8 @@ export function BVADialog({
         onClose();
       }
       if (e.key === "Enter" && !e.shiftKey) {
-        const isValid = validateMultiRangeBVAConfig(config.ranges ?? []).length === 0;
-        if (isValid) {
+        const isValid = validateRanges(dataType, config.ranges ?? []).length === 0;
+        if (isValid && !loading) {
           e.preventDefault();
           handleApply();
         }
@@ -110,7 +110,7 @@ export function BVADialog({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, config, onClose]);
+  }, [isOpen, config, dataType, extendedOptions, loading, onClose]);
 
   // Fokus auf ersten Input
   useEffect(() => {
@@ -121,6 +121,7 @@ export function BVADialog({
   }, [isOpen]);
 
   const handleApply = async () => {
+    if (loading) return; // kein Doppelklick -> keine doppelten Werte
     setError(null);
     setLoading(true);
 
@@ -156,8 +157,13 @@ export function BVADialog({
 
   if (!isOpen) return null;
 
-  const points = calculateMultiRangeBVAPoints(config.ranges ?? [], config.pointsPerBoundary);
-  const isValid = validateMultiRangeBVAConfig(config.ranges ?? []).length === 0;
+  const isValid = validateRanges(dataType, config.ranges ?? []).length === 0;
+  // Zahlenstrahl und Vorschau gibt es nur fuer Zahlen; fuer die anderen Typen
+  // berechnet das Backend die Werte.
+  const points = dataType === "number" && isValid
+    ? calculateMultiRangeBVAPoints(config.ranges ?? [], config.pointsPerBoundary)
+    : [];
+  const optionLabel = (key: string) => t(`bvaDialog.options.${key}`);
 
   return (
     <div
@@ -211,7 +217,77 @@ export function BVADialog({
             </select>
           </div>
 
-          <BVAInputPanel config={config} onChange={setConfig} />
+          <BVAInputPanel config={config} onChange={setConfig} dataType={dataType} />
+
+          {/* BUG C-02: Typspezifische Optionen (REQ-6007) */}
+          {dataType !== "number" && (
+            <fieldset className="rounded-lg border border-slate-200 p-3 space-y-3" data-testid="bva-options">
+              <legend className="px-1 text-sm font-medium text-slate-700">{optionLabel("title")}</legend>
+              <div className="flex flex-wrap gap-4">
+                {(dataType === "date" || dataType === "time") && (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    {optionLabel("format")}
+                    <select
+                      aria-label={optionLabel("format")}
+                      value={extendedOptions.format ?? ""}
+                      onChange={(e) => setOption({ format: e.target.value })}
+                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                    >
+                      {(dataType === "date" ? DATE_FORMATS : TIME_FORMATS).map((f) => (
+                        <option key={f} value={f}>{optionLabel(`formats.${f}`)}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {(dataType === "time" || dataType === "datetime") && (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    {optionLabel("step")}
+                    <select
+                      aria-label={optionLabel("step")}
+                      value={extendedOptions.step ?? "minute"}
+                      onChange={(e) => setOption({ step: e.target.value })}
+                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                    >
+                      {STEPS.map((st) => (
+                        <option key={st} value={st}>{optionLabel(`steps.${st}`)}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {dataType === "strlen" && (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    {optionLabel("charset")}
+                    <select
+                      aria-label={optionLabel("charset")}
+                      value={extendedOptions.charset ?? "alnum"}
+                      onChange={(e) => setOption({ charset: e.target.value })}
+                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                    >
+                      {CHARSETS.map((c) => (
+                        <option key={c} value={c}>{optionLabel(`charsets.${c}`)}</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-medium text-slate-600 mb-1">{optionLabel("extras")}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  {EXTRAS_BY_TYPE[dataType].map((key) => (
+                    <label key={key} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(extendedOptions.extras?.[key])}
+                        onChange={(e) => setExtra(key, e.target.checked)}
+                        className="w-4 h-4 text-sky-600"
+                      />
+                      {optionLabel(`extraLabels.${key}`)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </fieldset>
+          )}
 
           {/* Visualisierung */}
           {points.length > 0 && (
