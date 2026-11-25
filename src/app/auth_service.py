@@ -40,7 +40,8 @@ def admin_set_password(db: Session, target: User, new_password: str) -> None:
     beim ersten Login aendern muss.
     """
     apply_new_password(target, new_password)
-    target.default_password_active = True
+    # BUG A-01: api_user kann sein Passwort nie selbst aendern -> keine Pflicht
+    target.default_password_active = target.role != "api_user"
     increment_token_version(db, target)
 
 

@@ -12,7 +12,7 @@ import jwt
 from ..database import get_db
 from ..models.auth import User, RefreshToken
 from ..auth_utils import create_access_token, create_refresh_token, decode_access_token, decode_refresh_token
-from ..auth_deps import get_current_user, get_current_user_unrestricted, require_admin, require_writer, require_api_capable
+from ..auth_deps import get_current_user, get_current_user_unrestricted, password_change_required, require_admin, require_writer, require_api_capable
 from ..config import JWT_ACCESS_TOKEN_EXPIRE_MINUTES, JWT_REFRESH_TOKEN_EXPIRE_DAYS, GREAT_COOKIE_SECURE
 from ..rate_limiter import login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter
 from ..config import GREAT_TRUST_PROXY_HEADERS
@@ -122,7 +122,7 @@ def login(
         "username": user.username,
         "role": user.role,
         "message": "Login erfolgreich",
-        "password_change_required": bool(user.default_password_active),  # REQ-4028 AK-1
+        "password_change_required": password_change_required(user),  # REQ-4028 AK-1, BUG A-01
         "language": user.language,  # REQ-6005
     }
 
@@ -318,7 +318,7 @@ def get_me(current_user: User = Depends(get_current_user_unrestricted)):
         "username": current_user.username,
         "role": current_user.role,
         "is_active": current_user.is_active,
-        "password_change_required": bool(current_user.default_password_active),
+        "password_change_required": password_change_required(current_user),  # BUG A-01
         "language": current_user.language,
     }
 

@@ -7,6 +7,7 @@ REQ-3040: Constraint-aware Generierung optional via rule_engine.
 """
 import itertools
 from typing import Dict, List, Optional
+from .budget import checkpoint  # BUG B-03
 
 
 def _deduplicate(testcases: list[dict]) -> list[dict]:
@@ -14,6 +15,7 @@ def _deduplicate(testcases: list[dict]) -> list[dict]:
     seen = set()
     result = []
     for tc in testcases:
+        checkpoint()  # BUG B-03: Zeitbudget
         key = tuple(sorted(tc.items()))
         if key not in seen:
             seen.add(key)
@@ -38,6 +40,7 @@ def _find_valid_testcase_for_value(
 ):
     """Findet deterministisch den ersten final g?ltigen Testfall f?r einen Zielwert."""
     for combo in itertools.product(*[categories[k] for k in keys]):
+        checkpoint()  # BUG B-03: Zeitbudget
         raw_candidate = {k: v for k, v in zip(keys, combo)}
         candidate = _finalize_if_valid(rule_engine, raw_candidate)
         if candidate is None:
@@ -87,8 +90,10 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
     result: List[Dict[str, str]] = [dict(basis)]
 
     for key in keys:
+        checkpoint()  # BUG B-03: Zeitbudget
         werte = categories[key]
         for wert in werte[1:]:  # alle au?er dem ersten (Standard-)Wert
+            checkpoint()  # BUG B-03: Zeitbudget
             tc = dict(basis)
             tc[key] = wert
             
@@ -104,7 +109,9 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
     if rule_engine is not None:
         covered_values = {k: {tc[k] for tc in result if k in tc} for k in keys}
         for key in keys:
+            checkpoint()  # BUG B-03: Zeitbudget
             for value in categories[key]:
+                checkpoint()  # BUG B-03: Zeitbudget
                 if value in covered_values[key]:
                     continue
                 candidate = _find_valid_testcase_for_value(categories, keys, rule_engine, key, value)
@@ -112,6 +119,7 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
                     continue
                 result.append(candidate)
                 for covered_key in keys:
+                    checkpoint()  # BUG B-03: Zeitbudget
                     covered_values[covered_key].add(candidate[covered_key])
 
     return _deduplicate(result)
@@ -127,7 +135,9 @@ def _find_valid_base(categories: Dict[str, List[str]], keys: List[str], rule_eng
     
     # Versuche jeden Wert jeder Kategorie als Alternative
     for key in keys:
+        checkpoint()  # BUG B-03: Zeitbudget
         for val in categories[key][1:]:
+            checkpoint()  # BUG B-03: Zeitbudget
             candidate = dict(basis)
             candidate[key] = val
             candidate = _finalize_if_valid(rule_engine, candidate)

@@ -22,6 +22,7 @@ Referenzen:
 """
 
 from typing import Dict, List, Optional
+from .budget import checkpoint  # BUG B-03
 
 
 def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[str, str]]:
@@ -82,10 +83,12 @@ def generate(categories: Dict[str, List[str]], rule_engine=None) -> List[Dict[st
     
     # Schritt 2: Für jede Kategorie, für jeden Wert (außer Baseline-Wert): Variation erzeugen
     for cat in keys:
+        checkpoint()  # BUG B-03: Zeitbudget
         baseline_value = baseline[cat]
         values = categories[cat]
         
         for val in values:
+            checkpoint()  # BUG B-03: Zeitbudget
             if val == baseline_value:
                 continue  # Baseline-Wert überspringen
             
@@ -143,6 +146,7 @@ def _find_valid_baseline(categories: Dict[str, List[str]], keys: List[str], rule
     
     # Strategie: Probiere alle Kombinationen (limitiert auf erste 100 für Performance)
     for i, combo in enumerate(product(*[categories[k] for k in keys])):
+        checkpoint()  # BUG B-03: Zeitbudget
         if i >= 100:  # Performance-Limit
             break
         candidate = {k: v for k, v in zip(keys, combo)}
@@ -183,10 +187,12 @@ def _find_alternative_pair(
     """
     # Strategie 1: Variiere andere Kategorien systematisch (eine nach der anderen)
     for other_cat in keys:
+        checkpoint()  # BUG B-03: Zeitbudget
         if other_cat == target_cat:
             continue
         
         for other_val in categories[other_cat]:
+            checkpoint()  # BUG B-03: Zeitbudget
             candidate = dict(baseline)
             candidate[target_cat] = target_val
             candidate[other_cat] = other_val
@@ -199,6 +205,7 @@ def _find_alternative_pair(
     
     other_keys = [k for k in keys if k != target_cat]
     for combo in product(*[categories[k] for k in other_keys]):
+        checkpoint()  # BUG B-03: Zeitbudget
         candidate = {k: v for k, v in zip(other_keys, combo)}
         candidate[target_cat] = target_val
         
@@ -229,6 +236,7 @@ def _generate_any_valid(categories: Dict[str, List[str]], keys: List[str], rule_
     seen = set()
     
     for i, combo in enumerate(product(*[categories[k] for k in keys])):
+        checkpoint()  # BUG B-03: Zeitbudget
         if i >= 100:  # Performance-Limit
             break
         

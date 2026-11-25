@@ -1,4 +1,5 @@
 import itertools
+from .budget import checkpoint  # BUG B-03
 
 
 def deduplicate_testcases(testcases: list[dict]) -> list[dict]:
@@ -6,6 +7,7 @@ def deduplicate_testcases(testcases: list[dict]) -> list[dict]:
     seen = set()
     result = []
     for tc in testcases:
+        checkpoint()  # BUG B-03: Zeitbudget
         key = tuple(sorted(tc.items()))
         if key not in seen:
             seen.add(key)
@@ -24,6 +26,7 @@ def _finalize_if_valid(rule_engine, candidate: dict):
 def _find_valid_testcase_for_value(categories: dict, keys: list[str], rule_engine, target_key: str, target_value: str):
     """Findet deterministisch den ersten final gültigen Testfall für einen Zielwert."""
     for combo in itertools.product(*[categories[k] for k in keys]):
+        checkpoint()  # BUG B-03: Zeitbudget
         raw_candidate = {k: v for k, v in zip(keys, combo)}
         candidate = _finalize_if_valid(rule_engine, raw_candidate)
         if candidate is None:
@@ -49,8 +52,10 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
         max_len = max(len(v) for v in categories.values())
         testcases = []
         for i in range(max_len):
+            checkpoint()  # BUG B-03: Zeitbudget
             tc = {}
             for k in keys:
+                checkpoint()  # BUG B-03: Zeitbudget
                 vals = categories[k]
                 tc[k] = vals[i % len(vals)]
             testcases.append(tc)
@@ -61,10 +66,12 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
     max_len = max(len(v) for v in categories.values())
 
     for i in range(max_len * 2):
+        checkpoint()  # BUG B-03: Zeitbudget
         raw_tc = {}
 
         # Wähle Werte: priorisiere noch nicht abgedeckte Werte
         for k in keys:
+            checkpoint()  # BUG B-03: Zeitbudget
             vals = categories[k]
             uncovered = [v for v in vals if v not in covered_values[k]]
             if uncovered:
@@ -79,9 +86,11 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
 
             # Strategie: Variiere jede Kategorie einzeln
             for k_vary in keys:
+                checkpoint()  # BUG B-03: Zeitbudget
                 vals_vary = categories[k_vary]
                 original_val = raw_tc[k_vary]
                 for alt_val in vals_vary:
+                    checkpoint()  # BUG B-03: Zeitbudget
                     if alt_val == original_val:
                         continue
                     candidate_raw = dict(raw_tc)
@@ -96,6 +105,7 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
 
             if not valid_found:
                 for combo in itertools.product(*[categories[k] for k in keys]):
+                    checkpoint()  # BUG B-03: Zeitbudget
                     candidate_raw = {k: v for k, v in zip(keys, combo)}
                     candidate = _finalize_if_valid(rule_engine, candidate_raw)
                     if candidate is not None:
@@ -107,6 +117,7 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
                 continue
 
         for k in keys:
+            checkpoint()  # BUG B-03: Zeitbudget
             covered_values[k].add(tc[k])
 
         testcases.append(tc)
@@ -116,7 +127,9 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
 
     # Finale Coverage-Ergänzung: fehlende, aber final regelkonforme Werte gezielt nachziehen
     for k in keys:
+        checkpoint()  # BUG B-03: Zeitbudget
         for value in categories[k]:
+            checkpoint()  # BUG B-03: Zeitbudget
             if value in covered_values[k]:
                 continue
             candidate = _find_valid_testcase_for_value(categories, keys, rule_engine, k, value)
@@ -124,6 +137,7 @@ def generate(categories: dict, rule_engine=None) -> list[dict]:
                 continue
             testcases.append(candidate)
             for key in keys:
+                checkpoint()  # BUG B-03: Zeitbudget
                 covered_values[key].add(candidate[key])
 
     return deduplicate_testcases(testcases)

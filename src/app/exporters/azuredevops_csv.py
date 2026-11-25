@@ -7,7 +7,7 @@ from __future__ import annotations
 import csv
 import io
 
-from .base import BaseExporter, protect_formula
+from .base import BaseExporter, protect_formula, single_line
 
 
 class AzureDevOpsCsvExporter(BaseExporter):
@@ -20,9 +20,9 @@ class AzureDevOpsCsvExporter(BaseExporter):
     def render_header(self, project_name: str, gen_id: str, strategy: str,
                       date: str, version: str) -> str:
         return (
-            f"# G.R.E.A.T. Export | Projekt: {project_name} | "
-            f"Generierung: {gen_id} | Strategie: {strategy} | "
-            f"Datum: {date} | Version: {version}\n"
+            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
+            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
+            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
         )
 
     def render(self, generation_view: dict, options: dict) -> bytes:

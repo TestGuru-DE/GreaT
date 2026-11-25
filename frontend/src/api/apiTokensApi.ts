@@ -1,6 +1,7 @@
 ﻿// REQ-6012: API-Token-Verwaltung - API-Client
 
 import client from './client';
+export { expiresAtToDays } from '../lib/tokenExpiry';
 
 export interface ApiToken {
   id: number;
@@ -16,9 +17,13 @@ export interface ApiToken {
 
 export interface CreateTokenRequest {
   name: string;
-  expires_at: string;
+  /** BUG A-04: Backend erwartet die Laufzeit in Tagen (1..365), kein Datum */
+  expires_in_days: number;
   scopes: string[];
+  /** BUG A-01: Admin legt Token fuer einen technischen Nutzer (api_user) an */
+  user_id?: number;
 }
+
 
 export interface CreateTokenResponse {
   token: string;
@@ -30,13 +35,13 @@ export interface CreateTokenResponse {
 }
 
 export function listTokens(): Promise<ApiToken[]> {
-  return client.get('/api/v1/api-tokens').then(r => r.data);
+  return client.get('/v1/api-tokens').then(r => r.data);
 }
 
 export function createToken(request: CreateTokenRequest): Promise<CreateTokenResponse> {
-  return client.post('/api/v1/api-tokens', request).then(r => r.data);
+  return client.post('/v1/api-tokens', request).then(r => r.data);
 }
 
 export function revokeToken(id: number): Promise<void> {
-  return client.delete(`/api/v1/api-tokens/${id}`).then(() => undefined);
+  return client.delete(`/v1/api-tokens/${id}`).then(() => undefined);
 }

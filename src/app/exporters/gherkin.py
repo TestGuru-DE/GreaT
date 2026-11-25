@@ -5,7 +5,7 @@ Sprache DE (Funktionalitaet/Szenariogrundriss/Beispiele) oder EN waehlbar.
 """
 from __future__ import annotations
 
-from .base import BaseExporter
+from .base import BaseExporter, single_line
 
 
 class GherkinExporter(BaseExporter):
@@ -38,9 +38,9 @@ class GherkinExporter(BaseExporter):
     def render_header(self, project_name: str, gen_id: str, strategy: str,
                       date: str, version: str) -> str:
         return (
-            f"# G.R.E.A.T. Export | Projekt: {project_name} | "
-            f"Generierung: {gen_id} | Strategie: {strategy} | "
-            f"Datum: {date} | Version: {version}\n"
+            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
+            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
+            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
         )
 
     def render(self, generation_view: dict, options: dict) -> bytes:
@@ -131,6 +131,10 @@ def gherkin_escape_value(value: str) -> str:
     Pipe: \| escapen
     Anführungszeichen: '...' umschließen
     """
+    # BUG A-02: Zeilenumbrueche als \n (Gherkin-Tabellen-Escape), sonstige
+    # Steuerzeichen entfernen, damit keine neue Gherkin-Zeile entsteht.
+    value = value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
+    value = single_line(value)
     escaped = value.replace("|", "\\|")
     if '"' in escaped or "'" in escaped:
         escaped = '"' + escaped.replace('"', '\\"') + '"'

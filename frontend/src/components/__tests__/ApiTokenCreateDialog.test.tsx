@@ -37,6 +37,12 @@ vi.mock("react-i18next", () => ({
   }),
 }));
 
+// BUG A-01: Dialog nutzt Auth-Store und Benutzer-API (Besitzer-Auswahl fuer Admins)
+vi.mock("../../store/authStore", () => ({
+  useAuthStore: (selector: (s: unknown) => unknown) => selector({ user: { role: "editor" } }),
+}));
+vi.mock("../../api/usersApi", () => ({ usersApi: { list: vi.fn().mockResolvedValue([]) } }));
+
 // Mock apiTokensApi
 vi.mock("../../api/apiTokensApi", () => ({
   listTokens: vi.fn(),
@@ -109,6 +115,8 @@ describe("ApiTokenCreateDialog - REQ-6012", () => {
         expect.objectContaining({
           name: "Jenkins Nightly",
           scopes: expect.arrayContaining(["projects:read"]),
+          // BUG A-04: Backend erwartet expires_in_days (Vorschlag 90 Tage)
+          expires_in_days: 90,
         })
       );
     });

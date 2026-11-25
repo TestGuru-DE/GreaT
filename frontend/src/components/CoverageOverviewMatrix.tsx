@@ -1,6 +1,7 @@
 // REQ-6008: CoverageOverviewMatrix — Uebersicht aller Kategorienpaare als Kacheln
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { coverageApi, type CoverageResponse, type UncoveredTuple } from "../api/client";
 import CoverageHeatmap from "./CoverageHeatmap";
 
@@ -19,6 +20,7 @@ function getCoverageColor(pct: number): string {
 }
 
 export default function CoverageOverviewMatrix({ generationId }: CoverageOverviewMatrixProps) {
+  const { t } = useTranslation();
   const [coverage, setCoverage] = useState<CoverageResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
       const data = await coverageApi.getCoverage(generationId, 2);
       setCoverage(data);
     } catch (e: any) {
-      setError(e.message || "Fehler beim Laden der Abdeckungsdaten");
+      setError(e.message || t("coverage.loadError"));
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
     }
   };
 
-  if (loading) return <div className="coverage-overview-loading">Lade Abdeckungsdaten...</div>;
+  if (loading) return <div className="coverage-overview-loading">{t("coverage.loadingOverview")}</div>;
   if (error) return <div className="coverage-overview-error">{error}</div>;
   if (!coverage) return null;
 
@@ -84,18 +86,18 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
   const hasGaps = coverage_2wise.percentage < 100 && coverage_2wise.possible > 0;
 
   return (
-    <div className="coverage-overview" role="region" aria-label="Abdeckungsuebersicht">
+    <div className="coverage-overview" role="region" aria-label={t("coverage.overviewAria")}>
       {/* Summary */}
       <div className="coverage-overview-summary">
         <div className="coverage-overview-stat">
-          <span className="coverage-overview-stat-label">1-wise:</span>
+          <span className="coverage-overview-stat-label">{t("coverage.oneWise")}</span>
           <span className="coverage-overview-stat-value">{coverage_1wise.percentage}%</span>
           <span className="coverage-overview-stat-detail">
             ({coverage_1wise.covered}/{coverage_1wise.possible})
           </span>
         </div>
         <div className="coverage-overview-stat">
-          <span className="coverage-overview-stat-label">2-wise:</span>
+          <span className="coverage-overview-stat-label">{t("coverage.twoWise")}</span>
           <span className="coverage-overview-stat-value">{coverage_2wise.percentage}%</span>
           <span className="coverage-overview-stat-detail">
             ({coverage_2wise.covered}/{coverage_2wise.possible})
@@ -103,7 +105,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
         </div>
         {coverage_2wise.excluded_by_rules > 0 && (
           <div className="coverage-overview-stat">
-            <span className="coverage-overview-stat-label">Ausgeschlossen:</span>
+            <span className="coverage-overview-stat-label">{t("coverage.excluded")}</span>
             <span className="coverage-overview-stat-value">{coverage_2wise.excluded_by_rules}</span>
           </div>
         )}
@@ -176,7 +178,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
           {/* Uncovered Tuples List */}
           {showUncovered && uncoveredTuples.length > 0 && (
             <div className="coverage-overview-uncovered" role="list">
-              <h4>Nicht abgedeckte 2-wise-Tupel ({uncoveredTuples.length})</h4>
+              <h4>{t("coverage.uncoveredTuples", { count: uncoveredTuples.length })}</h4>
               <div className="coverage-overview-uncovered-list" role="list">
                 {uncoveredTuples.slice(0, 50).map((tuple, idx) => (
                   <div key={idx} className="coverage-overview-uncovered-item" role="listitem">

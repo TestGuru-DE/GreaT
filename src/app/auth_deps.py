@@ -18,6 +18,15 @@ from .models.auth import User, ApiToken
 # REQ-4028 AK-2: maschinenlesbarer Code fuer die Passwortwechsel-Sperre
 PASSWORD_CHANGE_REQUIRED = "password_change_required"
 
+
+def password_change_required(user: User) -> bool:
+    """BUG A-01: Passwortwechsel-Pflicht (REQ-4028) gilt nicht fuer api_user.
+
+    Technische Nutzer koennen sich nicht per Oberflaeche anmelden (REQ-6012) und
+    ihr Passwort daher nie aendern; die Pflicht wuerde ihre Tokens dauerhaft sperren.
+    """
+    return bool(user.default_password_active) and user.role != "api_user"
+
 # REQ-6012: API-Token-Scope-Fehlercode
 INSUFFICIENT_SCOPE = "insufficient_scope"
 
@@ -207,7 +216,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         HTTPException 403: password_change_required (REQ-4028)
     """
     user = _load_authenticated_user(request, db)
-    if user.default_password_active:
+    if password_change_required(user):  # BUG A-01
         raise HTTPException(status_code=403, detail=PASSWORD_CHANGE_REQUIRED)
     return user
 

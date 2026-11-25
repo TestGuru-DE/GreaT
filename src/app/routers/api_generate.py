@@ -15,7 +15,7 @@ from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer, require_scope
 from ..api_types import DbId
 from .. import models, schemas
-from ..config import get_max_testcases, get_max_combinations, get_generation_timeout  # REQ-4018: konfigurierbare Obergrenze
+from ..config import get_max_testcases, get_max_combinations, get_generation_timeout, get_max_tuples  # REQ-4018: konfigurierbare Obergrenze
 from ..export_utils import escape_spreadsheet_value  # B-05: Formel-Injection verhindern
 from combinatorics.utils import compute_cartesian_size
 from ..services import (
@@ -116,6 +116,17 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
 
     return RuleEngine(engine_rules)
 
+def _timeout_error(timeout) -> HTTPException:
+    """BUG B-03 / N-03: Einheitliche Antwort bei ueberschrittenem Zeitbudget (422 + Code)."""
+    return HTTPException(
+        status_code=422,
+        detail={
+            "code": "generation_timeout",
+            "detail": f"Die Generierung hat das Zeitlimit von {timeout} s ueberschritten. Bitte Modell verkleinern oder andere Strategie waehlen.",
+        },
+    )
+
+
 @router.post("/projects/{pid}/generate", response_model=schemas.GenerateResponse, dependencies=[Depends(require_writer), Depends(require_scope("generate"))])
 def generate(
     pid: DbId,
@@ -169,73 +180,97 @@ def generate(
     if effective_strategy == "all" or (effective_strategy == "t_wise" and t_strength >= cat_count):
         max_comb = get_max_combinations()
         if total_possible > max_comb:
+            # BUG N-03: 422 mit stabilem Code statt 409 (409 ist fuer Konflikte reserviert)
             raise HTTPException(
-                status_code=409,
-                detail=f"Kartesisches Produkt ({total_possible}) ueberschreitet GREAT_MAX_COMBINATIONS ({max_comb}). Strategie oder Kategorien reduzieren.",
+                status_code=422,
+                detail={
+                    "code": "too_many_combinations",
+                    "detail": f"Kartesisches Produkt ({total_possible}) ueberschreitet GREAT_MAX_COMBINATIONS ({max_comb}). Strategie oder Kategorien reduzieren.",
+                },
             )
+
+    # BUG B-03: Groessenpruefung auch fuer t-Tupel (T-Wise/Pairwise), bevor gerechnet wird.
+    # Begrenzt Laufzeit und Speicher (Abdeckungsziel wird als Tupelmenge aufgebaut).
+    if effective_strategy in ("t_wise", "pairwise", "orthogonal"):
+        from combinatorics.budget import count_t_tuples
+        t_eff = 2 if effective_strategy != "t_wise" else t_strength
+        if t_eff < cat_count:
+            n_tuples = count_t_tuples(catmap, t_eff)
+            max_tuples = get_max_tuples()
+            if n_tuples > max_tuples:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "code": "too_many_combinations",
+                        "detail": f"Zu viele {t_eff}-Tupel ({n_tuples}) fuer Staerke {t_eff}. Maximal erlaubt: {max_tuples} (GREAT_MAX_TUPLES). Bitte Staerke oder Werte reduzieren.",
+                    },
+                )
 
     # Timeout (deadline wird direkt an generate_cases() weitergegeben)
     timeout = get_generation_timeout()
     deadline = _time.time() + timeout
 
-    # REQ-3005/REQ-3040: Regeln VOR der Generierung an die Strategien uebergeben
-    rule_engine = None
-    if payload.apply_rules:
-        rule_engine = _build_rule_engine(db, pid)
+    # BUG B-03: Zeitbudget gilt fuer die gesamte Generierung inkl. Seeds und Regelanwendung.
+    from combinatorics.budget import BudgetExceeded, time_budget
+    try:
+        with time_budget(deadline):
+            # REQ-3005/REQ-3040: Regeln VOR der Generierung an die Strategien uebergeben
+            rule_engine = None
+            if payload.apply_rules:
+                rule_engine = _build_rule_engine(db, pid)
 
-    # REQ-6009: Seed-Generierung oder normale Generierung
-    seeds_count = 0
-    supplemented_count = 0
-    coverage_before = 0.0
-    coverage_after = 0.0
-    warnings: list[str] = []
-    rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
+            # REQ-6009: Seed-Generierung oder normale Generierung
+            seeds_count = 0
+            supplemented_count = 0
+            coverage_before = 0.0
+            coverage_after = 0.0
+            warnings: list[str] = []
+            rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
 
-    if payload.seed_set_id or payload.seeds:
-        # Seed-Generierung
-        from ..services_seed import generate_with_seeds
+            if payload.seed_set_id or payload.seeds:
+                # Seed-Generierung
+                from ..services_seed import generate_with_seeds
 
-        cases, report, seed_warnings = generate_with_seeds(
-            db, pid, payload.seed_set_id, payload.seeds,
-            payload.strategy, t_strength, rule_engine, deadline,
-        )
-        warnings.extend(seed_warnings)
-        seeds_count = report.seeds_count
-        supplemented_count = report.supplemented_count
-        coverage_before = report.coverage_before
-        coverage_after = report.coverage_after
-    else:
-        # Normale Generierung
-        cases = generate_cases(
-            catmap, payload.strategy, db=db, project_id=pid,
-            t_strength=t_strength, rule_engine=rule_engine, deadline=deadline,
-        )
+                cases, report, seed_warnings = generate_with_seeds(
+                    db, pid, payload.seed_set_id, payload.seeds,
+                    payload.strategy, t_strength, rule_engine, deadline,
+                )
+                warnings.extend(seed_warnings)
+                seeds_count = report.seeds_count
+                supplemented_count = report.supplemented_count
+                coverage_before = report.coverage_before
+                coverage_after = report.coverage_after
+            else:
+                # Normale Generierung
+                cases = generate_cases(
+                    catmap, payload.strategy, db=db, project_id=pid,
+                    t_strength=t_strength, rule_engine=rule_engine, deadline=deadline,
+                )
 
-        # Nach Generierung pruefen, ob Timeout erreicht wurde
-        if _time.time() > deadline:
-            raise HTTPException(
-                status_code=408,
-                detail=f"Generierung hat Timeout von {timeout}s ueberschritten.",
-            )
+                # Nach Generierung pruefen, ob Timeout erreicht wurde
+                if _time.time() > deadline:
+                    raise _timeout_error(timeout)
 
-        # B-20/B-21: Regeln anwenden
-        if payload.apply_rules:
-            cases, unreachable_warnings = apply_business_rules(pid, cases, db, catmap=catmap)
-            warnings.extend(unreachable_warnings)
-        elif rule_count > 0:
-            rule_word = "Regeln" if rule_count > 1 else "Regel"
-            warnings.append(f"Das Projekt hat {rule_count} {rule_word}, sie wurden nicht angewendet (apply_rules=false).")
-        else:
-            if rule_engine is not None:
-                cases = rule_engine.apply(cases)
+                # B-20/B-21: Regeln anwenden
+                if payload.apply_rules:
+                    cases, unreachable_warnings = apply_business_rules(pid, cases, db, catmap=catmap)
+                    warnings.extend(unreachable_warnings)
+                elif rule_count > 0:
+                    rule_word = "Regeln" if rule_count > 1 else "Regel"
+                    warnings.append(f"Das Projekt hat {rule_count} {rule_word}, sie wurden nicht angewendet (apply_rules=false).")
+                else:
+                    if rule_engine is not None:
+                        cases = rule_engine.apply(cases)
 
-        # REQ-3034: Risiko-Sortierung
-        category_risk_map = load_categories_values_weighted(db, pid)
-        cases = sort_by_risk_descending(cases, category_risk_map)
+                # REQ-3034: Risiko-Sortierung
+                category_risk_map = load_categories_values_weighted(db, pid)
+                cases = sort_by_risk_descending(cases, category_risk_map)
 
-        # BUG-5/REQ-3018: Fehlerwert-Sortierung
-        error_values = load_error_values(db, pid)
-        cases = sort_testcases_error_last(cases, error_values)
+                # BUG-5/REQ-3018: Fehlerwert-Sortierung
+                error_values = load_error_values(db, pid)
+                cases = sort_testcases_error_last(cases, error_values)
+    except BudgetExceeded:
+        raise _timeout_error(timeout)
 
     # REQ-4018: Maximale Anzahl Testfaelle respektieren.
     effective_limit = payload.limit if payload.limit is not None else get_max_testcases()
@@ -893,7 +928,9 @@ def export_generation_format(
         "deterministic": deterministic,
     }
 
-    content = exporter.render(generation_view, options)
+    # BUG A-02: Namen einzeilig machen, bevor sie in Code-/Zeilenformate gelangen
+    from ..exporters.base import sanitize_generation_view
+    content = exporter.render(sanitize_generation_view(generation_view), options)
     return Response(
         content=content,
         media_type=exporter.media_type,
