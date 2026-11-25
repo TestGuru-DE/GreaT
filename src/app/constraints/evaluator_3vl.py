@@ -407,37 +407,33 @@ def _check_with_sampling(
     # Stichprobengroesse (max 1000, mindestens 100)
     sample_size = min(max(100, total_combinations // 10), 1000)
 
-    # Deterministische Stichprobe: gleichmaessig ueber den Raum verteilen
-    step = max(1, total_combinations // sample_size)
+    # BUG K-01: Echte Zufallsstichprobe (fester Seed, deterministisch) statt Aufzaehlung
+    # des gesamten Kombinationsraums. Vorher wurde itertools.product komplett
+    # durchlaufen (z. B. 10^12 bei 12 x 10) und der Server blockierte dauerhaft.
+    import random
+    rng = random.Random(6001)
 
     start_time = time.monotonic()
     reachable_values: Dict[int, set] = {cid: set() for cid in cat_ids}
     valid_count = 0
     checked = 0
 
-    # Iteriere mit Schrittweite durch den Kombinationsraum
-    for combo in itertools.product(*cat_values):
-        if (checked % step) == 0:
-            assignment = dict(zip(cat_ids, combo))
-
-            elapsed = time.monotonic() - start_time
-            if elapsed > _CHECK_TIMEOUT:
-                # Timeout erreicht
-                warnings.append(
-                    f"Widerspruchspruefung abgebrochen (Timeout nach {int(elapsed)}s). "
-                    f"Geprueft: {checked} von {total_combinations} Kombinationen (Stichprobe)."
-                )
-                break
-
-            if check_all_constraints(all_constraints, assignment):
-                valid_count += 1
-                for cid, vid in zip(cat_ids, combo):
-                    reachable_values[cid].add(vid)
-
-        checked += 1
-        # Fruhes Beenden wenn genug Stichproben
-        if checked // step >= sample_size:
+    for _ in range(sample_size):
+        elapsed = time.monotonic() - start_time
+        if elapsed > _CHECK_TIMEOUT:
+            warnings.append(
+                f"Widerspruchspruefung abgebrochen (Timeout nach {int(elapsed)}s). "
+                f"Geprueft: {checked} von {total_combinations} Kombinationen (Stichprobe)."
+            )
             break
+
+        combo = tuple(rng.choice(values) for values in cat_values)
+        assignment = dict(zip(cat_ids, combo))
+        if check_all_constraints(all_constraints, assignment):
+            valid_count += 1
+            for cid, vid in zip(cat_ids, combo):
+                reachable_values[cid].add(vid)
+        checked += 1
 
     if valid_count == 0 and checked < total_combinations:
         # Keine gueltige Kombination in Stichprobe -> Warnung mit Hinweis

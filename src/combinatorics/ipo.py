@@ -16,6 +16,7 @@ from __future__ import annotations
 import time
 from itertools import product as itertools_product
 from typing import Dict, List, Optional, Set, Tuple
+from .budget import checkpoint  # BUG B-03
 
 
 def _check_deadline(deadline: Optional[float]) -> bool:
@@ -58,7 +59,9 @@ def generate(
     k1, k2 = keys[0], keys[1]
     suite: List[Dict[str, str]] = []
     for v1 in categories[k1]:
+        checkpoint()  # BUG B-03: Zeitbudget
         for v2 in categories[k2]:
+            checkpoint()  # BUG B-03: Zeitbudget
             tc = {k1: v1, k2: v2}
             if rule_engine is not None:
                 if not rule_engine.is_combination_valid(tc):
@@ -71,6 +74,7 @@ def generate(
 
     # --- Phase 2: Jede weitere Kategorie hinzufügen ---
     for i in range(2, n):
+        checkpoint()  # BUG B-03: Zeitbudget
         if _check_deadline(deadline):
             return suite
 
@@ -80,6 +84,7 @@ def generate(
         # 2a: Bestehende Testfaelle mit erstem Wert der neuen Kategorie initialisieren
         first_val = new_values[0]
         for tc in suite:
+            checkpoint()  # BUG B-03: Zeitbudget
             tc[new_cat] = first_val
             if rule_engine is not None:
                 tc = rule_engine.apply_dependency_rules(tc)
@@ -111,6 +116,7 @@ def _ipo_g_add_category(
     existing_cats = [c for c in active_cats if c != new_cat]
 
     for new_val in new_values:
+        checkpoint()  # BUG B-03: Zeitbudget
         if _check_deadline(deadline):
             return suite
 
@@ -118,6 +124,7 @@ def _ipo_g_add_category(
         uncovered = _find_uncovered_pairs(suite, existing_cats, categories, new_cat, new_val)
 
         for ec, ev in uncovered:
+            checkpoint()  # BUG B-03: Zeitbudget
             if _check_deadline(deadline):
                 return suite
 
@@ -146,6 +153,7 @@ def _create_new_testcase(
     # Finde existierenden Testfall mit fixed_cat=fixed_val als Vorlage
     template = None
     for tc in suite:
+        checkpoint()  # BUG B-03: Zeitbudget
         if tc.get(fixed_cat) == fixed_val:
             template = tc
             break
@@ -154,6 +162,7 @@ def _create_new_testcase(
         # Kein passender Vorlagen-Testfall; erstelle von Grund auf
         template = {}
         for c in active_cats:
+            checkpoint()  # BUG B-03: Zeitbudget
             template[c] = categories[c][0]
         template[fixed_cat] = fixed_val
 
@@ -163,6 +172,7 @@ def _create_new_testcase(
 
     # Fuer alle anderen Kategorien: erster Wert (wenn nicht im Template)
     for c in active_cats:
+        checkpoint()  # BUG B-03: Zeitbudget
         if c not in new_tc:
             new_tc[c] = categories[c][0]
 
@@ -189,14 +199,18 @@ def _find_uncovered_pairs(
     noch nicht vorkommen."""
     covered: Set[Tuple[str, str]] = set()
     for tc in suite:
+        checkpoint()  # BUG B-03: Zeitbudget
         if tc.get(new_cat) == new_val:
             for ec in existing_cats:
+                checkpoint()  # BUG B-03: Zeitbudget
                 if ec in tc:
                     covered.add((ec, tc[ec]))
 
     uncovered: List[Tuple[str, str]] = []
     for ec in existing_cats:
+        checkpoint()  # BUG B-03: Zeitbudget
         for ev in categories[ec]:
+            checkpoint()  # BUG B-03: Zeitbudget
             if (ec, ev) not in covered:
                 uncovered.append((ec, ev))
 
@@ -216,8 +230,10 @@ def _find_valid_extension(
     other_cats = [c for c in active_cats if c not in (fixed_cat, new_cat)]
 
     for combo in itertools_product(*[categories[c] for c in other_cats]):
+        checkpoint()  # BUG B-03: Zeitbudget
         tc = {fixed_cat: fixed_val, new_cat: new_val}
         for c, v in zip(other_cats, combo):
+            checkpoint()  # BUG B-03: Zeitbudget
             tc[c] = v
         if rule_engine.is_combination_valid(tc):
             return tc
@@ -230,6 +246,7 @@ def _deduplicate(testcases: List[Dict[str, str]]) -> List[Dict[str, str]]:
     seen: Set[Tuple] = set()
     result: List[Dict[str, str]] = []
     for tc in testcases:
+        checkpoint()  # BUG B-03: Zeitbudget
         key = tuple(sorted(tc.items()))
         if key not in seen:
             seen.add(key)

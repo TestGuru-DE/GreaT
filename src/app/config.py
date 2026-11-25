@@ -156,6 +156,21 @@ def get_max_combinations() -> int:
     return value if value > 0 else GREAT_MAX_COMBINATIONS_DEFAULT
 
 
+# BUG B-03: Obergrenze fuer die Anzahl abzudeckender t-Tupel (T-Wise/Pairwise).
+# Begrenzt Rechenzeit und Speicher, bevor die Generierung startet.
+GREAT_MAX_TUPLES_DEFAULT: int = 1_000_000
+
+
+def get_max_tuples() -> int:
+    """Liefert die Obergrenze fuer t-Tupel; ungueltige Werte -> Default."""
+    raw = os.getenv("GREAT_MAX_TUPLES", str(GREAT_MAX_TUPLES_DEFAULT))
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return GREAT_MAX_TUPLES_DEFAULT
+    return value if value > 0 else GREAT_MAX_TUPLES_DEFAULT
+
+
 # Maximale Backup-Dateigroesse in MB (Default 50 MB)
 GREAT_MAX_BACKUP_MB: int = int(os.getenv("GREAT_MAX_BACKUP_MB", "50"))
 

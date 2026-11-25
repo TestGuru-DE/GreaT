@@ -289,9 +289,19 @@ def api_gap_fill(
 
     rule_engine = _build_rule_engine(db, gen.project_id)
 
-    new_tcs, report, warnings = gap_fill_generation(
-        db, gen.project_id, gid, strategy, t_strength, rule_engine
-    )
+    # BUG B-03: Gleiches Zeitbudget wie bei der normalen Generierung
+    import time as _time
+    from combinatorics.budget import BudgetExceeded, time_budget
+    from ..config import get_generation_timeout
+    from .api_generate import _timeout_error
+    timeout = get_generation_timeout()
+    try:
+        with time_budget(_time.time() + timeout):
+            new_tcs, report, warnings = gap_fill_generation(
+                db, gen.project_id, gid, strategy, t_strength, rule_engine
+            )
+    except BudgetExceeded:
+        raise _timeout_error(timeout)
 
     # Neue Generierung speichern
     new_gen = models.Generation(

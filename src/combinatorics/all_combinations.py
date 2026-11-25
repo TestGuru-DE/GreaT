@@ -1,10 +1,12 @@
 import itertools
+from .budget import checkpoint  # BUG B-03
 
 def deduplicate_testcases(testcases: list[dict]) -> list[dict]:
     """Entfernt Duplikate aus Testfall-Liste (BUG-4 Fix)."""
     seen = set()
     result = []
     for tc in testcases:
+        checkpoint()  # BUG B-03: Zeitbudget
         key = tuple(sorted(tc.items()))
         if key not in seen:
             seen.add(key)

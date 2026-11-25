@@ -11,6 +11,7 @@ Constraint-aware über RuleEngine: ungültige Tuples werden aus Coverage-Ziel en
 """
 from itertools import combinations, product
 from typing import Dict, List, Optional, Set, Tuple
+from .budget import checkpoint  # BUG B-03
 
 
 def _deduplicate(testcases: list[dict]) -> list[dict]:
@@ -18,6 +19,7 @@ def _deduplicate(testcases: list[dict]) -> list[dict]:
     seen = set()
     result = []
     for tc in testcases:
+        checkpoint()  # BUG B-03: Zeitbudget
         key = tuple(sorted(tc.items()))
         if key not in seen:
             seen.add(key)
@@ -74,10 +76,12 @@ def _generate_each_choice(
     
     # Greedy: Baue Testfälle bis alle Werte abgedeckt
     for i in range(max_len * 2):  # Safety-Factor für Constraints
+        checkpoint()  # BUG B-03: Zeitbudget
         tc = {}
         
         # Wähle für jede Kategorie einen noch nicht abgedeckten Wert (wenn möglich)
         for cat in cat_names:
+            checkpoint()  # BUG B-03: Zeitbudget
             vals = categories[cat]
             uncovered = [v for v in vals if v not in covered_values[cat]]
             if uncovered:
@@ -96,6 +100,7 @@ def _generate_each_choice(
         
         # Markiere abgedeckte Werte
         for cat in cat_names:
+            checkpoint()  # BUG B-03: Zeitbudget
             covered_values[cat].add(tc[cat])
         
         testcases.append(tc)
@@ -116,6 +121,7 @@ def _generate_cartesian(
     testcases = []
     
     for values in product(*[categories[cat] for cat in cat_names]):
+        checkpoint()  # BUG B-03: Zeitbudget
         tc = {cat: val for cat, val in zip(cat_names, values)}
         
         # Constraint-Check
@@ -150,6 +156,7 @@ def _generate_t_wise_greedy(
     iteration = 0
     
     while uncovered_tuples and iteration < max_iterations:
+        checkpoint()  # BUG B-03: Zeitbudget
         iteration += 1
         
         # Finde besten Testfall (maximaler Coverage-Gewinn)
@@ -186,10 +193,12 @@ def _build_coverage_goal(
     
     # Für jede Kombination von t Kategorien
     for cat_subset in combinations(cat_names, t):
+        checkpoint()  # BUG B-03: Zeitbudget
         # Für jede Wert-Kombination dieser Kategorien
         value_lists = [categories[cat] for cat in cat_subset]
         
         for value_tuple in product(*value_lists):
+            checkpoint()  # BUG B-03: Zeitbudget
             # Constraint-Check
             if rule_engine is not None:
                 partial = {cat: val for cat, val in zip(cat_subset, value_tuple)}
@@ -212,6 +221,7 @@ def _extract_covered_tuples(
     covered = set()
     
     for cat_subset in combinations(cat_names, t):
+        checkpoint()  # BUG B-03: Zeitbudget
         # Baue Tuple aus Testfall
         value_tuple = tuple(testcase[cat] for cat in cat_subset)
         tuple_key = cat_subset + value_tuple
@@ -254,6 +264,7 @@ def _find_best_testcase(
             ]
     
     for tc in candidates:
+        checkpoint()  # BUG B-03: Zeitbudget
         if rule_engine is not None:
             tc = rule_engine.apply_dependency_rules(tc)
         
@@ -272,6 +283,7 @@ def _is_large_space(categories: Dict[str, List[str]]) -> bool:
     """Prüft ob Suchraum zu groß für vollständige Enumeration ist."""
     size = 1
     for vals in categories.values():
+        checkpoint()  # BUG B-03: Zeitbudget
         size *= len(vals)
         if size > 10000:
             return True
@@ -292,6 +304,7 @@ def _generate_candidate_sample(
     attempt = 0
     
     while len(candidates) < sample_size and attempt < max_attempts:
+        checkpoint()  # BUG B-03: Zeitbudget
         attempt += 1
         
         # Random Assignment
@@ -316,8 +329,10 @@ def _find_valid_alternative(
     """Sucht gültige Alternative für ungültigen Testfall."""
     # Variiere jede Kategorie einzeln
     for cat_vary in cat_names:
+        checkpoint()  # BUG B-03: Zeitbudget
         original_val = tc[cat_vary]
         for alt_val in categories[cat_vary]:
+            checkpoint()  # BUG B-03: Zeitbudget
             if alt_val == original_val:
                 continue
             

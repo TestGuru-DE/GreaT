@@ -14,6 +14,7 @@
 #   Sei W_i der Pool eines Werts mit risk_weight r_i:
 #   P(W_i in TC_j) ≈ r_i / Σr_k – proportional zur Risikogewichtung.
 from __future__ import annotations
+from .budget import checkpoint  # BUG B-03
 
 
 def generate(categories: dict[str, list[tuple[str, int]]]) -> list[dict[str, str]]:
@@ -33,8 +34,10 @@ def generate(categories: dict[str, list[tuple[str, int]]]) -> list[dict[str, str
     # Expandierten Pool je Kategorie aufbauen
     expanded: dict[str, list[str]] = {}
     for cat_name, weighted_values in categories.items():
+        checkpoint()  # BUG B-03: Zeitbudget
         pool: list[str] = []
         for value, weight in weighted_values:
+            checkpoint()  # BUG B-03: Zeitbudget
             pool.extend([value] * max(1, weight))
         expanded[cat_name] = pool
 
@@ -43,8 +46,10 @@ def generate(categories: dict[str, list[tuple[str, int]]]) -> list[dict[str, str
 
     testcases: list[dict[str, str]] = []
     for i in range(max_len):
+        checkpoint()  # BUG B-03: Zeitbudget
         tc: dict[str, str] = {}
         for cat_name, pool in expanded.items():
+            checkpoint()  # BUG B-03: Zeitbudget
             tc[cat_name] = pool[i % len(pool)]
         testcases.append(tc)
 
@@ -62,10 +67,12 @@ def compute_testcase_risk(testcase: dict[str, str], category_risk_map: dict[str,
     """
     total = 0.0
     for cat_name, value in testcase.items():
+        checkpoint()  # BUG B-03: Zeitbudget
         weighted_values = category_risk_map.get(cat_name)
         if not weighted_values:
             continue
         for candidate_value, weight in weighted_values:
+            checkpoint()  # BUG B-03: Zeitbudget
             if candidate_value == value:
                 total += weight
                 break
