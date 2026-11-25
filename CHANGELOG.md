@@ -6,6 +6,39 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ---
 
+## [1.11.2] – 2026-11-25 – Bugfixes: Sicherheit, Stabilitaet, Pairwise, Grenzwertanalyse
+
+### 🔒 Sicherheit
+- **Code-Injection ueber Exporte verhindert (A-02):** Projekt-, Kategorie- und Seed-Namen mit Zeilenumbruechen oder Steuerzeichen werden abgelehnt (422). Alle Exporter (pytest, Robot, Gherkin, Markdown, CSV) schreiben Namen einzeilig und maskieren Werte; generierter Testcode kann keinen fremden Code mehr enthalten.
+- **Server-Blockade verhindert (B-03, K-01, K-03, N-03):** Zeitbudget fuer alle Generierungsstrategien und die Constraint-Pruefung. Zu grosse Aufgaben liefern 422 `too_many_combinations` bzw. `generation_timeout`, statt CPU und Speicher zu blockieren. Obergrenze per `GREAT_MAX_TUPLES` (Default 1.000.000).
+
+### 🐛 Bugfixes
+- **Pairwise (B-02, K-03):** Neuer IPOG-Algorithmus erzeugt minimale Suiten mit 100 % Paarabdeckung (z. B. 3×3 → 9, 10×10 → 169, 20×10 → 223 statt 15.571 Testfaellen).
+- **Rolle api_user nutzbar (A-01):** Admins legen API-Tokens fuer technische Nutzer an (`user_id`); fuer `api_user` gilt keine Passwortwechsel-Pflicht. Ungueltige Scopes liefern 422 statt 500.
+- **Grenzwertanalyse Datum/Uhrzeit/Stringlaenge (C-02, C-06):** Dialog prueft passend zum Datentyp, bietet Format, Schrittweite, Zeichenvorrat und Zusatzwerte; Werte werden mit Typ `date`/`time` gespeichert.
+- **Vertragsfehler Frontend/Backend (R-02, C-01, C-03, A-04):** Zahlen-BVA im Dialog, Stringlaengen-Ergebnis, API-Token-Pfade und Ablaufdatum.
+- **Generierungshistorie (R-03):** `GET /api/projects/{id}/generations` liefert wieder eine Liste (wie dokumentiert).
+- **Abdeckungsanzeige (R-06):** Texte uebersetzt (de/en).
+
+### 🧪 Tests & Doku
+- Backend- und Frontend-Testsuite vollstaendig gruen (CSV-Golden-Files mit CRLF, Test-DB-Isolation repariert); neue Tests fuer alle Fixes.
+- REQ-4028 AK-11 (api_user-Ausnahme), Handbuch zur Rolle api_user.
+
+### ⚠️ Hinweise fuer API-Nutzer
+- `GET /api/projects/{id}/generations` liefert ein JSON-Array (in 1.11.1 kurzzeitig `{"generations": [...]}`).
+- Neue 422-Codes: `too_many_combinations`, `generation_timeout`.
+- Namen mit Zeilenumbruch/Tab/Steuerzeichen werden abgelehnt (Werte duerfen sie weiterhin enthalten).
+
+---
+
+## [1.11.1] – 2026-11-24 – Bugfixes Klassifikationsbaum und Migration
+
+### 🐛 Bugfixes
+- **REQ-6006:** Testfallmatrix im Klassifikationsbaum – Generierungsauswahl, Laden der Testfaelle, Fehlerbehandlung.
+- **REQ-6009/6008/6016:** DB-Migration fuer `seed_set_id`, `coverage_meta`, `origin`, `parent_value_id`; Escaping der Tabelle `values` in SQLite.
+
+---
+
 ## [1.11.0] – 2026-11-23 – Methodik: Constraints, Coverage, Seeds, BVA, Klassifikationsbaum, Hierarchie
 
 ### ✨ Neue Features
@@ -26,6 +59,16 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - Backend: 489+ Tests (vorher ~340)
 - Frontend: 729 Tests (vorher ~527)
 - Build: TypeScript + Vite OK
+
+---
+
+## [1.10.0] – 2026-11-18 – i18n, Exporte, API-Tokens, Testmodell als Datei
+
+### ✨ Neue Features
+- **REQ-6005:** Oberflaeche auf Deutsch und Englisch, Sprachumschalter in der Navigation und auf der Login-Seite.
+- **REQ-6011:** Exporte fuer Testmanagement und Automatisierung: Gherkin (de/en), pytest, Robot Framework, JSON, Xray, TestRail, Azure DevOps, Markdown.
+- **REQ-6012:** API-Tokens (Bearer, Scopes, argon2id) fuer CI und Testwerkzeuge; Token-Verwaltung in den Einstellungen.
+- **REQ-6013:** Testmodell als Datei (YAML/JSON) exportieren und importieren, mit Aenderungsvorschau.
 
 ---
 
