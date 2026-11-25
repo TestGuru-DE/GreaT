@@ -4,6 +4,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CoverageHeatmap from "../CoverageHeatmap";
+import i18n from "../../i18n";
+
+// BUG R-06: Komponente ist jetzt uebersetzt; Tests laufen mit der echten DE-Uebersetzung
+beforeEach(async () => { await i18n.changeLanguage("de"); });
 
 // Mock API
 vi.mock("../../api/client", () => ({

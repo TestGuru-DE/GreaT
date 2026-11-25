@@ -168,7 +168,7 @@
     "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
     "importExport": "Import / Export:",
     "exportBtn": "📤 Export",
-    "importBtn": "📥 Import (JSON)",
+    "importBtn": "📥 Import",
     "newCategory": "+ Create new category",
     "newCategoryPlaceholder": "Name of new category...",
     "createBtn": "Create",
@@ -180,7 +180,6 @@
     "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
     "importing": "⏳ Importing...",
     "refresh": "🔄 Refresh",
-    "importBtn": "📥 Import",
     "emptySystem": "No example data yet – click \"Import\".",
     "errorCreate": "Error creating: {{error}}",
     "errorAddValue": "Error adding: {{error}}",
@@ -756,5 +755,22 @@
     },
     "subCategory": "Sub-Category",
     "hierarchy": "Hierarchy"
+  },
+  "coverage": {
+    "loadingHeatmap": "Loading heatmap ...",
+    "loadingOverview": "Loading coverage data ...",
+    "loadError": "Failed to load coverage data",
+    "heatmapAria": "Coverage: {{a}} x {{b}}",
+    "overviewAria": "Coverage overview",
+    "cellTitle": "{{row}} + {{col}}: {{count}} test cases ({{status}})",
+    "uncovered": "✕ Not covered",
+    "gapHint": "Use <strong>Close gaps</strong> to add these combinations.",
+    "legendHigh": "Highly covered",
+    "legendLow": "Barely covered",
+    "legendExcluded": "⊘ Excluded by rule",
+    "oneWise": "1-wise:",
+    "twoWise": "2-wise:",
+    "excluded": "Excluded:",
+    "uncoveredTuples": "Uncovered 2-wise tuples ({{count}})"
   }
 }

@@ -109,6 +109,8 @@ describe("ApiTokenCreateDialog - REQ-6012", () => {
         expect.objectContaining({
           name: "Jenkins Nightly",
           scopes: expect.arrayContaining(["projects:read"]),
+          // BUG A-04: Backend erwartet expires_in_days (Vorschlag 90 Tage)
+          expires_in_days: 90,
         })
       );
     });

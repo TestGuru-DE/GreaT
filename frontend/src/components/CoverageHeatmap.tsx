@@ -2,6 +2,7 @@
 // Farbskala: Okabe-Ito (farbenblind-tauglich), Intensitaet nach count
 
 import { useState, useEffect, useCallback } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { coverageApi, type HeatmapResponse, type HeatmapCellData } from "../api/client";
 
 interface CoverageHeatmapProps {
@@ -43,6 +44,7 @@ export default function CoverageHeatmap({
   categories,
   onFilterChange,
 }: CoverageHeatmapProps) {
+  const { t } = useTranslation();
   const [heatmap, setHeatmap] = useState<HeatmapResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,12 +89,12 @@ export default function CoverageHeatmap({
     }
   };
 
-  if (loading) return <div className="coverage-heatmap-loading">Lade Heatmap...</div>;
+  if (loading) return <div className="coverage-heatmap-loading">{t("coverage.loadingHeatmap")}</div>;
   if (error) return <div className="coverage-heatmap-error">{error}</div>;
   if (!heatmap) return null;
 
   return (
-    <div className="coverage-heatmap" role="region" aria-label={`Abdeckung: ${selectedCatA} x ${selectedCatB}`}>
+    <div className="coverage-heatmap" role="region" aria-label={t("coverage.heatmapAria", { a: selectedCatA, b: selectedCatB })}>
       {/* Category Selectors */}
       {availableCategories.length >= 2 && (
         <div className="coverage-heatmap-selectors">
@@ -179,7 +181,7 @@ export default function CoverageHeatmap({
                   data-count={cell.count}
                   style={{ backgroundColor: bgColor }}
                   onClick={() => handleCellClick(row, col, cell)}
-                  title={`${row} + ${col}: ${cell.count} Testfaelle (${cell.status})`}
+                  title={t("coverage.cellTitle", { row, col, count: cell.count, status: cell.status })}
                   role="gridcell"
                   tabIndex={0}
                 >
@@ -194,8 +196,8 @@ export default function CoverageHeatmap({
       {/* Gap hint */}
       {showGapHint && (
         <div className="coverage-heatmap-gap-hint" role="alert">
-          <p>✕ Nicht abgedeckt</p>
-          <p>Mit <strong>REQ-6009 Lücken schließen</strong> koennen diese Kombinationen ergaenzt werden.</p>
+          <p>{t("coverage.uncovered")}</p>
+          <p><Trans i18nKey="coverage.gapHint" components={{ strong: <strong /> }} /></p>
         </div>
       )}
 
@@ -203,19 +205,19 @@ export default function CoverageHeatmap({
       <div className="coverage-heatmap-legend" role="definition">
         <div className="coverage-heatmap-legend-item">
           <span className="coverage-heatmap-legend-swatch" style={{ backgroundColor: getCellColor(maxCount, maxCount) }} />
-          <span>Hoch abgedeckt</span>
+          <span>{t("coverage.legendHigh")}</span>
         </div>
         <div className="coverage-heatmap-legend-item">
           <span className="coverage-heatmap-legend-swatch" style={{ backgroundColor: getCellColor(1, maxCount) }} />
-          <span>Gering abgedeckt</span>
+          <span>{t("coverage.legendLow")}</span>
         </div>
         <div className="coverage-heatmap-legend-item">
           <span className="coverage-heatmap-legend-swatch" style={{ backgroundColor: getUncoveredColor() }} />
-          <span>✕ Nicht abgedeckt</span>
+          <span>{t("coverage.uncovered")}</span>
         </div>
         <div className="coverage-heatmap-legend-item">
           <span className="coverage-heatmap-legend-swatch" style={{ backgroundColor: getExcludedColor() }} />
-          <span>⊘ Durch Regel ausgeschlossen</span>
+          <span>{t("coverage.legendExcluded")}</span>
         </div>
       </div>
     </div>

@@ -168,7 +168,7 @@
     "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
     "importExport": "Import / Export:",
     "exportBtn": "📤 Exportieren",
-    "importBtn": "📥 Importieren (JSON)",
+    "importBtn": "📥 Importieren",
     "newCategory": "+ Neue Kategorie anlegen",
     "newCategoryPlaceholder": "Name der neuen Kategorie...",
     "createBtn": "Anlegen",
@@ -180,7 +180,6 @@
     "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
     "importing": "⏳ Importiere...",
     "refresh": "🔄 Aktualisieren",
-    "importBtn": "📥 Importieren",
     "emptySystem": "Noch keine Beispieldaten – klicke auf \"Importieren\".",
     "errorCreate": "Fehler beim Anlegen: {{error}}",
     "errorAddValue": "Fehler beim Hinzufügen: {{error}}",
@@ -756,5 +755,22 @@
     },
     "subCategory": "Unter-Kategorie",
     "hierarchy": "Hierarchie"
+  },
+  "coverage": {
+    "loadingHeatmap": "Lade Heatmap ...",
+    "loadingOverview": "Lade Abdeckungsdaten ...",
+    "loadError": "Fehler beim Laden der Abdeckungsdaten",
+    "heatmapAria": "Abdeckung: {{a}} x {{b}}",
+    "overviewAria": "Abdeckungsübersicht",
+    "cellTitle": "{{row}} + {{col}}: {{count}} Testfälle ({{status}})",
+    "uncovered": "✕ Nicht abgedeckt",
+    "gapHint": "Mit <strong>Lücken schließen</strong> können diese Kombinationen ergänzt werden.",
+    "legendHigh": "Hoch abgedeckt",
+    "legendLow": "Gering abgedeckt",
+    "legendExcluded": "⊘ Durch Regel ausgeschlossen",
+    "oneWise": "1-wise:",
+    "twoWise": "2-wise:",
+    "excluded": "Ausgeschlossen:",
+    "uncoveredTuples": "Nicht abgedeckte 2-wise-Tupel ({{count}})"
   }
 }

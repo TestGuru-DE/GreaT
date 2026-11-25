@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createToken, CreateTokenRequest } from '../api/apiTokensApi';
+import { expiresAtToDays } from '../lib/tokenExpiry';
 
 const ALL_SCOPES = [
   'projects:read',
@@ -44,11 +45,11 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
     setLoading(true);
     setError(null);
     try {
-      const req: CreateTokenRequest = { name: name.trim(), expires_at: expiresAt, scopes };
+      const req: CreateTokenRequest = { name: name.trim(), expires_in_days: expiresAtToDays(expiresAt), scopes }; // BUG A-04
       const res = await createToken(req);
       setCreatedToken(res.token);
     } catch (e: any) {
-      setError(e.response?.data?.detail || String(e));
+      setError(e instanceof Error ? e.message : String(e)); // ApiError liefert lesbare Meldung
     } finally {
       setLoading(false);
     }

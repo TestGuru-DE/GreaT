@@ -56,7 +56,8 @@ export interface BVAExtendedResult {
 }
 
 export interface BVAExtendedResponse {
-  results: BVAExtendedResult[];
+  // BUG C-03: Backend liefert "values" (schemas.BVAExtendedResponse)
+  values: BVAExtendedResult[];
   category_id: number;
 }
 
@@ -81,9 +82,10 @@ export const bvaApi = {
   ): Promise<BVAResponse> => {
     const payload = {
       points: params.points,
+      // BUG R-02/C-01: Backend erwartet snake_case (min_val/max_val)
       ranges: params.ranges.map((range) => ({
-        minVal: range.minVal,
-        maxVal: range.maxVal,
+        min_val: range.minVal,
+        max_val: range.maxVal,
         allowed: range.allowed,
       })),
     };

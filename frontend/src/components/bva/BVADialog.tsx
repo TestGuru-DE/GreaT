@@ -144,7 +144,7 @@ export function BVADialog({
           points: config.pointsPerBoundary,
           options: extendedOptions,
         });
-        onApply(response.results.map(r => r.value));
+        onApply(response.values.map(r => r.value)); // BUG C-03
       }
       onClose();
     } catch (err) {
