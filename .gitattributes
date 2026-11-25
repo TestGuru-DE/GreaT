@@ -1,3 +1,7 @@
 # BUG: Golden-Files fuer CSV-Exporte enthalten bewusst CRLF (RFC 4180).
 # Nicht normalisieren, sonst schlagen die Golden-Tests fehl.
 tests/golden/export/*.expected -text
+
+# Startskripte: Windows-Batch braucht CRLF (Sprungmarken), Shell-Skripte LF (Shebang)
+*.bat text eol=crlf
+*.sh text eol=lf

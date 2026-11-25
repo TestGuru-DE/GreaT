@@ -80,3 +80,7 @@ test_bugmagnet.py
 .openchamber/screenshots/
 .opencode/
 AGENTS.md
+
+# Python-Umgebung (Start.sh) und Installationsmerker (Start.bat)
+.venv/
+.great-start/

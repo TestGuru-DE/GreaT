@@ -26,7 +26,7 @@ fi
 
 echo "Python $PYTHON_VERSION gefunden."
 
-# Abhängigkeiten installieren (falls noch nicht geschehen)
+# Python-Abhängigkeiten in .venv (nur neu installieren, wenn requirements.txt geändert)
 if [ ! -d ".venv" ]; then
     echo "Erstelle virtuelle Umgebung..."
     $PYTHON -m venv .venv
@@ -34,8 +34,38 @@ fi
 
 source .venv/bin/activate
 
-echo "Installiere Abhängigkeiten..."
-pip install -r requirements.txt --quiet
+if cmp -s requirements.txt .venv/.great-requirements.installed; then
+    echo "Python-Pakete sind aktuell."
+else
+    echo "Installiere Python-Pakete aus requirements.txt..."
+    pip install --disable-pip-version-check -r requirements.txt --quiet
+    cp requirements.txt .venv/.great-requirements.installed
+fi
+
+# Frontend: Pakete bei Bedarf installieren und bauen.
+# Ohne Node.js (z. B. Raspberry Pi) wird ein vorhandener Build verwendet.
+if command -v npm >/dev/null 2>&1; then
+    pushd frontend >/dev/null
+    if [ ! -d node_modules ] || ! cmp -s package-lock.json node_modules/.great-package-lock.installed; then
+        echo "Installiere Frontend-Pakete (npm ci)..."
+        npm ci --no-audit --no-fund
+        cp package-lock.json node_modules/.great-package-lock.installed
+    else
+        echo "Frontend-Pakete sind aktuell."
+    fi
+    echo "Baue Frontend..."
+    if ! npm run build; then
+        echo "FEHLER: Frontend-Build fehlgeschlagen. Tipp: frontend/node_modules löschen und erneut starten."
+        exit 1
+    fi
+    popd >/dev/null
+elif [ -f frontend/dist/index.html ]; then
+    echo "HINWEIS: npm nicht gefunden – verwende vorhandenen Frontend-Build (frontend/dist)."
+else
+    echo "FEHLER: Kein Frontend-Build vorhanden und npm nicht gefunden."
+    echo "        Node.js LTS installieren (https://nodejs.org/) oder frontend/dist von einem anderen Rechner kopieren."
+    exit 1
+fi
 
 # Port konfigurieren (REQ-4007: GREAT_PORT Umgebungsvariable)
 GREAT_PORT=${GREAT_PORT:-8000}
