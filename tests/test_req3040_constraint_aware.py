@@ -331,23 +331,30 @@ class TestRuleEnginePerformance:
 
     def test_overhead_under_10_percent(self):
         """TEST-REQ-3040-018: Performance-Overhead ≤ 20% bei aktivierten Regeln."""
-        categories = {
-            "A": [f"a{i}" for i in range(10)],
-            "B": [f"b{i}" for i in range(10)],
-            "C": [f"c{i}" for i in range(10)],
-            "D": [f"d{i}" for i in range(10)],
-        }
+        # BUG B-02: Groesseres Modell (20 x 10), damit die Laufzeit (~0,2 s) deutlich
+        # ueber dem Timer-Rauschen liegt; 4 x 10 laeuft inzwischen in ~5 ms.
+        categories = {f"K{k:02d}": [f"k{k}_{i}" for i in range(10)] for k in range(20)}
 
-        # Ohne Regeln
-        start = time.perf_counter()
-        result_baseline = ipo.generate(categories)
-        time_baseline = time.perf_counter() - start
-
-        # Mit Regeln (leere Engine, minimaler Overhead)
+        # BUG B-02: Pairwise laeuft jetzt in wenigen Millisekunden; eine Einzelmessung
+        # ist Timer-Rauschen. Daher Minimum aus 5 Laeufen je Variante (Grenze unveraendert).
+        # Abwechselnd messen und Garbage Collection pausieren, sonst verfaelschen
+        # Messreihenfolge und GC-Laeufe das Ergebnis (Minimum je Variante).
+        import gc
         engine = RuleEngine([])
-        start = time.perf_counter()
-        result_with_rules = ipo.generate(categories, rule_engine=engine)
-        time_with_rules = time.perf_counter() - start
+        time_baseline = time_with_rules = float("inf")
+        gc.collect()
+        gc.disable()
+        try:
+            for _ in range(5):
+                start = time.perf_counter()
+                result_baseline = ipo.generate(categories)
+                time_baseline = min(time_baseline, time.perf_counter() - start)
+
+                start = time.perf_counter()
+                result_with_rules = ipo.generate(categories, rule_engine=engine)
+                time_with_rules = min(time_with_rules, time.perf_counter() - start)
+        finally:
+            gc.enable()
 
         overhead = (time_with_rules - time_baseline) / time_baseline * 100
 
