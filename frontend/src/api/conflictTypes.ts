@@ -1,5 +1,5 @@
 // REQ-4022: Typ fuer 409-Conflict-Erkennung
-// Aus handlers.ts ausgelagert (WP-18: handlers.ts archiviert)
+// Aus handlers.ts ausgelagert (handlers.ts archiviert)
 
 /**
  * Typ fuer Konflikt-Informationen aus einer 409-Response.

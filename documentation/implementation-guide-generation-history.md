@@ -1,4 +1,4 @@
-# WP-13 Implementierungsanleitung: Generierungshistorie unveraenderlich machen (B-18)
+# Implementierungsanleitung: Generierungshistorie unveraenderlich machen (B-18)
 
 **Status:** Implementierungsanleitung fuer GREAT Senior Developer
 **ADR:** ADR-018

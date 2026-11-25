@@ -1237,7 +1237,7 @@ curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
 | **Admin** | Vollstaendiger Zugriff auf alle Endpoints |
 | **Editor** | Lese- und Schreibzugriff auf Projekte, Kategorien, Werte, Regeln, Generierung |
 | **Viewer** | Nur Lesezugriff (GET-Requests), Export |
-| **api_user** | Spezielle Rolle fuer API-only-Zugriff (keine UI) |
+| **api_user** | Technischer Nutzer fuer CI/Testwerkzeuge: kein Login an der Oberflaeche, Zugriff nur per API-Token. Ein Admin legt das Token unter Einstellungen > API-Tokens an und waehlt den technischen Nutzer als Besitzer. Keine Passwortwechsel-Pflicht. |
 
 **Writer = Admin + Editor** (alle Endpoints, die `require_writer` als Dependency haben)
 

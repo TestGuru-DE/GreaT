@@ -2434,6 +2434,7 @@ damit das oeffentlich dokumentierte Standardpasswort nicht dauerhaft gueltig ble
 - AK-8 (Fehlversuche begrenzt): Fehlgeschlagene Selbst-Wechsel-Versuche (falsches aktuelles Passwort) sind rate-limitiert. Schwelle: `OFFEN` (siehe offene Frage 5).
 - AK-9 (Keine Geheimnisse): Passwort, Passwort-Hash und Passwortlaenge erscheinen in keiner API-Antwort, keinem Log und keiner Fehlermeldung (wie REQ-4027 AK-12).
 - AK-10 (Geltungsbereich, Stand 2026-11-03): Heute betrifft das Flag nur den Default-Admin. Die Ausweitung auf von Admins angelegte Nutzer mit Initialpasswort ist offen (siehe offene Frage 2).
+- AK-11 (Ausnahme technische Nutzer, Stand v1.11.2): Fuer Nutzer mit der Rolle `api_user` gilt keine Passwortwechsel-Pflicht. Begruendung: `api_user` kann sich nicht an der Oberflaeche anmelden (REQ-6012) und das Flag daher nie selbst zuruecksetzen; die Sperre (AK-2) wuerde jedes API-Token dieses Nutzers dauerhaft blockieren. Umsetzung: Beim Anlegen und beim Passwort-Setzen durch einen Admin wird `default_password_active` fuer `api_user` nicht gesetzt; ein bereits gesetztes Flag wird bei `api_user` ignoriert. Fuer alle anderen Rollen gilt die Pflicht unveraendert. Tokens fuer einen `api_user` legt ein Admin an (`POST /api/v1/api-tokens/` mit `user_id`). Tests: `tests/test_bugfix_api_user_tokens.py`, `tests/test_change_password.py`.
 **TDD-Hinweis:** Backend zuerst (pytest): Endpunkt-Matrix Flag x Route (403 ausser Ausnahmen, AK-2), Passwort-Policy-Unit-Tests (AK-4, AK-5), Zustandsuebergang (AK-6), Selbst-Wechsel verlangt aktuelles Passwort (AK-3). Danach Router. Frontend zuerst (Vitest/RTL): Redirect nach Login bei gesetztem Flag, Fehlermeldung bei abgelehntem Standardpasswort.
 **Abhaengigkeiten:** REQ-4001 (Auth-Router, Token), REQ-4020 (Rollen, Sperre rollenunabhaengig), REQ-4025 (Admin-Passwortsetzung, Luecke Selbst-Wechsel), REQ-4026 (Standard-Admin-Anlage; CR-4026-01 offen), REQ-4027 (Flag, Statusendpunkt)
 **Blockiert:** –
@@ -3333,7 +3334,7 @@ damit das Modell neben dem Quellcode im Git liegt, per Pull Request geprueft wer
 - Dann Schema-Validierungstests (fehlende Pflichtfelder, falsche Typen, unbekannte Referenzen, zu gross, neuere `schemaVersion`).
 - Dann Tests fuer die Aenderungsvorschau und die Transaktion (Fehler mitten im Import -> nichts geaendert).
 - Das JSON-Schema selbst wird im Test gegen die Beispieldateien geprueft.
-**Abhaengigkeiten:** Backup-Format 2.0 aus v1.9.0 (gleiche Datenabdeckung), WP-04-Eindeutigkeit aus v1.9.0
+**Abhaengigkeiten:** Backup-Format 2.0 aus v1.9.0 (gleiche Datenabdeckung), eindeutige Namen und Eingabevalidierung aus v1.9.0
 **Blockiert:** REQ-6003, REQ-6014
 
 ---

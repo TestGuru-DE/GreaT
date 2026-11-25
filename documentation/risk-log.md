@@ -64,7 +64,7 @@ Erstellt von: Program Manager Agent
 | RISK-S-004 | OWASP Top 10 nicht systematisch geprüft | 3 | 4 | 12 | 🔴 | Security Review durch Security Architect Agent vor Release |
 | RISK-S-005 | Keine Input-Validierung auf UI-Ebene (HTMX-Forms) | 2 | 3 | 6 | 🟡 | **GEMILDERT (v1.9.0):** Pydantic-Validierung auf API-Ebene erweitert (B-03..B-04, B-13, B-15..B-16, B-19..B-26). React-Frontend mit Client-Validierung. HTMX-Forms archiviert. |
 | RISK-S-016 | Default-Admin mit festem Passwort `changeme123!` (src/app/bootstrap.py); kein Zwang zum Passwortwechsel nach dem ersten Login; Passwort steht im Quellcode des Repositories | 2 | 5 | 10 | 🟡 | **GEMILDERT (v1.9.0):** Hinweis auf Login-Seite (REQ-4027), Pflicht-Passwortwechsel bei Erstanmeldung (REQ-4028), Ablehnung bekannter Defaults, Rate-Limit 10/min/IP. Risikoakzeptanz durch Projektinhaber (Georg Hartel, 2026-11-03). Score reduziert von 20 auf 10. |
-| RISK-S-017 | Access-Token bleibt bis zu 15 min nach Logout/Passwortwechsel/Rollenaeanderung gueltig (JWT ist stateless; Server kann es nicht sofort revokieren) | 2 | 3 | 6 | 🟡 | **AKZEPTIERTES RESTRISIKO (WP-07):** Gemindert durch kurze TTL (15 min Default) und Token-Versionierung (B-06). Akzeptiert als Restrisiko; sofortige Revokation wuerde stateful Session-Tracking erfordern. |
+| RISK-S-017 | Access-Token bleibt bis zu 15 min nach Logout/Passwortwechsel/Rollenaeanderung gueltig (JWT ist stateless; Server kann es nicht sofort revokieren) | 2 | 3 | 6 | 🟡 | **AKZEPTIERTES RESTRISIKO (v1.9.0, Sitzungen/Passwortwechsel):** Gemindert durch kurze TTL (15 min Default) und Token-Versionierung (B-06). Akzeptiert als Restrisiko; sofortige Revokation wuerde stateful Session-Tracking erfordern. |
 
 ## Kategorie: Betrieb
 
