@@ -668,11 +668,13 @@ def api_delete_rule(pid: DbId, rid: DbId, db: Session = Depends(get_db)):
     return {"ok": True, "id": rid}
 
 
-@router.get("/projects/{pid}/generations")
+@router.get("/projects/{pid}/generations", response_model=List[schemas.GenerationSummary])
 def list_generations(pid: DbId, db: Session = Depends(get_db)):
-    """REQ-2001: Generierungshistorie eines Projekts.
-    
-    REQ-6008: Enthalt coverage_2wise_pct aus Cache.
+    """REQ-2001: Generierungshistorie eines Projekts (neueste zuerst).
+
+    REQ-6008: Enthaelt coverage_2wise_pct aus Cache.
+    BUG R-03: Antwort ist wieder eine Liste (wie dokumentiert und von
+    bestehenden API-Nutzern erwartet), nicht {"generations": [...]}.
     """
     from .api_coverage import _coverage_cache
     from ..schemas import GenerationSummary
@@ -707,7 +709,7 @@ def list_generations(pid: DbId, db: Session = Depends(get_db)):
             testcase_count=tc_count,
             coverage_2wise_pct=coverage_pct,
         ))
-    return {"generations": result}
+    return result
 
 
 @router.post("/projects/bulk-delete", response_model=schemas.BulkDeleteResponse, dependencies=[Depends(require_writer)])

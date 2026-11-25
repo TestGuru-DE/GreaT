@@ -287,7 +287,8 @@ class TestCoverageAPIHeatmap:
         resp = auth_client.get(f"/api/projects/{pid}/generations")
         data = resp.json()
 
-        gens = data.get("generations", [])
+        assert isinstance(data, list)  # BUG R-03: Liste statt Objekt
+        gens = data
         target = [g for g in gens if g["id"] == gen_id]
         assert len(target) == 1
         assert "coverage_2wise_pct" in target[0]

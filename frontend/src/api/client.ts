@@ -163,7 +163,9 @@ export const generateApi = {
   getTestcases: (generationId: number) =>
     api.get<TestcasesResponse>("/generations/" + generationId + "/testcases").then((r) => r.data),
   listGenerations: (projectId: number) =>
-    api.get<{ generations: GenerationSummary[] }>("/projects/" + projectId + "/generations").then((r) => r.data.generations),
+    // BUG R-03: Backend liefert eine Liste; altes Objektformat wird toleriert.
+    api.get<GenerationSummary[] | { generations: GenerationSummary[] }>("/projects/" + projectId + "/generations")
+      .then((r) => (Array.isArray(r.data) ? r.data : r.data.generations ?? [])),
   renameGeneration: (generationId: number, name: string) =>
     api.patch<GenerationSummary>("/generations/" + generationId + "/rename", { name }).then((r) => r.data),
   deleteGeneration: (generationId: number) =>
