@@ -184,7 +184,7 @@ class TestPasswordChangeLock:
             ("admin", "/auth/admin-only"),
             ("editor", "/auth/writer-only"),
             ("viewer", "/auth/api-capable"),
-            ("api_user", "/auth/api-capable"),
+            # BUG A-01 (PO-Entscheidung 11/2026): api_user ist ausgenommen, siehe unten
         ],
     )
     def test_each_role_is_locked_with_password_change_required(self, role, path):
@@ -193,6 +193,14 @@ class TestPasswordChangeLock:
         r = _client_for(user_id).get(path)
         assert r.status_code == 403
         assert r.json() == {"detail": "password_change_required"}
+
+
+    def test_api_user_is_not_locked_by_password_flag(self):
+        """BUG A-01: api_user kann sich nicht anmelden und sein Passwort nie aendern;
+        die Passwortwechsel-Pflicht darf seine Zugriffe daher nicht sperren."""
+        user_id = _add_user("locked_api_user", "api_user", OLD_PASSWORD, flag=True)
+        r = _client_for(user_id).get("/auth/api-capable")
+        assert r.status_code == 200, r.text
 
     def test_every_protected_route_is_locked_for_flagged_admin(self):
         """REQ-4028 AK-2: Endpunkt-Matrix – alle geschuetzten Routen x Flag gesetzt -> 403."""

@@ -1,9 +1,11 @@
 // REQ-6012: API-Token-Erstellungs-Dialog
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createToken, CreateTokenRequest } from '../api/apiTokensApi';
 import { expiresAtToDays } from '../lib/tokenExpiry';
+import { useAuthStore } from '../store/authStore';
+import { usersApi, type AppUser } from '../api/usersApi';
 
 const ALL_SCOPES = [
   'projects:read',
@@ -32,6 +34,17 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
   const [createdToken, setCreatedToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // BUG A-01: Admins koennen Tokens fuer technische Nutzer (api_user) anlegen
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+  const [technicalUsers, setTechnicalUsers] = useState<AppUser[]>([]);
+  const [ownerId, setOwnerId] = useState<number | ''>('');
+
+  useEffect(() => {
+    if (!open || !isAdmin) return;
+    usersApi.list()
+      .then((users) => setTechnicalUsers(users.filter((u) => u.role === 'api_user' && u.is_active)))
+      .catch(() => setTechnicalUsers([]));
+  }, [open, isAdmin]);
 
   const toggleScope = useCallback((s: string) => {
     setScopes(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -46,6 +59,7 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
     setError(null);
     try {
       const req: CreateTokenRequest = { name: name.trim(), expires_in_days: expiresAtToDays(expiresAt), scopes }; // BUG A-04
+      if (ownerId !== '') req.user_id = ownerId; // BUG A-01
       const res = await createToken(req);
       setCreatedToken(res.token);
     } catch (e: any) {
@@ -53,7 +67,7 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
     } finally {
       setLoading(false);
     }
-  }, [name, expiresAt, scopes, t]);
+  }, [name, expiresAt, scopes, ownerId, t]);
 
   const handleCopy = useCallback(() => {
     if (createdToken) navigator.clipboard.writeText(createdToken);
@@ -96,8 +110,28 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
               />
             </div>
 
+            {isAdmin && technicalUsers.length > 0 && (
+              <div className="mb-4">
+                <label htmlFor="token-owner" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                  {t('settings.apiTokens.owner')}
+                </label>
+                <select
+                  id="token-owner"
+                  value={ownerId}
+                  onChange={(e) => setOwnerId(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="">{t('settings.apiTokens.ownerSelf')}</option>
+                  {technicalUsers.map((u) => (
+                    <option key={u.id} value={u.id}>{u.username}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">{t('settings.apiTokens.ownerHint')}</p>
+              </div>
+            )}
+
             <div className="mb-4">
-              <label className="block textsm font-medium mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                 {t('settings.apiTokens.expiresAt')} *
               </label>
               <input

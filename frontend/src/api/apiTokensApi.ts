@@ -20,6 +20,8 @@ export interface CreateTokenRequest {
   /** BUG A-04: Backend erwartet die Laufzeit in Tagen (1..365), kein Datum */
   expires_in_days: number;
   scopes: string[];
+  /** BUG A-01: Admin legt Token fuer einen technischen Nutzer (api_user) an */
+  user_id?: number;
 }
 
 

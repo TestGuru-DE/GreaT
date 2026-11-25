@@ -8,7 +8,9 @@ DELETE /api/v1/admin/api-tokens/{id} - Admin: beliebigen Token widerrufen
 """
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -30,6 +32,14 @@ class ApiTokenCreateRequest(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     scopes: list[str] = Field(min_length=1)
     expires_in_days: int = Field(default=90, ge=1, le=365)
+    # BUG A-01: Admin legt Tokens fuer technische Nutzer (Rolle api_user) an
+    user_id: Optional[int] = Field(default=None, ge=1)
+
+    @field_validator("scopes")
+    @classmethod
+    def _check_scopes(cls, scopes: list[str]) -> list[str]:
+        # Nebenbefund A-17: ungueltiger Scope fuehrte zu 500 -> jetzt 422
+        return cls.validate_scopes(scopes)
 
     @staticmethod
     def validate_scopes(scopes: list[str]) -> list[str]:
@@ -46,6 +56,8 @@ class ApiTokenCreateResponse(BaseModel):
     name: str
     scopes: list[str]
     expires_at: str
+    user_id: int
+    username: str
 
 
 class ApiTokenRead(BaseModel):
@@ -59,9 +71,11 @@ class ApiTokenRead(BaseModel):
     last_used_at: str | None = None
     last_used_ip: str | None = None
     revoked_at: str | None = None
+    user_id: int | None = None
+    username: str | None = None
 
 
-def _token_to_dict(token: ApiToken) -> dict:
+def _token_to_dict(token: ApiToken, username: str | None = None) -> dict:
     """Convert ApiToken ORM object to response dict."""
     import json
     result = {
@@ -74,6 +88,8 @@ def _token_to_dict(token: ApiToken) -> dict:
         "last_used_at": token.last_used_at.isoformat() if token.last_used_at else None,
         "last_used_ip": token.last_used_ip,
         "revoked_at": token.revoked_at.isoformat() if token.revoked_at else None,
+        "user_id": token.user_id,
+        "username": username,
     }
     return result
 
@@ -93,11 +109,22 @@ def create_token(
 
     Das Token wird genau einmal im Klartext angezeigt, mit Kopierknopf und Warnhinweis.
     """
-    # Validate scopes
-    ApiTokenCreateRequest.validate_scopes(payload.scopes)
+    owner = current_user
+    if payload.user_id is not None and payload.user_id != current_user.id:
+        # BUG A-01: Nur Admins duerfen Tokens fuer andere Nutzer anlegen, und nur
+        # fuer technische Nutzer (api_user) - keine Tokens im Namen echter Personen.
+        if current_user.role != "admin":
+            raise HTTPException(status_code=403, detail="Nur Admins duerfen Tokens fuer andere Nutzer anlegen.")
+        owner = db.get(User, payload.user_id)
+        if owner is None:
+            raise HTTPException(status_code=404, detail="Nutzer nicht gefunden.")
+        if owner.role != "api_user":
+            raise HTTPException(status_code=400, detail="Tokens fuer andere Nutzer sind nur fuer technische Nutzer (Rolle api_user) erlaubt.")
+        if not owner.is_active:
+            raise HTTPException(status_code=400, detail="Der Nutzer ist deaktiviert.")
 
     raw_token, token_record = create_api_token(
-        db, current_user, payload.name, payload.scopes, payload.expires_in_days
+        db, owner, payload.name, payload.scopes, payload.expires_in_days
     )
 
     return ApiTokenCreateResponse(
@@ -106,6 +133,8 @@ def create_token(
         name=token_record.name,
         scopes=token_record.get_scopes_list(),
         expires_at=token_record.expires_at.isoformat(),
+        user_id=owner.id,
+        username=owner.username,
     )
 
 
@@ -145,13 +174,14 @@ def list_all_tokens(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-    """Admin: Liste aller API-Tokens aller Nutzer."""
+    """Admin: Liste aller API-Tokens aller Nutzer (mit Besitzer, BUG A-01)."""
     tokens = (
         db.query(ApiToken)
         .order_by(ApiToken.created_at.desc())
         .all()
     )
-    return [_token_to_dict(t) for t in tokens]
+    names = {u.id: u.username for u in db.query(User.id, User.username).all()}
+    return [_token_to_dict(t, names.get(t.user_id)) for t in tokens]
 
 
 @admin_router.delete("/{token_id}", dependencies=[Depends(require_admin)])

@@ -264,7 +264,10 @@
       "understood": "Verstanden",
       "empty": "Noch keine API-Tokens erstellt.",
       "expires": "Läuft ab:",
-      "lastUsed": "Letzter Gebrauch:"
+      "lastUsed": "Letzter Gebrauch:",
+      "owner": "Besitzer",
+      "ownerSelf": "Ich selbst",
+      "ownerHint": "Admins können Tokens für technische Nutzer (Rolle api_user) anlegen, z. B. für CI-Pipelines."
     }
   },
   "changePassword": {

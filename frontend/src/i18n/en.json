@@ -264,7 +264,10 @@
       "understood": "Understood",
       "empty": "No API tokens created yet.",
       "expires": "Expires:",
-      "lastUsed": "Last used:"
+      "lastUsed": "Last used:",
+      "owner": "Owner",
+      "ownerSelf": "Myself",
+      "ownerHint": "Admins can create tokens for technical users (role api_user), e.g. for CI pipelines."
     }
   },
   "changePassword": {

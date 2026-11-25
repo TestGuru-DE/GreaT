@@ -55,8 +55,9 @@ def create_user(
         username=payload.username,
         role=payload.role,
         is_active=True,
-        # B-22: Admin-created users must change password on first login
-        default_password_active=True,
+        # B-22: Admin-created users must change password on first login.
+        # BUG A-01: nicht fuer api_user (kann sich nicht anmelden, nur per Token).
+        default_password_active=payload.role != "api_user",
     )
     new_user.set_password(payload.password)
     db.add(new_user)
