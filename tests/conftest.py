@@ -11,8 +11,12 @@ import db_guard  # noqa: E402  (importiert vor app.*, erstellt START_SNAPSHOT)
 
 # REQ-1300: Jeder Testlauf nutzt eine eigene temporaere SQLite-Datei.
 # Muss VOR dem ersten Import von app.config/app.database gesetzt werden.
-_TEST_DB_DIR = tempfile.mkdtemp(prefix="great-pytest-")
-_TEST_DB_PATH = os.path.join(_TEST_DB_DIR, "test_great.db")
+# Wird conftest zusaetzlich als Modul importiert (z. B. "from tests.conftest
+# import ..."), darf keine zweite Test-DB entstehen: Pfad einmal pro Prozess.
+if getattr(db_guard, "TEST_DB_PATH", None) is None:
+    db_guard.TEST_DB_PATH = os.path.join(
+        tempfile.mkdtemp(prefix="great-pytest-"), "test_great.db")
+_TEST_DB_PATH = db_guard.TEST_DB_PATH
 os.environ["DATABASE_URL"] = "sqlite:///" + pathlib.Path(_TEST_DB_PATH).as_posix()
 os.environ["GREAT_TEST_DB_PATH"] = _TEST_DB_PATH
 

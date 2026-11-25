@@ -5,7 +5,6 @@ REQ-6009: API-Integration-Tests fuer Seed-Saetze.
 """
 import pytest
 from fastapi.testclient import TestClient
-from tests.conftest import app_instance
 
 
 class TestSeedSetCRUD:
