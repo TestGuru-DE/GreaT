@@ -120,9 +120,9 @@ describe("REQ-6009: SeedManager", () => {
   it("rendert die Grundstruktur mit Titel und Buttons", () => {
     render(<SeedManager projectId={1} />, { wrapper });
 
-    expect(screen.getByText("Seed-Saetze")).toBeInTheDocument();
+    expect(screen.getByText("Seed-Sätze")).toBeInTheDocument();
     expect(screen.getByText("+ Neuer Satz")).toBeInTheDocument();
-    expect(screen.getByText("CSV Import")).toBeInTheDocument();
+    expect(screen.getByText("CSV-Import")).toBeInTheDocument();
   });
 
   it("zeigt 'Noch keine Seed-Saetze' bei leerer Liste", async () => {
@@ -131,7 +131,7 @@ describe("REQ-6009: SeedManager", () => {
     render(<SeedManager projectId={1} />, { wrapper });
 
     await waitFor(() => {
-      expect(screen.getByText(/Noch keine Seed-Saetze/i)).toBeInTheDocument();
+      expect(screen.getByText(/Noch keine Seed-Sätze/i)).toBeInTheDocument();
     });
   });
 
@@ -189,7 +189,7 @@ describe("REQ-6009: SeedManager", () => {
   it("oeffnet SeedImport-Dialog bei Klick auf 'CSV Import'", async () => {
     render(<SeedManager projectId={1} />, { wrapper });
 
-    const importBtn = screen.getByText("CSV Import");
+    const importBtn = screen.getByText("CSV-Import");
     fireEvent.click(importBtn);
 
     await waitFor(() => {
@@ -354,7 +354,7 @@ describe("REQ-6009: SeedManager", () => {
   it("schliesst Import-Dialog via onClose Callback", async () => {
     render(<SeedManager projectId={1} />, { wrapper });
 
-    const importBtn = screen.getByText("CSV Import");
+    const importBtn = screen.getByText("CSV-Import");
     fireEvent.click(importBtn);
 
     await waitFor(() => {

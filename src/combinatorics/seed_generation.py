@@ -12,6 +12,7 @@ import logging
 from typing import Dict, List, Optional, Tuple
 
 from combinatorics.coverage import calculate_coverage
+from combinatorics.supplement import strength_for, supplement_coverage
 
 logger = logging.getLogger("great.combinatorics.seed")
 
@@ -265,30 +266,12 @@ def seed_generation(
         for tc in seed_tcs
     ]
 
-    coverage = calculate_coverage(
-        seed_assignments,
-        active_cats,
-        t=t_strength,
-        rule_engine=rule_engine,
-    )
-
-    # Wenn 100% Abdeckung: nur Seeds zurueckgeben
-    if coverage.percentage >= 100.0:
-        return seed_tcs, []
-
-    # Unabgedeckte Tupel ergaenzen
-    supplemented = _supplement_uncovered(
-        seed_assignments,
-        active_cats,
-        strategy,
-        t_strength,
-        rule_engine,
-        deadline,
-    )
-
-    # Kombiniere Seeds + Ergaenzung
-    all_tcs = seed_tcs + supplemented
-    return all_tcs, []
+    # BUG K-10/K-11: nur fehlende, erreichbare Tupel der gewaehlten Staerke ergaenzen
+    t = strength_for(strategy, t_strength, len(active_cats))
+    supplemented = supplement_coverage(seed_assignments, active_cats, t, rule_engine)
+    for tc in supplemented:
+        tc["origin"] = "supplemented"
+    return seed_tcs + supplemented, []
 
 
 def _generate_normal(
@@ -323,71 +306,3 @@ def _generate_normal(
         tc["origin"] = "generated"
 
     return result
-
-
-def _supplement_uncovered(
-    seed_assignments: List[Dict[str, str]],
-    active_cats: Dict[str, List[str]],
-    strategy: str,
-    t_strength: int,
-    rule_engine=None,
-    deadline: Optional[float] = None,
-) -> List[Dict[str, str]]:
-    """
-    Generiert nur die Testfaelle, die noetig sind, um die fehlende
-    Abdeckung zu ergaenzen.
-
-    Strategie: Normale Generierung durchfuehren, dann nur die TCs nehmen,
-    die neue Abdeckung bringen (nicht bereits durch Seeds abgedeckt).
-    """
-    from combinatorics import all_combinations, each_choice, ipo, linear_expansion, t_wise
-
-    # Normale Generierung durchfuehren
-    if strategy == "pairwise":
-        normal = ipo.generate(active_cats, rule_engine=rule_engine, deadline=deadline)
-    elif strategy == "t_wise":
-        normal = t_wise.generate(
-            active_cats, t=t_strength, rule_engine=rule_engine
-        )
-    elif strategy == "each":
-        normal = each_choice.generate(active_cats, rule_engine=rule_engine)
-    elif strategy == "linear":
-        normal = linear_expansion.generate(active_cats, rule_engine=rule_engine)
-    elif strategy == "all":
-        normal = all_combinations.generate(active_cats)
-    else:
-        normal = ipo.generate(active_cats, rule_engine=rule_engine, deadline=deadline)
-
-    # Berechne welche Paare bereits durch Seeds abgedeckt sind
-    seed_coverage = calculate_coverage(
-        seed_assignments,
-        active_cats,
-        t=t_strength,
-        rule_engine=rule_engine,
-    )
-
-    # Nur TCs nehmen, die neue Abdeckung bringen
-    supplemented: List[Dict[str, str]] = []
-    for tc in normal:
-        # Pruefen ob dieser TC bereits durch Seeds abgedeckt ist
-        # Einfacher Check: ist dieser TC bereits in den Seeds?
-        tc_clean = {k: v for k, v in tc.items() if k != "origin"}
-        if not _tc_covered_by_seeds(tc_clean, seed_assignments):
-            tc["origin"] = "supplemented"
-            supplemented.append(tc)
-
-    return supplemented
-
-
-def _tc_covered_by_seeds(
-    tc: Dict[str, str],
-    seed_assignments: List[Dict[str, str]],
-) -> bool:
-    """
-    Prueft ob ein Testfall bereits durch einen Seed abgedeckt ist.
-    Ein Seed deckt einen TC ab, wenn alle seine Werte identisch sind.
-    """
-    for seed in seed_assignments:
-        if all(seed.get(k) == v for k, v in tc.items()):
-            return True
-    return False

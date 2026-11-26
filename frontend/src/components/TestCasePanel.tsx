@@ -2,7 +2,8 @@
 // REQ-6005 Slice 3: i18n Datums-/Zahlenformate, Export-Spaltenkoepfe
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { rulesApi } from "../api/client";
+import { rulesApi, seedApi } from "../api/client";
+import type { SeedSetList } from "../types";
 import { useGenerateStore } from "../store/generateStore";
 import { useDecisionTableStore } from "../store/decisionTableStore";
 import { useSortableTable } from "../hooks/useSortableTable";
@@ -19,6 +20,9 @@ const STRATEGIES: { value: Strategy; label: string }[] = [
   { value: "risk_based", label: "Risikobasiert" },
 ];
 
+// REQ-6009: Seeds bei Pairwise, T-Wise, Each Choice oder Linear
+const SEED_STRATEGIES: Strategy[] = ["each", "linear", "pairwise", "t_wise"];
+
 interface Props { projectId: number; }
 
 export default function TestCasePanel({ projectId }: Props) {
@@ -30,7 +34,12 @@ export default function TestCasePanel({ projectId }: Props) {
     riskSummary, // REQ-3051
     resultCategories,
     updateAssignment,
+    warnings, // BUG R-05
   } = useGenerateStore();
+  // REQ-6009 / BUG K-09: Seed-Satz als Startpunkt der Generierung
+  const [seedSets, setSeedSets] = useState<SeedSetList[]>([]);
+  const [seedSetId, setSeedSetId] = useState<number | null>(null);
+  const seedCapable = SEED_STRATEGIES.includes(strategy);
 
   const [editingName, setEditingName] = useState<string | null>(null);
   const [applyRules, setApplyRules] = useState(false); // REQ-3005
@@ -44,6 +53,11 @@ export default function TestCasePanel({ projectId }: Props) {
   useEffect(() => {
     fetchGenerations(projectId);
   }, [projectId, fetchGenerations]);
+
+  useEffect(() => {
+    setSeedSetId(null);
+    seedApi.list(projectId).then(setSeedSets).catch(() => setSeedSets([]));
+  }, [projectId]);
 
 
   useEffect(() => {
@@ -206,7 +220,24 @@ export default function TestCasePanel({ projectId }: Props) {
             />
           </div>
         )}
-        <button onClick={() => generate(projectId, applyRules, strategy === "t_wise" ? tStrength : undefined)} disabled={loading || dtMode}
+        {seedCapable && seedSets.length > 0 && (
+          <div>
+            <label htmlFor="seed-set-select" className="block text-xs text-slate-500 mb-1 font-medium">{t('seeds.generateWith')}</label>
+            <select id="seed-set-select" value={seedSetId ?? ""}
+              onChange={(e) => setSeedSetId(e.target.value ? Number(e.target.value) : null)}
+              className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+              <option value="">{t('seeds.none')}</option>
+              {seedSets.map((s) => (
+                <option key={s.id} value={s.id}>{s.name} ({s.seed_count})</option>
+              ))}
+            </select>
+          </div>
+        )}
+        <button onClick={() => {
+          const ts = strategy === "t_wise" ? tStrength : undefined;
+          if (seedCapable && seedSetId) generate(projectId, applyRules, ts, seedSetId);
+          else generate(projectId, applyRules, ts);
+        }} disabled={loading || dtMode}
           className="px-4 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
           {loading ? "Generiere..." : "Neu generieren"}
         </button>
@@ -307,6 +338,13 @@ export default function TestCasePanel({ projectId }: Props) {
 
       {error && (
         <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+      )}
+
+      {/* BUG R-05: Hinweise der Generierung (z. B. nicht angewendete Constraints) */}
+      {warnings.length > 0 && (
+        <ul role="status" data-testid="generation-warnings" className="px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm list-disc list-inside">
+          {warnings.map((w, i) => <li key={i}>{w}</li>)}
+        </ul>
       )}
 
       {/* REQ-3051: Risikoabdeckungs-Badge */}

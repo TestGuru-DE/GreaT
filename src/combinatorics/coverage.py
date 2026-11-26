@@ -11,6 +11,10 @@ from itertools import combinations, product
 from typing import Dict, List, Optional, Tuple
 
 
+# Obergrenze fuer die Abdeckungsberechnung (t >= 3)
+MAX_COVERAGE_TUPLES = 5_000_000
+
+
 # ---------------------------------------------------------------------------
 # Dataclasses
 # ---------------------------------------------------------------------------
@@ -25,6 +29,7 @@ class CoverageResult:
     percentage: float
     excluded_by_rules: int
     uncovered_tuples: list = field(default_factory=list)
+    excluded_tuples: list = field(default_factory=list)  # BUG K-11: wirklich unmoegliche Tupel
 
 
 @dataclass
@@ -67,6 +72,7 @@ def calculate_coverage(
     rule_engine=None,
     result_category_names: Optional[List[str]] = None,
     hierarchy=None,
+    feasibility=None,
 ) -> CoverageResult:
     """
     Berechnet die t-wise Abdeckung einer Testfallmenge.
@@ -114,22 +120,20 @@ def calculate_coverage(
             )
         t = len(cat_names)
 
-    # REQ-6008: Groessenpruefung fuer 3-wise (Abbruch >5 Mio Tripel)
+    # REQ-6008 / BUG K-04: Groessenpruefung ueber die echte Anzahl der t-Tupel
+    # (Summe ueber Kategorie-Tripel), nicht das Produkt aller Werteanzahlen.
     if t >= 3:
-        from math import comb
-        # Schatze maximale Anzahl moeglicher Tupel
-        max_tuples = comb(len(cat_names), t)
-        for vals in active_cats.values():
-            max_tuples *= len(vals)
-        if max_tuples > 5_000_000:
+        from .budget import count_t_tuples
+        max_tuples = count_t_tuples(active_cats, t)
+        if max_tuples > MAX_COVERAGE_TUPLES:
             raise ValueError(
-                f"3-wise Abbruch: {max_tuples:,} moegliche Tripel ueberschreiten "
-                f"das Limit von 5.000.000. Reduziere Kategorien oder Werte."
+                f"{t}-wise Abbruch: {max_tuples:,} moegliche Tupel ueberschreiten "
+                f"das Limit von {MAX_COVERAGE_TUPLES:,}. Reduziere Kategorien oder Werte."
             )
 
     # Alle moeglichen t-wise Tupel generieren
     all_possible, excluded = _get_all_tuples(
-        cat_names, active_cats, t, rule_engine, hierarchy
+        cat_names, active_cats, t, rule_engine, hierarchy, feasibility
     )
 
     # Abgedeckte Tupel ermitteln
@@ -140,7 +144,7 @@ def calculate_coverage(
     excluded_count = len(excluded)
 
     # Unabgedeckte Tupel (nur die, die moeglich sind)
-    uncovered = sorted(all_possible - covered_set)
+    uncovered = sorted(all_possible - covered_set, key=sorted)
 
     percentage = round((covered / possible) * 100, 2) if possible > 0 else 0.0
 
@@ -151,6 +155,7 @@ def calculate_coverage(
         percentage=percentage,
         excluded_by_rules=excluded_count,
         uncovered_tuples=uncovered,
+        excluded_tuples=sorted(excluded, key=sorted),
     )
 
 
@@ -166,6 +171,7 @@ def compute_heatmap(
     categories: Dict[str, List[str]],
     rule_engine=None,
     hierarchy=None,
+    feasibility=None,
 ) -> HeatmapResult:
     """
     Berechnet eine Heatmap-Matrix fuer zwei Kategorien.
@@ -193,16 +199,17 @@ def compute_heatmap(
     rows = list(categories[cat_a])
     cols = list(categories[cat_b])
 
+    # Leistung: Paare einmal zaehlen statt je Zelle alle Testfaelle zu durchlaufen
+    from collections import Counter
+    counts = Counter((tc.get(cat_a), tc.get(cat_b)) for tc in testcases)
+    checker = _checker(categories, rule_engine, feasibility)
+
     cells = {}
     uncovered = []
 
     for row_val in rows:
         for col_val in cols:
-            count = sum(
-                1
-                for tc in testcases
-                if tc.get(cat_a) == row_val and tc.get(cat_b) == col_val
-            )
+            count = counts.get((row_val, col_val), 0)
 
             partial_tc = {cat_a: row_val, cat_b: col_val}
 
@@ -215,7 +222,7 @@ def compute_heatmap(
 
             if hierarchy_excluded:
                 status = "excluded"
-            elif rule_engine is not None and not rule_engine.is_combination_valid(partial_tc):
+            elif checker is not None and not checker.is_feasible(partial_tc):  # BUG K-06
                 status = "excluded"
             elif count > 0:
                 status = "covered"
@@ -248,6 +255,7 @@ def _get_all_tuples(
     t: int,
     rule_engine=None,
     hierarchy=None,
+    feasibility=None,
 ) -> Tuple[set, set]:
     """
     Generiert alle moeglichen t-wise Tupel und trennt sie in
@@ -266,22 +274,32 @@ def _get_all_tuples(
     if hierarchy is not None:
         all_tuples = _filter_hierarchy_tuples(all_tuples, hierarchy)
 
-    if rule_engine is None:
-        excluded_from_rules = set()
-        return all_tuples, excluded_from_rules
+    checker = _checker(active_cats, rule_engine, feasibility)
+    if checker is None:
+        return all_tuples, set()
 
     possible = set()
     excluded = set()
 
     for tup in all_tuples:
-        # Partial testcase fuer is_combination_valid bauen
-        partial_tc = {cat: val for cat, val in tup}
-        if rule_engine.is_combination_valid(partial_tc):
+        # BUG K-06: moeglich nur, wenn ein vollstaendiger gueltiger Testfall das Tupel
+        # enthaelt (auch ueber verkettete Constraints unmoegliche Tupel werden erkannt)
+        if checker.is_feasible(dict(tup)):
             possible.add(tup)
         else:
             excluded.add(tup)
 
     return possible, excluded
+
+
+def _checker(categories, rule_engine, feasibility=None):
+    """FeasibilityChecker fuer die Kategorien (oder None ohne Regeln)."""
+    if feasibility is not None:
+        return feasibility
+    if rule_engine is None:
+        return None
+    from .feasibility import FeasibilityChecker
+    return FeasibilityChecker(categories, rule_engine)
 
 
 def _generate_all_tuples(

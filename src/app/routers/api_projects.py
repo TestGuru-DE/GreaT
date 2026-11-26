@@ -707,11 +707,11 @@ def api_delete_rule(pid: DbId, rid: DbId, db: Session = Depends(get_db)):
 def list_generations(pid: DbId, db: Session = Depends(get_db)):
     """REQ-2001: Generierungshistorie eines Projekts (neueste zuerst).
 
-    REQ-6008: Enthaelt coverage_2wise_pct aus Cache.
+    REQ-6008: Enthaelt coverage_2wise_pct aus der gespeicherten Abdeckung (BUG K-08).
     BUG R-03: Antwort ist wieder eine Liste (wie dokumentiert und von
     bestehenden API-Nutzern erwartet), nicht {"generations": [...]}.
     """
-    from .api_coverage import _coverage_cache
+    from .api_coverage import project_fingerprint, read_cached_coverage
     from ..schemas import GenerationSummary
 
     project = db.get(models.Project, pid)
@@ -723,6 +723,7 @@ def list_generations(pid: DbId, db: Session = Depends(get_db)):
         .order_by(models.Generation.id.desc())
         .all()
     )
+    fingerprint = project_fingerprint(db, pid)  # BUG K-08
     result = []
     for g in gens:
         tc_count = (
@@ -730,11 +731,11 @@ def list_generations(pid: DbId, db: Session = Depends(get_db)):
             .filter(models.TestCase.generation_id == g.id)
             .count()
         )
-        # REQ-6008: 2-wise Coverage % aus Cache
+        # REQ-6008: 2-wise Coverage % aus der gespeicherten Abdeckung (nur wenn aktuell)
         coverage_pct: Optional[float] = None
-        if g.id in _coverage_cache:
-            c2 = _coverage_cache[g.id].get("coverage_2wise", {})
-            coverage_pct = c2.get("percentage")
+        cached = read_cached_coverage(g, fingerprint)
+        if cached:
+            coverage_pct = (cached.get("coverage_2wise") or {}).get("percentage")
 
         result.append(GenerationSummary(
             id=g.id,

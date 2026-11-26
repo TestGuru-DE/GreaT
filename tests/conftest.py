@@ -224,15 +224,6 @@ def _purge_constraints_per_test():
 
 
 @pytest.fixture(autouse=True)
-def _clear_coverage_cache_per_test():
-    """REQ-6008: Coverage-Cache je Test leeren."""
-    from app.routers.api_coverage import _coverage_cache
-    _coverage_cache.clear()
-    yield
-    _coverage_cache.clear()
-
-
-@pytest.fixture(autouse=True)
 def _purge_seed_sets_per_test():
     """REQ-6009: Seed-Saetze und Seed-Cases je Test entfernen."""
     from app.database import SessionLocal

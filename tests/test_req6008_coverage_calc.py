@@ -450,9 +450,11 @@ class TestCoverageWithRules:
         assert result.excluded_by_rules == 1
 
     def test_dependency_rule_no_exclusion(self):
-        """TEST-REQ-6008-019: Dependency-Regeln schliessen Tupel nicht aus.
+        """TEST-REQ-6008-019: Dependency-Regeln schliessen widersprechende Tupel aus.
 
-        Dependency setzt Werte, verbietet aber keine Kombinationen.
+        BUG K-06: WENN A=a1 DANN B=b1 setzt B nach der Generierung immer auf b1.
+        Das Paar (a1, b2) kommt daher in keinem Testfall vor und zaehlt nach
+        REQ-6008 ("Unmoegliche Tupel zaehlen nicht zum Nenner") als ausgeschlossen.
         """
         from combinatorics.coverage import calculate_coverage
 
@@ -467,10 +469,10 @@ class TestCoverageWithRules:
             rule_engine=engine,
         )
 
-        assert result.covered == 4
-        assert result.possible == 4
+        assert result.covered == 3
+        assert result.possible == 3
         assert result.percentage == 100.0
-        assert result.excluded_by_rules == 0
+        assert result.excluded_by_rules == 1
 
     def test_multiple_forbidden_rules(self):
         """TEST-REQ-6008-020: Zwei verbotene Paare.

@@ -23,7 +23,6 @@ from ..database import get_db
 from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..constraints.ast_parser import validate_ast, count_leaf_nodes, MAX_LEAF_NODES
-from ..constraints.evaluator_3vl import check_unsatisfiable
 from ..constraints.references import invalid_references
 
 log = logging.getLogger("great.api.constraints")
@@ -120,50 +119,35 @@ def _run_unsatisfiable_check(
     exclude_constraint_id: Optional[int] = None,
     db: Optional[Session] = None,
 ) -> List[str]:
-    """REQ-6001 AK-8: Fuehrt die Widerspruchspruefung aus.
+    """REQ-6001 AK-8: Widerspruchspruefung nach dem Speichern.
 
-    Args:
-        project_id: Projekt-ID
-        new_constraint_ast: Neues Constraint-AST
-        exclude_constraint_id: Wenn gesetzt, wird dieses Constraint aus
-            den bestehenden Constraints ausgeschlossen (fuer PUT-Updates)
-        db: DB-Session (wird fuer Kategorien/Constraints geladen)
-
-    Returns:
-        Liste von Warnstrings (leer wenn keine Warnung)
+    Warnt, wenn das Modell unerfuellbar ist oder einzelne Werte in keinem
+    gueltigen Testfall mehr vorkommen koennen (BUG K-06: auch einzelne Werte,
+    auch ueber verkettete Constraints). Beruecksichtigt alle Regeln und gueltigen
+    Constraints des Projekts; das gerade gespeicherte Constraint ist bereits enthalten.
     """
     if db is None:
         return []
-
     try:
-        categories = _load_categories_with_values(project_id, db)
-        existing = _load_existing_constraints(project_id, db)
+        from combinatorics.feasibility import FeasibilityChecker
+        from .api_generate import build_rule_engine_with_report
+        from ..services import load_categories_values
 
-        # Bei PUT: das aktualisierte Constraint aus der bestehenden Liste entfernen
-        if exclude_constraint_id is not None:
-            existing = [
-                c for c in existing
-                if json.loads(c.get("expression_json", "{}") if isinstance(c, models.Constraint) else "{}").get("_id") != exclude_constraint_id
-            ]
-            # Einfacher: alle existing Constraints laden und das mit exclude_id entfernen
-            # Da wir JSON-ASTs haben, muessen wir anders vorgehen
-            # Die existing-Liste enthaelt bereits geparste ASTs ohne ID-Info
-            # -> Wir laden die Constraints mit ID und filtern
-            existing_raw = (
-                db.query(models.Constraint)
-                .filter(
-                    models.Constraint.project_id == project_id,
-                    models.Constraint.is_valid == True,  # noqa: E712
-                    models.Constraint.id != exclude_constraint_id,
-                )
-                .all()
-            )
-            existing = [_parse_expression(c.expression_json) for c in existing_raw
-                       if c.expression_json]
-
-        is_unsat, warnings = check_unsatisfiable(categories, new_constraint_ast, existing)
+        catmap = load_categories_values(db, project_id)
+        if not catmap or any(not values for values in catmap.values()):
+            return []
+        engine, _ = build_rule_engine_with_report(db, project_id)
+        checker = FeasibilityChecker(catmap, engine)
+        if not checker.is_satisfiable():
+            return ["Dieses Constraint macht das Modell unerfuellbar: "
+                    "Keine Wertekombination erfuellt alle Regeln."]
+        warnings = [f"Wert '{val}' ({cat}) ist durch die Regeln in keinem Testfall erreichbar."
+                    for cat, val in checker.unreachable_values()]
+        if checker.exhausted:
+            warnings.append("Widerspruchspruefung unvollstaendig (Modell zu gross); "
+                            "einzelne unerreichbare Werte werden evtl. nicht gemeldet.")
         return warnings
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - Pruefung darf das Speichern nie verhindern
         log.warning("Unsatisfiable check failed: %s", e)
         return []
 

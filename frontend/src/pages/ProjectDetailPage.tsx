@@ -17,12 +17,13 @@ import RuleVisualization from "../components/RuleVisualization";
 import ModelExportDropdown from "../components/ModelExportDropdown";
 import ModelImportDialog from "../components/ModelImportDialog";
 import ClassificationTreeTab from "../components/ClassificationTreeTab";
+import SeedManager from "../components/SeedManager";
 import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
 import { useToastStore } from "../components/Toast";
 
-type RightTab = "generate" | "rules" | "constraints" | "generations" | "decision" | "classification";
+type RightTab = "generate" | "rules" | "constraints" | "generations" | "seeds" | "decision" | "classification";
 
 export default function ProjectDetailPage() {
   const { t } = useTranslation();
@@ -184,6 +185,10 @@ export default function ProjectDetailPage() {
             <button onClick={() => setRightTab("generations")} className={tabClass("generations")}>
               {t('projectDetail.tabGenerations')}
             </button>
+            {/* BUG K-09: Seed-Sätze (REQ-6009) */}
+            <button onClick={() => setRightTab("seeds")} className={tabClass("seeds")}>
+              {t('projectDetail.tabSeeds')}
+            </button>
             <button onClick={() => setRightTab("decision")} className={tabClass("decision")}>
               {t('projectDetail.tabDecision')}
             </button>
@@ -197,6 +202,7 @@ export default function ProjectDetailPage() {
             {rightTab === "rules" && <RulesPanel projectId={projectId} />}
             {rightTab === "constraints" && <ConstraintBuilder projectId={projectId} />}
             {rightTab === "generations" && <GenerationsPanel projectId={projectId} />}
+            {rightTab === "seeds" && <SeedManager projectId={projectId} />}
             {rightTab === "decision" && (
               <div className="flex flex-col gap-6">
                 <DecisionTable projectId={projectId} />

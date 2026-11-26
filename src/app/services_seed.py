@@ -390,6 +390,18 @@ def generate_with_seeds(
     # Validieren
     normalized_seeds, validation_warnings = validate_seeds(seeds_raw, catmap, rule_engine)
 
+    # BUG K-12: Seeds mit Werten, die es im Modell nicht gibt, gelangen nicht in die
+    # Generierung (die Warnung aus validate_seeds nennt den Wert).
+    usable_seeds = []
+    for idx, seed in enumerate(normalized_seeds, start=1):
+        unknown = [f"{c}={v}" for c, v in seed.items() if v is not None and v not in catmap.get(c, [])]
+        if unknown:
+            validation_warnings.append(
+                f"Seed {idx} wurde nicht uebernommen: unbekannte Werte ({', '.join(unknown)}).")
+        else:
+            usable_seeds.append(seed)
+    normalized_seeds = usable_seeds
+
     # Auffuellen
     filled_seeds, filled_fields = fill_partial_seeds(normalized_seeds, catmap, rule_engine)
 

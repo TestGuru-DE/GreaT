@@ -320,7 +320,8 @@ class TestConstraintAPIUnsatisfiable:
 
     def test_create_valid_constraint_no_warning(self, auth_client):
         """
-        REQ-6001 AK-8: Gueltiges Constraint -> keine Warnung in Response.
+        REQ-6001 AK-8 / BUG K-06: Ein Verbot, das genau einen Wert unerreichbar macht,
+        wird gespeichert und nennt diesen Wert (frueher: keine Warnung).
         """
         ctx = self._create_test_project(auth_client)
         pid = ctx["project_id"]
@@ -335,9 +336,7 @@ class TestConstraintAPIUnsatisfiable:
         assert resp.status_code == 201
         data = resp.json()
         assert data["name"] == "KeinRot"
-        # warnings-Feld sollte vorhanden sein (leer)
-        assert "warnings" in data
-        assert data["warnings"] == []
+        assert data["warnings"] == ["Wert 'Rot' (Farbe) ist durch die Regeln in keinem Testfall erreichbar."]
 
     def test_update_to_unsatisfiable_warns(self, auth_client):
         """

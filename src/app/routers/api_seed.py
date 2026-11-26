@@ -302,6 +302,8 @@ def api_gap_fill(
             )
     except BudgetExceeded:
         raise _timeout_error(timeout)
+    except ValueError as e:  # BUG K-11: unbekannte Strategie
+        raise HTTPException(status_code=422, detail={"code": "invalid_strategy", "detail": str(e)})
 
     # Neue Generierung speichern
     new_gen = models.Generation(
@@ -350,7 +352,7 @@ def api_gap_fill(
         "total_testcases": report.total_testcases,
         "coverage_before": report.coverage_before,
         "coverage_after": report.coverage_after,
-        "impossible_tuples": report.impossible_tuples,
+        "impossible_tuples": [sorted(list(t)) for t in report.impossible_tuples],  # BUG K-11
         "warnings": warnings,
     }
 

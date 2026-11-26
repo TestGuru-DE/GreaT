@@ -127,7 +127,8 @@
     "tabGenerations": "Generierte Testfälle",
     "tabDecision": "Entscheidungstabelle",
     "tabConstraints": "Constraints",
-    "projectNameLabel": "Projektname"
+    "projectNameLabel": "Projektname",
+    "tabSeeds": "Seeds"
   },
   "generations": {
     "title": "Alle Generierungen",
@@ -142,14 +143,22 @@
       "strategy": "Strategie",
       "testcases": "Testfälle",
       "date": "Datum",
-      "actions": "Aktionen"
+      "actions": "Aktionen",
+      "coverage2wise": "2-wise %"
     },
     "actions": {
       "edit": "✏️",
       "json": "JSON",
       "excel": "Excel",
       "csv": "CSV",
-      "delete": "🗑️"
+      "delete": "🗑️",
+      "coverage": "Abdeckung",
+      "gapFill": "Lücken schließen"
+    },
+    "gapFill": {
+      "running": "Ergänze…",
+      "done": "Neue Generierung angelegt: {{seeds}} bisherige und {{added}} ergänzte Testfälle, 2-wise-Abdeckung {{before}} % → {{after}} %.",
+      "impossible": "{{count}} Paare sind durch Regeln ausgeschlossen."
     }
   },
   "generationsPanel": {
@@ -616,8 +625,8 @@
       "format": "Format",
       "step": "Schrittweite",
       "charset": "Zeichenvorrat",
-        "timezone": "Zeitzone (optional)",
-        "timezoneHint": "ISO-8601-Offset, z. B. +02:00, -05:30 oder Z",
+      "timezone": "Zeitzone (optional)",
+      "timezoneHint": "ISO-8601-Offset, z. B. +02:00, -05:30 oder Z",
       "extras": "Zusatzwerte",
       "formats": {
         "iso": "JJJJ-MM-TT (ISO)",
@@ -821,5 +830,44 @@
     "twoWise": "2-wise:",
     "excluded": "Ausgeschlossen:",
     "uncoveredTuples": "Nicht abgedeckte 2-wise-Tupel ({{count}})"
+  },
+  "seeds": {
+    "generateWith": "Seed-Satz",
+    "none": "(ohne Seeds)"
+  },
+  "seedManager": {
+    "title": "Seed-Sätze",
+    "newSet": "+ Neuer Satz",
+    "importCsv": "CSV-Import",
+    "loading": "Laden …",
+    "noSets": "Noch keine Seed-Sätze. Erstellen oder importieren.",
+    "seeds": "Seeds",
+    "deleteTitle": "Löschen",
+    "deleteConfirm": "Seed-Satz löschen?",
+    "createTitle": "Neuer Seed-Satz",
+    "editorTitle": "Seeds bearbeiten",
+    "setNamePlaceholder": "Name des Seed-Satzes",
+    "needCategories": "Zuerst Kategorien anlegen.",
+    "noSeeds": "Noch keine Seeds. Füge welche hinzu.",
+    "addSeed": "Seed",
+    "removeSeed": "Seed entfernen",
+    "anyPlaceholder": "(beliebig)",
+    "saveSet": "Satz speichern",
+    "saveBtn": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "seedImport": {
+    "title": "CSV-Import",
+    "setNameLabel": "Name des Seed-Satzes",
+    "setNamePlaceholder": "z. B. Meine Seeds",
+    "fileLabel": "CSV-Datei",
+    "dropText": "CSV-Datei hier ablegen oder …",
+    "browse": "durchsuchen",
+    "formatTitle": "CSV-Format",
+    "formatDesc": "Erste Zeile: Kategorien (Kopfzeile). Jede weitere Zeile: Werte. Leer = beliebig. Trennzeichen: Komma oder Semikolon (wird erkannt).",
+    "formatExample": "KategorieA,KategorieB,KategorieC\nWert1,,Wert3\n,Wert2,Wert3",
+    "importBtn": "Importieren",
+    "importing": "Importiere …",
+    "cancel": "Abbrechen"
   }
 }

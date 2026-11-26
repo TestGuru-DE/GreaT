@@ -76,11 +76,15 @@ export interface GenerateRequest {
   limit?: number;
   apply_rules?: boolean;  // REQ-3005
   t_strength?: number;     // BUG-3: T-Wise Stärke (default 2)
+  seed_set_id?: number;    // REQ-6009 / BUG K-09: Seed-Satz als Startpunkt
 }
 
 export interface GenerateResponse {
   generation_id: number;
   count: number;
+  warnings?: string[];     // BUG R-05: z. B. nicht angewendete Constraints
+  seeds_count?: number;
+  supplemented_count?: number;
 }
 
 export interface TestCaseOut {

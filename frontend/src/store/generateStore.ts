@@ -17,7 +17,8 @@ interface GenerateStore {
   riskSummary: RiskSummary | null; // REQ-3051
   resultCategories: ResultCategory[];
   setStrategy: (s: Strategy) => void;
-  generate: (projectId: number, applyRules?: boolean, tStrength?: number) => Promise<void>;
+  generate: (projectId: number, applyRules?: boolean, tStrength?: number, seedSetId?: number) => Promise<void>;
+  warnings: string[];  // BUG R-05: Hinweise der letzten Generierung
   fetchGenerations: (projectId: number) => Promise<void>;
   loadGeneration: (generationId: number) => Promise<void>;
   renameGeneration: (generationId: number, name: string) => Promise<void>;
@@ -30,6 +31,7 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
   count: 0,
   loading: false,
   error: null,
+  warnings: [],
   strategy: "each",
   generations: [],
   generationsLoading: false,
@@ -38,14 +40,15 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
 
   setStrategy: (strategy) => set({ strategy }),
 
-  generate: async (projectId, applyRules = false, tStrength = 2) => {
-    set({ loading: true, error: null, testcases: [], riskSummary: null, resultCategories: [] });
+  generate: async (projectId, applyRules = false, tStrength = 2, seedSetId) => {
+    set({ loading: true, error: null, warnings: [], testcases: [], riskSummary: null, resultCategories: [] });
     try {
       const res = await generateApi.run(projectId, { 
         strategy: get().strategy, 
         apply_rules: applyRules,
         t_strength: tStrength, // BUG-3: T-Wise Stärke
         limit: readMaxTestCases(), // REQ-4018: Obergrenze aus Einstellungen respektieren
+        ...(seedSetId ? { seed_set_id: seedSetId } : {}), // REQ-6009
       });
       const data = await generateApi.getTestcases(res.generation_id);
       set({
@@ -54,6 +57,7 @@ export const useGenerateStore = create<GenerateStore>((set, get) => ({
         resultCategories: data.result_categories,
         generationId: res.generation_id,
         count: res.count,
+        warnings: res.warnings ?? [],
         loading: false,
       });
       // History nach neuer Generierung aktualisieren

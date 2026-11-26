@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from combinatorics.coverage import calculate_coverage
+from combinatorics.supplement import strength_for
 
 
 @dataclass
@@ -73,6 +74,7 @@ def create_seed_report(
         for name, vals in categories.items()
         if name not in (result_category_names or [])
     }
+    t_strength = _effective_strength(strategy, t_strength, active_cats)
 
     if not active_cats:
         return SeedReport(
@@ -114,7 +116,7 @@ def create_seed_report(
         total_testcases=len(testcases),
         coverage_before=coverage_before.percentage,
         coverage_after=coverage_after.percentage,
-        impossible_tuples=coverage_before.uncovered_tuples,
+        impossible_tuples=coverage_before.excluded_tuples,  # BUG K-11
         strategy=strategy,
         t_strength=t_strength,
         filled_fields=filled_fields or [],
@@ -153,6 +155,7 @@ def create_gap_fill_report(
         for name, vals in categories.items()
         if name not in (result_category_names or [])
     }
+    t_strength = _effective_strength(strategy, t_strength, active_cats)
 
     if not active_cats:
         return SeedReport(
@@ -188,8 +191,15 @@ def create_gap_fill_report(
         total_testcases=len(new_testcases),
         coverage_before=coverage_before.percentage,
         coverage_after=coverage_after.percentage,
-        impossible_tuples=coverage_before.uncovered_tuples,
+        impossible_tuples=coverage_before.excluded_tuples,  # BUG K-11
         strategy=strategy,
         t_strength=t_strength,
         warnings=warnings or [],
     )
+
+def _effective_strength(strategy: str, t_strength: int, active_cats) -> int:
+    """BUG K-11: Bericht nutzt dieselbe Staerke wie die Ergaenzung."""
+    try:
+        return strength_for(strategy, t_strength, len(active_cats))
+    except ValueError:
+        return t_strength

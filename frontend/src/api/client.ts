@@ -174,6 +174,7 @@ export interface GenerationSummary {
   name: string;
   created_at: string;
   testcase_count: number;
+  coverage_2wise_pct?: number | null;  // REQ-6008: gespeicherte 2-wise-Abdeckung (sofern berechnet)
 }
 
 // REQ-3051: Testcases Response mit risk_summary

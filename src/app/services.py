@@ -325,7 +325,8 @@ def generate_cases(
         # Risikogewichtete Generierung benoetigt Gewichte aus der DB
         if db is not None and project_id is not None:
             weighted = load_categories_values_weighted(db, project_id)
-            return risk_based_generate(weighted)
+            # BUG K-07: Regeln beim Erzeugen beachten
+            return risk_based_generate(weighted, rule_engine=rule_engine)
         # Fallback ohne Gewichte: wie each_choice
         return each_choice.generate(categories, rule_engine=rule_engine)
     if strategy == "mcdc":
@@ -372,13 +373,26 @@ def load_rules_structured(db: Session, pid: int) -> Dict[str, list]:
     return out
 
 
-def find_unreachable_values(catmap: Dict[str, List[str]], result: List[Dict[str, str]]) -> List[str]:
-    """Finde Werte, die nach Regelanwendung in keinem Testfall vorkommen. B-20."""
+def find_unreachable_values(catmap: Dict[str, List[str]], result: List[Dict[str, str]],
+                            rule_engine=None) -> List[str]:
+    """Werte, die in keinem Testfall vorkommen. B-20.
+
+    BUG K-07: "durch die Regeln in keinem Testfall erreichbar" nur, wenn der Wert
+    tatsaechlich in keinem gueltigen Testfall vorkommen KANN. Fehlt ein erreichbarer
+    Wert nur in dieser Generierung, wird das gesondert gemeldet.
+    """
+    from combinatorics.feasibility import FeasibilityChecker
+    checker = FeasibilityChecker(catmap, rule_engine) if rule_engine is not None else None
+    present = {(cat, tc.get(cat)) for tc in result for cat in catmap}
     warnings: List[str] = []
     for cat_name, values in catmap.items():
         for val in values:
-            if not any(tc.get(cat_name) == val for tc in result):
+            if (cat_name, val) in present:
+                continue
+            if checker is not None and not checker.is_feasible({cat_name: val}):
                 warnings.append(f"Wert '{val}' ({cat_name}) ist durch die Regeln in keinem Testfall erreichbar.")
+            else:
+                warnings.append(f"Wert '{val}' ({cat_name}) kommt in dieser Generierung nicht vor.")
     return warnings
 
 
@@ -469,7 +483,7 @@ def apply_business_rules(
     # Unreachable values detection
     warnings: List[str] = []
     if catmap:
-        warnings = find_unreachable_values(catmap, unique)
+        warnings = find_unreachable_values(catmap, unique, engine)
 
     return unique, warnings
 

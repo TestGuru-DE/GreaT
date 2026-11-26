@@ -127,7 +127,8 @@
     "tabGenerations": "Generated Test Cases",
     "tabDecision": "Decision Table",
     "tabConstraints": "Constraints",
-    "projectNameLabel": "Project name"
+    "projectNameLabel": "Project name",
+    "tabSeeds": "Seeds"
   },
   "generations": {
     "title": "All Generations",
@@ -142,14 +143,22 @@
       "strategy": "Strategy",
       "testcases": "Test Cases",
       "date": "Date",
-      "actions": "Actions"
+      "actions": "Actions",
+      "coverage2wise": "2-wise %"
     },
     "actions": {
       "edit": "✏️",
       "json": "JSON",
       "excel": "Excel",
       "csv": "CSV",
-      "delete": "🗑️"
+      "delete": "🗑️",
+      "coverage": "Coverage",
+      "gapFill": "Fill gaps"
+    },
+    "gapFill": {
+      "running": "Filling…",
+      "done": "New generation created: {{seeds}} existing and {{added}} added test cases, 2-wise coverage {{before}} % → {{after}} %.",
+      "impossible": "{{count}} pairs are excluded by rules."
     }
   },
   "generationsPanel": {
@@ -616,8 +625,8 @@
       "format": "Format",
       "step": "Step",
       "charset": "Character set",
-        "timezone": "Time zone (optional)",
-        "timezoneHint": "ISO 8601 offset, e.g. +02:00, -05:30 or Z",
+      "timezone": "Time zone (optional)",
+      "timezoneHint": "ISO 8601 offset, e.g. +02:00, -05:30 or Z",
       "extras": "Additional values",
       "formats": {
         "iso": "YYYY-MM-DD (ISO)",
@@ -821,5 +830,44 @@
     "twoWise": "2-wise:",
     "excluded": "Excluded:",
     "uncoveredTuples": "Uncovered 2-wise tuples ({{count}})"
+  },
+  "seeds": {
+    "generateWith": "Seed set",
+    "none": "(no seeds)"
+  },
+  "seedManager": {
+    "title": "Seed sets",
+    "newSet": "+ New set",
+    "importCsv": "CSV import",
+    "loading": "Loading …",
+    "noSets": "No seed sets yet. Create or import one.",
+    "seeds": "Seeds",
+    "deleteTitle": "Delete",
+    "deleteConfirm": "Delete seed set?",
+    "createTitle": "New seed set",
+    "editorTitle": "Edit seeds",
+    "setNamePlaceholder": "Seed set name",
+    "needCategories": "Create categories first.",
+    "noSeeds": "No seeds yet. Add some.",
+    "addSeed": "Seed",
+    "removeSeed": "Remove seed",
+    "anyPlaceholder": "(any)",
+    "saveSet": "Save set",
+    "saveBtn": "Save",
+    "cancel": "Cancel"
+  },
+  "seedImport": {
+    "title": "CSV import",
+    "setNameLabel": "Seed set name",
+    "setNamePlaceholder": "e.g. My seeds",
+    "fileLabel": "CSV file",
+    "dropText": "Drop a CSV file here or …",
+    "browse": "browse",
+    "formatTitle": "CSV format",
+    "formatDesc": "First row: categories (header). Every further row: values. Empty = any. Separator: comma or semicolon (detected automatically).",
+    "formatExample": "CategoryA,CategoryB,CategoryC\nValue1,,Value3\n,Value2,Value3",
+    "importBtn": "Import",
+    "importing": "Importing …",
+    "cancel": "Cancel"
   }
 }

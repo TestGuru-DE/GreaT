@@ -67,13 +67,13 @@ describe("REQ-6009: SeedImport", () => {
   it("rendert Dialog mit Titel 'CSV Import'", () => {
     render(<SeedImport projectId={1} onClose={onCloseMock} />, { wrapper });
 
-    expect(screen.getByText("CSV Import")).toBeInTheDocument();
+    expect(screen.getByText("CSV-Import")).toBeInTheDocument();
   });
 
   it("zeigt Name-Input-Feld", () => {
     render(<SeedImport projectId={1} onClose={onCloseMock} />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/z\.B\. Meine Seeds/i);
+    const input = screen.getByPlaceholderText(/z\. B\. Meine Seeds/i);
     expect(input).toBeInTheDocument();
   });
 
@@ -118,7 +118,7 @@ describe("REQ-6009: SeedImport", () => {
   it("Importieren-Button bleibt disabled wenn nur Name gesetzt", () => {
     render(<SeedImport projectId={1} onClose={onCloseMock} />, { wrapper });
 
-    const input = screen.getByPlaceholderText(/z\.B\. Meine Seeds/i);
+    const input = screen.getByPlaceholderText(/z\. B\. Meine Seeds/i);
     fireEvent.change(input, { target: { value: "Mein Satz" } });
 
     const importBtn = screen.getByText("Importieren");
@@ -131,10 +131,10 @@ describe("REQ-6009: SeedImport", () => {
     render(<SeedImport projectId={1} onClose={onCloseMock} />, { wrapper });
 
     // Even with name filled, loading disables the button
-    const input = screen.getByPlaceholderText(/z\.B\. Meine Seeds/i);
+    const input = screen.getByPlaceholderText(/z\. B\. Meine Seeds/i);
     fireEvent.change(input, { target: { value: "Mein Satz" } });
 
-    const importBtn = screen.getByText("Importiere...");
+    const importBtn = screen.getByText("Importiere …");
     expect(importBtn).toBeDisabled();
   });
 
@@ -143,7 +143,7 @@ describe("REQ-6009: SeedImport", () => {
 
     render(<SeedImport projectId={1} onClose={onCloseMock} />, { wrapper });
 
-    expect(screen.getByText("Importiere...")).toBeInTheDocument();
+    expect(screen.getByText("Importiere …")).toBeInTheDocument();
   });
 
   it("ruft onClose bei Abbrechen auf", () => {

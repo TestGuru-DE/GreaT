@@ -61,21 +61,24 @@ router = APIRouter(tags=["API"], dependencies=[Depends(require_api_capable)])
 
 
 
-def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
-    """REQ-3005/REQ-3040/REQ-6001: Regel-Engine aus Projektregeln + Constraints aufbauen."""
+def build_rule_engine_with_report(db: Session, pid: int) -> tuple[RuleEngine, list[str]]:
+    """REQ-3005/REQ-3040/REQ-6001: Regel-Engine aus Projektregeln + Constraints aufbauen.
+
+    BUG R-05: Liefert zusaetzlich Warnungen fuer Constraints, die NICHT angewendet
+    werden (als ungueltig markiert oder nicht auswertbar), statt sie nur zu loggen.
+    """
+    import logging
+    log = logging.getLogger("great.api")
+
     db_rules = db.query(models.Rule).filter(models.Rule.project_id == pid).all()
     categories = db.query(models.Category).filter(models.Category.project_id == pid).all()
     cat_name_by_id = {c.id: c.name for c in categories}
-
-    # REQ-6001: value_id -> value_name Mapping (pro Kategorie)
     all_values = db.query(models.Value).filter(
         models.Value.category_id.in_(cat_name_by_id.keys())
     ).all()
-    value_name_by_id: dict[int, str] = {v.id: v.value for v in all_values}
-    # Umgekehrtes Mapping: (category_id, value_id) -> value_name
-    val_map: dict[tuple[int, int], int] = {}  # (cat_id, val_id) -> val_id (selbst, fuer ConstraintRule)
 
     engine_rules = []
+    skipped: list[str] = []
     for r in db_rules:
         ic = cat_name_by_id.get(r.if_category_id, "")
         tc_name = cat_name_by_id.get(r.then_category_id, "")
@@ -87,34 +90,33 @@ def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
             allowed = json.loads(r.then_values_json or "[]")
             engine_rules.append(CombineRule(ic, r.if_value, tc_name, allowed))
 
-    # REQ-6001: Constraints laden und als ConstraintRule hinzufügen
-    constraints = db.query(models.Constraint).filter(
-        models.Constraint.project_id == pid,
-        models.Constraint.is_valid == True,  # noqa: E712
-    ).all()
-
-    for c in constraints:
-        import json as json_mod
+    # REQ-6001: Constraints als ConstraintRule
+    cat_map: dict[str, int] = {name: cid for cid, name in cat_name_by_id.items()}
+    val_map: dict[tuple[int, str], int] = {(v.category_id, v.value): v.id for v in all_values}
+    from ..constraints.references import invalid_references
+    for c in (db.query(models.Constraint)
+              .filter(models.Constraint.project_id == pid)
+              .order_by(models.Constraint.name, models.Constraint.id)):
+        if not c.is_valid:
+            skipped.append(f"Constraint '{c.name}' ist ungueltig (verweist auf geloeschte Kategorie "
+                           "oder geloeschten Wert) und wurde nicht angewendet.")
+            continue
         try:
-            expression = json_mod.loads(c.expression_json)
-            # category_map: category_name -> category_id
-            # value_map: (category_id, value_name) -> value_id
-            cat_map: dict[str, int] = {name: cid for cid, name in cat_name_by_id.items()}
-            val_map2: dict[tuple[int, str], int] = {}
-            for v in all_values:
-                val_map2[(v.category_id, v.value)] = v.id
-
-            engine_rules.append(ConstraintRule(
-                expression=expression,
-                category_map=cat_map,
-                value_map=val_map2,
-            ))
-        except (json_mod.JSONDecodeError, Exception) as e:
-            # Ungueltige Constraints ueberspringen (is_valid=False setzen wuerde besser passen)
-            log = __import__("logging").getLogger("great.api")
+            expression = json.loads(c.expression_json)
+            problems = invalid_references(db, pid, expression)
+            if problems:
+                raise ValueError("; ".join(problems))
+            engine_rules.append(ConstraintRule(expression=expression, category_map=cat_map, value_map=val_map))
+        except Exception as e:  # noqa: BLE001 - jedes Problem wird dem Nutzer gemeldet
             log.warning("Skipping invalid constraint id=%d: %s", c.id, e)
+            skipped.append(f"Constraint '{c.name}' ist nicht auswertbar und wurde nicht angewendet.")
 
-    return RuleEngine(engine_rules)
+    return RuleEngine(engine_rules), skipped
+
+
+def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
+    """Regel-Engine ohne Bericht (siehe build_rule_engine_with_report)."""
+    return build_rule_engine_with_report(db, pid)[0]
 
 def _timeout_error(timeout) -> HTTPException:
     """BUG B-03 / N-03: Einheitliche Antwort bei ueberschrittenem Zeitbudget (422 + Code)."""
@@ -216,25 +218,30 @@ def generate(
         with time_budget(deadline):
             # REQ-3005/REQ-3040: Regeln VOR der Generierung an die Strategien uebergeben
             rule_engine = None
+            skipped_constraints: list[str] = []
             if payload.apply_rules:
-                rule_engine = _build_rule_engine(db, pid)
+                # BUG R-05: nicht angewendete Constraints werden gemeldet
+                rule_engine, skipped_constraints = build_rule_engine_with_report(db, pid)
 
             # REQ-6009: Seed-Generierung oder normale Generierung
             seeds_count = 0
             supplemented_count = 0
             coverage_before = 0.0
             coverage_after = 0.0
-            warnings: list[str] = []
+            warnings: list[str] = list(skipped_constraints)
             rule_count = len(db.query(models.Rule).filter(models.Rule.project_id == pid).all())
 
             if payload.seed_set_id or payload.seeds:
                 # Seed-Generierung
                 from ..services_seed import generate_with_seeds
 
-                cases, report, seed_warnings = generate_with_seeds(
-                    db, pid, payload.seed_set_id, payload.seeds,
-                    payload.strategy, t_strength, rule_engine, deadline,
-                )
+                try:
+                    cases, report, seed_warnings = generate_with_seeds(
+                        db, pid, payload.seed_set_id, payload.seeds,
+                        payload.strategy, t_strength, rule_engine, deadline,
+                    )
+                except ValueError as e:  # BUG K-11: unbekannte Strategie
+                    raise HTTPException(status_code=422, detail={"code": "invalid_strategy", "detail": str(e)})
                 warnings.extend(seed_warnings)
                 seeds_count = report.seeds_count
                 supplemented_count = report.supplemented_count
@@ -275,7 +282,24 @@ def generate(
     # REQ-4018: Maximale Anzahl Testfaelle respektieren.
     effective_limit = payload.limit if payload.limit is not None else get_max_testcases()
     truncated = len(cases) > effective_limit
-    cases = cases[:effective_limit]
+    seed_cases = [c for c in cases if c.get("origin") == "seed"]
+    if seed_cases:
+        # BUG K-12: Seeds sind Pflicht-Testfaelle und werden nie still abgeschnitten;
+        # das Limit begrenzt nur die Ergaenzung.
+        others = [c for c in cases if c.get("origin") != "seed"]
+        keep = max(0, effective_limit - len(seed_cases))
+        if len(seed_cases) > effective_limit:
+            warnings.append(
+                f"Limit {effective_limit} ist kleiner als die Anzahl der Seeds ({len(seed_cases)}). "
+                "Alle Seeds wurden uebernommen, es wurde nichts ergaenzt.")
+        elif len(others) > keep:
+            warnings.append(
+                f"Limit {effective_limit}: {len(others) - keep} ergaenzte Testfaelle wurden nicht uebernommen; "
+                "die Abdeckung ist daher unvollstaendig.")
+        kept = {id(c) for c in others[:keep]}
+        cases = [c for c in cases if c.get("origin") == "seed" or id(c) in kept]
+    else:
+        cases = cases[:effective_limit]
 
     gen = models.Generation(
         project_id=pid,

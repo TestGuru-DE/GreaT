@@ -23,6 +23,10 @@ vi.mock("../../api/client", () => ({
     renameGeneration: vi.fn(),
     updateAssignment: vi.fn(),
   },
+  // REQ-6009: Seed-Saetze fuer die Auswahl im Generierungsformular
+  seedApi: {
+    list: vi.fn(() => Promise.resolve([])),
+  },
 }));
 
 describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
@@ -44,6 +48,7 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     count: 2,
     loading: false,
     error: null,
+    warnings: [] as string[],
     strategy: "each" as const,
     generations: [],
     generationsLoading: false,
@@ -231,6 +236,7 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     count: 1,
     loading: false,
     error: null,
+    warnings: [] as string[],
     strategy: "each" as const,
     generations: [],
     generationsLoading: false,
@@ -319,6 +325,7 @@ describe("TestCasePanel - REQ-3005 Mit-Regeln-Checkbox", () => {
     count: 0,
     loading: false,
     error: null,
+    warnings: [] as string[],
     strategy: "each" as const,
     generations: [],
     generationsLoading: false,
