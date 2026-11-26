@@ -165,6 +165,20 @@ export const valuesApi = {
       ? api.delete<{ok: boolean}>("/values/" + valueId, { params: { force: true } })
       : api.delete<{ok: boolean}>("/values/" + valueId)
     ).then((r) => r.data),
+  // REQ-6006 / BUG C-17: Reihenfolge der Werte (alle Wert-IDs der Kategorie)
+  reorder: (categoryId: number, order: number[]) =>
+    api.patch<{ ok: boolean }>("/categories/" + categoryId + "/values/reorder", { order }).then((r) => r.data),
+};
+
+// REQ-6006 / BUG C-19: Manuellen Testfall gegen Regeln und Constraints pruefen
+export interface TestcaseCheckResult {
+  valid: boolean;
+  completable: boolean;
+  violations: string[];
+}
+export const testcaseCheckApi = {
+  check: (projectId: number, assignment: Record<string, string>) =>
+    api.post<TestcaseCheckResult>(`/projects/${projectId}/testcases/check`, { assignment }).then((r) => r.data),
 };
 
 // --- Generierung ---

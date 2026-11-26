@@ -1,5 +1,9 @@
 // REQ-6006: Layout-Berechnung fuer Klassifikationsbaum (SVG)
 // REQ-6016: Hierarchische Klassen (Verfeinerung)
+//
+// BUG C-16: Klassische Notation – Klassen stehen NEBENEINANDER unter ihrer
+// Klassifikation. Jede Klasse ist eine Spalte; die Testfallmatrix unter dem Baum
+// nutzt dieselben Spalten (x/width), dadurch stehen die Punkte exakt unter den Klassen.
 
 export interface TreeNode {
   id: string;
@@ -10,6 +14,7 @@ export interface TreeNode {
   label: string;
   type: "root" | "category" | "value";
   categoryId?: number;
+  valueId?: number;
   value?: string;
   isError?: boolean;
   isDefault?: boolean;
@@ -18,20 +23,41 @@ export interface TreeNode {
   parentId?: number | null;
 }
 
+export interface TreeEdge {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+/** Eine Klasse = eine Spalte (fuer Baum und Matrix). */
+export interface TreeColumn {
+  categoryId: number;
+  categoryName: string;
+  valueId?: number;
+  value: string;
+  x: number;
+  width: number;
+}
+
 export interface LayoutResult {
   nodes: TreeNode[];
+  edges: TreeEdge[];
+  columns: TreeColumn[];
   totalWidth: number;
+  /** Hoehe des Baums (ohne Matrix) */
   totalHeight: number;
 }
 
-interface LayoutCategory {
+export interface LayoutCategory {
   id: number;
   name: string;
   isResult?: boolean;
   values: LayoutValue[];
 }
 
-interface LayoutValue {
+export interface LayoutValue {
+  id?: number;
   name: string;
   isError?: boolean;
   isDefault?: boolean;
@@ -39,101 +65,71 @@ interface LayoutValue {
   parentId?: number | null;
 }
 
-const ROOT_HEIGHT = 40;
-const CATEGORY_HEIGHT = 36;
-const VALUE_HEIGHT = 28;
-const NODE_WIDTH = 120;
-const H_GAP = 20;
-const V_GAP = 12;
-const ROOT_TO_CATS_GAP = 24;
-const CAT_TO_VALUES_GAP = 16;
+export const ROOT_HEIGHT = 40;
+export const CATEGORY_HEIGHT = 44;
+export const VALUE_HEIGHT = 44;
+export const ROW_HEIGHT = 24;
+const MIN_CLASS_WIDTH = 72;
+const MAX_CLASS_WIDTH = 160;
+const CHAR_WIDTH = 7;
+const CLASS_GAP = 8;
+const CATEGORY_GAP = 28;
+const LEVEL_GAP = 32;
+export const LEFT_MARGIN = 96; // Platz fuer Testfallnamen in der Matrix
 
-export function computeTreeLayout(
-  projectName: string,
-  categories: LayoutCategory[],
-  cellWidth?: number,
-  cellHeight?: number,
-): LayoutResult {
-  const cw = cellWidth ?? NODE_WIDTH;
-  const ch = cellHeight ?? VALUE_HEIGHT;
+function textWidth(label: string, min: number, max: number): number {
+  return Math.max(min, Math.min(max, label.length * CHAR_WIDTH + 24));
+}
 
+export function computeTreeLayout(projectName: string, categories: LayoutCategory[]): LayoutResult {
   const nodes: TreeNode[] = [];
-  let curX = 0;
+  const edges: TreeEdge[] = [];
+  const columns: TreeColumn[] = [];
 
-  // 1. Root node (project name) - position first, center later
-  const rootWidth = Math.max(cw, Math.min(300, projectName.length * 9 + 40));
-  nodes.push({
-    id: "root",
-    x: 0,
-    y: 0,
-    width: rootWidth,
-    height: ROOT_HEIGHT,
-    label: projectName,
-    type: "root",
-  });
+  const catY = ROOT_HEIGHT + LEVEL_GAP;
+  const valY = catY + CATEGORY_HEIGHT + LEVEL_GAP;
 
-  // 2. Compute category column widths
-  const catWidths: number[] = [];
+  nodes.push({ id: "root", x: 0, y: 0, width: 0, height: ROOT_HEIGHT, label: projectName, type: "root" });
+
+  let curX = categories.length ? LEFT_MARGIN : 0;
   for (const cat of categories) {
-    const maxValLen = cat.values.reduce((m, v) => Math.max(m, v.name.length), cat.name.length);
-    const w = Math.max(cw, Math.min(200, maxValLen * 9 + 40));
-    catWidths.push(w);
-  }
+    const classWidths = cat.values.map((v) => textWidth(v.name, MIN_CLASS_WIDTH, MAX_CLASS_WIDTH));
+    const classesWidth = classWidths.reduce((a, b) => a + b, 0) + CLASS_GAP * Math.max(0, classWidths.length - 1);
+    const catWidth = Math.max(textWidth(cat.name, MIN_CLASS_WIDTH, 2 * MAX_CLASS_WIDTH), classesWidth);
+    const catNode: TreeNode = {
+      id: `cat-${cat.id}`, x: curX, y: catY, width: catWidth, height: CATEGORY_HEIGHT,
+      label: cat.name, type: "category", categoryId: cat.id, isResult: cat.isResult,
+    };
+    nodes.push(catNode);
 
-  // 3. Place categories and values
-  for (let ci = 0; ci < categories.length; ci++) {
-    const cat = categories[ci];
-    const w = catWidths[ci];
-
-    // Category node
-    nodes.push({
-      id: `cat-${cat.id}`,
-      x: curX,
-      y: ROOT_HEIGHT + ROOT_TO_CATS_GAP,
-      width: w,
-      height: CATEGORY_HEIGHT,
-      label: cat.name,
-      type: "category",
-      categoryId: cat.id,
-      isResult: cat.isResult,
-    });
-
-    // Value nodes
-    for (let vi = 0; vi < cat.values.length; vi++) {
-      const val = cat.values[vi];
+    // Klassen unter der Klassifikation zentrieren
+    let classX = curX + (catWidth - classesWidth) / 2;
+    cat.values.forEach((val, vi) => {
+      const w = classWidths[vi];
       nodes.push({
-        id: `val-${cat.id}-${vi}`,
-        x: curX,
-        y: ROOT_HEIGHT + ROOT_TO_CATS_GAP + CATEGORY_HEIGHT + CAT_TO_VALUES_GAP + vi * (ch + V_GAP),
-        width: w,
-        height: ch,
-        label: val.name,
-        type: "value",
-        categoryId: cat.id,
-        value: val.name,
-        isError: val.isError,
-        isDefault: val.isDefault,
-        // REQ-6016: Parent value ID for hierarchical refinement
-        parentId: val.parentId ?? null,
+        id: `val-${cat.id}-${val.id ?? vi}`, x: classX, y: valY, width: w, height: VALUE_HEIGHT,
+        label: val.name, type: "value", categoryId: cat.id, valueId: val.id, value: val.name,
+        isError: val.isError, isDefault: val.isDefault, parentId: val.parentId ?? null,
       });
-    }
-
-    curX += w + H_GAP;
+      columns.push({ categoryId: cat.id, categoryName: cat.name, valueId: val.id, value: val.name, x: classX, width: w });
+      edges.push({ x1: curX + catWidth / 2, y1: catY + CATEGORY_HEIGHT, x2: classX + w / 2, y2: valY });
+      classX += w + CLASS_GAP;
+    });
+    curX += catWidth + CATEGORY_GAP;
   }
 
-  // 4. Center root node
-  const totalWidth = curX;
-  nodes[0].x = (totalWidth - rootWidth) / 2;
+  const totalWidth = categories.length ? curX - CATEGORY_GAP + 16 : 0;
+  const rootWidth = textWidth(projectName, 120, 320);
+  const root = nodes[0];
+  root.width = rootWidth;
+  root.x = Math.max(0, (Math.max(totalWidth, rootWidth) - rootWidth) / 2);
+  for (const n of nodes) {
+    if (n.type === "category") {
+      edges.push({ x1: root.x + rootWidth / 2, y1: ROOT_HEIGHT, x2: n.x + n.width / 2, y2: catY });
+    }
+  }
 
-  // 5. Compute total height
-  const maxValCount = categories.reduce((m, c) => Math.max(m, c.values.length), 0);
-  const totalHeight =
-    ROOT_HEIGHT +
-    ROOT_TO_CATS_GAP +
-    CATEGORY_HEIGHT +
-    CAT_TO_VALUES_GAP +
-    maxValCount * (ch + V_GAP) -
-    V_GAP;
-
-  return { nodes, totalWidth, totalHeight };
+  const hasValues = categories.some((c) => c.values.length > 0);
+  const totalHeight = categories.length === 0 ? ROOT_HEIGHT : hasValues ? valY + VALUE_HEIGHT : catY + CATEGORY_HEIGHT;
+  return { nodes, edges, columns, totalWidth: Math.max(totalWidth, categories.length ? rootWidth : 0), totalHeight };
 }

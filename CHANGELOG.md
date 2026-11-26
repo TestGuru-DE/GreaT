@@ -29,6 +29,16 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Risikobasierte Strategie regelbewusst (K-07):** `risk_based` erzeugt nur regelkonforme Testfaelle und deckt jeden erreichbaren Wert ab, statt regelwidrige Faelle nachtraeglich zu verwerfen.
 - **Seeds und Lueckenschluss ergaenzen gezielt (K-10 bis K-12):** Nur noch fehlende, erreichbare Tupel der gewaehlten Staerke werden ergaenzt (keine volle Neugenerierung); `t_wise` nutzt `t_strength`; unbekannte Strategien liefern 422. Der Bericht nennt die durch Regeln unmoeglichen Tupel. `limit` kuerzt keine Seeds (Hinweis statt stiller Kuerzung); Seeds mit unbekannten Werten werden nicht uebernommen.
 - **Oberflaeche eingebunden (K-09):** Generierungsuebersicht mit Spalte "2-wise %", Abdeckungsmatrix mit Heatmap und Aktion "Luecken schliessen"; Projektansicht mit Reiter "Seeds" (Seed-Saetze anlegen, bearbeiten, CSV-Import) und Auswahl eines Seed-Satzes bei der Generierung.
+- **Klassifikationsbaum ueberarbeitet (C-15 bis C-23):**
+  - Alle Klassen werden angezeigt, ohne vorheriges Aufklappen in der Kategorien-Ansicht (C-15).
+  - Klassen stehen nebeneinander unter ihrer Klassifikation; die Testfallmatrix hat eine Spalte je Klasse mit Punkt (●), exakt darunter (C-16).
+  - Bearbeiten im Baum: hinzufuegen, umbenennen (Doppelklick/F2), loeschen (Entf, mit Rueckfrage), Reihenfolge per Ziehen oder Alt+Pfeil (C-17).
+  - Undo/Redo (Strg+Z/Strg+Y) wirkt auf dem Server, auch in der Kategorien-Ansicht (Umbenennen und Sortieren sind jetzt ebenfalls rueckgaengig zu machen) (C-18).
+  - Manuelle Testfaelle in der Matrix per Klick, Regelverstoesse sofort markiert, Speichern als Seed-Satz (C-19). Neuer Endpunkt `POST /api/projects/{id}/testcases/check`.
+  - Export als SVG (gueltiges, eigenstaendiges Bild) und PNG, wahlweise mit oder ohne Matrix (C-20).
+  - Kontrast >= 4,5:1 in allen Themes, Ergebnis/Fehlerwert/Standard mit Symbol und Beschriftung, Legende (C-21, C-22).
+  - Strg+Mausrad zoomt nur den Baum; "Einpassen" passt an die verfuegbare Flaeche an (C-23).
+  - Reihenfolge der Werte ist aenderbar (`PATCH /api/categories/{id}/values/reorder`) und gilt fuer Anzeige und Generierung.
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
 
 ### ⚠️ Hinweise fuer API-Nutzer

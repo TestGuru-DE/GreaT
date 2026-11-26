@@ -796,12 +796,12 @@
   "classificationTree": {
     "project": "Projekt",
     "zoomOut": "Verkleinern",
-    "zoomIn": "Vergrössern",
+    "zoomIn": "Vergrößern",
     "fit": "Einpassen",
-    "addCategory": "Kategorie",
-    "newCategory": "Neue Kategorie",
+    "addCategory": "Klassifikation",
+    "newCategory": "Neue Klassifikation",
     "deleteConfirm": "Kategorie löschen?",
-    "refine": "Verfeinern...",
+    "refine": "Verfeinern …",
     "refineDialog": {
       "title": "Verfeinerung erstellen: {{valueName}}",
       "namePlaceholder": "Name der Unter-Kategorie...",
@@ -812,7 +812,40 @@
       "maxDepth": "Maximale Hierarchie-Tiefe (3 Ebenen) erreicht."
     },
     "subCategory": "Unter-Kategorie",
-    "hierarchy": "Hierarchie"
+    "hierarchy": "Hierarchie",
+    "title": "Klassifikationsbaum",
+    "canvasLabel": "Klassifikationsbaum und Testfallmatrix",
+    "addClass": "Klasse",
+    "newClass": "Neue Klasse",
+    "rename": "Umbenennen (F2)",
+    "delete": "Löschen (Entf)",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen",
+    "deleteConfirmCategory": "Klassifikation „{{name}}“ mit allen Klassen löschen?",
+    "deleteConfirmValue": "Klasse „{{name}}“ löschen?",
+    "withMatrix": "mit Matrix",
+    "exportSvg": "SVG",
+    "exportPng": "PNG",
+    "markers": {
+      "result": "Ergebnis",
+      "error": "Fehlerwert",
+      "default": "Standard"
+    },
+    "legend": {
+      "title": "Legende",
+      "dot": "gewählte Klasse im Testfall",
+      "keys": "Doppelklick/F2 umbenennen, Entf löschen, Ziehen oder Alt+←/→ verschieben, Strg+Z/Strg+Y, Strg+Mausrad zoomen"
+    },
+    "generation": "Generierung:",
+    "noGeneration": "(keine)",
+    "addTestCase": "Testfall",
+    "manualPrefix": "Manuell ",
+    "manualHint": "Klick in eine Zelle wählt die Klasse; Regelverstöße werden rot markiert.",
+    "seedSetName": "Name des Seed-Satzes",
+    "saveAsSeeds": "Als Seed-Satz speichern",
+    "discardManual": "Verwerfen",
+    "manualSaved": "Seed-Satz „{{name}}“ mit {{count}} Testfällen gespeichert.",
+    "notCompletable": "lässt sich nicht zu einem gültigen Testfall vervollständigen"
   },
   "coverage": {
     "loadingHeatmap": "Lade Heatmap ...",

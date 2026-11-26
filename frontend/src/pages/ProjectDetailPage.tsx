@@ -171,7 +171,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Rechte Spalte: Tabs */}
-        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm flex flex-col min-h-0">
+        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm flex flex-col min-h-0 min-w-0">
           <div className="flex border-b border-theme-border px-4 pt-3">
             <button onClick={() => setRightTab("generate")} className={tabClass("generate")}>
               {t('projectDetail.tabGenerate')}
@@ -197,7 +197,7 @@ export default function ProjectDetailPage() {
             </button>
           </div>
 
-          <div className="flex-1 p-4 flex flex-col min-h-0 overflow-auto">
+          <div className="flex-1 p-4 flex flex-col min-h-0 min-w-0 overflow-auto">
             {rightTab === "generate" && <TestCasePanel projectId={projectId} />}
             {rightTab === "rules" && <RulesPanel projectId={projectId} />}
             {rightTab === "constraints" && <ConstraintBuilder projectId={projectId} />}

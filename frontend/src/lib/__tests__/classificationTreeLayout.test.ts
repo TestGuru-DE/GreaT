@@ -33,12 +33,38 @@ describe("computeTreeLayout", () => {
     expect(cats[1].x).toBeGreaterThan(cats[0].x + cats[0].width);
   });
 
-  it("keine Ueberlappung vertikal", () => {
+  it("Klassen nebeneinander ohne Ueberlappung, unter ihrer Klassifikation (C-16)", () => {
     const result = computeTreeLayout("P", [
       { id: 1, name: "A", values: [{ name: "a1" }, { name: "a2" }] },
     ]);
+    const cat = result.nodes.find((n) => n.type === "category")!;
     const vals = result.nodes.filter((n) => n.type === "value" && n.categoryId === 1);
-    expect(vals[1].y).toBeGreaterThan(vals[0].y + vals[0].height);
+    expect(vals[1].y).toBe(vals[0].y);
+    expect(vals[1].x).toBeGreaterThan(vals[0].x + vals[0].width);
+    expect(vals[0].x).toBeGreaterThanOrEqual(cat.x);
+    expect(vals[1].x + vals[1].width).toBeLessThanOrEqual(cat.x + cat.width);
+  });
+
+  it("liefert je Klasse eine Matrixspalte an derselben Position (C-16)", () => {
+    const result = computeTreeLayout("P", [
+      { id: 1, name: "A", values: [{ id: 5, name: "a1" }] },
+      { id: 2, name: "B", values: [{ id: 6, name: "b1" }, { id: 7, name: "b2" }] },
+    ]);
+    expect(result.columns.map((c) => c.value)).toEqual(["a1", "b1", "b2"]);
+    for (const col of result.columns) {
+      const node = result.nodes.find((n) => n.valueId === col.valueId)!;
+      expect([col.x, col.width]).toEqual([node.x, node.width]);
+    }
+  });
+
+  it("30 Klassifikationen x 20 Klassen ohne Ueberlappung (REQ-6006)", () => {
+    const cats = Array.from({ length: 30 }, (_, i) => ({
+      id: i + 1, name: `K${i}`, values: Array.from({ length: 20 }, (_, j) => ({ id: i * 100 + j, name: `Klasse ${j}` })),
+    }));
+    const result = computeTreeLayout("P", cats);
+    const cols = result.columns;
+    expect(cols).toHaveLength(600);
+    for (let i = 1; i < cols.length; i++) expect(cols[i].x).toBeGreaterThanOrEqual(cols[i - 1].x + cols[i - 1].width);
   });
 
   it("30 Kategorien x 20 Werte < totalWidth", () => {

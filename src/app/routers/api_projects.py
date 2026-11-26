@@ -254,7 +254,7 @@ def list_values(cid: DbId, db: Session = Depends(get_db)):
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
-    return db.query(models.Value).filter(models.Value.category_id == cid).order_by(models.Value.id).all()
+    return db.query(models.Value).filter(models.Value.category_id == cid).order_by(models.Value.order_index, models.Value.id).all()
 
 
 @router.post("/categories/{cid}/values", response_model=schemas.ValueRead, dependencies=[Depends(require_writer)])
@@ -284,17 +284,38 @@ def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(
             current = db.get(models.Value, current.parent_value_id)
     # REQ-3008: Erster Wert einer Kategorie ist automatisch Default
     existing_count = db.query(models.Value).filter(models.Value.category_id == cid).count()
+    # REQ-6006: neue Werte am Ende einordnen (Reihenfolge per Ziehen aenderbar)
+    max_order = db.query(func.max(models.Value.order_index)).filter(models.Value.category_id == cid).scalar()
     v = models.Value(
         category_id=cid,
         value=payload.value,
         risk_weight=payload.risk_weight,
         is_default=(existing_count == 0),
         parent_value_id=parent_value_id,
+        order_index=(max_order + 1) if existing_count else 0,
     )
     db.add(v)
     db.commit()
     db.refresh(v)
     return v
+
+
+@router.patch("/categories/{cid}/values/reorder", dependencies=[Depends(require_writer)])
+def reorder_values(cid: DbId, payload: ReorderRequest, db: Session = Depends(get_db)):
+    """REQ-6006 / BUG C-17: Reihenfolge der Werte (Klassen) aendern.
+
+    order: alle Wert-IDs der Kategorie in neuer Reihenfolge. Fremde IDs -> 422.
+    """
+    cat = db.get(models.Category, cid)
+    if not cat:
+        raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    values = {v.id: v for v in db.query(models.Value).filter(models.Value.category_id == cid)}
+    if set(payload.order) != set(values) or len(payload.order) != len(values):
+        raise HTTPException(status_code=422, detail="order muss genau alle Werte der Kategorie enthalten")
+    for idx, vid in enumerate(payload.order):
+        values[vid].order_index = idx
+    db.commit()
+    return {"ok": True}
 
 
 @router.delete("/values/{vid}", dependencies=[Depends(require_writer)])

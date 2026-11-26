@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCategoryStore } from "../store/categoryStore";
 import { categoriesApi } from "../api/client";
-import { renameApi, reorderApi, categoryPropertiesApi } from "../api/client";
+import { categoryPropertiesApi } from "../api/client";
 import { useToastStore } from "./Toast";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useKeyboardNav } from "../hooks/useKeyboardNav";
@@ -31,6 +31,7 @@ export default function CategoryTree({ projectId }: Props) {
     fetchCategories, createCategory, deleteCategory: storeDeleteCategory,
     fetchValues, createValue, deleteValue: storeDeleteValue,
     canUndo, canRedo, undo, redo, // REQ-3053
+    renameCategory, renameValue, reorderCategories, // BUG C-18
   } = useCategoryStore();
   const toast = useToastStore();
 
@@ -149,8 +150,7 @@ export default function CategoryTree({ projectId }: Props) {
   const confirmEditCat = async (catId: number) => {
     if (!editingCatName.trim()) { setEditingCat(null); return; }
     try {
-      await renameApi.category(catId, editingCatName.trim());
-      await fetchCategories(projectId);
+      await renameCategory(catId, editingCatName.trim());  // BUG C-18: mit serverseitigem Undo
       toast.add(t("categoryTree.toast.categoryRenamed"));
     } catch { toast.add(t("categoryTree.toast.errorRename"), "error"); }
     setEditingCat(null);
@@ -163,8 +163,7 @@ export default function CategoryTree({ projectId }: Props) {
   const confirmEditVal = async (catId: number, valId: number) => {
     if (!editingValName.trim()) { setEditingVal(null); return; }
     try {
-      await renameApi.value(valId, editingValName.trim());
-      await fetchValues(catId);
+      await renameValue(catId, valId, editingValName.trim());  // BUG C-18: mit serverseitigem Undo
       toast.add(t("categoryTree.toast.valueRenamed"));
     } catch { toast.add(t("categoryTree.toast.errorRename"), "error"); }
     setEditingVal(null);
@@ -186,8 +185,7 @@ export default function CategoryTree({ projectId }: Props) {
     newOrder.splice(fromIdx, 1);
     newOrder.splice(toIdx, 0, fromId);
     try {
-      await reorderApi.categories(projectId, newOrder);
-      await fetchCategories(projectId);
+      await reorderCategories(projectId, newOrder);  // BUG C-18: mit serverseitigem Undo
       toast.add(t("categoryTree.toast.orderSaved"));
     } catch { toast.add(t("categoryTree.toast.errorSort"), "error"); }
     setDragOverId(null);

@@ -114,6 +114,58 @@ def build_rule_engine_with_report(db: Session, pid: int) -> tuple[RuleEngine, li
     return RuleEngine(engine_rules), skipped
 
 
+class TestcaseCheckRequest(schemas.BaseModel):
+    """REQ-6006 / BUG C-19: (Teil-)Belegung {Kategorie: Wert}."""
+    assignment: dict
+
+
+@router.post("/projects/{pid}/testcases/check")
+def check_testcase(pid: DbId, payload: TestcaseCheckRequest, db: Session = Depends(get_db)):
+    """REQ-6006 / BUG C-19: Prueft einen manuellen Testfall gegen Regeln und Constraints.
+
+    Liefert die verletzten Regeln/Constraints (sicher verletzt, auch bei Teilbelegung)
+    und ob sich die Belegung noch zu einem gueltigen Testfall vervollstaendigen laesst.
+    """
+    from combinatorics.feasibility import FeasibilityChecker
+    from ..services import load_categories_values
+
+    project = db.get(models.Project, pid)
+    if not project:
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    assignment = {str(k): str(v) for k, v in payload.assignment.items() if v not in (None, "")}
+    catmap = load_categories_values(db, pid)
+    unknown = [f"{c}={v}" for c, v in assignment.items() if v not in catmap.get(c, [])]
+    if unknown:
+        raise HTTPException(status_code=422, detail=f"Unbekannte Kategorie oder unbekannter Wert: {', '.join(unknown)}")
+
+    violations: list[str] = []
+    names = {c.id: c.name for c in db.query(models.Category).filter(models.Category.project_id == pid)}
+    for r in db.query(models.Rule).filter(models.Rule.project_id == pid).order_by(models.Rule.id):
+        ic, tc = names.get(r.if_category_id), names.get(r.then_category_id)
+        if assignment.get(ic) != r.if_value or tc not in assignment:
+            continue
+        if r.type == "exclude" and assignment[tc] == r.then_value:
+            violations.append(f"Regel: {ic}={r.if_value} schliesst {tc}={r.then_value} aus")
+        elif r.type == "dependency" and assignment[tc] != r.then_value:
+            violations.append(f"Regel: {ic}={r.if_value} verlangt {tc}={r.then_value}")
+        elif r.type == "combine" and assignment[tc] not in json.loads(r.then_values_json or "[]"):
+            violations.append(f"Regel: {ic}={r.if_value} erlaubt fuer {tc} nur bestimmte Werte")
+
+    cat_map = {name: cid for cid, name in names.items()}
+    val_map = {(v.category_id, v.value): v.id for v in db.query(models.Value).filter(
+        models.Value.category_id.in_(cat_map.values()))}
+    for c in (db.query(models.Constraint)
+              .filter(models.Constraint.project_id == pid, models.Constraint.is_valid == True)  # noqa: E712
+              .order_by(models.Constraint.name)):
+        rule = ConstraintRule(expression=json.loads(c.expression_json), category_map=cat_map, value_map=val_map)
+        if rule.is_violated(assignment):
+            violations.append(f"Constraint: {c.name}")
+
+    engine, _ = build_rule_engine_with_report(db, pid)
+    completable = not violations and FeasibilityChecker(catmap, engine).is_feasible(assignment)
+    return {"valid": not violations, "completable": completable, "violations": violations}
+
+
 def _build_rule_engine(db: Session, pid: int) -> RuleEngine:
     """Regel-Engine ohne Bericht (siehe build_rule_engine_with_report)."""
     return build_rule_engine_with_report(db, pid)[0]
@@ -461,7 +513,7 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
                 row.value
                 for row in db.query(models.Value)
                 .filter(models.Value.category_id == rule.then_category_id)
-                .order_by(models.Value.id)
+                .order_by(models.Value.order_index, models.Value.id)
                 .all()
             ]
             for value in then_values:

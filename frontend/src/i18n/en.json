@@ -795,13 +795,13 @@
   },
   "classificationTree": {
     "project": "Project",
-    "zoomOut": "Zoom Out",
-    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
     "fit": "Fit",
-    "addCategory": "Category",
-    "newCategory": "New Category",
+    "addCategory": "Classification",
+    "newCategory": "New classification",
     "deleteConfirm": "Delete category?",
-    "refine": "Refine...",
+    "refine": "Refine …",
     "refineDialog": {
       "title": "Create refinement: {{valueName}}",
       "namePlaceholder": "Name of sub-category...",
@@ -812,7 +812,40 @@
       "maxDepth": "Maximum hierarchy depth (3 levels) reached."
     },
     "subCategory": "Sub-Category",
-    "hierarchy": "Hierarchy"
+    "hierarchy": "Hierarchy",
+    "title": "Classification tree",
+    "canvasLabel": "Classification tree and test case matrix",
+    "addClass": "Class",
+    "newClass": "New class",
+    "rename": "Rename (F2)",
+    "delete": "Delete (Del)",
+    "undo": "Undo",
+    "redo": "Redo",
+    "deleteConfirmCategory": "Delete classification “{{name}}” with all its classes?",
+    "deleteConfirmValue": "Delete class “{{name}}”?",
+    "withMatrix": "with matrix",
+    "exportSvg": "SVG",
+    "exportPng": "PNG",
+    "markers": {
+      "result": "Result",
+      "error": "Error value",
+      "default": "Default"
+    },
+    "legend": {
+      "title": "Legend",
+      "dot": "class chosen in the test case",
+      "keys": "double-click/F2 rename, Del delete, drag or Alt+←/→ move, Ctrl+Z/Ctrl+Y, Ctrl+wheel zoom"
+    },
+    "generation": "Generation:",
+    "noGeneration": "(none)",
+    "addTestCase": "Test case",
+    "manualPrefix": "Manual ",
+    "manualHint": "Click a cell to choose the class; rule violations are marked red.",
+    "seedSetName": "Seed set name",
+    "saveAsSeeds": "Save as seed set",
+    "discardManual": "Discard",
+    "manualSaved": "Seed set “{{name}}” with {{count}} test cases saved.",
+    "notCompletable": "cannot be completed to a valid test case"
   },
   "coverage": {
     "loadingHeatmap": "Loading heatmap ...",

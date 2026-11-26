@@ -91,7 +91,7 @@ def load_categories_values(db: Session, project_id: int) -> Dict[str, List[str]]
         values = (
             db.query(models.Value)
             .filter(models.Value.category_id == c.id)
-            .order_by(models.Value.id)
+            .order_by(models.Value.order_index, models.Value.id)
             .all()
         )
         result[c.name] = [v.value for v in values]
@@ -116,7 +116,7 @@ def load_all_categories_values(db: Session, project_id: int) -> Dict[str, List[s
         values = (
             db.query(models.Value)
             .filter(models.Value.category_id == c.id)
-            .order_by(models.Value.id)
+            .order_by(models.Value.order_index, models.Value.id)
             .all()
         )
         result[c.name] = [v.value for v in values]
@@ -139,7 +139,7 @@ def load_result_categories(db: Session, project_id: int) -> List[dict]:
         values = (
             db.query(models.Value)
             .filter(models.Value.category_id == c.id)
-            .order_by(models.Value.id)
+            .order_by(models.Value.order_index, models.Value.id)
             .all()
         )
         result.append({
@@ -197,7 +197,7 @@ def load_categories_values_weighted(db: Session, project_id: int) -> dict:
         values = (
             db.query(models.Value)
             .filter(models.Value.category_id == c.id, models.Value.allowed == True)
-            .order_by(models.Value.id)
+            .order_by(models.Value.order_index, models.Value.id)
             .all()
         )
         result[c.name] = [(v.value, v.risk_weight or 1) for v in values]
