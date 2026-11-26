@@ -10,6 +10,9 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Constraints nur mit Kategorien und Werten des eigenen Projekts (K-05):** Fremde oder unbekannte IDs liefern 422 `constraint_reference_invalid`; `/constraints/validate` meldet sie als Fehler.
 
 ### 🐛 Bugfixes
+- **Angemeldet bleiben nach eigenem Passwortwechsel (B-06):** Die aendernde Sitzung erhaelt neue Tokens; alle anderen Sitzungen des Nutzers enden weiterhin.
+- **Kein Abmelden mehr beim Neuladen nach 15 Minuten (B-43):** Auch Aufrufe unter `/auth` (z. B. `/auth/me` beim Seitenstart) erneuern ein abgelaufenes Access-Token per Refresh. Scheitert der Refresh, wird die Anfrage nicht endlos wiederholt.
+- **Verstaendliche Fehlermeldungen beim Passwortwechsel (N-01):** Statt "Request failed with status code 400" erscheinen uebersetzte Meldungen, auch fuer zu verbreitete Passwoerter und zu wenig verschiedene Zeichen. Die Login-Seite zeigt ebenfalls die Meldung des Servers.
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
 
 ### ⚠️ Hinweise fuer API-Nutzer

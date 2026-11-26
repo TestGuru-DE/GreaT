@@ -43,6 +43,21 @@ def _delete_auth_cookie(response: Response, name: str) -> None:
     )
 
 
+def _issue_session(db: Session, response: Response, user: User) -> None:
+    """Neues Access- und Refresh-Token (aktuelle token_version) als Cookies setzen."""
+    access_token = create_access_token(user.id, user.username, user.role, user.token_version)
+    refresh_token = create_refresh_token(user.id)
+    db.add(RefreshToken(
+        user_id=user.id,
+        token=refresh_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=JWT_REFRESH_TOKEN_EXPIRE_DAYS),
+    ))
+    db.commit()
+    # B-26: httpOnly-Cookies ueber Helper
+    _set_auth_cookie(response, "access_token", access_token, JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60)
+    _set_auth_cookie(response, "refresh_token", refresh_token, JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60)
+
+
 @router.post("/login")
 def login(
     request: Request,
@@ -91,31 +106,7 @@ def login(
     login_rate_limiter.is_rate_limited(key, is_failure=False)
 
     # B-06: Token mit token_version erzeugen
-    access_token = create_access_token(user.id, user.username, user.role, user.token_version)
-    refresh_token = create_refresh_token(user.id)
-
-    # Store refresh token in DB
-    rt = RefreshToken(
-        user_id=user.id,
-        token=refresh_token,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=JWT_REFRESH_TOKEN_EXPIRE_DAYS),
-    )
-    db.add(rt)
-    db.commit()
-
-    # B-26: Set httpOnly cookies via helper
-    _set_auth_cookie(
-        response,
-        "access_token",
-        access_token,
-        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-    )
-    _set_auth_cookie(
-        response,
-        "refresh_token",
-        refresh_token,
-        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-    )
+    _issue_session(db, response, user)
 
     return {
         "user_id": user.id,
@@ -212,32 +203,8 @@ def refresh_token_endpoint(
     rt.is_revoked = True
     db.commit()
 
-    # Create NEW tokens
-    new_access_token = create_access_token(user.id, user.username, user.role, user.token_version)
-    new_refresh_token = create_refresh_token(user.id)
-
-    # Store new refresh token in DB
-    new_rt = RefreshToken(
-        user_id=user.id,
-        token=new_refresh_token,
-        expires_at=datetime.now(timezone.utc) + timedelta(days=JWT_REFRESH_TOKEN_EXPIRE_DAYS),
-    )
-    db.add(new_rt)
-    db.commit()
-
-    # B-26: Set new httpOnly cookies via helper
-    _set_auth_cookie(
-        response,
-        "access_token",
-        new_access_token,
-        JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-    )
-    _set_auth_cookie(
-        response,
-        "refresh_token",
-        new_refresh_token,  # B2: NEUER Token!
-        JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-    )
+    # B2: NEUE Tokens (Rotation)
+    _issue_session(db, response, user)
 
     return {"message": "Token erneuert"}
 
@@ -276,6 +243,7 @@ def first_start_hint(
 @router.post("/change-password")
 def change_password(
     payload: PasswordChangeRequest,
+    response: Response,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user_unrestricted),
 ):
@@ -299,6 +267,9 @@ def change_password(
         change_own_password(db, current_user, payload.current_password, payload.new_password)
     except PasswordError as exc:
         raise HTTPException(status_code=400, detail=exc.code)
+    # BUG B-06: Der Wechsel beendet alle Sitzungen (token_version). Die eigene
+    # Sitzung erhaelt sofort neue Tokens, damit der Nutzer angemeldet bleibt.
+    _issue_session(db, response, current_user)
     return {"message": "Passwort geaendert"}
 
 

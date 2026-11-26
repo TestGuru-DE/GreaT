@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import ChangePasswordPage from "../ChangePasswordPage";
 import { useAuthStore } from "../../store/authStore";
+import { ApiError } from "../../api/ApiError";
 
 // REQ-6005: i18n mock for ChangePasswordPage tests
 vi.mock("react-i18next", () => ({
@@ -24,6 +25,9 @@ vi.mock("react-i18next", () => ({
         "changePassword.errors.isDefault": "Dieses Passwort ist ein bekanntes Standardpasswort und nicht erlaubt.",
         "changePassword.errors.tooLong": "Das neue Passwort ist zu lang.",
         "changePassword.errors.tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
+        "changePassword.errors.tooCommon": "Dieses Passwort ist zu verbreitet.",
+        "changePassword.errors.lowVariety": "Mindestens {{count}} verschiedene Zeichen.",
+        "changePassword.errors.generic": "Das Passwort konnte nicht geändert werden.",
       };
       let v = tr[key] ?? key;
       if (params) v = v.replace(/\{\{(\w+)\}\}/g, (_, k) => String(params[k] ?? ""));
@@ -244,8 +248,11 @@ describe("ChangePasswordPage - REQ-4028", () => {
     );
 
     await user.type(screen.getByLabelText(/Aktuelles Passwort/i), "oldpass123!");
-    await user.type(getNewPasswordInput(), "a".repeat(129));
-    await user.type(screen.getByLabelText(/Neues Passwort wiederholen/i), "a".repeat(129));
+    // Einfuegen statt 2 x 129 Tastendruecke (Test lief sonst nahe am 5-s-Limit)
+    await user.click(getNewPasswordInput());
+    await user.paste("a".repeat(129));
+    await user.click(screen.getByLabelText(/Neues Passwort wiederholen/i));
+    await user.paste("a".repeat(129));
     await user.click(screen.getByRole("button", { name: /Ändern/i }));
 
     await waitFor(() => {
@@ -270,6 +277,51 @@ describe("ChangePasswordPage - REQ-4028", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Zu viele Versuche. Bitte warte einen Moment.")).toBeInTheDocument();
+    });
+  });
+
+  // N-01: echte Fehlerform des Clients (ApiError mit Server-Code), alle Policy-Codes uebersetzt
+  async function submitWithError(error: unknown) {
+    mockChangePassword.mockRejectedValue(error);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ChangePasswordPage />
+      </MemoryRouter>
+    );
+    await user.type(screen.getByLabelText(/Aktuelles Passwort/i), "oldpass123!");
+    await user.type(getNewPasswordInput(), "password1234");
+    await user.type(screen.getByLabelText(/Neues Passwort wiederholen/i), "password1234");
+    await user.click(screen.getByRole("button", { name: /Ändern/i }));
+  }
+
+  it("N-01: 'password_too_common' wird als verstaendliche Meldung gezeigt", async () => {
+    await submitWithError(new ApiError(400, "password_too_common"));
+    await waitFor(() => {
+      expect(screen.getByText("Dieses Passwort ist zu verbreitet.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
+  });
+
+  it("N-01: 'password_low_variety' wird als verstaendliche Meldung gezeigt", async () => {
+    await submitWithError(new ApiError(400, "password_low_variety"));
+    await waitFor(() => {
+      expect(screen.getByText("Mindestens 4 verschiedene Zeichen.")).toBeInTheDocument();
+    });
+  });
+
+  it("N-01: unbekannter Code fuehrt zu allgemeiner Meldung statt Rohtext", async () => {
+    await submitWithError(new ApiError(400, "some_future_code"));
+    await waitFor(() => {
+      expect(screen.getByText("Das Passwort konnte nicht geändert werden.")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("some_future_code")).not.toBeInTheDocument();
+  });
+
+  it("N-01: Netzwerkfehler zeigt die Meldung des Clients", async () => {
+    await submitWithError(new ApiError(0, "Network Error"));
+    await waitFor(() => {
+      expect(screen.getByText("Server nicht erreichbar")).toBeInTheDocument();
     });
   });
 });

@@ -4,9 +4,12 @@ import { useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
+import { ApiError } from "../api/ApiError";
 
 // REQ-4028 AK-4: Mindestlaenge 12 Zeichen (serverseitig enforced, clientseitig vorab geprueft)
 const MIN_PASSWORD_LENGTH = 12;
+// B-23: mindestens 4 verschiedene Zeichen (serverseitig MIN_PASSWORD_VARIETY)
+const MIN_PASSWORD_VARIETY = 4;
 
 export default function ChangePasswordPage() {
   const { t } = useTranslation();
@@ -55,17 +58,28 @@ export default function ChangePasswordPage() {
         navigate("/app");
       }, 1500);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : String(e);
-      // Map server error codes to i18n keys
-      const errorKeyMap: Record<string, string> = {
-        current_password_invalid: 'changePassword.errors.currentInvalid',
-        password_is_default: 'changePassword.errors.isDefault',
-        password_too_short: 'changePassword.errors.tooShort',
-        password_too_long: 'changePassword.errors.tooLong',
-        too_many_attempts: 'changePassword.errors.tooManyAttempts',
-      };
-      setServerError(errorKeyMap[message] ? t(errorKeyMap[message], { count: MIN_PASSWORD_LENGTH }) : message);
+      setServerError(serverErrorMessage(e));
     }
+  }
+
+  // N-01: Server-Codes (ApiError.message) in verstaendliche Meldungen uebersetzen.
+  // Unbekannte Codes und rohe HTTP-Fehler fuehren zu einer allgemeinen Meldung.
+  function serverErrorMessage(e: unknown): string {
+    const message = e instanceof Error ? e.message : String(e);
+    const errorKeyMap: Record<string, [string, number?]> = {
+      current_password_invalid: ['changePassword.errors.currentInvalid'],
+      password_is_default: ['changePassword.errors.isDefault'],
+      password_too_short: ['changePassword.errors.tooShort', MIN_PASSWORD_LENGTH],
+      password_too_long: ['changePassword.errors.tooLong'],
+      password_too_common: ['changePassword.errors.tooCommon'],
+      password_low_variety: ['changePassword.errors.lowVariety', MIN_PASSWORD_VARIETY],
+      too_many_attempts: ['changePassword.errors.tooManyAttempts'],
+    };
+    const mapped = errorKeyMap[message];
+    if (mapped) return t(mapped[0], { count: mapped[1] });
+    // Netzwerkfehler: Meldung des Clients ist bereits verstaendlich
+    if (e instanceof ApiError && e.status === 0) return message;
+    return t('changePassword.errors.generic');
   }
 
   const displayError = clientError || serverError;

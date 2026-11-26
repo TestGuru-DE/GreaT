@@ -86,10 +86,13 @@ class TestPasswordChangeInvalidatesSessions:
             )
             assert resp.status_code == 200
 
-            # Der Client hat den alten Token im Cookie – nach dem Wechsel ist
-            # token_version=1; ein NEUER Request mit dem alten Token sollte 401 liefern.
-            resp2 = client.get("/auth/me")
-            assert resp2.status_code == 401, "Alter Token sollte nach Passwortwechsel ungültig sein"
+            # B-06: Die aendernde Sitzung erhaelt neue Cookies und bleibt angemeldet.
+            assert client.get("/auth/me").status_code == 200
+
+            # Das alte Token (token_version=0) ist dagegen ungueltig.
+            stale = TestClient(app)
+            stale.cookies.set("access_token", token_v0)
+            assert stale.get("/auth/me").status_code == 401, "Alter Token sollte nach Passwortwechsel ungültig sein"
         finally:
             db.close()
 

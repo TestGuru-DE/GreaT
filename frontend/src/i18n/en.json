@@ -284,7 +284,10 @@
       "currentInvalid": "The current password is incorrect.",
       "isDefault": "This password is a known default password and is not allowed.",
       "tooLong": "The new password is too long.",
-      "tooManyAttempts": "Too many attempts. Please wait a moment."
+      "tooManyAttempts": "Too many attempts. Please wait a moment.",
+      "tooCommon": "This password is too common and easy to guess. Please choose another one.",
+      "lowVariety": "The new password must contain at least {{count}} different characters.",
+      "generic": "The password could not be changed. Please try again."
     }
   },
   "help": {

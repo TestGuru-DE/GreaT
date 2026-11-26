@@ -41,39 +41,48 @@ authClient.interceptors.request.use((config) => {
   return config;
 });
 
-let refreshPromise: Promise<void> | null = null;
+// B-43: Abgelaufenes Access-Token (15 min) per Refresh erneuern und die Anfrage einmal
+// wiederholen. Gilt fuer beide Clients, auch fuer /auth/me beim Neuladen der Seite.
+// Ein gemeinsamer Refresh fuer parallele Anfragen; jede Anfrage wird hoechstens
+// einmal wiederholt (kein Endlos-Kreislauf, wenn der Refresh scheitert).
+let refreshPromise: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = authClient
+      .post("/refresh")
+      .then(() => true, () => false)
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
 
 function isAuthRoute(url?: string): boolean {
   if (!url) return true;
-  const u = url.toLowerCase();
-  return u.includes('/auth/login') || u.includes('/auth/refresh') || u.includes('/auth/logout');
+  const path = url.toLowerCase().split('?')[0];
+  return ['/login', '/refresh', '/logout'].some((p) => path.endsWith(p));
+}
+
+type RetryableConfig = { url?: string; _retry?: boolean };
+
+function shouldRefresh(error: { response?: { status?: number }; config?: RetryableConfig }): boolean {
+  const config = error.config;
+  return error.response?.status === 401 && !!config && !config._retry && !isAuthRoute(config.url);
+}
+
+function toApiError(error: { response?: { status?: number; data?: { detail?: unknown } }; message?: string }): ApiError {
+  return new ApiError(error.response?.status ?? 0, error.response?.data?.detail ?? error.message);
 }
 
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const originalRequest = error.config;
-
-    // B-43: 401 -> Token-Refresh + Retry (nur bei nicht-Auth-Routes)
-    if (error.response?.status === 401 && !isAuthRoute(originalRequest?.url)) {
-      if (refreshPromise) {
-        await refreshPromise;
-        return api(originalRequest);
-      }
-
-      refreshPromise = (async () => {
-        try {
-          await useAuthStore.getState().refresh();
-        } catch {
-          useAuthStore.getState().logout();
-          window.location.href = '/login?reason=session_expired';
-        } finally {
-          refreshPromise = null;
-        }
-      })();
-
-      await refreshPromise;
-      return api(originalRequest);
+    if (shouldRefresh(error)) {
+      error.config._retry = true;
+      if (await refreshSession()) return api(error.config);
+      // Refresh gescheitert: Sitzung ist beendet
+      useAuthStore.getState().logout().catch(() => {});
+      window.location.href = '/login?reason=session_expired';
     }
 
     // B-42: 403 password_change_required -> Redirect (REQ-4028)
@@ -83,11 +92,20 @@ api.interceptors.response.use(
       return Promise.reject(new Error("password_change_required_redirect"));
     }
 
-    const apiError = new ApiError(
-      error.response?.status ?? 0,
-      error.response?.data?.detail ?? error.message
-    );
-    throw apiError;
+    throw toApiError(error);
+  }
+);
+
+// B-43 / N-01: Auth-Client erneuert die Sitzung ebenfalls und liefert ApiError
+// (Nachricht = Server-Code bzw. -Meldung statt "Request failed with status code ...").
+authClient.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    if (shouldRefresh(error)) {
+      error.config._retry = true;
+      if (await refreshSession()) return authClient(error.config);
+    }
+    throw toApiError(error);
   }
 );
 

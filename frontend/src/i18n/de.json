@@ -284,7 +284,10 @@
       "currentInvalid": "Das aktuelle Passwort ist falsch.",
       "isDefault": "Dieses Passwort ist ein bekanntes Standardpasswort und nicht erlaubt.",
       "tooLong": "Das neue Passwort ist zu lang.",
-      "tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment."
+      "tooManyAttempts": "Zu viele Versuche. Bitte warte einen Moment.",
+      "tooCommon": "Dieses Passwort ist zu verbreitet und leicht zu erraten. Bitte wähle ein anderes.",
+      "lowVariety": "Das neue Passwort muss mindestens {{count}} verschiedene Zeichen enthalten.",
+      "generic": "Das Passwort konnte nicht geändert werden. Bitte versuche es erneut."
     }
   },
   "help": {
