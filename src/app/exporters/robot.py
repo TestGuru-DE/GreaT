@@ -1,11 +1,22 @@
 """REQ-6011: Robot Framework Export (.robot).
 
-Data-Driven-Test mit [Template] und einer Zeile je Testfall.
-Space-separated Format (2+ Spaces als Trennzeichen).
+Data-Driven-Test mit `Test Template` und einer Zeile je Testfall.
+Space-separated Format (4 Leerzeichen als Trennzeichen).
+
+BUG A-06: Gueltige Syntax (Test Template in *** Settings ***, eingerueckte
+[Arguments]); Werte werden nach den Robot-Regeln maskiert (Variablen, #, =,
+Leerzeichen, leere Werte), sodass jedes Argument exakt den Originalwert erhaelt.
+BUG A-12: Variablennamen behalten Umlaute und sind nach Robot-Regeln eindeutig
+(Robot ignoriert Gross-/Kleinschreibung, Leerzeichen und Unterstriche).
 """
 from __future__ import annotations
 
-from .base import BaseExporter, single_line
+import re
+
+from .base import BaseExporter, metadata_comment, single_line, sorted_testcases, unique_names
+
+SEP = "    "
+KEYWORD_NAME = "Execute Test Case"
 
 
 class RobotExporter(BaseExporter):
@@ -15,117 +26,85 @@ class RobotExporter(BaseExporter):
     file_extension = ".robot"
     media_type = "text/plain"
 
-    def render_header(self, project_name: str, gen_id: str, strategy: str,
-                      date: str, version: str) -> str:
-        return (
-            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
-            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
-            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
-        )
-
     def render(self, generation_view: dict, options: dict) -> bytes:
-        lines: list[str] = []
-
-        # Header-Kommentar
-        date_str = generation_view.get("created_at", "")
-        if options.get("deterministic"):
-            date_str = "1970-01-01"
-        header = self.render_header(
-            generation_view["project_name"],
-            str(generation_view["generation_id"]),
-            generation_view["strategy"],
-            date_str,
-            generation_view.get("version", ""),
-        )
-        if header:
-            lines.append(header)
-
         categories = generation_view.get("categories", [])
-        result_categories = generation_view.get("result_categories", [])
-        testcases = generation_view.get("testcases", [])
+        result_categories = set(generation_view.get("result_categories", []))
+        varnames = unique_names(categories, robot_safe_varname, key=_robot_normalize)
 
-        # *** Settings ***
-        lines.append("*** Settings ***")
-        lines.append("[Template]    Execute Test Case")
-        lines.append("")
+        lines: list[str] = [
+            f"# {metadata_comment(generation_view, options)}",
+            "*** Settings ***",
+            f"Test Template{SEP}{KEYWORD_NAME}",
+            "",
+            "*** Test Cases ***",
+        ]
+        for tc in sorted_testcases(generation_view.get("testcases", [])):
+            cells = [robot_escape_name(tc.get("name", ""))]
+            cells += [robot_escape_value(tc["assignments"].get(cat, "")) for cat in categories]
+            lines.append(SEP.join(cells))
 
-        # *** Test Cases ***
-        lines.append("*** Test Cases ***")
-
-        for tc in sorted(testcases, key=lambda t: t["name"]):
-            values = []
-            for cat in categories:
-                val = tc["assignments"].get(cat, "")
-                values.append(robot_escape_value(val))
-            # 4-Space-Trennung zwischen Werten
-            line = f"{tc['name']}"
-            for v in values:
-                line += "    " + v
-            lines.append(line)
-
-        lines.append("")
-
-        # *** Keywords ***
-        lines.append("*** Keywords ***")
-        lines.append("Execute Test Case")
-
-        # [Arguments]
-        arg_parts = []
-        for cat in categories:
-            vn = robot_safe_varname(cat)
-            arg_parts.append("$" + "{" + vn + "}")
-        lines.append("[Arguments]    " + "    ".join(arg_parts))
-        lines.append("")
-
-        # Log-Schritte (Platzhalter)
-        for cat in categories:
-            varname = robot_safe_varname(cat)
-            if cat in result_categories:
-                lines.append("    Should Be Equal As Strings    $" + "{" + varname + "}" + "    Expected Result")
-            else:
-                lines.append("    Log    " + robot_escape_value(single_line(cat)) + ": $" + "{" + varname + "}")
+        lines += ["", "*** Keywords ***", KEYWORD_NAME]
+        if varnames:
+            lines.append(SEP + "[Arguments]" + SEP + SEP.join("${" + v + "}" for v in varnames))
+            for cat, var in zip(categories, varnames):
+                # Eine Zelle: "<Kategorie>: ${var}" (Log nimmt die Meldung als 1. Argument)
+                prefix = "Expected " if cat in result_categories else ""
+                label = robot_escape_value(prefix + single_line(cat).strip() + ":")
+                lines.append(SEP + "Log" + SEP + label + " ${" + var + "}")
+        else:
+            lines.append(SEP + "No Operation")
 
         lines.append("")
         return "\n".join(lines).encode("utf-8")
 
 
+def _robot_normalize(name: str) -> str:
+    """Robot vergleicht Variablennamen ohne Gross-/Kleinschreibung, Leerzeichen und _."""
+    return name.casefold().replace("_", "").replace(" ", "")
+
+
 def robot_safe_varname(name: str) -> str:
-    """Konvertiert Kategoriename in Robot-sicheren Variablennamen."""
-    import re
-    # Nur alphanumerische Zeichen und Unterstriche
-    safe = re.sub(r"[^a-zA-Z0-9_]", "_", name)
+    """Kategoriename -> Robot-Variablenname (Buchstaben inkl. Umlaute, Ziffern, _)."""
+    safe = re.sub(r"\W", "_", single_line(name)).strip("_")
+    if not safe or safe[0].isdigit():
+        safe = "v_" + safe  # ${1} waere eine Zahl, kein Variablenname
     return safe
 
 
 def robot_escape_value(value: str) -> str:
-    r"""Escapes Pipe-Zeichen und Anführungszeichen in Robot-Werten.
+    """Maskiert einen Wert als einzelnes Robot-Argument (exakter Originalwert).
 
-    Pipe: \| escapen
-    Anführungszeichen: ${"quoted"} Syntax
+    - leerer Wert -> ${EMPTY}
+    - Backslash, Variablenzeichen ($ @ & %), #, = -> mit Backslash maskiert
+    - Zeilenumbruch/Tab/Steuerzeichen -> \\n, \\r, \\t, \\xhh, \\uhhhh
+    - Leerzeichen am Rand oder mehrfach -> ${SPACE} (sonst Trennzeichen)
     """
-    if not value:
-        return value
-
-    # BUG A-02: Zeilenumbrueche und Steuerzeichen duerfen keine neue Robot-Zeile
-    # (und damit keine neuen Abschnitte wie *** Settings ***) erzeugen.
-    # Robot kennt die Escape-Sequenzen \n, \r, \t und \xhh.
-    value = (
-        value.replace("\\", "\\\\")
-        .replace("\r", "\\r")
-        .replace("\n", "\\n")
-        .replace("\t", "\\t")
-    )
-    value = "".join(
-        f"\\x{ord(c):02x}" if (ord(c) < 0x20 or c in "\x7f\x85") else
-        f"\\u{ord(c):04x}" if c in "  " else c
-        for c in value
-    )
-
-    escaped = value.replace("|", "\\|")
-
-    # Bei Sonderzeichen: ${"quoted"} Syntax
-    if '"' in escaped or "'" in escaped or "\\" in escaped:
-        escaped = escaped.replace('"', '\\"')
-        return '${"' + escaped + '"}'
-
+    value = "" if value is None else str(value)
+    if value == "":
+        return "${EMPTY}"
+    out: list[str] = []
+    for ch in value:
+        if ch in "\\$@&%#=":
+            out.append("\\" + ch)
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ord(ch) < 0x20 or ch in "\x7f\x85":
+            out.append(f"\\x{ord(ch):02x}")
+        elif ch in "  \xa0":
+            out.append(f"\\u{ord(ch):04x}")
+        else:
+            out.append(ch)
+    escaped = "".join(out)
+    if " " in value and (value != value.strip(" ") or "  " in value):
+        escaped = escaped.replace(" ", "${SPACE}")
     return escaped
+
+
+def robot_escape_name(name: str) -> str:
+    """Testfallname (erste Zelle einer Zeile); Leerzeichen bleiben einfach erhalten."""
+    escaped = robot_escape_value(single_line(name).strip())
+    return "TC" if escaped == "${EMPTY}" else escaped

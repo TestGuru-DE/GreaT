@@ -1,27 +1,25 @@
 # G.R.E.A.T. Export | Projekt: GoldenExportTest | Generierung: 1 | Strategie: all | Datum: 1970-01-01 | Version: 1.11.2
-
 *** Settings ***
-[Template]    Execute Test Case
+Test Template    Execute Test Case
 
 *** Test Cases ***
-TC_1    Chrome    Windows    ${"mit\|Pipe"}    
-TC_10    Firefox    macOS    ${"mit\|Pipe"}    
-TC_11    Firefox    macOS    ${"mit\"Quote"}    
-TC_12    Firefox    macOS    Normal    
-TC_2    Chrome    Windows    ${"mit\"Quote"}    
-TC_3    Chrome    Windows    Normal    
-TC_4    Chrome    macOS    ${"mit\|Pipe"}    
-TC_5    Chrome    macOS    ${"mit\"Quote"}    
-TC_6    Chrome    macOS    Normal    
-TC_7    Firefox    Windows    ${"mit\|Pipe"}    
-TC_8    Firefox    Windows    ${"mit\"Quote"}    
-TC_9    Firefox    Windows    Normal    
+TC_1    Chrome    Windows    mit|Pipe    ${EMPTY}
+TC_2    Chrome    Windows    mit"Quote    ${EMPTY}
+TC_3    Chrome    Windows    Normal    ${EMPTY}
+TC_4    Chrome    macOS    mit|Pipe    ${EMPTY}
+TC_5    Chrome    macOS    mit"Quote    ${EMPTY}
+TC_6    Chrome    macOS    Normal    ${EMPTY}
+TC_7    Firefox    Windows    mit|Pipe    ${EMPTY}
+TC_8    Firefox    Windows    mit"Quote    ${EMPTY}
+TC_9    Firefox    Windows    Normal    ${EMPTY}
+TC_10    Firefox    macOS    mit|Pipe    ${EMPTY}
+TC_11    Firefox    macOS    mit"Quote    ${EMPTY}
+TC_12    Firefox    macOS    Normal    ${EMPTY}
 
 *** Keywords ***
 Execute Test Case
-[Arguments]    ${Browser}    ${OS}    ${Eingabe}    ${Ergebnis}
-
+    [Arguments]    ${Browser}    ${OS}    ${Eingabe}    ${Ergebnis}
     Log    Browser: ${Browser}
     Log    OS: ${OS}
     Log    Eingabe: ${Eingabe}
-    Should Be Equal As Strings    ${Ergebnis}    Expected Result
+    Log    Expected Ergebnis: ${Ergebnis}

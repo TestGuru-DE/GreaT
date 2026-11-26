@@ -3,9 +3,6 @@
 | TC-ID | Browser | OS | Eingabe | Ergebnis |
 | --- | --- | --- | --- | --- |
 | TC_1 | Chrome | Windows | mit\|Pipe |  |
-| TC_10 | Firefox | macOS | mit\|Pipe |  |
-| TC_11 | Firefox | macOS | `mit"Quote` |  |
-| TC_12 | Firefox | macOS | Normal |  |
 | TC_2 | Chrome | Windows | `mit"Quote` |  |
 | TC_3 | Chrome | Windows | Normal |  |
 | TC_4 | Chrome | macOS | mit\|Pipe |  |
@@ -14,3 +11,6 @@
 | TC_7 | Firefox | Windows | mit\|Pipe |  |
 | TC_8 | Firefox | Windows | `mit"Quote` |  |
 | TC_9 | Firefox | Windows | Normal |  |
+| TC_10 | Firefox | macOS | mit\|Pipe |  |
+| TC_11 | Firefox | macOS | `mit"Quote` |  |
+| TC_12 | Firefox | macOS | Normal |  |

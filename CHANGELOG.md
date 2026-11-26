@@ -13,11 +13,17 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Angemeldet bleiben nach eigenem Passwortwechsel (B-06):** Die aendernde Sitzung erhaelt neue Tokens; alle anderen Sitzungen des Nutzers enden weiterhin.
 - **Kein Abmelden mehr beim Neuladen nach 15 Minuten (B-43):** Auch Aufrufe unter `/auth` (z. B. `/auth/me` beim Seitenstart) erneuern ein abgelaufenes Access-Token per Refresh. Scheitert der Refresh, wird die Anfrage nicht endlos wiederholt.
 - **Verstaendliche Fehlermeldungen beim Passwortwechsel (N-01):** Statt "Request failed with status code 400" erscheinen uebersetzte Meldungen, auch fuer zu verbreitete Passwoerter und zu wenig verschiedene Zeichen. Die Login-Seite zeigt ebenfalls die Meldung des Servers.
+- **Gherkin-Export gueltig (A-05):** Deutsches Schluesselwort `Funktionalität`; Schritte verwenden Platzhalter (`<Spalte>`) statt der Werte des ersten Testfalls; Tabellenzellen werden nach Gherkin-Regeln maskiert und nicht mehr in Anfuehrungszeichen gesetzt; kein Fehler 500 bei Generierungen ohne Testfaelle.
+- **Robot-Export lauffaehig (A-06):** `Test Template` in `*** Settings ***`, eingerueckte `[Arguments]`; Werte werden exakt uebergeben (Variablen, `#`, `=`, mehrfache Leerzeichen, leere Werte als `${EMPTY}`). Die immer fehlschlagende Pruefung gegen "Expected Result" entfaellt.
+- **Exporte folgen der Generierung (A-10):** Spalten sind die Kategorien der jeweiligen Generierung; geloeschte Kategorien bleiben erhalten, spaeter angelegte erscheinen nicht.
+- **Testmanagement-CSV importierbar (A-11):** Erste Zeile ist der Spaltenkopf (keine Kommentarzeile); Titel/Summary beginnen mit der TC-ID. Azure DevOps: Spalte `ID` leer (neue Testfaelle statt Ueberschreiben vorhandener Work Items), Komma als Trennzeichen, State `Design`.
+- **Namen und Reihenfolge (A-12):** Eindeutige Bezeichner bei kollidierenden Kategorienamen (z. B. `a b`/`a-b`), Umlaute bleiben in Gherkin und Robot erhalten, Testfaelle in natuerlicher Reihenfolge (TC_1, TC_2, …, TC_10).
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
 
 ### ⚠️ Hinweise fuer API-Nutzer
 - Tokens brauchen jetzt fuer jeden Endpunkt den passenden Scope, z. B. `projects:read` zusaetzlich zu `export`, um Projekte und Generierungen aufzulisten.
 - `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
+- Exporte: Azure-DevOps-CSV nutzt Komma statt Semikolon; Xray-, TestRail- und Azure-CSV enthalten keine `#`-Kopfzeile mehr; Gherkin-, Robot- und pytest-Dateien sind anders aufgebaut (siehe oben).
 - 429-Antworten des Token-Rate-Limits haben das Format `{"detail": {"code": "rate_limit_exceeded", "detail": "..."}}`.
 
 ---

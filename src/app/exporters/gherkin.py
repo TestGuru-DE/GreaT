@@ -1,11 +1,18 @@
 """REQ-6011: Gherkin Export (.feature).
 
 BDD-Format mit Feature/Scenario Outline/Examples.
-Sprache DE (Funktionalitaet/Szenariogrundriss/Beispiele) oder EN waehlbar.
+Sprache DE (Funktionalität/Szenariogrundriss/Beispiele) oder EN waehlbar.
+
+BUG A-05: Gueltige deutsche Schluesselwoerter; Schritte verwenden Platzhalter
+(<Spalte>) statt der Werte des ersten Testfalls; Tabellenzellen werden nach der
+Gherkin-Spezifikation maskiert (\\|, \\\\, \\n), Werte bleiben unveraendert.
+BUG A-12: Spaltennamen behalten Umlaute und sind eindeutig; natuerliche Sortierung.
 """
 from __future__ import annotations
 
-from .base import BaseExporter, single_line
+import re
+
+from .base import BaseExporter, metadata_comment, single_line, sorted_testcases, unique_names
 
 
 class GherkinExporter(BaseExporter):
@@ -15,33 +22,29 @@ class GherkinExporter(BaseExporter):
     file_extension = ".feature"
     media_type = "text/plain"
 
-    # Gherkin-Schluesselwoerter DE/EN
+    # Gherkin-Schluesselwoerter DE/EN (offizielle Gherkin-Sprachdefinition)
     KEYWORDS = {
         "en": {
             "feature": "Feature",
             "scenario_outline": "Scenario Outline",
+            "scenario_title": "Test case execution",
             "examples": "Examples",
             "given": "Given",
             "when": "When",
             "then": "Then",
+            "is": "is",
         },
         "de": {
-            "feature": "Funktionalitaet",
+            "feature": "Funktionalität",
             "scenario_outline": "Szenariogrundriss",
+            "scenario_title": "Testfall-Ausführung",
             "examples": "Beispiele",
             "given": "Angenommen",
             "when": "Wenn",
             "then": "Dann",
+            "is": "ist",
         },
     }
-
-    def render_header(self, project_name: str, gen_id: str, strategy: str,
-                      date: str, version: str) -> str:
-        return (
-            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
-            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
-            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
-        )
 
     def render(self, generation_view: dict, options: dict) -> bytes:
         lang = options.get("lang", "en")
@@ -49,93 +52,61 @@ class GherkinExporter(BaseExporter):
             lang = "en"
         kw = self.KEYWORDS[lang]
 
-        lines: list[str] = []
-
-        # Language-Deklaration
-        lines.append(f"# language: {lang}")
-
-        # Header-Kommentar
-        date_str = generation_view.get("created_at", "")
-        if options.get("deterministic"):
-            date_str = "1970-01-01"
-        header = self.render_header(
-            generation_view["project_name"],
-            str(generation_view["generation_id"]),
-            generation_view["strategy"],
-            date_str,
-            generation_view.get("version", ""),
-        )
-        if header:
-            lines.append(header)
-
-        project_name = generation_view["project_name"]
         categories = generation_view.get("categories", [])
-        result_categories = generation_view.get("result_categories", [])
-        testcases = generation_view.get("testcases", [])
+        result_categories = set(generation_view.get("result_categories", []))
+        # "TC-ID" ist als erste Spalte reserviert
+        columns = unique_names(["TC-ID"] + categories, gherkin_column_name)[1:]
 
-        # Feature-Zeile
-        lines.append(f"{kw['feature']}: {project_name}")
-        lines.append("")
+        lines: list[str] = [
+            f"# language: {lang}",  # muss die erste Zeile sein
+            f"# {metadata_comment(generation_view, options)}",
+            f"{kw['feature']}: {single_line(generation_view.get('project_name', ''))}",
+            "",
+            f"  {kw['scenario_outline']}: {kw['scenario_title']}",
+        ]
 
-        # Scenario Outline
-        lines.append(f"{kw['scenario_outline']}: Test Case Execution")
-        lines.append("")
-
-        # Given/When/Then-Schritte (Platzhalter pro Kategorie)
-        step_idx = 0
-        for cat in categories:
+        # Schritte: erste Eingabe Given, weitere When, Ergebnisse Then
+        inputs_seen = 0
+        for cat, col in zip(categories, columns):
             if cat in result_categories:
                 keyword = kw["then"]
-            elif step_idx == 0:
-                keyword = kw["given"]
             else:
-                keyword = kw["when"]
-            lines.append(f"  {keyword} <{gherkin_safe_name(cat)}> is '{gherkin_escape_value(generation_view['testcases'][0]['assignments'].get(cat, ''))}'")
-            step_idx += 1
+                keyword = kw["given"] if inputs_seen == 0 else kw["when"]
+                inputs_seen += 1
+            lines.append(f"    {keyword} {col} {kw['is']} \"<{col}>\"")
 
         lines.append("")
+        lines.append(f"    {kw['examples']}:")
+        lines.append("      | " + " | ".join(["TC-ID"] + columns) + " |")
+        for tc in sorted_testcases(generation_view.get("testcases", [])):
+            cells = [gherkin_escape_value(tc.get("name", ""))]
+            cells += [gherkin_escape_value(tc["assignments"].get(cat, "")) for cat in categories]
+            lines.append("      | " + " | ".join(cells) + " |")
 
-        # Examples-Tabelle
-        lines.append(f"{kw['examples']}:")
-
-        # Header-Zeile der Examples-Tabelle
-        header_cells = ["TC-ID"] + [gherkin_safe_name(c) for c in categories]
-        lines.append("  | " + " | ".join(header_cells) + " |")
-
-        # Datenzeilen
-        for tc in sorted(testcases, key=lambda t: t["name"]):
-            row_cells = [tc["name"]]
-            for cat in categories:
-                val = tc["assignments"].get(cat, "")
-                row_cells.append(gherkin_escape_value(val))
-            lines.append("  | " + " | ".join(row_cells) + " |")
-
-        lines.append("")  # trailing newline
+        lines.append("")
         return "\n".join(lines).encode("utf-8")
 
 
-def gherkin_safe_name(name: str) -> str:
-    """Konvertiert Kategoriename in gherkin-sicheren Spaltennamen.
+_COLUMN_UNSAFE_RE = re.compile(r"[|<>\\\"]")
 
-    Leerzeichen und Sonderzeichen werden durch Unterstriche ersetzt.
+
+def gherkin_column_name(name: str) -> str:
+    """Spaltenname = Platzhaltername. Zeichen, die Tabelle oder Platzhalter stoeren, -> _.
+
+    Umlaute und andere Buchstaben bleiben erhalten (A-12).
     """
-    import re
-    # Nur alphanumerische Zeichen und Unterstriche
-    safe = re.sub(r"[^a-zA-Z0-9_]", "_", name)
-    return safe
+    safe = _COLUMN_UNSAFE_RE.sub("_", single_line(name)).strip()
+    return safe or "Kategorie"
 
 
 def gherkin_escape_value(value: str) -> str:
-    """Escapes Pipe-Zeichen und Anführungszeichen in Gherkin-Werten.
+    """Maskiert einen Wert fuer eine Gherkin-Tabellenzelle (\\\\, \\|, \\n).
 
-    Pipe: \| escapen
-    Anführungszeichen: '...' umschließen
+    Der Gherkin-Parser liefert danach exakt den Originalwert zurueck, mit einer
+    Ausnahme: fuehrende/abschliessende Leerzeichen einer Zelle entfernt Gherkin immer.
     """
-    # BUG A-02: Zeilenumbrueche als \n (Gherkin-Tabellen-Escape), sonstige
-    # Steuerzeichen entfernen, damit keine neue Gherkin-Zeile entsteht.
+    value = "" if value is None else str(value)
+    value = value.replace("\\", "\\\\").replace("|", "\\|")
+    # BUG A-02: Zeilenumbrueche als \n, sonstige Steuerzeichen entfernen
     value = value.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
-    value = single_line(value)
-    escaped = value.replace("|", "\\|")
-    if '"' in escaped or "'" in escaped:
-        escaped = '"' + escaped.replace('"', '\\"') + '"'
-    return escaped
+    return single_line(value)

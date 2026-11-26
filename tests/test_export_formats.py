@@ -102,7 +102,7 @@ class TestExportFormats:
         assert r.status_code == 200, f"Gherkin DE failed: {r.text}"
 
         text = r.text
-        assert "Funktionalitaet:" in text
+        assert "Funktionalität:" in text  # A-05: gueltiges Gherkin-Schluesselwort
         assert "Szenariogrundriss:" in text
         assert "Beispiele:" in text
         assert "# language: de" in text
@@ -157,7 +157,7 @@ class TestExportFormats:
         assert "*** Settings ***" in text
         assert "*** Test Cases ***" in text
         assert "*** Keywords ***" in text
-        assert "[Template]" in text
+        assert "Test Template    Execute Test Case" in text  # A-06
         assert "Execute Test Case" in text
 
     def test_export_xray_csv(self, auth_client):

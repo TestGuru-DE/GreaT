@@ -863,8 +863,6 @@ def export_generation_format(
         .all()
     )
     name_by_id = {c.id: c.name for c in categories}
-    cat_names = [c.name for c in categories]
-    result_cats = [c.name for c in categories if c.is_result]
 
     testcases_db = (
         db.query(models.TestCase)
@@ -872,6 +870,26 @@ def export_generation_format(
         .order_by(models.TestCase.id)
         .all()
     )
+
+    # BUG A-10: Spalten = Kategorien, die in DIESER Generierung belegt sind (unveraenderliche
+    # Historie). Noch vorhandene in aktueller Reihenfolge, geloeschte danach (gespeicherter Name);
+    # spaeter angelegte Kategorien erscheinen nicht.
+    used_ids, deleted_names = set(), []
+    for cid, cname in (
+        db.query(models.TestCaseValue.category_id, models.TestCaseValue.category_name)
+        .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
+        .filter(models.TestCase.generation_id == gen_id)
+        .order_by(models.TestCaseValue.id)
+    ):
+        if cid in name_by_id:
+            used_ids.add(cid)
+        else:
+            label = cname or f"cat#{cid}"
+            if label not in deleted_names:
+                deleted_names.append(label)
+    used_names = [c.name for c in categories if c.id in used_ids]
+    cat_names = used_names + [n for n in deleted_names if n not in used_names]
+    result_cats = [c.name for c in categories if c.is_result and c.id in used_ids]
 
     # REQ-3063: Fehlerwerte
     error_values = load_error_values(db, gen.project_id)

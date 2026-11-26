@@ -7,9 +7,6 @@ import pytest
 
 @pytest.mark.parametrize("Browser, OS, Eingabe, Ergebnis", [
     ('Chrome', 'Windows', 'mit|Pipe', ''),
-    ('Firefox', 'macOS', 'mit|Pipe', ''),
-    ('Firefox', 'macOS', 'mit"Quote', ''),
-    ('Firefox', 'macOS', 'Normal', ''),
     ('Chrome', 'Windows', 'mit"Quote', ''),
     ('Chrome', 'Windows', 'Normal', ''),
     ('Chrome', 'macOS', 'mit|Pipe', ''),
@@ -18,6 +15,9 @@ import pytest
     ('Firefox', 'Windows', 'mit|Pipe', ''),
     ('Firefox', 'Windows', 'mit"Quote', ''),
     ('Firefox', 'Windows', 'Normal', ''),
-], ids=["TC_1", "TC_10", "TC_11", "TC_12", "TC_2", "TC_3", "TC_4", "TC_5", "TC_6", "TC_7", "TC_8", "TC_9"])
+    ('Firefox', 'macOS', 'mit|Pipe', ''),
+    ('Firefox', 'macOS', 'mit"Quote', ''),
+    ('Firefox', 'macOS', 'Normal', ''),
+], ids=['TC_1', 'TC_2', 'TC_3', 'TC_4', 'TC_5', 'TC_6', 'TC_7', 'TC_8', 'TC_9', 'TC_10', 'TC_11', 'TC_12'])
 def test_generated(Browser, OS, Eingabe, Ergebnis):
     pytest.skip("TODO")

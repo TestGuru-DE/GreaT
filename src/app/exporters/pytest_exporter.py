@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 
-from .base import BaseExporter, single_line
+from .base import BaseExporter, metadata_comment, single_line, sorted_testcases, unique_names
 
 # Python-Reserved-Worte die nicht als Variablenname verwendet werden duerfen
 PYTHON_RESERVED = {
@@ -22,6 +22,7 @@ PYTHON_BUILTINS = {
     "os", "sys", "io", "str", "int", "float", "list", "dict", "set",
     "tuple", "bool", "type", "len", "print", "input", "open", "file",
     "value", "test", "case", "name", "id", "class", "method", "function",
+    "pytest",  # wuerde im Testkoerper das Modul verdecken (pytest.skip)
 }
 
 
@@ -32,67 +33,40 @@ class PytestExporter(BaseExporter):
     file_extension = ".py"
     media_type = "text/x-python"
 
-    def render_header(self, project_name: str, gen_id: str, strategy: str,
-                      date: str, version: str) -> str:
-        return (
-            f"# G.R.E.A.T. Export | Projekt: {single_line(project_name)} | "
-            f"Generierung: {single_line(gen_id)} | Strategie: {single_line(strategy)} | "
-            f"Datum: {single_line(date)} | Version: {single_line(version)}\n"
-        )
-
     def render(self, generation_view: dict, options: dict) -> bytes:
-        lines: list[str] = []
-
-        # Header-Kommentar
-        date_str = generation_view.get("created_at", "")
-        if options.get("deterministic"):
-            date_str = "1970-01-01"
-        header = self.render_header(
-            generation_view["project_name"],
-            str(generation_view["generation_id"]),
-            generation_view["strategy"],
-            date_str,
-            generation_view.get("version", ""),
-        )
-        if header:
-            lines.append(header)
-
-        lines.append('"""Auto-generated test file by G.R.E.A.T."""')
-        lines.append("import pytest")
-        lines.append("")
+        lines: list[str] = [
+            f"# {metadata_comment(generation_view, options)}",
+            "",
+            '"""Auto-generated test file by G.R.E.A.T."""',
+            "import pytest",
+            "",
+        ]
 
         categories = generation_view.get("categories", [])
-        result_categories = generation_view.get("result_categories", [])
-        testcases = generation_view.get("testcases", [])
+        testcases = sorted_testcases(generation_view.get("testcases", []))  # BUG A-12
 
-        # Variablennamen fuer Kategorien
-        var_names = [to_python_identifier(cat) for cat in categories]
+        # BUG A-12: eindeutige Bezeichner ("a b" und "a-b" -> a_b, a_b_2)
+        var_names = unique_names(categories, to_python_identifier)
 
         # Mapping-Kommentar
-        mapping_parts = [f"{vn} -> {cn}" for vn, cn in zip(var_names, categories)]
+        mapping_parts = [f"{vn} -> {single_line(cn)}" for vn, cn in zip(var_names, categories)]
         lines.append(f"# Mapping: {', '.join(mapping_parts)}")
         lines.append("")
 
-        # @pytest.mark.parametrize
-        param_names = ", ".join(var_names)
-        lines.append(f'@pytest.mark.parametrize("{param_names}", [')
+        if not var_names:
+            lines.append("def test_generated():")
+            lines.append('    pytest.skip("TODO")')
+            lines.append("")
+            return "\n".join(lines).encode("utf-8")
 
-        # Argument-Tupel + ids
-        arg_tuples: list[str] = []
+        lines.append(f'@pytest.mark.parametrize("{", ".join(var_names)}", [')
         ids: list[str] = []
-
-        for tc in sorted(testcases, key=lambda t: t["name"]):
-            values = []
-            for cat in categories:
-                val = tc["assignments"].get(cat, "")
-                values.append(f"'{escape_python_string(val)}'")
-            arg_tuples.append(f"    ({', '.join(values)}),")
-            ids.append(f'"{tc["name"]}"')
-
-        lines.extend(arg_tuples)
+        for tc in testcases:
+            values = [f"'{escape_python_string(tc['assignments'].get(cat, ''))}'" for cat in categories]
+            lines.append(f"    ({', '.join(values)}),")
+            ids.append(f"'{escape_python_string(tc.get('name', ''))}'")
         lines.append("], ids=[" + ", ".join(ids) + "])")
 
-        # Funktionssignatur
         lines.append(f"def test_generated({', '.join(var_names)}):")
         lines.append('    pytest.skip("TODO")')
         lines.append("")
