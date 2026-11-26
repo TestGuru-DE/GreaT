@@ -423,6 +423,7 @@
     }
   },
   "categoryTree": {
+    "constraintReferenceConfirm": "Diese Constraints verweisen auf den Eintrag: {{names}}. Beim Löschen werden sie als ungültig markiert und wirken erst wieder, wenn du sie bearbeitest. Trotzdem löschen?",
     "loading": "Lade Kategorien...",
     "newCategoryPlaceholder": "Neue Kategorie eingeben...",
     "newValuePlaceholder": "Neuer Wert... (Enter)",
@@ -730,6 +731,7 @@
     "saveError": "Fehler beim Speichern.",
     "validationError": "Validierungsfehler: {{errors}}",
     "invalidConstraint": "Ungueltig: {{reason}}",
+    "invalidReasonDeletedReference": "verweist auf eine gelöschte Kategorie oder einen gelöschten Wert. Bitte bearbeiten.",
     "deleteConfirm": "Constraint \"{{name}}\" wirklich loeschen?",
     "deleteTitle": "Constraint loeschen",
     "edit": "Bearbeiten",

@@ -14,6 +14,7 @@ import ContextMenu, { type ContextMenuItem } from "./ContextMenu";
 import { BVADialog } from "./bva/BVADialog";
 import DataNodeApplyDialog from "./DataNodeApplyDialog";
 import UndoRedoToolbar from "./ui/UndoRedoToolbar";
+import { deleteWithConstraintCheck } from "../lib/constraintReference";
 
 interface Props { projectId: number; }
 
@@ -27,11 +28,20 @@ export default function CategoryTree({ projectId }: Props) {
   const { t } = useTranslation();
   const {
     categories, values, loading, error,
-    fetchCategories, createCategory, deleteCategory,
-    fetchValues, createValue, deleteValue,
+    fetchCategories, createCategory, deleteCategory: storeDeleteCategory,
+    fetchValues, createValue, deleteValue: storeDeleteValue,
     canUndo, canRedo, undo, redo, // REQ-3053
   } = useCategoryStore();
   const toast = useToastStore();
+
+  // REQ-6001 AK-10: Bei verweisenden Constraints vor dem Loeschen nachfragen.
+  // Liefert true, wenn geloescht wurde, false bei Abbruch durch den Nutzer.
+  const confirmAffectedConstraints = (names: string[]) =>
+    confirm(t("categoryTree.constraintReferenceConfirm", { names: names.join(", ") }));
+  const deleteCategory = (categoryId: number) =>
+    deleteWithConstraintCheck((force) => storeDeleteCategory(categoryId, force), confirmAffectedConstraints);
+  const deleteValue = (categoryId: number, valueId: number) =>
+    deleteWithConstraintCheck((force) => storeDeleteValue(categoryId, valueId, force), confirmAffectedConstraints);
 
   const [newCatName, setNewCatName] = useState("");
   // REQ-5002/REQ-4016: Typ der neuen Kategorie
@@ -65,7 +75,7 @@ export default function CategoryTree({ projectId }: Props) {
       onDelete: () => {
         if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm"))) {
           deleteCategory(cat.id)
-            .then(() => { toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
+            .then((done) => { if (!done) return; toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
             .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       },
@@ -81,13 +91,13 @@ export default function CategoryTree({ projectId }: Props) {
       if (selectedValId) {
         if (confirm(t("categoryTree.contextMenu.deleteValueConfirm"))) {
           deleteValue(selectedValId.catId, selectedValId.valId)
-            .then(() => { toast.add(t("categoryTree.toast.valueDeleted")); setSelectedValId(null); })
+            .then((done) => { if (!done) return; toast.add(t("categoryTree.toast.valueDeleted")); setSelectedValId(null); })
             .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       } else if (selectedCatId) {
         if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm"))) {
           deleteCategory(selectedCatId)
-            .then(() => { toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
+            .then((done) => { if (!done) return; toast.add(t("categoryTree.toast.categoryDeleted")); setSelectedCatId(null); })
             .catch(() => toast.add(t("categoryTree.toast.errorDelete"), "error"));
         }
       }
@@ -214,7 +224,7 @@ export default function CategoryTree({ projectId }: Props) {
         { label: t("categoryTree.contextMenu.delete"), danger: true, action: () => {
           if (confirm(t("categoryTree.contextMenu.deleteCategoryConfirm")))
             deleteCategory(ctx.id)
-              .then(() => toast.add(t("categoryTree.toast.categoryDeleted")))
+              .then((done) => { if (done) toast.add(t("categoryTree.toast.categoryDeleted")); })
               .catch(() => toast.add(t("categoryTree.toast.error"), "error"));
         }},
       ];
@@ -237,7 +247,7 @@ export default function CategoryTree({ projectId }: Props) {
       { label: t("categoryTree.contextMenu.delete"), danger: true, action: () => {
         if (confirm(t("categoryTree.contextMenu.deleteValueConfirm")))
           deleteValue(ctx.catId!, ctx.id)
-            .then(() => toast.add(t("categoryTree.toast.valueDeleted")))
+            .then((done) => { if (done) toast.add(t("categoryTree.toast.valueDeleted")); })
             .catch(() => toast.add(t("categoryTree.toast.error"), "error"));
       }},
     ];
@@ -453,7 +463,7 @@ export default function CategoryTree({ projectId }: Props) {
                                 />
                               </div>
                               <button onClick={() => deleteValue(cat.id, v.id)
-                                .then(() => toast.add(t("categoryTree.toast.valueDeleted")))
+                                .then((done) => { if (done) toast.add(t("categoryTree.toast.valueDeleted")); })
                                 .catch(() => toast.add(t("categoryTree.toast.error"), "error"))}
                                 className="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 text-xs ml-2 transition-opacity">
                                 x

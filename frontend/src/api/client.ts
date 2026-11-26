@@ -114,8 +114,12 @@ export const categoriesApi = {
     api.get<Category[]>("/projects/" + projectId + "/categories").then((r) => r.data),
   create: (projectId: number, data: CategoryCreate) =>
     api.post<Category>("/projects/" + projectId + "/categories", data).then((r) => r.data),
-  delete: (categoryId: number) =>
-    api.delete<{ok: boolean}>("/categories/" + categoryId).then((r) => r.data),
+  // REQ-6001 AK-10: force=true bestaetigt, dass verweisende Constraints ungueltig werden
+  delete: (categoryId: number, force = false) =>
+    (force
+      ? api.delete<{ok: boolean}>("/categories/" + categoryId, { params: { force: true } })
+      : api.delete<{ok: boolean}>("/categories/" + categoryId)
+    ).then((r) => r.data),
 
   updateProperties: (valueId: number, props: { risk_weight?: number; vtype?: string; allowed?: boolean }) =>
     api.patch<Value>("/values/" + valueId + "/properties", props).then((r) => r.data),
@@ -137,8 +141,12 @@ export const valuesApi = {
     api.get<Value[]>("/categories/" + categoryId + "/values").then((r) => r.data),
   create: (categoryId: number, data: ValueCreate) =>
     api.post<Value>("/categories/" + categoryId + "/values", data).then((r) => r.data),
-  delete: (valueId: number) =>
-    api.delete<{ok: boolean}>("/values/" + valueId).then((r) => r.data),
+  // REQ-6001 AK-10: force=true bestaetigt, dass verweisende Constraints ungueltig werden
+  delete: (valueId: number, force = false) =>
+    (force
+      ? api.delete<{ok: boolean}>("/values/" + valueId, { params: { force: true } })
+      : api.delete<{ok: boolean}>("/values/" + valueId)
+    ).then((r) => r.data),
 };
 
 // --- Generierung ---

@@ -118,12 +118,41 @@ def create_category(pid: DbId, payload: schemas.CategoryCreate, db: Session = De
     return c
 
 
+def _invalidate_referencing_constraints(
+    db: Session, project_id: int, force: bool, category_id=None, value_ids=None
+) -> list[str]:
+    """BUG K-02 / REQ-6001 AK-10: Betroffene Constraints vor dem Loeschen melden.
+
+    Ohne force: 409 mit den Namen der betroffenen Constraints (Hinweis vorab).
+    Mit force: Constraints werden als ungueltig markiert (nicht geloescht).
+    """
+    from ..constraints.references import referencing_constraints
+
+    affected = referencing_constraints(db, project_id, category_id=category_id, value_ids=value_ids)
+    names = [c.name for c in affected]
+    if affected and not force:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "constraint_reference",
+                "detail": "Constraints verweisen auf diesen Eintrag: " + ", ".join(names)
+                          + ". Beim Loeschen werden sie als ungueltig markiert.",
+                "constraints": names,
+            },
+        )
+    for c in affected:
+        c.is_valid = False
+    return names
+
+
 @router.delete("/categories/{cid}", dependencies=[Depends(require_writer)])
-def delete_category(cid: DbId, db: Session = Depends(get_db)):
-    """REQ-1206: Kategorie loeschen."""
+def delete_category(cid: DbId, force: bool = False, db: Session = Depends(get_db)):
+    """REQ-1206: Kategorie loeschen. REQ-6001 AK-10: betroffene Constraints siehe oben."""
     cat = db.get(models.Category, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="Kategorie nicht gefunden")
+    invalidated = _invalidate_referencing_constraints(
+        db, cat.project_id, force, category_id=cid, value_ids=[v.id for v in cat.values])
     # B-18: TestCaseValue-Referenzen auf NULL setzen (nicht CASCADE-Loeschen)
     db.query(models.TestCaseValue).filter(
         models.TestCaseValue.category_id == cid
@@ -133,7 +162,7 @@ def delete_category(cid: DbId, db: Session = Depends(get_db)):
     )
     db.delete(cat)
     db.commit()
-    return {"ok": True, "id": cid}
+    return {"ok": True, "id": cid, "invalidated_constraints": invalidated}
 
 
 class RenameCategory(BaseModel):
@@ -269,12 +298,18 @@ def create_value(cid: DbId, payload: schemas.ValueCreate, db: Session = Depends(
 
 
 @router.delete("/values/{vid}", dependencies=[Depends(require_writer)])
-def delete_value(vid: int, db: Session = Depends(get_db)):
-    """REQ-1206: Wert loeschen. B-19: Regeln die diesen Wert referenzieren mitloeschen."""
+def delete_value(vid: int, force: bool = False, db: Session = Depends(get_db)):
+    """REQ-1206: Wert loeschen. B-19: Regeln die diesen Wert referenzieren mitloeschen.
+
+    REQ-6001 AK-10: Constraints werden nicht geloescht, sondern als ungueltig markiert
+    (erst nach Bestaetigung per force=true).
+    """
     val = db.get(models.Value, vid)
     if not val:
         raise HTTPException(status_code=404, detail="Wert nicht gefunden")
     cid = val.category_id
+    invalidated = _invalidate_referencing_constraints(
+        db, val.category.project_id, force, value_ids=[vid])
     # B-19: Regeln die diesen Wert referenzieren (als if_value oder then_value) mitloeschen
     rules_to_delete = db.query(models.Rule).filter(
         models.Rule.project_id == val.category.project_id,
@@ -288,7 +323,7 @@ def delete_value(vid: int, db: Session = Depends(get_db)):
         db.delete(r)
     db.delete(val)
     db.commit()
-    return {"ok": True, "id": vid}
+    return {"ok": True, "id": vid, "invalidated_constraints": invalidated}
 
 
 class RenameValue(BaseModel):

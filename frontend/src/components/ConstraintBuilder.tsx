@@ -960,7 +960,7 @@ export default function ConstraintBuilder({ projectId }: Props) {
                       </span>
                       {invalid && (
                         <span className="text-xs text-amber-600">
-                          ⚠️ {t("constraintBuilder.invalidConstraint", { reason: t("constraintBuilder.invalidConstraint") })}
+                          ⚠️ {t("constraintBuilder.invalidConstraint", { reason: t("constraintBuilder.invalidReasonDeletedReference") })}
                         </span>
                       )}
                     </div>

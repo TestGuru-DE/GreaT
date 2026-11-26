@@ -90,8 +90,10 @@ def pytest_runtest_setup(item):
         first_start_hint_rate_limiter,
         password_change_rate_limiter,
         token_rate_limiter,
+        token_failure_rate_limiter,
     )
-    for limiter in (login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter, token_rate_limiter):
+    for limiter in (login_rate_limiter, first_start_hint_rate_limiter, password_change_rate_limiter,
+                    token_rate_limiter, token_failure_rate_limiter):
         limiter._requests.clear()
 
 

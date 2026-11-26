@@ -4,6 +4,19 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ## [Unreleased]
 
+### 🔒 Sicherheit
+- **Scopes von API-Tokens gelten fuer alle Endpunkte (A-03):** Bisher nur bei `generate` geprueft. Zuordnung fuer `/api/*`: Modell-Datei lesen/schreiben `models:read`/`models:write`, Testfall-Exporte `export`, Generierung und Lueckenschluss `generate`, sonst lesend `projects:read` und aendernd `projects:write`. Fehlender Scope: 403 mit `X-Error-Code: insufficient_scope`.
+- **Rate-Limit nicht mehr ueber den Token-Praefix missbrauchbar (A-07):** Gezaehlt wird je Token erst nach erfolgreicher Pruefung. Fehlgeschlagene Token-Pruefungen sind je Client-IP begrenzt (20/Minute) und werden vor der aufwendigen Hash-Pruefung abgewiesen.
+- **Constraints nur mit Kategorien und Werten des eigenen Projekts (K-05):** Fremde oder unbekannte IDs liefern 422 `constraint_reference_invalid`; `/constraints/validate` meldet sie als Fehler.
+
+### 🐛 Bugfixes
+- **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
+
+### ⚠️ Hinweise fuer API-Nutzer
+- Tokens brauchen jetzt fuer jeden Endpunkt den passenden Scope, z. B. `projects:read` zusaetzlich zu `export`, um Projekte und Generierungen aufzulisten.
+- `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
+- 429-Antworten des Token-Rate-Limits haben das Format `{"detail": {"code": "rate_limit_exceeded", "detail": "..."}}`.
+
 ---
 
 ## [1.11.2] – 2026-11-25 – Bugfixes: Sicherheit, Stabilitaet, Pairwise, Grenzwertanalyse

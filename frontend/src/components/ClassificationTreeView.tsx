@@ -7,6 +7,7 @@ import { useProjectStore } from "../store/projectStore";
 import { computeTreeLayout } from "../lib/classificationTreeLayout";
 import type { TreeNode } from "../lib/classificationTreeLayout";
 import { categoriesApi } from "../api/client";
+import { deleteWithConstraintCheck } from "../lib/constraintReference";
 
 interface Props {
   projectId: number;
@@ -199,7 +200,12 @@ export default function ClassificationTreeView({ projectId }: Props) {
   const handleDelete = (node: TreeNode) => {
     if (node.type === "category" && node.categoryId) {
       if (confirm(t("classificationTree.deleteConfirm", { defaultValue: "Kategorie loeschen?" }))) {
-        deleteCategory(node.categoryId);
+        const categoryId = node.categoryId;
+        // REQ-6001 AK-10: bei verweisenden Constraints nachfragen
+        deleteWithConstraintCheck(
+          (force) => deleteCategory(categoryId, force),
+          (names) => confirm(t("categoryTree.constraintReferenceConfirm", { names: names.join(", ") })),
+        ).catch((e: unknown) => alert(e instanceof Error ? e.message : String(e)));
       }
     }
   };

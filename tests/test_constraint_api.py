@@ -370,9 +370,10 @@ class TestConstraintValidate:
     def test_validate_valid_forbid(self, auth_client):
         """Gueltiges forbid-AST validieren."""
         ctx = _create_test_project(auth_client)
+        zahlart = ctx["categories"]["Zahlart"]
         resp = auth_client.post(f"/api/v1/projects/{ctx['project_id']}/constraints/validate", json={
             "kind": "forbid",
-            "expression": {"op": "eq", "category_id": 1, "value_id": 2},
+            "expression": {"op": "eq", "category_id": zahlart["id"], "value_id": zahlart["values"]["Rechnung"]},
         })
         assert resp.status_code == 200
         data = resp.json()
@@ -382,10 +383,12 @@ class TestConstraintValidate:
     def test_validate_valid_implies(self, auth_client):
         """Gueltiges implies-AST validieren."""
         ctx = _create_test_project(auth_client)
+        zahlart = ctx["categories"]["Zahlart"]
+        versand = ctx["categories"]["Versand"]
         resp = auth_client.post(f"/api/v1/projects/{ctx['project_id']}/constraints/validate", json={
             "kind": "implies",
-            "expression": {"op": "eq", "category_id": 1, "value_id": 2},
-            "consequence": {"op": "ne", "category_id": 3, "value_id": 4},
+            "expression": {"op": "eq", "category_id": zahlart["id"], "value_id": zahlart["values"]["Rechnung"]},
+            "consequence": {"op": "ne", "category_id": versand["id"], "value_id": versand["values"]["Express"]},
         })
         assert resp.status_code == 200
         data = resp.json()

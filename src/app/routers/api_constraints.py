@@ -24,8 +24,23 @@ from ..auth_deps import require_api_capable, require_writer
 from .. import models, schemas
 from ..constraints.ast_parser import validate_ast, count_leaf_nodes, MAX_LEAF_NODES
 from ..constraints.evaluator_3vl import check_unsatisfiable
+from ..constraints.references import invalid_references
 
 log = logging.getLogger("great.api.constraints")
+
+
+def _require_own_references(project_id: int, ast_dict: dict, db: Session) -> None:
+    """BUG K-05: Alle Kategorien/Werte muessen zum Projekt gehoeren, sonst 422."""
+    errors = invalid_references(db, project_id, ast_dict)
+    if errors:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "constraint_reference_invalid",
+                "detail": "Das Constraint verweist auf Kategorien oder Werte, die es in diesem Projekt nicht gibt.",
+                "errors": errors,
+            },
+        )
 
 router = APIRouter(tags=["Constraints"], dependencies=[Depends(require_api_capable)])
 
@@ -162,17 +177,18 @@ def list_constraints(
     project_id: int,
     db: Session = Depends(get_db),
 ):
-    """Alle gueltigen Constraints eines Projekts listen (sortiert nach Name)."""
+    """Alle Constraints eines Projekts listen (sortiert nach Name).
+
+    REQ-6001 AK-10: Auch ungueltige Constraints (referenzierte Kategorie/Wert
+    geloescht) erscheinen, mit is_valid=false, damit der Nutzer sie korrigieren kann.
+    """
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
     constraints = (
         db.query(models.Constraint)
-        .filter(
-            models.Constraint.project_id == project_id,
-            models.Constraint.is_valid == True,  # noqa: E712
-        )
+        .filter(models.Constraint.project_id == project_id)
         .order_by(models.Constraint.name)
         .all()
     )
@@ -229,6 +245,8 @@ def create_constraint(
             status_code=400,
             detail=f"Zu viele atomare Vergleiche: {leaf_count} (max {MAX_LEAF_NODES})",
         )
+
+    _require_own_references(project_id, ast_dict, db)  # BUG K-05
 
     # Constraint anlegen (komplettes AST speichern)
     constraint = models.Constraint(
@@ -340,6 +358,11 @@ def update_constraint(
                 detail=f"Zu viele atomare Vergleiche: {leaf_count} (max {MAX_LEAF_NODES})",
             )
 
+        _require_own_references(project_id, ast_dict, db)  # BUG K-05
+        # REQ-6001 AK-10: Ein (nach Loeschung) ungueltiges Constraint wird durch
+        # Speichern mit gueltigen Referenzen wieder gueltig.
+        constraint.is_valid = True
+
     # Felder aktualisieren (nur wenn nicht-None)
     if payload.name is not None:
         constraint.name = payload.name
@@ -443,6 +466,9 @@ def validate_constraint_ast(
             ast_dict["consequence"] = payload.consequence
 
     is_valid, errors = validate_ast(ast_dict)
+    if is_valid:
+        errors = invalid_references(db, project_id, ast_dict)  # BUG K-05
+        is_valid = not errors
     leaf_count = count_leaf_nodes(ast_dict)
 
     warnings: List[str] = []

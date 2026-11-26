@@ -61,6 +61,18 @@ class RateLimiter:
 
         return False, 0
 
+    def peek(self, key: str) -> Tuple[bool, int]:
+        """Prueft das Limit, ohne einen Versuch zu zaehlen oder zurueckzusetzen."""
+        now = time.time()
+        recent = [t for t in self._requests.get(key, []) if now - t < self.time_window]
+        if recent:
+            self._requests[key] = recent
+        else:
+            self._requests.pop(key, None)
+        if len(recent) >= self.max_attempts:
+            return True, max(1, int(self.time_window - (now - recent[0])) + 1)
+        return False, 0
+
 
 # Globale Instanz fuer Login-Endpoint (fuer MVP)
 # In Production: Redis-basiert mit shared state zwischen Worker-Instances
@@ -73,5 +85,8 @@ password_change_rate_limiter = RateLimiter(max_attempts=10, time_window=60)
 
 # REQ-6012: Rate-Limit pro API-Token (Standard 600/Minute, konfigurierbar via GREAT_TOKEN_RATE_LIMIT)
 # In-Memory: dokumentiert als MVP; in Production: Redis-basiert
+# BUG A-07: Schluessel ist die Token-ID, gezaehlt wird erst nach erfolgreicher Pruefung.
 from .config import GREAT_TOKEN_RATE_LIMIT
 token_rate_limiter = RateLimiter(max_attempts=GREAT_TOKEN_RATE_LIMIT, time_window=60)
+# BUG A-07: Fehlgeschlagene Token-Pruefungen je Client-IP (begrenzt auch den argon2-Aufwand)
+token_failure_rate_limiter = RateLimiter(max_attempts=20, time_window=60)

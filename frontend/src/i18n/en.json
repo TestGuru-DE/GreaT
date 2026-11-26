@@ -423,6 +423,7 @@
     }
   },
   "categoryTree": {
+    "constraintReferenceConfirm": "These constraints refer to this entry: {{names}}. Deleting marks them as invalid; they take effect again once you edit them. Delete anyway?",
     "loading": "Loading categories...",
     "newCategoryPlaceholder": "Enter new category...",
     "newValuePlaceholder": "New value... (Enter)",
@@ -730,6 +731,7 @@
     "saveError": "Error saving.",
     "validationError": "Validation error: {{errors}}",
     "invalidConstraint": "Invalid: {{reason}}",
+    "invalidReasonDeletedReference": "refers to a deleted category or value. Please edit it.",
     "deleteConfirm": "Really delete constraint \"{{name}}\"?",
     "deleteTitle": "Delete constraint",
     "edit": "Edit",

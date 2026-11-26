@@ -130,33 +130,8 @@ app.add_middleware(
 )
 
 
-# REQ-6012: Rate-Limit-Middleware fuer API-Tokens
-@app.middleware("http")
-async def api_token_rate_limiter(request: Request, call_next):
-    """REQ-6012: Rate-Limit pro API-Token (600/Min, konfigurierbar).
-
-    In-Memory: dokumentiert als MVP; in Production: Redis-basiert.
-    """
-    from .auth_deps import _extract_bearer_token
-    from .rate_limiter import token_rate_limiter
-
-    raw_token = _extract_bearer_token(request)
-    if raw_token:
-        # Use first 16 chars as key (matches DB prefix for uniqueness)
-        rate_key = raw_token[:16]
-        is_limited, retry_after = token_rate_limiter.is_rate_limited(rate_key)
-        if is_limited:
-            return JSONResponse(
-                status_code=429,
-                content={
-                    "detail": "Rate-Limit fuer API-Token ueberschritten",
-                    "code": "rate_limit_exceeded",
-                },
-                headers={"Retry-After": str(retry_after)},
-            )
-
-    response = await call_next(request)
-    return response
+# REQ-6012: Das Rate-Limit fuer API-Tokens greift in auth_deps nach der Token-Pruefung
+# (BUG A-07: frueher hier per Token-Praefix, damit fremde Tokens sperrbar).
 
 
 # REQ-4009: Request/Response-Logging Middleware

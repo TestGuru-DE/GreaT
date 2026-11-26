@@ -26,10 +26,10 @@ interface CategoryStore {
   // Original actions
   fetchCategories: (projectId: number) => Promise<void>;
   createCategory: (projectId: number, name: string, categoryType?: CategoryType, isResult?: boolean) => Promise<void>;
-  deleteCategory: (categoryId: number) => Promise<void>;
+  deleteCategory: (categoryId: number, force?: boolean) => Promise<void>;
   fetchValues: (categoryId: number) => Promise<void>;
   createValue: (categoryId: number, value: string, riskWeight?: number) => Promise<void>;
-  deleteValue: (categoryId: number, valueId: number) => Promise<void>;
+  deleteValue: (categoryId: number, valueId: number, force?: boolean) => Promise<void>;
 }
 
 export const useCategoryStore = create<CategoryStore>((set, get) => ({
@@ -109,9 +109,9 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     set((s) => ({ categories: [...s.categories, cat] }));
   },
 
-  deleteCategory: async (categoryId) => {
+  deleteCategory: async (categoryId, force = false) => {
     get().snapshot(); // Snapshot vor Änderung
-    await categoriesApi.delete(categoryId);
+    await (force ? categoriesApi.delete(categoryId, true) : categoriesApi.delete(categoryId));
     set((s) => ({
       categories: s.categories.filter((c) => c.id !== categoryId),
       values: Object.fromEntries(
@@ -137,9 +137,9 @@ export const useCategoryStore = create<CategoryStore>((set, get) => ({
     }));
   },
 
-  deleteValue: async (categoryId, valueId) => {
+  deleteValue: async (categoryId, valueId, force = false) => {
     get().snapshot(); // Snapshot vor Änderung
-    await valuesApi.delete(valueId);
+    await (force ? valuesApi.delete(valueId, true) : valuesApi.delete(valueId));
     set((s) => ({
       values: {
         ...s.values,

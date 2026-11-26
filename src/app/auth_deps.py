@@ -100,6 +100,17 @@ def _extract_bearer_token(request: Request) -> Optional[str]:
     return None
 
 
+def _rate_limit_error(retry_after: int) -> HTTPException:
+    return HTTPException(
+        status_code=429,
+        detail={
+            "code": "rate_limit_exceeded",
+            "detail": "Rate-Limit fuer API-Token ueberschritten",
+        },
+        headers={"Retry-After": str(retry_after)},
+    )
+
+
 def _authenticate_with_api_token(
     request: Request,
     db: Session,
@@ -107,20 +118,42 @@ def _authenticate_with_api_token(
     """REQ-6012: Authenticate via Bearer API token.
 
     Returns (user, token_record) on success, None on failure.
-    Raises HTTPException 403 for deactivated users.
+    Raises HTTPException 403 for deactivated users, 429 when rate-limited.
+
+    BUG A-07: Das Rate-Limit zaehlt erst nach erfolgreicher Pruefung je Token-ID.
+    Fehlversuche zaehlen je Client-IP und werden vor der teuren argon2-Pruefung
+    abgewiesen. Ein gefaelschtes Token mit fremdem Praefix sperrt so nur den
+    Absender, nie das echte Token.
+    Das Ergebnis wird je Anfrage zwischengespeichert (eine Pruefung, eine Zaehlung).
     """
     from .api_token_service import verify_api_token
+    from .rate_limiter import token_rate_limiter, token_failure_rate_limiter
+
+    cached = getattr(request.state, "api_token_auth", None)
+    if cached is not None:
+        return cached or None
 
     raw_token = _extract_bearer_token(request)
     if not raw_token:
         return None
 
+    client_ip = request.client.host if request.client else "unknown"
+    is_limited, retry_after = token_failure_rate_limiter.peek(client_ip)
+    if is_limited:
+        raise _rate_limit_error(retry_after)
+
     result = verify_api_token(db, raw_token)
     if result is None:
+        token_failure_rate_limiter.is_rate_limited(client_ip)  # Fehlversuch zaehlen
+        request.state.api_token_auth = False
         return None
 
     # New signature: (user, token_record, status)
     user, token_record, status = result
+
+    is_limited, retry_after = token_rate_limiter.is_rate_limited(f"token:{token_record.id}")
+    if is_limited:
+        raise _rate_limit_error(retry_after)
 
     # REQ-6012: Deactivated user -> 403
     if status == "deactivated":
@@ -134,9 +167,9 @@ def _authenticate_with_api_token(
 
     # REQ-6012: Update last_used_at
     from .api_token_service import update_last_used
-    client_ip = request.client.host if request.client else None
-    update_last_used(db, token_record, client_ip)
+    update_last_used(db, token_record, request.client.host if request.client else None)
 
+    request.state.api_token_auth = (user, token_record)
     return user, token_record
 
 
@@ -146,6 +179,44 @@ def _is_api_token_blocked_path(path: str) -> bool:
         if path == blocked or path.startswith(blocked + "/") or path.startswith(blocked + "?"):
             return True
     return False
+
+
+_READ_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def required_scope_for(method: str, path: str) -> Optional[str]:
+    """BUG A-03: Scope, den ein API-Token fuer diese Anfrage braucht.
+
+    Gilt fuer alle /api/*-Pfade (REQ-6012: Schnittmenge aus Rolle und Scopes):
+    - Modell-Datei (REQ-6013): models:read (lesen) bzw. models:write
+    - Testfall-Exporte: export
+    - Generierung, Lueckenschluss: generate
+    - alles andere: projects:read (lesen) bzw. projects:write (aendern)
+    Ausserhalb von /api (z. B. /auth/me) ist kein Scope noetig.
+    """
+    if not path.startswith("/api/"):
+        return None
+    method = method.upper()
+    is_read = method in _READ_METHODS
+    segments = [s for s in path.split("/") if s]
+    if "model" in segments or segments[-1] == "import-model":
+        return "models:read" if is_read else "models:write"
+    if "export" in segments and is_read:
+        return "export"
+    if not is_read and segments[-1] in ("generate", "gap-fill"):
+        return "generate"
+    return "projects:read" if is_read else "projects:write"
+
+
+def _check_token_scope(request: Request, token_record: ApiToken) -> None:
+    """BUG A-03: 403 insufficient_scope, wenn dem Token der noetige Scope fehlt."""
+    scope = required_scope_for(request.method, request.url.path)
+    if scope is not None and not token_record.has_scope(scope):
+        raise HTTPException(
+            status_code=403,
+            detail=f"API-Token hat nicht den erforderlichen Scope: {scope}",
+            headers={"X-Error-Code": INSUFFICIENT_SCOPE},
+        )
 
 
 def _load_authenticated_user(request: Request, db: Session) -> User:
@@ -173,6 +244,7 @@ def _load_authenticated_user(request: Request, db: Session) -> User:
                 headers={"X-Error-Code": "api_token_blocked_endpoint"},
             )
 
+        _check_token_scope(request, token_record)  # BUG A-03
         return user
 
     # Neither worked
@@ -253,7 +325,9 @@ def require_role(*allowed_roles: str):
 def require_scope(*required_scopes: str):
     """REQ-6012: Dependency factory for API-token scope checking.
 
-    Prueft, ob der API-Token (falls verwendet) die必要的 Scopes hat.
+    Prueft, ob der API-Token (falls verwendet) die noetigen Scopes hat.
+    Seit A-03 prueft get_current_user den Scope je Pfad zentral; diese
+    Dependency bleibt fuer zusaetzliche, ausdrueckliche Anforderungen.
     Bei Cookie-Auth (keine API-Token) wird kein Scope-Check durchgefuehrt.
 
     Die Rolle des Nutzers gilt weiterhin als Obergrenze:
@@ -271,22 +345,15 @@ def require_scope(*required_scopes: str):
     """
     def scope_checker(
         request: Request,
-        db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user),
     ) -> User:
-        # Check if this is an API token request
-        raw_token = _extract_bearer_token(request)
-        if not raw_token:
+        # Token-Ergebnis aus get_current_user (je Anfrage zwischengespeichert)
+        api_auth = getattr(request.state, "api_token_auth", None)
+        if not api_auth:
             # Cookie auth – no scope check needed (role is the gate)
             return current_user
 
-        # API token – find the token record and check scopes
-        from .api_token_service import verify_api_token
-        result = verify_api_token(db, raw_token)
-        if result is None:
-            raise HTTPException(status_code=401, detail="Ungultiges API-Token")
-
-        _, token_record, _ = result  # 3-tuple: (user, token_record, status)
+        _, token_record = api_auth
 
         # Check each required scope
         for scope in required_scopes:
