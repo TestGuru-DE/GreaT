@@ -121,10 +121,9 @@ class TestBvaStrlenWhitespace:
         assert ws[0].is_error is True
 
     def test_leading_trailing_whitespace(self):
-        """Fuehrende und abschliessende Leerzeichen.
-        
-        Beide haben gleiche Laenge (min_len+1), also wird nur einer
-        durch Deduplizierung beibehalten. Der erste (leading) gewinnt.
+        """Fuehrende und abschliessende Leerzeichen: beide Werte bleiben erhalten.
+
+        Frueher ging einer verloren, weil Werte nach Laenge dedupliziert wurden.
         """
         result = generate_bva_strlen(
             5, 20, points=2,
@@ -132,9 +131,8 @@ class TestBvaStrlenWhitespace:
         )
         leading = [r for r in result if "Fuehrend" in r.label]
         trailing = [r for r in result if "Abschliessend" in r.label]
-        # Leading wird zuerst hinzugefuegt und bleibt; trailing wird dedupliziert
-        assert len(leading) >= 1
-        assert len(trailing) == 0  # Dedupliziert, da gleiche Laenge
+        assert len(leading) == 1 and leading[0].value.startswith(" ")
+        assert len(trailing) == 1 and trailing[0].value.endswith(" ")
 
     def test_trailing_whitespace_alone(self):
         """Abschliessendes Leerzeichen allein (ohne leading)."""

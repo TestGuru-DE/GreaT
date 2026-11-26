@@ -1,6 +1,6 @@
 // BUG C-02: Eingabepruefung fuer Datum, Uhrzeit, Datum+Uhrzeit, Stringlaenge
 import { describe, it, expect } from "vitest";
-import { defaultExtendedOptions, EXTRAS_BY_TYPE, validateExtendedRanges } from "../bva-extended-input";
+import { defaultExtendedOptions, EXTRAS_BY_TYPE, validateExtendedRanges, validateTimezone } from "../bva-extended-input";
 
 const r = (minVal: string, maxVal: string) => [{ id: "r1", minVal, maxVal, allowed: true }];
 
@@ -45,5 +45,35 @@ describe("defaultExtendedOptions", () => {
     for (const keys of Object.values(EXTRAS_BY_TYPE)) {
       for (const k of keys) expect(k).toMatch(/^[a-z0-9_]+$/);
     }
+  });
+});
+
+// BUG C-05 / REQ-6007: ueberlappende Bereiche sofort melden
+describe("validateExtendedRanges - Ueberschneidung", () => {
+  const ranges = (...pairs: [string, string][]) =>
+    pairs.map(([minVal, maxVal], i) => ({ id: `r${i}`, minVal, maxVal, allowed: i === 0 }));
+
+  it("meldet ueberlappende Datumsbereiche", () => {
+    const errors = validateExtendedRanges("date", ranges(["2024-01-01", "2024-01-31"], ["2024-01-15", "2024-02-15"]));
+    expect(errors.some((e) => e.includes("überschneiden"))).toBe(true);
+  });
+
+  it("akzeptiert angrenzende Bereiche", () => {
+    expect(validateExtendedRanges("strlen", ranges(["1", "10"], ["11", "20"]))).toEqual([]);
+    expect(validateExtendedRanges("date", ranges(["2024-01-01", "2024-01-31"], ["2024-02-01", "2024-02-29"]))).toEqual([]);
+  });
+
+  it("prueft Uhrzeiten nicht auf Ueberschneidung (Mitternacht; das Backend prueft)", () => {
+    expect(validateExtendedRanges("time", ranges(["22:00", "02:00"], ["08:00", "12:00"]))).toEqual([]);
+  });
+});
+
+// BUG C-10: Zeitzone als Formatoption
+describe("validateTimezone", () => {
+  it.each(["", "+02:00", "-05:30", "Z", "z", "+14:00"])("akzeptiert %j", (tz) => {
+    expect(validateTimezone(tz)).toBeNull();
+  });
+  it.each(["2", "+2", "+0200", "MEZ", "+15:00", "+02:60"])("lehnt %j ab", (tz) => {
+    expect(validateTimezone(tz)).not.toBeNull();
   });
 });

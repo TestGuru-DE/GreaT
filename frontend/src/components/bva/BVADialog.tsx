@@ -19,6 +19,7 @@ import {
   TIME_FORMATS,
   defaultExtendedOptions,
   validateExtendedRanges,
+  validateTimezone,
 } from "../../lib/bva-extended-input";
 
 interface BVADialogProps {
@@ -40,10 +41,11 @@ const DATA_TYPE_OPTIONS: { value: BVADataType; labelKey: string }[] = [
 ];
 
 // BUG C-02: Pruefung passend zum Datentyp (Zahlen-Pruefung blockierte Datum/Uhrzeit)
-function validateRanges(type: BVADataType, ranges: BVARangeEntry[]): string[] {
-  return type === "number"
-    ? validateMultiRangeBVAConfig(ranges)
-    : validateExtendedRanges(type, ranges);
+function validateRanges(type: BVADataType, ranges: BVARangeEntry[], options: BVAExtendedOptions = {}): string[] {
+  if (type === "number") return validateMultiRangeBVAConfig(ranges);
+  const errors = validateExtendedRanges(type, ranges);
+  const tzError = type === "datetime" ? validateTimezone(options.timezone) : null;  // BUG C-10
+  return tzError ? [...errors, tzError] : errors;
 }
 
 function createDefaultRanges(_type: BVADataType): BVARangeEntry[] {
@@ -100,7 +102,7 @@ export function BVADialog({
         onClose();
       }
       if (e.key === "Enter" && !e.shiftKey) {
-        const isValid = validateRanges(dataType, config.ranges ?? []).length === 0;
+        const isValid = validateRanges(dataType, config.ranges ?? [], extendedOptions).length === 0;
         if (isValid && !loading) {
           e.preventDefault();
           handleApply();
@@ -157,7 +159,7 @@ export function BVADialog({
 
   if (!isOpen) return null;
 
-  const isValid = validateRanges(dataType, config.ranges ?? []).length === 0;
+  const isValid = validateRanges(dataType, config.ranges ?? [], extendedOptions).length === 0;
   // Zahlenstrahl und Vorschau gibt es nur fuer Zahlen; fuer die anderen Typen
   // berechnet das Backend die Werte.
   const points = dataType === "number" && isValid
@@ -252,6 +254,25 @@ export function BVADialog({
                         <option key={st} value={st}>{optionLabel(`steps.${st}`)}</option>
                       ))}
                     </select>
+                  </label>
+                )}
+                {/* BUG C-10: optionale Zeitzone (ISO-8601-Offset) fuer Datum+Uhrzeit */}
+                {dataType === "datetime" && (
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    {optionLabel("timezone")}
+                    <input
+                      type="text"
+                      aria-label={optionLabel("timezone")}
+                      value={extendedOptions.timezone ?? ""}
+                      onChange={(e) => setOption({ timezone: e.target.value })}
+                      placeholder="+02:00"
+                      title={optionLabel("timezoneHint")}
+                      aria-invalid={validateTimezone(extendedOptions.timezone) !== null}
+                      className="w-24 px-2 py-1 border border-slate-300 rounded-lg"
+                    />
+                    {validateTimezone(extendedOptions.timezone) && (
+                      <span role="alert" className="text-xs text-red-600">{optionLabel("timezoneHint")}</span>
+                    )}
                   </label>
                 )}
                 {dataType === "strlen" && (

@@ -10,7 +10,7 @@ Quelle: ISTQB Foundation Level Syllabus, Boundary Value Analysis.
 REQ-6007: Erweiterung fuer Datum, Uhrzeit, Datum+Uhrzeit und Stringlaengen.
 """
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Union, Optional
 
@@ -21,6 +21,27 @@ def _normalize_decimal_text(raw: Union[str, int, float]) -> str:
 
 class BVAError(ValueError):
     """Wird geworfen bei ungültigen BVA-Parametern (Rückwärtskompatibilität)."""
+
+
+# BUG C-04: Grenzen fuer Zahlen. Darueber rundet Decimal (28 Stellen) min-1 zu min
+# bzw. str(int(...)) erzeugt riesige Zeichenketten.
+_MAX_DECIMALS = 10
+
+
+def _parse_number(raw: Union[str, int, float]) -> Decimal:
+    """Zahl fuer die BVA lesen; BVAError statt 500 bei NaN, Unendlich, Riesenwerten, Text."""
+    try:
+        value = Decimal(_normalize_decimal_text(raw))
+    except ArithmeticError as exc:  # InvalidOperation, aber auch Overflow (z. B. 1e999999999)
+        raise BVAError(f"Ungültige Zahl: {raw!r}") from exc
+    if not value.is_finite():
+        raise BVAError(f"Ungültige Zahl: {raw!r} (NaN/Unendlich nicht erlaubt)")
+    # Groesse ueber den Exponenten pruefen: abs() wuerde bei 1e999999999 selbst ueberlaufen
+    if value != 0 and value.adjusted() >= 15:
+        raise BVAError(f"Zahl zu groß: {raw!r} (Betrag maximal 10^15)")
+    if value != 0 and value.as_tuple().exponent < -_MAX_DECIMALS:
+        raise BVAError(f"Zu viele Nachkommastellen: {raw!r} (maximal {_MAX_DECIMALS})")
+    return value
 
 
 def _epsilon(lo: Decimal, hi: Decimal) -> Decimal:
@@ -49,13 +70,10 @@ def generate_bva_values(
     Returns:
         Deduplizierte, aufsteigend sortierte Liste von Wert-Strings.
     """
-    try:
-        lo = Decimal(_normalize_decimal_text(min_val))
-        hi = Decimal(_normalize_decimal_text(max_val))
-    except InvalidOperation as exc:
-        raise BVAError(f"Ungültige Grenzwerte: min={min_val!r}, max={max_val!r}") from exc
+    lo = _parse_number(min_val)  # BUG C-04
+    hi = _parse_number(max_val)
 
-    if lo > hi:
+    if lo > hi:  # REQ-0306: Einzelbereich wird automatisch korrigiert
         lo, hi = hi, lo
 
     eps = _epsilon(lo, hi)
@@ -111,7 +129,7 @@ def _parse_optional_decimal(raw: str) -> Optional[Decimal]:
     text = _normalize_decimal_text(raw)
     if text == "":
         return None
-    return Decimal(text)
+    return _parse_number(text)  # BUG C-04: z. B. Datum an /bva/ranges -> 400 statt 500
 
 
 def _format_bound(raw: str, is_min: bool) -> str:
@@ -124,7 +142,8 @@ def _normalize_range(r: BVARange) -> tuple[Optional[Decimal], Optional[Decimal],
     lo = _parse_optional_decimal(r.min_val)
     hi = _parse_optional_decimal(r.max_val)
     if lo is not None and hi is not None and lo > hi:
-        lo, hi = hi, lo
+        # BUG C-05 / REQ-6007: Min > Max wird gemeldet statt still vertauscht
+        raise BVAError(f"Min ist größer als Max: {r.min_val} > {r.max_val}")
     return lo, hi, _format_bound(r.min_val, True), _format_bound(r.max_val, False)
 
 
@@ -257,6 +276,17 @@ def _classify_value(v: Decimal, ranges: list[BVARange]) -> bool:
 
 # ---------------------------------------------------------------------------
 # REQ-6007: BVA fuer Datum, Uhrzeit, Datum+Uhrzeit und Stringlaengen
+#
+# Alle Typen nutzen dieselbe Mehrbereichs-Logik wie Zahlen (REQ-3064):
+# - Jeder Bereich hat Min/Max und gueltig/ungueltig (allowed).
+# - Min > Max und ueberlappende Bereiche werden abgelehnt (BUG C-05).
+#   Ausnahme Uhrzeit: Min > Max ist ein Bereich ueber Mitternacht.
+# - Kandidaten (min-1, min, ... je nach 2/3/4-Punkt-Methode) werden je Bereich
+#   erzeugt, dedupliziert und nach ZUGEHOERIGKEIT eingestuft: in einem gueltigen
+#   Bereich = gueltig, sonst Fehlerwert (keine widerspruechlichen Doppelwerte).
+# - Werte ausserhalb des darstellbaren Bereichs (vor 0001-01-01, nach 9999-12-31,
+#   negative Laengen) entfallen statt einen Fehler 500 auszuloesen (BUG C-04).
+# - Zusatzwerte entstehen nur im bzw. an einem Bereich (BUG C-07).
 # ---------------------------------------------------------------------------
 
 @dataclass
@@ -268,23 +298,111 @@ class BVAValue:
     label: str = ""  # Beschreibung, z.B. "min", "29.02. Schaltjahr"
 
 
+@dataclass
+class TypedRange:
+    """Ein Bereich fuer die typisierte BVA (Grenzen als Text wie im Dialog)."""
+    min_val: str
+    max_val: str
+    allowed: bool = True
+
+
+# Methode -> (Offset, Label, liegt an der Untergrenze?)
+_OFFSETS = {
+    2: [(-1, "min-1", True), (0, "min", True), (0, "max", False), (1, "max+1", False)],
+    3: [(-1, "min-1", True), (0, "min", True), (1, "min+1", True),
+        (-1, "max-1", False), (0, "max", False), (1, "max+1", False)],
+    4: [(-2, "min-2", True), (-1, "min-1", True), (0, "min", True), (1, "min+1", True),
+        (-1, "max-1", False), (0, "max", False), (1, "max+1", False), (2, "max+2", False)],
+}
+
+# Obergrenze fuer aufzaehlende Zusatzwerte (Monatsenden, Jahreswechsel): je Bereich
+# die ersten und letzten 12, damit lange Bereiche nicht tausende Werte erzeugen.
+_MAX_ENUM_EXTRAS = 12
+
+
+def _offsets(points: int):
+    if points not in _OFFSETS:
+        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
+    return _OFFSETS[points]
+
+
+def _normalize_extras(extras) -> dict:
+    """BUG C-04: Zusatzwerte als Dict {name: bool} oder Liste von Namen."""
+    if extras is None:
+        return {}
+    if isinstance(extras, dict):
+        return {str(k): bool(v) for k, v in extras.items()}
+    if isinstance(extras, (list, tuple, set)):
+        return {str(k): True for k in extras}
+    raise BVAError("extras muss ein Objekt {Name: true/false} oder eine Liste von Namen sein")
+
+
+def _limit_enum(values: list) -> list:
+    if len(values) <= 2 * _MAX_ENUM_EXTRAS:
+        return values
+    return values[:_MAX_ENUM_EXTRAS] + values[-_MAX_ENUM_EXTRAS:]
+
+
+def _check_overlaps(intervals: list[tuple]) -> None:
+    """Intervalle (lo, hi) eines geordneten Typs duerfen sich nicht ueberschneiden."""
+    ordered = sorted(intervals)
+    for (lo1, hi1), (lo2, hi2) in zip(ordered, ordered[1:]):
+        if lo2 <= hi1:
+            raise BVAError("Bereiche dürfen sich nicht überschneiden.")
+
+
+class _Collector:
+    """Sammelt Werte je Schluessel; Einstufung per Zugehoerigkeit zu den Bereichen."""
+
+    def __init__(self, vtype: str, classify, render, sort_key):
+        self.vtype, self.classify, self.render, self.sort_key = vtype, classify, render, sort_key
+        self.items: dict = {}
+
+    def add(self, key, label: str, force_error: bool = False, text: Optional[str] = None) -> None:
+        value = text if text is not None else self.render(key)
+        if value in self.items:
+            return
+        is_error = True if force_error else self.classify(key)
+        self.items[value] = (self.sort_key(key), BVAValue(value=value, is_error=is_error,
+                                                          vtype=self.vtype, label=label))
+
+    def result(self) -> list[BVAValue]:
+        return [v for _, v in sorted(self.items.values(), key=lambda item: item[0])]
+
+
+def _in_allowed(intervals_with_flag: list[tuple], key) -> bool:
+    """True, wenn key in einem gueltigen Bereich liegt (sonst Fehlerwert)."""
+    for lo, hi, allowed in intervals_with_flag:
+        if lo <= key <= hi:
+            return allowed
+    return False
+
+
+# --- Datum ----------------------------------------------------------------
+
 def _parse_date(raw: str) -> date:
     """Parsiert ein Datum im Format 'YYYY-MM-DD'."""
     try:
-        parts = raw.strip().split("-")
+        parts = str(raw).strip().split("-")
         if len(parts) != 3:
             raise ValueError
         y, m, d = int(parts[0]), int(parts[1]), int(parts[2])
         return date(y, m, d)
-    except (ValueError, IndexError) as exc:
+    except (ValueError, IndexError, TypeError, OverflowError) as exc:
         raise BVAError(f"Ungültiges Datum: {raw!r}. Format: YYYY-MM-DD") from exc
+
+
+_DATE_FORMATS = ("iso", "de")
+
+
+def _format_date_parts(y: int, m: int, d: int, fmt: str) -> str:
+    # Ohne strftime: Jahre < 1000 werden plattformunabhaengig vierstellig ausgegeben
+    return f"{d:02d}.{m:02d}.{y:04d}" if fmt == "de" else f"{y:04d}-{m:02d}-{d:02d}"
 
 
 def _format_date(d: date, fmt: str = "iso") -> str:
     """Formatiert ein Datum."""
-    if fmt == "de":
-        return d.strftime("%d.%m.%Y")
-    return d.isoformat()  # YYYY-MM-DD
+    return _format_date_parts(d.year, d.month, d.day, fmt)
 
 
 def _is_leap_year(year: int) -> bool:
@@ -292,43 +410,102 @@ def _is_leap_year(year: int) -> bool:
     return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
 
 
-def _last_day_of_month(year: int, month: int) -> int:
-    """Letzer Tag eines Monats."""
+def _last_day_of_month(year: int, month: int) -> date:
+    """Letzter Tag eines Monats (BUG C-04: auch fuer Dezember ein Datum)."""
     if month == 12:
-        return 31
-    return date(year, month + 1, 1) - timedelta(days=1)  # type: ignore[operator]
+        return date(year, 12, 31)
+    return date(year, month + 1, 1) - timedelta(days=1)
+
+
+def _months_in_range(start: date, end: date):
+    """(Jahr, Monat) fuer jeden Monat, der den Bereich beruehrt (inkl. Startmonat)."""
+    y, m = start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        yield y, m
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
 
 
 def _month_ends_in_range(start: date, end: date) -> list[date]:
-    """Alle Monatsenden (30./31.) im Bereich [start, end]."""
-    results = []
-    current = start.replace(day=1)
-    if current < start:
-        current = (current.replace(day=28) + timedelta(days=4)).replace(day=1)
-
-    while current <= end:
-        last = _last_day_of_month(current.year, current.month)
-        if last >= start and last <= end and last not in results:
-            results.append(last)
-        # Next month
-        if current.month == 12:
-            current = current.replace(year=current.year + 1, month=1, day=1)
-        else:
-            current = current.replace(month=current.month + 1, day=1)
-    return results
+    """Alle Monatsenden im Bereich [start, end] (BUG C-08: inkl. Startmonat)."""
+    return [last for y, m in _months_in_range(start, end)
+            if start <= (last := _last_day_of_month(y, m)) <= end]
 
 
 def _year_transitions_in_range(start: date, end: date) -> list[date]:
     """31.12. und 01.01. im Bereich [start, end]."""
     results = []
-    for y in range(start.year, end.year + 2):
-        dec31 = date(y, 12, 31)
-        jan01 = date(y, 1, 1)
-        if dec31 >= start and dec31 <= end:
-            results.append(dec31)
-        if jan01 >= start and jan01 <= end:
-            results.append(jan01)
-    return sorted(set(results))
+    for y in range(start.year, end.year + 1):
+        for d in (date(y, 1, 1), date(y, 12, 31)):
+            if start <= d <= end:
+                results.append(d)
+    return results
+
+
+def generate_multi_range_bva_date(
+    ranges: list[TypedRange],
+    points: int = 2,
+    fmt: str = "iso",
+    extras=None,
+) -> list[BVAValue]:
+    """REQ-6007: BVA fuer Datumsbereiche (Schritt 1 Tag), mehrere Bereiche.
+
+    Zusatzwerte (extras): leap_year, non_leap_year, month_ends,
+    year_transition, invalid_date. Sie entstehen nur im/an einem Bereich.
+    """
+    extras = _normalize_extras(extras)
+    if fmt not in _DATE_FORMATS:
+        raise BVAError(f"Unbekanntes Datumsformat: {fmt!r}. Erlaubt: iso, de")
+    parsed = []
+    for r in ranges:
+        lo, hi = _parse_date(r.min_val), _parse_date(r.max_val)
+        if lo > hi:
+            raise BVAError(f"Min ist größer als Max: {r.min_val} > {r.max_val}")
+        parsed.append((lo.toordinal(), hi.toordinal(), r.allowed))
+    _check_overlaps([(lo, hi) for lo, hi, _ in parsed])
+
+    first, last = date.min.toordinal(), date.max.toordinal()
+    out = _Collector(
+        "date",
+        classify=lambda key: not _in_allowed(parsed, key),
+        render=lambda key: _format_date(date.fromordinal(key), fmt),
+        sort_key=lambda key: (key, 0),
+    )
+    for lo, hi, _ in parsed:
+        for offset, label, at_min in _offsets(points):
+            key = (lo if at_min else hi) + offset
+            if first <= key <= last:  # BUG C-04: vor 0001-01-01 / nach 9999-12-31 gibt es nichts
+                out.add(key, label)
+
+    for lo_o, hi_o, _ in parsed:
+        lo, hi = date.fromordinal(lo_o), date.fromordinal(hi_o)
+        if extras.get("leap_year"):
+            for y in range(lo.year, hi.year + 1):
+                if _is_leap_year(y) and lo <= date(y, 2, 29) <= hi:
+                    out.add(date(y, 2, 29).toordinal(), f"29.02. {y} (Schaltjahr)")
+                    break
+        if extras.get("non_leap_year"):
+            # BUG C-07: nur ein Jahr, dessen Februarende im Bereich liegt; Jahreszahl bleibt unveraendert
+            for y in range(lo.year, hi.year + 1):
+                feb28 = date(y, 2, 28)
+                if not _is_leap_year(y) and lo <= feb28 <= hi:
+                    out.add(feb28.toordinal(), f"29.02. {y} (Nicht-Schaltjahr, ungueltig)",
+                            force_error=True, text=_format_date_parts(y, 2, 29, fmt))
+                    break
+        if extras.get("month_ends"):
+            for d in _limit_enum(_month_ends_in_range(lo, hi)):
+                out.add(d.toordinal(), f"Monatsende {d.day}.{d.month:02d}.")
+        if extras.get("year_transition"):
+            for d in _limit_enum(_year_transitions_in_range(lo, hi)):
+                out.add(d.toordinal(), "Jahreswechsel")
+        if extras.get("invalid_date"):
+            # BUG C-07: 31. eines 30-Tage-Monats, dessen 30. im Bereich liegt
+            for y, m in _months_in_range(lo, hi):
+                last_day = _last_day_of_month(y, m)
+                if last_day.day == 30 and lo <= last_day <= hi:
+                    out.add(last_day.toordinal(), f"Ungueltiges Datum (31.{m:02d}.)",
+                            force_error=True, text=_format_date_parts(y, m, 31, fmt))
+                    break
+    return out.result()
 
 
 def generate_bva_date(
@@ -338,154 +515,27 @@ def generate_bva_date(
     fmt: str = "iso",
     extras: Optional[dict] = None,
 ) -> list[BVAValue]:
-    """
-    REQ-6007: BVA fuer Datumsbereiche.
-
-    2/3/4-Punkt-Methode mit Schritt=1 Tag.
-    Zusatzwerte (optional): 29.02 (Schaltjahr/Nicht-Schaltjahr), Monatsenden,
-    Jahreswechsel, ungultiges Datum.
-
-    Args:
-        min_date: Untere Grenze (YYYY-MM-DD)
-        max_date: Obere Grenze (YYYY-MM-DD)
-        points: 2, 3 oder 4
-        fmt: 'iso' (JJJJ-MM-TT) oder 'de' (TT.MM.JJJJ)
-        extras: Dict mit Booleans:
-            - 'leap_year': 29.02. eines Schaltjahrs (gultig)
-            - 'non_leap_year': 29.02. eines Nicht-Schaltjahrs (ungultig)
-            - 'month_ends': Monatsenden 30./31.
-            - 'year_transition': Jahreswechsel 31.12./01.01.
-            - 'invalid_date': Ungultiges Datum (z.B. 31.04.)
-
-    Returns:
-        Liste von BVAValue-Objekten (dedupliziert, sortiert nach Datum).
-    """
-    if extras is None:
-        extras = {}
-
-    lo = _parse_date(min_date)
-    hi = _parse_date(max_date)
-    if lo > hi:
-        lo, hi = hi, lo
-
-    results: dict[str, BVAValue] = {}
-
-    # --- BVA-Grenzwerte ---
-    if points == 2:
-        date_candidates = [
-            (lo - timedelta(days=1), "min-1", True),
-            (lo, "min", False),
-            (hi, "max", False),
-            (hi + timedelta(days=1), "max+1", True),
-        ]
-    elif points == 3:
-        date_candidates = [
-            (lo - timedelta(days=1), "min-1", True),
-            (lo, "min", False),
-            (lo + timedelta(days=1), "min+1", False),
-            (hi - timedelta(days=1), "max-1", False),
-            (hi, "max", False),
-            (hi + timedelta(days=1), "max+1", True),
-        ]
-    elif points == 4:
-        date_candidates = [
-            (lo - timedelta(days=2), "min-2", True),
-            (lo - timedelta(days=1), "min-1", True),
-            (lo, "min", False),
-            (lo + timedelta(days=1), "min+1", False),
-            (hi - timedelta(days=1), "max-1", False),
-            (hi, "max", False),
-            (hi + timedelta(days=1), "max+1", True),
-            (hi + timedelta(days=2), "max+2", True),
-        ]
-    else:
-        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
-
-    for d, label, is_err in date_candidates:
-        key = _format_date(d, fmt)
-        if key not in results:
-            results[key] = BVAValue(value=key, is_error=is_err, vtype="date", label=label)
-
-    # --- Zusatzwerte ---
-    if extras.get("leap_year"):
-        # Finde ein Schaltjahr im Bereich
-        for y in range(lo.year, hi.year + 1):
-            if _is_leap_year(y):
-                feb29 = date(y, 2, 29)
-                if feb29 >= lo and feb29 <= hi:
-                    key = _format_date(feb29, fmt)
-                    if key not in results:
-                        results[key] = BVAValue(
-                            value=key, is_error=False, vtype="date",
-                            label=f"29.02. {y} (Schaltjahr)"
-                        )
-                    break
-
-    if extras.get("non_leap_year"):
-        # Finde ein Nicht-Schaltjahr im Bereich
-        for y in range(lo.year, hi.year + 1):
-            if not _is_leap_year(y):
-                # 29.02 ist in Nicht-Schaltjahren ungueltig
-                feb_start = date(y, 2, 1)
-                if feb_start >= lo or feb_start <= hi:
-                    key = _format_date(date(y, 2, 28), fmt).replace("28", "29")
-                    if key not in results:
-                        results[key] = BVAValue(
-                            value=key, is_error=True, vtype="date",
-                            label=f"29.02. {y} (Nicht-Schaltjahr, ungueltig)"
-                        )
-                    break
-
-    if extras.get("month_ends"):
-        for d in _month_ends_in_range(lo, hi):
-            key = _format_date(d, fmt)
-            if key not in results:
-                results[key] = BVAValue(
-                    value=key, is_error=False, vtype="date",
-                    label=f"Monatsende {d.day}.{d.month:02d}"
-                )
-
-    if extras.get("year_transition"):
-        for d in _year_transitions_in_range(lo, hi):
-            key = _format_date(d, fmt)
-            if key not in results:
-                results[key] = BVAValue(
-                    value=key, is_error=False, vtype="date",
-                    label="Jahreswechsel"
-                )
-
-    if extras.get("invalid_date"):
-        # 31.04. als Beispiel fuer ungultiges Datum
-        invalid = date(lo.year, 4, 30) + timedelta(days=1)  # 31.04. -> wird zu 30.04. + 1 = 1.5. in Python
-        # Wir muessen ein explizit ungultiges Datum als String erzeugen
-        invalid_str = f"{lo.year}-04-31" if fmt == "iso" else f"31.04.{lo.year}"
-        if invalid_str not in results:
-            results[invalid_str] = BVAValue(
-                value=invalid_str, is_error=True, vtype="date",
-                label="Ungultiges Datum (31.04.)"
-            )
-
-    # Sortieren: BVAValue nach Datum (ISO-Format sortiert lexikalisch korrekt)
-    sorted_results = sorted(results.values(), key=lambda v: v.value)
-    return sorted_results
+    """REQ-6007: BVA fuer einen Datumsbereich (siehe generate_multi_range_bva_date)."""
+    return generate_multi_range_bva_date([TypedRange(min_date, max_date)], points, fmt, extras)
 
 
-# ---------------------------------------------------------------------------
-# BVA fuer Uhrzeit
-# ---------------------------------------------------------------------------
+# --- Uhrzeit ----------------------------------------------------------------
+
+_DAY = 86400
+_TIME_FORMATS = ("HH:MM", "HH:MM:SS")
+_STEPS = {"minute": 60, "second": 1}
+
 
 def _parse_time(raw: str) -> time:
     """Parsiert eine Uhrzeit im Format 'HH:MM' oder 'HH:MM:SS'."""
     try:
-        parts = raw.strip().split(":")
+        parts = str(raw).strip().split(":")
         if len(parts) == 2:
-            h, m = int(parts[0]), int(parts[1])
-            return time(h, m)
-        elif len(parts) == 3:
-            h, m, s = int(parts[0]), int(parts[1]), int(parts[2])
-            return time(h, m, s)
+            return time(int(parts[0]), int(parts[1]))
+        if len(parts) == 3:
+            return time(int(parts[0]), int(parts[1]), int(parts[2]))
         raise ValueError
-    except (ValueError, IndexError) as exc:
+    except (ValueError, IndexError, TypeError) as exc:
         raise BVAError(f"Ungültige Uhrzeit: {raw!r}. Format: HH:MM oder HH:MM:SS") from exc
 
 
@@ -503,12 +553,72 @@ def _time_to_seconds(t: time) -> int:
 
 def _seconds_to_time(sec: int) -> Optional[time]:
     """Konvertiert Sekunden seit Mitternacht zu time. None bei ungültigen Werten."""
-    if sec < 0 or sec >= 86400:
-        return None  # Ungültig
-    h = sec // 3600
-    m = (sec % 3600) // 60
-    s = sec % 60
-    return time(h, m, s)
+    if sec < 0 or sec >= _DAY:
+        return None
+    return time(sec // 3600, (sec % 3600) // 60, sec % 60)
+
+
+def _step_seconds(step: str) -> int:
+    if step not in _STEPS:
+        raise BVAError(f"Unbekannte Schrittweite: {step!r}. Erlaubt: minute, second")
+    return _STEPS[step]
+
+
+def generate_multi_range_bva_time(
+    ranges: list[TypedRange],
+    points: int = 2,
+    fmt: str = "HH:MM",
+    step: str = "minute",
+    extras=None,
+) -> list[BVAValue]:
+    """REQ-6007: BVA fuer Uhrzeiten, mehrere Bereiche.
+
+    Min > Max bedeutet einen Bereich ueber Mitternacht (z. B. 22:00-02:00).
+    Nachbarwerte werden ueber Mitternacht fortgesetzt (BUG C-09: 00:00 minus
+    1 Minute = 23:59 statt "-00:01"; 23:59 plus 1 Minute = 00:00 statt "24:00").
+    Zusatzwerte: midnight, end_of_day, invalid_2400, midnight_crossing.
+    """
+    extras = _normalize_extras(extras)
+    if fmt not in _TIME_FORMATS:
+        raise BVAError(f"Unbekanntes Zeitformat: {fmt!r}. Erlaubt: HH:MM, HH:MM:SS")
+    step_sec = _step_seconds(step)
+    if step_sec == 1:
+        fmt = "HH:MM:SS"  # Sekundenschritte brauchen Sekunden im Format
+
+    parsed = []    # (lo, hi, allowed) in Sekunden; lo > hi = ueber Mitternacht
+    intervals = []  # fuer die Ueberschneidungspruefung, Mitternachtsbereiche geteilt
+    for r in ranges:
+        lo, hi = _time_to_seconds(_parse_time(r.min_val)), _time_to_seconds(_parse_time(r.max_val))
+        parsed.append((lo, hi, r.allowed))
+        intervals += [(lo, hi)] if lo <= hi else [(lo, _DAY - 1), (0, hi)]
+    _check_overlaps(intervals)
+
+    def contains(lo, hi, sec):
+        return lo <= sec <= hi if lo <= hi else (sec >= lo or sec <= hi)
+
+    def classify(sec):
+        for lo, hi, allowed in parsed:
+            if contains(lo, hi, sec):
+                return not allowed
+        return True
+
+    out = _Collector("time", classify=classify,
+                     render=lambda sec: _format_time(_seconds_to_time(sec), fmt),
+                     sort_key=lambda sec: (sec, 0))
+    for lo, hi, _ in parsed:
+        for offset, label, at_min in _offsets(points):
+            out.add(((lo if at_min else hi) + offset * step_sec) % _DAY, label)
+
+    if extras.get("midnight"):
+        out.add(0, "00:00 (Mitternacht)")
+    if extras.get("end_of_day"):
+        out.add(_DAY - (1 if fmt == "HH:MM:SS" else 60), "23:59 (Ende des Tages)")
+    if extras.get("invalid_2400"):
+        text = "24:00:00" if fmt == "HH:MM:SS" else "24:00"
+        out.add(_DAY, "24:00 (ungueltig)", force_error=True, text=text)
+    if extras.get("midnight_crossing") and any(lo > hi for lo, hi, _ in parsed):
+        out.add(0, "Mitternachtsuebergang")
+    return out.result()
 
 
 def generate_bva_time(
@@ -519,150 +629,93 @@ def generate_bva_time(
     step: str = "minute",
     extras: Optional[dict] = None,
 ) -> list[BVAValue]:
-    """
-    REQ-6007: BVA fuer Uhrzeitbereiche.
-
-    2/3/4-Punkt-Methode mit Schritt=Sekunde oder Minute.
-    Zusatzwerte: 00:00, 23:59(:59), 24:00 (ungultig), Mitternachtsuebergang.
-
-    Args:
-        min_time: Untere Grenze (HH:MM oder HH:MM:SS)
-        max_time: Obere Grenze
-        points: 2, 3 oder 4
-        fmt: 'HH:MM' oder 'HH:MM:SS'
-        step: 'minute' (60s) oder 'second' (1s)
-        extras: Dict mit Booleans:
-            - 'midnight': 00:00
-            - 'end_of_day': 23:59(:59)
-            - 'invalid_2400': 24:00 (ungultig)
-            - 'midnight_crossing': Bereich ueber Mitternacht
-
-    Returns:
-        Liste von BVAValue-Objekten.
-    """
-    if extras is None:
-        extras = {}
-
-    lo = _parse_time(min_time)
-    hi = _parse_time(max_time)
-
-    step_seconds = 60 if step == "minute" else 1
-
-    lo_sec = _time_to_seconds(lo)
-    hi_sec = _time_to_seconds(hi)
-
-    # Mitternachtsuebergang: wenn min > max, Bereich geht ueber Mitternacht
-    crosses_midnight = lo_sec > hi_sec
-
-    results: dict[str, BVAValue] = {}
-
-    if points == 2:
-        candidates = [
-            (lo_sec - step_seconds, "min-1", True),
-            (lo_sec, "min", False),
-            (hi_sec, "max", False),
-            (hi_sec + step_seconds, "max+1", True),
-        ]
-    elif points == 3:
-        candidates = [
-            (lo_sec - step_seconds, "min-1", True),
-            (lo_sec, "min", False),
-            (lo_sec + step_seconds, "min+1", False),
-            (hi_sec - step_seconds, "max-1", False),
-            (hi_sec, "max", False),
-            (hi_sec + step_seconds, "max+1", True),
-        ]
-    elif points == 4:
-        candidates = [
-            (lo_sec - step_seconds * 2, "min-2", True),
-            (lo_sec - step_seconds, "min-1", True),
-            (lo_sec, "min", False),
-            (lo_sec + step_seconds, "min+1", False),
-            (hi_sec - step_seconds, "max-1", False),
-            (hi_sec, "max", False),
-            (hi_sec + step_seconds, "max+1", True),
-            (hi_sec + step_seconds * 2, "max+2", True),
-        ]
-    else:
-        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
-
-    for sec, label, is_err in candidates:
-        t = _seconds_to_time(sec)
-        if t is not None:
-            key = _format_time(t, fmt)
-            if key not in results:
-                results[key] = BVAValue(value=key, is_error=is_err, vtype="time", label=label)
-        else:
-            # Ungültige Uhrzeit (z.B. < 0 oder >= 86400)
-            if sec < 0:
-                # Vor Mitternacht: negativer Offset
-                abs_sec = abs(sec)
-                h = abs_sec // 3600
-                m = (abs_sec % 3600) // 60
-                fake = f"-{h:02d}:{m:02d}"
-                if fake not in results:
-                    results[fake] = BVAValue(
-                        value=fake, is_error=True, vtype="time",
-                        label=f"{label} (vor Mitternacht, ungueltig)"
-                    )
-            elif sec >= 86400:
-                h = sec // 3600
-                m = (sec % 3600) // 60
-                fake = f"{h:02d}:{m:02d}"
-                if fake not in results:
-                    results[fake] = BVAValue(
-                        value=fake, is_error=True, vtype="time",
-                        label=f"{label} (ungueltig)"
-                    )
-
-    # --- Zusatzwerte ---
-    if extras.get("midnight"):
-        t = time(0, 0)
-        key = _format_time(t, fmt)
-        if key not in results:
-            results[key] = BVAValue(value=key, is_error=False, vtype="time", label="00:00 (Mitternacht)")
-
-    if extras.get("end_of_day"):
-        if fmt == "HH:MM:SS":
-            t = time(23, 59, 59)
-        else:
-            t = time(23, 59)
-        key = _format_time(t, fmt)
-        if key not in results:
-            results[key] = BVAValue(value=key, is_error=False, vtype="time", label="23:59 (Ende des Tages)")
-
-    if extras.get("invalid_2400"):
-        invalid = "24:00:00" if fmt == "HH:MM:SS" else "24:00"
-        if invalid not in results:
-            results[invalid] = BVAValue(
-                value=invalid, is_error=True, vtype="time",
-                label="24:00 (ungueltig)"
-            )
-
-    if extras.get("midnight_crossing") and crosses_midnight:
-        # Mitternacht ist im Bereich enthalten
-        t = time(0, 0)
-        key = _format_time(t, fmt)
-        if key not in results:
-            results[key] = BVAValue(
-                value=key, is_error=False, vtype="time",
-                label="Mitternachtsuebergang"
-            )
-
-    sorted_results = sorted(results.values(), key=lambda v: v.value)
-    return sorted_results
+    """REQ-6007: BVA fuer einen Uhrzeitbereich (siehe generate_multi_range_bva_time)."""
+    return generate_multi_range_bva_time([TypedRange(min_time, max_time)], points, fmt, step, extras)
 
 
-# ---------------------------------------------------------------------------
-# BVA fuer Datum+Uhrzeit
-# ---------------------------------------------------------------------------
+# --- Datum+Uhrzeit -----------------------------------------------------------
 
-def _parse_datetime(raw: str) -> datetime:
-    """Parsiert ein Datum+Uhrzeit im ISO-Format."""
+def _parse_tz(raw: Optional[str]):
+    """BUG C-10: Zeitzone als ISO-8601-Offset (+02:00, -05:30, Z)."""
+    if raw is None or str(raw).strip() == "":
+        return None
+    text = str(raw).strip()
+    if text.upper() == "Z":
+        return timezone.utc
     try:
-        return datetime.fromisoformat(raw.strip())
-    except (ValueError, AttributeError) as exc:
+        return datetime.fromisoformat("2000-01-01T00:00:00" + text).tzinfo
+    except ValueError as exc:
+        raise BVAError(f"Ungültige Zeitzone: {raw!r}. Format: +HH:MM, -HH:MM oder Z") from exc
+
+
+def _parse_datetime(raw: str, tz=None) -> datetime:
+    """Parsiert ein Datum+Uhrzeit im ISO-Format; ohne Offset gilt die Zeitzone tz."""
+    try:
+        dt = datetime.fromisoformat(str(raw).strip())
+    except (ValueError, AttributeError, TypeError) as exc:
         raise BVAError(f"Ungültiges Datum+Uhrzeit: {raw!r}. Format: ISO 8601") from exc
+    if tz is not None:
+        dt = dt.replace(tzinfo=tz) if dt.tzinfo is None else dt.astimezone(tz)
+    return dt
+
+
+def generate_multi_range_bva_datetime(
+    ranges: list[TypedRange],
+    points: int = 2,
+    step: str = "minute",
+    extras=None,
+    tz: Optional[str] = None,
+) -> list[BVAValue]:
+    """REQ-6007: BVA fuer Datum+Uhrzeit, mehrere Bereiche.
+
+    tz (Formatoption): Werte werden mit diesem Offset ausgegeben; Eingaben ohne
+    Offset erhalten ihn. Ohne tz duerfen Eingaben nicht gemischt mit und ohne
+    Offset sein (BUG C-04).
+    Zusatzwerte: leap_year (29.02. im Bereich), midnight (erste Mitternacht im Bereich).
+    """
+    extras = _normalize_extras(extras)
+    step_td = timedelta(seconds=_step_seconds(step))
+    tzinfo = _parse_tz(tz)
+
+    parsed = []
+    for r in ranges:
+        lo, hi = _parse_datetime(r.min_val, tzinfo), _parse_datetime(r.max_val, tzinfo)
+        if (lo.tzinfo is None) != (hi.tzinfo is None) or (
+                parsed and (parsed[0][0].tzinfo is None) != (lo.tzinfo is None)):
+            raise BVAError("Angaben mit und ohne Zeitzone gemischt. Bitte einheitlich angeben "
+                           "oder die Zeitzonen-Option setzen.")
+        if lo > hi:
+            raise BVAError(f"Min ist größer als Max: {r.min_val} > {r.max_val}")
+        parsed.append((lo, hi, r.allowed))
+    _check_overlaps([(lo, hi) for lo, hi, _ in parsed])
+
+    out = _Collector("datetime", classify=lambda dt: not _in_allowed(parsed, dt),
+                     render=lambda dt: dt.isoformat(), sort_key=lambda dt: (dt, 0))
+    for lo, hi, _ in parsed:
+        for offset, label, at_min in _offsets(points):
+            try:
+                out.add((lo if at_min else hi) + offset * step_td, label)
+            except OverflowError:
+                pass  # BUG C-04: jenseits von 0001/9999 gibt es keinen Wert
+
+    for lo, hi, _ in parsed:
+        if extras.get("leap_year"):
+            for y in range(lo.year, hi.year + 1):
+                if _is_leap_year(y):
+                    feb29 = lo.replace(year=y, month=2, day=29)
+                    if lo <= feb29 <= hi:
+                        out.add(feb29, f"29.02. {y} (Schaltjahr)")
+                        break
+        if extras.get("midnight"):
+            try:
+                midnight = lo.replace(hour=0, minute=0, second=0, microsecond=0)
+                if midnight < lo:
+                    midnight += timedelta(days=1)
+            except OverflowError:
+                continue
+            if midnight <= hi:
+                out.add(midnight, "00:00 (Mitternacht)")
+    return out.result()
 
 
 def generate_bva_datetime(
@@ -671,101 +724,83 @@ def generate_bva_datetime(
     points: int = 2,
     step: str = "minute",
     extras: Optional[dict] = None,
+    tz: Optional[str] = None,
 ) -> list[BVAValue]:
+    """REQ-6007: BVA fuer einen Datum+Uhrzeit-Bereich."""
+    return generate_multi_range_bva_datetime([TypedRange(min_dt, max_dt)], points, step, extras, tz)
+
+
+# --- Stringlaenge -------------------------------------------------------------
+
+_MAX_STRLEN = 10 ** 9
+
+
+def _parse_length(raw) -> int:
+    text = str(raw).strip()
+    if not text.isdigit():
+        raise BVAError(f"Stringlänge muss eine ganze Zahl >= 0 sein, nicht {raw!r}")
+    value = int(text)
+    if value > _MAX_STRLEN:
+        raise BVAError(f"Stringlänge zu groß: {value} (maximal {_MAX_STRLEN})")
+    return value
+
+
+def generate_multi_range_bva_strlen(
+    ranges: list[TypedRange],
+    points: int = 2,
+    charset: str = "alpha",
+    extras=None,
+) -> list[BVAValue]:
+    """REQ-6007: BVA fuer Stringlaengen, mehrere Bereiche.
+
+    Negative Laengen entfallen (BUG C-11, frueher "<STR len=-1>").
+    Zusatzwerte: empty, whitespace_only, leading_whitespace, trailing_whitespace.
+    Lange Werte (> 500 Zeichen) werden symbolisch gespeichert.
     """
-    REQ-6007: BVA fuer Datum+Uhrzeit.
+    from .symbolic_values import should_be_symbolic, generate_symbolic_string, make_value, CHARSETS
 
-    Kombination aus Datum- und Uhrzeit-BVA.
-    Grenzwerte an den Bereichsgrenzen mit der kleinsten gewaehlten Einheit.
+    extras = _normalize_extras(extras)
+    if charset not in CHARSETS:
+        raise BVAError(f"Unbekanntes charset: {charset!r}. Erlaubt: {list(CHARSETS.keys())}")
+    parsed = []
+    for r in ranges:
+        lo, hi = _parse_length(r.min_val), _parse_length(r.max_val)
+        if lo > hi:
+            raise BVAError(f"Min ist größer als Max: {r.min_val} > {r.max_val}")
+        parsed.append((lo, hi, r.allowed))
+    _check_overlaps([(lo, hi) for lo, hi, _ in parsed])
 
-    Args:
-        min_dt: Untere Grenze (ISO 8601)
-        max_dt: Obere Grenze
-        points: 2, 3 oder 4
-        step: 'minute' (60s) oder 'second' (1s)
-        extras: Dict mit Booleans (wie bei Datum und Uhrzeit kombiniert)
+    def render(length: int) -> str:
+        return "" if length == 0 else make_value(length, charset)
 
-    Returns:
-        Liste von BVAValue-Objekten.
-    """
-    if extras is None:
-        extras = {}
+    # Sortierung nach Laenge; Zusatzwerte gleicher Laenge danach
+    out = _Collector("strlen", classify=lambda n: not _in_allowed(parsed, n), render=render,
+                     sort_key=lambda n: (n, 0))
+    for lo, hi, _ in parsed:
+        for offset, label, at_min in _offsets(points):
+            length = (lo if at_min else hi) + offset
+            if 0 <= length <= _MAX_STRLEN:
+                out.add(length, label)
 
-    lo = _parse_datetime(min_dt)
-    hi = _parse_datetime(max_dt)
-    if lo > hi:
-        lo, hi = hi, lo
+    min_len = min(lo for lo, _, _ in parsed)
+    if extras.get("empty"):
+        out.add(0, "Leerer String (Laenge 0)")
+    # Leerzeichen-Varianten: eigener Wert, auch wenn die Laenge schon belegt ist
+    for name, label, build in (
+        ("whitespace_only", "Nur Leerzeichen", lambda n: " " * n),
+        ("leading_whitespace", "Fuehrendes Leerzeichen", lambda n: " " + make_value(n - 1, charset)),
+        ("trailing_whitespace", "Abschliessendes Leerzeichen", lambda n: make_value(n - 1, charset) + " "),
+    ):
+        if not extras.get(name):
+            continue
+        length = max(min_len, 1) if name == "whitespace_only" else min_len + 1
+        if should_be_symbolic(length):
+            continue  # symbolische Werte koennen keine Leerzeichen-Variante abbilden
+        value = build(length)
+        out.items.setdefault(value, ((length, 1), BVAValue(value=value, is_error=True,
+                                                            vtype="strlen", label=label)))
+    return out.result()
 
-    step_seconds = 60 if step == "minute" else 1
-
-    results: dict[str, BVAValue] = {}
-
-    if points == 2:
-        candidates = [
-            (lo - timedelta(seconds=step_seconds), "min-1", True),
-            (lo, "min", False),
-            (hi, "max", False),
-            (hi + timedelta(seconds=step_seconds), "max+1", True),
-        ]
-    elif points == 3:
-        candidates = [
-            (lo - timedelta(seconds=step_seconds), "min-1", True),
-            (lo, "min", False),
-            (lo + timedelta(seconds=step_seconds), "min+1", False),
-            (hi - timedelta(seconds=step_seconds), "max-1", False),
-            (hi, "max", False),
-            (hi + timedelta(seconds=step_seconds), "max+1", True),
-        ]
-    elif points == 4:
-        candidates = [
-            (lo - timedelta(seconds=step_seconds * 2), "min-2", True),
-            (lo - timedelta(seconds=step_seconds), "min-1", True),
-            (lo, "min", False),
-            (lo + timedelta(seconds=step_seconds), "min+1", False),
-            (hi - timedelta(seconds=step_seconds), "max-1", False),
-            (hi, "max", False),
-            (hi + timedelta(seconds=step_seconds), "max+1", True),
-            (hi + timedelta(seconds=step_seconds * 2), "max+2", True),
-        ]
-    else:
-        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
-
-    for dt, label, is_err in candidates:
-        key = dt.isoformat()
-        if key not in results:
-            results[key] = BVAValue(value=key, is_error=is_err, vtype="datetime", label=label)
-
-    # Zusatzwerte aus Datum- und Uhrzeit-BVA kombinieren
-    if extras.get("leap_year"):
-        for y in range(lo.year, hi.year + 1):
-            if _is_leap_year(y):
-                feb29 = datetime(y, 2, 29, lo.hour, lo.minute, lo.second)
-                if feb29 >= lo and feb29 <= hi:
-                    key = feb29.isoformat()
-                    if key not in results:
-                        results[key] = BVAValue(
-                            value=key, is_error=False, vtype="datetime",
-                            label=f"29.02. {y} (Schaltjahr)"
-                        )
-                    break
-
-    if extras.get("midnight"):
-        midnight = datetime(lo.year, lo.month, lo.day, 0, 0, 0)
-        if midnight >= lo and midnight <= hi:
-            key = midnight.isoformat()
-            if key not in results:
-                results[key] = BVAValue(
-                    value=key, is_error=False, vtype="datetime",
-                    label="00:00 (Mitternacht)"
-                )
-
-    sorted_results = sorted(results.values(), key=lambda v: v.value)
-    return sorted_results
-
-
-# ---------------------------------------------------------------------------
-# BVA fuer Stringlaengen
-# ---------------------------------------------------------------------------
 
 def generate_bva_strlen(
     min_len: int,
@@ -774,159 +809,31 @@ def generate_bva_strlen(
     charset: str = "alpha",
     extras: Optional[dict] = None,
 ) -> list[BVAValue]:
-    """
-    REQ-6007: BVA fuer Stringlaengen.
-
-    min-1, min, max, max+1 nach gewaehlter Methode.
-    Zusatzwerte: Laenge 0 (leer), nur Leerzeichen, fuehrende/abschliessende Leerzeichen.
-    Lange Werte (>500) als symbolisch.
-
-    Args:
-        min_len: Minimale Laenge (>= 0)
-        max_len: Maximale Laenge (>= min_len)
-        points: 2, 3 oder 4
-        charset: Zeichenvorrat ('alpha', 'alnum', 'alpha_de', 'special', 'unicode')
-        extras: Dict mit Booleans:
-            - 'empty': Laenge 0 (leerer String)
-            - 'whitespace_only': Nur Leerzeichen
-            - 'leading_whitespace': Fuehrende Leerzeichen
-            - 'trailing_whitespace': Abschliessende Leerzeichen
-
-    Returns:
-        Liste von BVAValue-Objekten.
-    """
-    from .symbolic_values import (
-        should_be_symbolic,
-        generate_symbolic_string,
-        make_value,
-        MAX_VALUE_LENGTH,
-        CHARSETS,
-    )
-
-    if extras is None:
-        extras = {}
-
-    if min_len < 0:
+    """REQ-6007: BVA fuer einen Stringlaengen-Bereich."""
+    if int(min_len) < 0:
         raise BVAError(f"min_len muss >= 0 sein, nicht {min_len}")
-    if max_len < min_len:
-        min_len, max_len = max_len, min_len
-    if charset not in CHARSETS:
-        raise BVAError(f"Unbekanntes charset: {charset!r}. Erlaubt: {list(CHARSETS.keys())}")
+    return generate_multi_range_bva_strlen([TypedRange(str(min_len), str(max_len))], points, charset, extras)
 
-    results: dict[int, BVAValue] = {}  # key = length
 
-    def _add_length(length: int, label: str, is_err: bool):
-        if length in results:
-            return
-        if length < 0:
-            # Negative Laenge: ungultig
-            results[length] = BVAValue(
-                value=f"<STR len={length} charset={charset}>",
-                is_error=True,
-                vtype="strlen",
-                label=f"{label} (negative Laenge, ungueltig)"
-            )
-        elif length == 0:
-            results[length] = BVAValue(
-                value="",
-                is_error=is_err,
-                vtype="strlen",
-                label=label
-            )
-        elif should_be_symbolic(length):
-            results[length] = BVAValue(
-                value=generate_symbolic_string(length, charset),
-                is_error=is_err,
-                vtype="strlen",
-                label=label
-            )
-        else:
-            results[length] = BVAValue(
-                value=make_value(length, charset),
-                is_error=is_err,
-                vtype="strlen",
-                label=label
-            )
-
-    # --- BVA-Grenzwerte ---
-    if points == 2:
-        _add_length(min_len - 1, "min-1", True)
-        _add_length(min_len, "min", False)
-        _add_length(max_len, "max", False)
-        _add_length(max_len + 1, "max+1", True)
-    elif points == 3:
-        _add_length(min_len - 1, "min-1", True)
-        _add_length(min_len, "min", False)
-        _add_length(min_len + 1, "min+1", False)
-        _add_length(max_len - 1, "max-1", False)
-        _add_length(max_len, "max", False)
-        _add_length(max_len + 1, "max+1", True)
-    elif points == 4:
-        _add_length(min_len - 2, "min-2", True)
-        _add_length(min_len - 1, "min-1", True)
-        _add_length(min_len, "min", False)
-        _add_length(min_len + 1, "min+1", False)
-        _add_length(max_len - 1, "max-1", False)
-        _add_length(max_len, "max", False)
-        _add_length(max_len + 1, "max+1", True)
-        _add_length(max_len + 2, "max+2", True)
-    else:
-        raise BVAError(f"points muss 2, 3 oder 4 sein, nicht {points!r}")
-
-    # --- Zusatzwerte ---
-    if extras.get("empty"):
-        _add_length(0, "Leerer String (Laenge 0)", min_len > 0)
-
-    if extras.get("whitespace_only"):
-        # Leerzeichen-String innerhalb des gueltigen Bereichs,
-        # aber nicht an einer Boundary (min oder max)
-        ws_len = (min_len + max_len) // 2
-        if ws_len < min_len:
-            ws_len = min_len + 1
-        if ws_len > max_len:
-            ws_len = max_len - 1
-        if ws_len < 1:
-            ws_len = 1
-        if ws_len > 0 and not should_be_symbolic(ws_len):
-            val = " " * ws_len
-            if ws_len not in results:
-                results[ws_len] = BVAValue(
-                    value=val,
-                    is_error=True,
-                    vtype="strlen",
-                    label="Nur Leerzeichen"
-                )
-
-    if extras.get("leading_whitespace"):
-        # min_len + 1 fuehrendes Leerzeichen
-        lead_len = min_len + 1
-        if lead_len not in results:
-            if should_be_symbolic(lead_len):
-                val = generate_symbolic_string(lead_len, charset)
-            else:
-                val = " " + make_value(min_len, charset)
-            results[lead_len] = BVAValue(
-                value=val,
-                is_error=True,
-                vtype="strlen",
-                label="Fuehrendes Leerzeichen"
-            )
-
-    if extras.get("trailing_whitespace"):
-        trail_len = min_len + 1
-        label = "Abschliessendes Leerzeichen"
-        if trail_len not in results:
-            if should_be_symbolic(trail_len):
-                val = generate_symbolic_string(trail_len, charset)
-            else:
-                val = make_value(min_len, charset) + " "
-            results[trail_len] = BVAValue(
-                value=val,
-                is_error=True,
-                vtype="strlen",
-                label=label
-            )
-
-    # Sortieren nach Laenge (key)
-    sorted_results = sorted(results.values(), key=lambda v: (len(v.value) if not v.is_error else 0, v.value))
-    return sorted_results
+def generate_multi_range_bva_typed(
+    bva_type: str,
+    ranges: list[TypedRange],
+    points: int = 2,
+    options: Optional[dict] = None,
+) -> list[BVAValue]:
+    """REQ-6007: Einstieg fuer die API (type: date, time, datetime, strlen)."""
+    options = options or {}
+    if not isinstance(options, dict):
+        raise BVAError("options muss ein Objekt sein")
+    extras = options.get("extras")
+    if bva_type == "date":
+        return generate_multi_range_bva_date(ranges, points, options.get("format", "iso"), extras)
+    if bva_type == "time":
+        return generate_multi_range_bva_time(ranges, points, options.get("format", "HH:MM"),
+                                             options.get("step", "minute"), extras)
+    if bva_type == "datetime":
+        return generate_multi_range_bva_datetime(ranges, points, options.get("step", "minute"),
+                                                 extras, options.get("timezone"))
+    if bva_type == "strlen":
+        return generate_multi_range_bva_strlen(ranges, points, options.get("charset", "alpha"), extras)
+    raise BVAError(f"Unbekannter BVA-Typ: {bva_type!r}")

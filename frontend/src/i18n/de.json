@@ -616,6 +616,8 @@
       "format": "Format",
       "step": "Schrittweite",
       "charset": "Zeichenvorrat",
+        "timezone": "Zeitzone (optional)",
+        "timezoneHint": "ISO-8601-Offset, z. B. +02:00, -05:30 oder Z",
       "extras": "Zusatzwerte",
       "formats": {
         "iso": "JJJJ-MM-TT (ISO)",

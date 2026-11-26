@@ -27,12 +27,23 @@ CHARSET_ALPHA = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 CHARSET_ALNUM = CHARSET_ALPHA + "0123456789"
 CHARSET_ALPHA_DE = CHARSET_ALPHA + "äöüÄÖÜß"
 CHARSET_SPECIAL = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
-CHARSET_UNICODE = "αβγδεζηθικλμνξοπρστυφχψω"  # Griechisch als Unicode-Beispiel
+# BUG C-12: Unicode inkl. Emoji und Zeichen ausserhalb der BMP (je ein Codepoint, keine
+# zusammengesetzten Emoji), dazu CJK und Griechisch
+CHARSET_UNICODE = "😀𝄞漢α🚀字β🎉γδ"
 
 CHARSETS = {
     "alpha": CHARSET_ALPHA,
     "alnum": CHARSET_ALNUM,
     "alpha_de": CHARSET_ALPHA_DE,
+    "special": CHARSET_SPECIAL,
+    "unicode": CHARSET_UNICODE,
+}
+
+# BUG C-12: Reihenfolge fuer echte (kurze) Werte: kennzeichnende Zeichen zuerst
+REPRESENTATIVE_ORDER = {
+    "alpha": "aBcDeFgHiJkLmNoPqRsTuVwXyZ",
+    "alnum": "a1B2c3D4e5F6g7H8i9J0",
+    "alpha_de": "äÖüßÄöÜaBc",
     "special": CHARSET_SPECIAL,
     "unicode": CHARSET_UNICODE,
 }
@@ -179,7 +190,7 @@ def make_value(length: int, charset: str, fill_char: Optional[str] = None) -> st
         length: Anzahl Unicode-Codepoints
         charset: Zeichenvorrat-Name
         fill_char: Optionaler Fuellcharacter fuer echte Strings.
-                   Wenn None, wird der erste Character des charset verwendet.
+                   Wenn None, wird der Zeichenvorrat durchlaufen (REPRESENTATIVE_ORDER).
 
     Returns:
         Echter String oder symbolischer Wert.
@@ -187,15 +198,14 @@ def make_value(length: int, charset: str, fill_char: Optional[str] = None) -> st
     if should_be_symbolic(length):
         return generate_symbolic_string(length, charset)
 
-    charset_chars = CHARSETS[charset]
-    if fill_char is None:
-        fill_char = charset_chars[0]
+    if fill_char is not None and fill_char in CHARSETS[charset]:
+        return fill_char * length
 
-    # Fuehre den fill_char im charset? Wenn nicht, nimm den ersten.
-    if fill_char not in charset_chars:
-        fill_char = charset_chars[0]
-
-    return fill_char * length
+    # BUG C-12: Zeichenvorrat durchlaufen statt nur das erste Zeichen zu wiederholen.
+    # Die kennzeichnenden Zeichen stehen vorne (z. B. Umlaute bei alpha_de), damit
+    # auch kurze Werte den gewaehlten Zeichenvorrat zeigen.
+    sequence = REPRESENTATIVE_ORDER.get(charset, CHARSETS[charset])
+    return "".join(sequence[i % len(sequence)] for i in range(length))
 
 
 def count_codepoints(s: str) -> int:

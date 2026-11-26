@@ -200,9 +200,9 @@ class TestBvaDateEdgeCases:
             generate_bva_date("2024-13-01", "2024-12-31", points=2)
 
     def test_swapped_dates(self):
-        """Min > Max wird automatisch getauscht."""
-        result = generate_bva_date("2024-12-31", "2024-01-01", points=2)
-        assert len(result) >= 2
+        """BUG C-05 / REQ-6007: Min > Max wird gemeldet statt still getauscht."""
+        with pytest.raises(BVAError, match="Min"):
+            generate_bva_date("2024-12-31", "2024-01-01", points=2)
 
     def test_single_day_range(self):
         result = generate_bva_date("2024-06-15", "2024-06-15", points=2)

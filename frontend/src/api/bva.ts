@@ -38,6 +38,7 @@ export interface BVAExtendedOptions {
   format?: string;       // "iso" | "de" fuer date; "HH:MM" | "HH:MM:SS" fuer time
   step?: string;         // "minute" | "second" fuer time/datetime
   charset?: string;      // "alpha" | "alnum" | "alpha_de" | "special" | "unicode" fuer strlen
+  timezone?: string;     // BUG C-10: ISO-8601-Offset (+02:00, -05:30, Z) fuer datetime
   extras?: Record<string, boolean>;  // Typspezifische Zusatzwerte
 }
 

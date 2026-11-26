@@ -928,86 +928,23 @@ def generate_extended_bva_for_category(
                     label="",
                 ))
 
-        elif bva_type == "date":
-            from combinatorics.boundary_value import generate_bva_date
-            for r in payload.ranges:
-                bva_vals = generate_bva_date(
-                    min_date=r.min_val,
-                    max_date=r.max_val,
-                    points=points,
-                    fmt=options.get("format", "iso"),
-                    extras=options.get("extras"),
-                )
-                for bv in bva_vals:
-                    results_list.append(schemas.BVAExtendedResult(
-                        value=bv.value,
-                        is_error=bv.is_error,
-                        vtype=bv.vtype,
-                        label=bv.label,
-                    ))
-
-        elif bva_type == "time":
-            from combinatorics.boundary_value import generate_bva_time
-            for r in payload.ranges:
-                bva_vals = generate_bva_time(
-                    min_time=r.min_val,
-                    max_time=r.max_val,
-                    points=points,
-                    fmt=options.get("format", "HH:MM"),
-                    step=options.get("step", "minute"),
-                    extras=options.get("extras"),
-                )
-                for bv in bva_vals:
-                    results_list.append(schemas.BVAExtendedResult(
-                        value=bv.value,
-                        is_error=bv.is_error,
-                        vtype=bv.vtype,
-                        label=bv.label,
-                    ))
-
-        elif bva_type == "datetime":
-            from combinatorics.boundary_value import generate_bva_datetime
-            for r in payload.ranges:
-                bva_vals = generate_bva_datetime(
-                    min_dt=r.min_val,
-                    max_dt=r.max_val,
-                    points=points,
-                    step=options.get("step", "minute"),
-                    extras=options.get("extras"),
-                )
-                for bv in bva_vals:
-                    results_list.append(schemas.BVAExtendedResult(
-                        value=bv.value,
-                        is_error=bv.is_error,
-                        vtype=bv.vtype,
-                        label=bv.label,
-                    ))
-
-        elif bva_type == "strlen":
-            from combinatorics.boundary_value import generate_bva_strlen
-            for r in payload.ranges:
-                try:
-                    min_len = int(r.min_val)
-                    max_len = int(r.max_val)
-                except ValueError as exc:
-                    raise BVAError(f"Stringlaengen muessen Zahlen sein: {exc}") from exc
-                bva_vals = generate_bva_strlen(
-                    min_len=min_len,
-                    max_len=max_len,
-                    points=points,
-                    charset=options.get("charset", "alpha"),
-                    extras=options.get("extras"),
-                )
-                for bv in bva_vals:
-                    results_list.append(schemas.BVAExtendedResult(
-                        value=bv.value,
-                        is_error=bv.is_error,
-                        vtype=bv.vtype,
-                        label=bv.label,
-                    ))
-
         else:
-            raise BVAError(f"Unbekannter BVA-Typ: {bva_type!r}")
+            # BUG C-05: alle Bereiche gemeinsam berechnen (gueltig/ungueltig, Ueberschneidung,
+            # Min > Max) statt jeden Bereich isoliert
+            from combinatorics.boundary_value import TypedRange, generate_multi_range_bva_typed
+            bva_vals = generate_multi_range_bva_typed(
+                bva_type,
+                [TypedRange(r.min_val, r.max_val, r.allowed) for r in payload.ranges],
+                points,
+                options,
+            )
+            for bv in bva_vals:
+                results_list.append(schemas.BVAExtendedResult(
+                    value=bv.value,
+                    is_error=bv.is_error,
+                    vtype=bv.vtype,
+                    label=bv.label,
+                ))
 
     except BVAError as e:
         raise HTTPException(status_code=400, detail=str(e))

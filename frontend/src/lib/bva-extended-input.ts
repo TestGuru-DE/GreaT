@@ -92,15 +92,25 @@ const FORMAT_HINT: Record<ExtendedType, string> = {
   strlen: "Ganze Zahl >= 0 erwartet",
 };
 
+/** BUG C-10: Zeitzone leer (keine) oder ISO-8601-Offset wie +02:00, -05:30, Z. */
+const TIMEZONE_RE = /^(Z|[+-](0\d|1[0-4]):[0-5]\d)$/i;
+
+export function validateTimezone(raw: string | undefined): string | null {
+  const value = (raw ?? "").trim();
+  return value === "" || TIMEZONE_RE.test(value) ? null : "Zeitzone im Format +HH:MM, -HH:MM oder Z erwartet";
+}
+
 /**
  * Prueft die Bereiche fuer einen erweiterten Datentyp.
  * Minimum und Maximum sind Pflicht (das Backend kennt keine offenen Grenzen).
  * Bei Uhrzeiten ist min > max erlaubt (Bereich ueber Mitternacht).
+ * Ueberlappende Bereiche werden gemeldet (REQ-6007; bei Uhrzeiten prueft das Backend).
  */
 export function validateExtendedRanges(type: ExtendedType, ranges: BVARangeEntry[]): string[] {
   const errors: string[] = [];
   if (!ranges.length) return ["Mindestens ein Bereich erforderlich"];
   const parse = PARSERS[type];
+  const parsed: { idx: number; min: number; max: number }[] = [];
   ranges.forEach((range, idx) => {
     const prefix = `Bereich ${idx + 1}`;
     const minRaw = range.minVal.trim();
@@ -117,7 +127,17 @@ export function validateExtendedRanges(type: ExtendedType, ranges: BVARangeEntry
     }
     if (type !== "time" && min > max) {
       errors.push(`${prefix}: Minimum ist größer als Maximum`);
+      return;
     }
+    parsed.push({ idx, min, max });
   });
+  if (type !== "time") {
+    const ordered = [...parsed].sort((a, b) => a.min - b.min);
+    for (let i = 1; i < ordered.length; i++) {
+      if (ordered[i].min <= ordered[i - 1].max) {
+        errors.push(`Bereich ${ordered[i - 1].idx + 1} und Bereich ${ordered[i].idx + 1} überschneiden sich`);
+      }
+    }
+  }
   return errors;
 }

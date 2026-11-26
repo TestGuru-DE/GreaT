@@ -18,12 +18,18 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Exporte folgen der Generierung (A-10):** Spalten sind die Kategorien der jeweiligen Generierung; geloeschte Kategorien bleiben erhalten, spaeter angelegte erscheinen nicht.
 - **Testmanagement-CSV importierbar (A-11):** Erste Zeile ist der Spaltenkopf (keine Kommentarzeile); Titel/Summary beginnen mit der TC-ID. Azure DevOps: Spalte `ID` leer (neue Testfaelle statt Ueberschreiben vorhandener Work Items), Komma als Trennzeichen, State `Design`.
 - **Namen und Reihenfolge (A-12):** Eindeutige Bezeichner bei kollidierenden Kategorienamen (z. B. `a b`/`a-b`), Umlaute bleiben in Gherkin und Robot erhalten, Testfaelle in natuerlicher Reihenfolge (TC_1, TC_2, …, TC_10).
+- **Grenzwertanalyse ohne Serverfehler (C-04):** Monatsenden ueber Dezember, Kalendergrenzen 0001/9999, gemischte Zeitzonen, `extras` als Liste, `NaN`, sehr grosse Zahlen und Datumsangaben an `/bva/ranges` liefern Werte bzw. 400 mit Meldung statt 500.
+- **Mehrere Bereiche gemeinsam (C-05):** Datum, Uhrzeit, Datum+Uhrzeit und Stringlaenge werden wie Zahlen ueber alle Bereiche berechnet: gueltig/ungueltig je Bereich, keine doppelten Werte mit widerspruechlicher Einstufung, Ueberschneidung und Min > Max werden gemeldet (auch im Dialog). Uhrzeiten mit Min > Max gelten als Bereich ueber Mitternacht.
+- **Zusatzwerte nur im Bereich (C-07):** 29.02. im Nicht-Schaltjahr und ungueltiges Datum (31. eines 30-Tage-Monats) entstehen nur, wenn der Monat im Bereich liegt; die Jahreszahl bleibt unveraendert.
+- **Datum, Uhrzeit, Zeitzone (C-08 bis C-10):** Monatsenden inkl. Startmonat; im Format TT.MM.JJJJ chronologisch sortiert; nur gueltige Uhrzeiten (00:00 minus 1 Minute = 23:59, kein `-00:01`), `24:00:00` beim Format mit Sekunden, Sekundenschritte immer mit Sekunden. Neue Option Zeitzone (ISO-8601-Offset) fuer Datum+Uhrzeit.
+- **Stringlaenge (C-11, C-12):** Keine negative Laenge bei Min 0; Werte durchlaufen den Zeichenvorrat (z. B. Umlaute bei „inkl. Umlaute“), Unicode enthaelt Emoji und Zeichen ausserhalb der BMP; fuehrende und abschliessende Leerzeichen gehen nicht mehr verloren.
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
 
 ### ⚠️ Hinweise fuer API-Nutzer
 - Tokens brauchen jetzt fuer jeden Endpunkt den passenden Scope, z. B. `projects:read` zusaetzlich zu `export`, um Projekte und Generierungen aufzulisten.
 - `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
 - Exporte: Azure-DevOps-CSV nutzt Komma statt Semikolon; Xray-, TestRail- und Azure-CSV enthalten keine `#`-Kopfzeile mehr; Gherkin-, Robot- und pytest-Dateien sind anders aufgebaut (siehe oben).
+- Grenzwertanalyse mit mehreren Bereichen (`/bva/ranges`, `/bva/extended`): Min > Max liefert 400 statt stiller Vertauschung. Die einfache Zahlen-BVA (`/bva`, REQ-0306) vertauscht weiterhin automatisch. Zahlen sind auf Betrag < 10^15 und 10 Nachkommastellen begrenzt.
 - 429-Antworten des Token-Rate-Limits haben das Format `{"detail": {"code": "rate_limit_exceeded", "detail": "..."}}`.
 
 ---

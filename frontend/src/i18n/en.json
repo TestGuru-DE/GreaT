@@ -616,6 +616,8 @@
       "format": "Format",
       "step": "Step",
       "charset": "Character set",
+        "timezone": "Time zone (optional)",
+        "timezoneHint": "ISO 8601 offset, e.g. +02:00, -05:30 or Z",
       "extras": "Additional values",
       "formats": {
         "iso": "YYYY-MM-DD (ISO)",
