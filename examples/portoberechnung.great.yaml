@@ -3,150 +3,67 @@ projectName: Portoberechnung (Beispiel)
 categories:
 - name: Gewicht
   orderIndex: 0
-  isResult: false
-  categoryType: standard
   values:
   - value: 0–500g
     riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
   - value: 501g–1kg
     riskWeight: 2
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 1
   - value: 1kg–2kg
     riskWeight: 2
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 2
   - value: über 2kg
     riskWeight: 3
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 3
 - name: Größe
-  orderIndex: 0
-  isResult: false
-  categoryType: standard
+  orderIndex: 1
   values:
   - value: Briefumschlag
     riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
   - value: Großbrief
     riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 1
   - value: Päckchen
     riskWeight: 2
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 2
   - value: Paket
     riskWeight: 3
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 3
 - name: Transportart
-  orderIndex: 0
-  isResult: false
-  categoryType: standard
+  orderIndex: 2
   values:
   - value: Standard
     riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
   - value: Express
     riskWeight: 2
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 1
   - value: Overnight
     riskWeight: 3
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 2
 - name: Zielland
-  orderIndex: 0
-  isResult: false
-  categoryType: standard
+  orderIndex: 3
   values:
   - value: Deutschland
     riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
   - value: EU
     riskWeight: 2
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 1
   - value: Weltweit
     riskWeight: 3
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
-- name: Portopreis (Ergebnis)
-  orderIndex: 0
-  isResult: false
-  categoryType: standard
+    orderIndex: 2
+# Ergebnis-Kategorie: wird nicht kombiniert, sondern je Testfall als erwartetes Ergebnis eingetragen
+- name: Portopreis
+  orderIndex: 4
+  isResult: true
   values:
   - value: 0,85 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
   - value: 1,55 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 1
   - value: 2,70 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 2
   - value: 4,00 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 3
   - value: 6,90 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
+    orderIndex: 4
   - value: 14,90 €
-    riskWeight: 1
-    vtype: string
-    allowed: true
-    orderIndex: 0
-    isDefault: false
-rules: []
-decisionConstraints: []
-constraints: []
-seedSets: []
+    orderIndex: 5

@@ -50,6 +50,11 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Komfort-Endpunkt `generate?export=...&persist=...` (A-09):** Mit `export` (csv, json, xlsx oder ein Format aus REQ-6011) kommt das Ergebnis direkt im Exportformat; mit `persist=false` wird nichts gespeichert. Unbekanntes Format: 422 `invalid_export_format`; `persist=false` ohne `export`: 422 `persist_requires_export`; per Token ist zusaetzlich der Scope `export` noetig.
 - **Modell-Import prueft Referenzen und Schluessel (A-13):** Constraints mit unbekannten Kategorien/Werten (oder Zahlen-IDs) werden als ungueltig importiert und in `warnings` gemeldet; Kategorienamen, die sich nur in Gross-/Kleinschreibung unterscheiden, und unbekannte Schluessel (z. B. `categoriez`) werden abgelehnt; `PUT .../model` auf den Namen eines anderen Projekts liefert 409 `project_name_exists`. Seed-Saetze sind jetzt Teil der Modelldatei (`seedSets`).
 
+### 📚 Beispiele und Handbuch
+- **Vier Beispielprojekte:** Neben der Portoberechnung (jetzt mit echter Ergebnis-Kategorie "Portopreis") gibt es "Lieferbedingungen – Regeln" (5 Regeln aller drei Typen), "Versandkosten – Constraints" (5 logische Constraints mit und/oder/nicht, "ist keiner von", Wenn-Dann) und "Retourenabwicklung – Entscheidungstabelle" (3 Ursachen, 3 Wirkungen). Quelle sind die Modelldateien unter `examples/`.
+- **Beispiele beim ersten Start und nach dem Zuruecksetzen:** Geloeschte Beispiele kommen nicht mehr bei jedem Neustart wieder (bisher wurde das Porto-Beispiel immer neu angelegt), sondern erst nach "Datenbank zuruecksetzen". Bestehende Installationen erhalten die neuen Beispiele einmalig; die Porto-Ergebnis-Kategorie wird dabei korrigiert.
+- **Handbuch:** Neue Kapitel Beispielprojekte, Modelldatei, Klassifikationsbaum, logische Constraints, Seeds/Lueckenschluss, Abdeckung; API-Kapitel mit API-Tokens, `/api/v1`, Fehlercodes und Beispielen fuer GitHub Actions, GitLab CI und Jenkins; alle Bildschirmfotos im neuen Design; englische Fassung (`handbuch.en.md`), die Hilfe zeigt das Handbuch in der gewaehlten Sprache.
+
 ### 🔧 Restbefunde
 - **Zugriffslog ohne Geheimnisse (N-06):** Werte von `password`, `token` u. ae. in der URL werden im Log geschwaerzt.
 - **Login:** Ein deaktiviertes Konto erhaelt "Konto ist deaktiviert", ohne die Rolle `api_user` zu verraten.

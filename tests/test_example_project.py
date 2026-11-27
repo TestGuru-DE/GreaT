@@ -41,7 +41,7 @@ def test_example_categories_have_names(admin_client: TestClient):
     assert r2.status_code == 200
     categories = r2.json()
     names = {c["name"] for c in categories}
-    expected = {"Gewicht", "Größe", "Transportart", "Zielland", "Portopreis (Ergebnis)"}
+    expected = {"Gewicht", "Größe", "Transportart", "Zielland", "Portopreis"}  # Ergebnis-Kategorie (is_result), PO-Vorgabe 27.11.2026
     assert expected.issubset(names), f"Expected categories {expected}, got {names}"
 
 

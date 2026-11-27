@@ -263,3 +263,14 @@ class DataNodeValue(Base):
     
     node = relationship("DataNode", back_populates="values")
 
+
+
+class AppState(Base):
+    """Kleine Schluessel-Wert-Ablage fuer Zustand der Installation.
+
+    Z. B. "examples_version": Die Beispielprojekte wurden in dieser Fassung angelegt.
+    Beim Zuruecksetzen der Datenbank wird die Tabelle geleert.
+    """
+    __tablename__ = "app_state"
+    key = Column(String(100), primary_key=True)
+    value = Column(String(500), nullable=False, default="")

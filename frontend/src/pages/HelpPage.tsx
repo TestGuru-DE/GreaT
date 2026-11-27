@@ -6,48 +6,15 @@ import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import handbookContent from '../docs/handbuch.md?raw';
+import handbookContentEn from '../docs/handbuch.en.md?raw';
 
-// Screenshot-Importe (Vite resolved URLs)
-import s01 from '../docs/screenshots/01-login.png';
-import s02 from '../docs/screenshots/02-passwortwechsel.png';
-import s03 from '../docs/screenshots/03-projektuebersicht.png';
-import s0301 from '../docs/screenshots/03-01-kategorie-anlegen.png';
-import s0304 from '../docs/screenshots/03-04-werte-verwalten.png';
-import s0305 from '../docs/screenshots/03-05-fehlerwert.png';
-import s0306 from '../docs/screenshots/03-06-default-wert.png';
-import s0307 from '../docs/screenshots/03-07-risiko.png';
-import s0309 from '../docs/screenshots/03-09-bva.png';
-import s0401 from '../docs/screenshots/04-01-uebersicht.png';
-import s0403 from '../docs/screenshots/04-03-tabelle.png';
-import s0406 from '../docs/screenshots/04-06-constraint-dialog.png';
-import s0414 from '../docs/screenshots/04-14-graph.png';
-import s0502 from '../docs/screenshots/05-02-forbidden.png';
-import s0503 from '../docs/screenshots/05-03-dependency.png';
-import s0504 from '../docs/screenshots/05-04-combine.png';
-import s0505 from '../docs/screenshots/05-05-visualisierung.png';
-import s0901 from '../docs/screenshots/09-01-themes.png';
-
-// Mapping: relativer Pfad aus Markdown -> importierte URL
-const SCREENSHOT_MAP: Record<string, string> = {
-  './screenshots/01-login.png': s01,
-  './screenshots/02-passwortwechsel.png': s02,
-  './screenshots/03-projektuebersicht.png': s03,
-  './screenshots/03-01-kategorie-anlegen.png': s0301,
-  './screenshots/03-04-werte-verwalten.png': s0304,
-  './screenshots/03-05-fehlerwert.png': s0305,
-  './screenshots/03-06-default-wert.png': s0306,
-  './screenshots/03-07-risiko.png': s0307,
-  './screenshots/03-09-bva.png': s0309,
-  './screenshots/04-01-uebersicht.png': s0401,
-  './screenshots/04-03-tabelle.png': s0403,
-  './screenshots/04-06-constraint-dialog.png': s0406,
-  './screenshots/04-14-graph.png': s0414,
-  './screenshots/05-02-forbidden.png': s0502,
-  './screenshots/05-03-dependency.png': s0503,
-  './screenshots/05-04-combine.png': s0504,
-  './screenshots/05-05-visualisierung.png': s0505,
-  './screenshots/09-01-themes.png': s0901,
-};
+// Screenshots: alle Bilder unter docs/screenshots automatisch einbinden (Vite liefert URLs).
+// Schluessel wie im Markdown: "./screenshots/<datei>.png"
+const SCREENSHOT_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('../docs/screenshots/*.png', { eager: true, import: 'default' }) as Record<string, string>,
+  ).map(([path, url]) => [path.replace('../docs/', './'), url]),
+);
 
 // Kapitel-Liste fuer Sidebar-Navigation
 // IDs MUESSEN mit extractId(Heading-Text) uebereinstimmen!
@@ -190,7 +157,11 @@ export default function HelpPage() {
           mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
           // Find the target element by ID and scroll to it
-          const target = document.getElementById(activeChapter);
+          // Kapitel per ID; sonst per Kapitelnummer (englische Ueberschriften haben andere IDs)
+          const chapterNumber = activeChapter.split('-')[0];
+          const target = document.getElementById(activeChapter)
+            ?? mainRef.current?.querySelector<HTMLElement>(`h2[id^="${chapterNumber}-"]`)
+            ?? null;
           if (target && mainRef.current) {
             // Scroll within the main container
             const container = mainRef.current;
@@ -228,7 +199,7 @@ export default function HelpPage() {
   // Setze initial auf Info oder Handbuch je nach aktuellem Kapitel
   const content = activeChapter === 'info'
     ? (i18n.language === 'en' ? INFO_CONTENT_EN : INFO_CONTENT_DE)
-    : handbookContent;
+    : (i18n.language === 'en' ? handbookContentEn : handbookContent);
 
   return (
     <div className="flex min-h-screen">

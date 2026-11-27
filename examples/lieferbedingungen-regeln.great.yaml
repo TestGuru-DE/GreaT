@@ -1,0 +1,86 @@
+schemaVersion: 1
+projectName: Lieferbedingungen – Regeln (Beispiel)
+# Zeigt die drei Regeltypen: Abhängig (dependency), Verboten (exclude) und Kombinieren (combine).
+categories:
+- name: Zahlungsart
+  orderIndex: 0
+  values:
+  - value: Vorkasse
+  - value: Rechnung
+    orderIndex: 1
+    riskWeight: 2
+  - value: Nachnahme
+    orderIndex: 2
+    riskWeight: 3
+  - value: PayPal
+    orderIndex: 3
+- name: Versandart
+  orderIndex: 1
+  values:
+  - value: Standard
+  - value: Express
+    orderIndex: 1
+    riskWeight: 2
+  - value: Abholung im Laden
+    orderIndex: 2
+- name: Zielland
+  orderIndex: 2
+  values:
+  - value: Deutschland
+  - value: EU
+    orderIndex: 1
+    riskWeight: 2
+  - value: Schweiz
+    orderIndex: 2
+    riskWeight: 3
+- name: Kundentyp
+  orderIndex: 3
+  values:
+  - value: Neukunde
+    riskWeight: 2
+  - value: Stammkunde
+    orderIndex: 1
+  - value: Geschäftskunde
+    orderIndex: 2
+- name: Lieferzeit
+  orderIndex: 4
+  isResult: true
+  values:
+  - value: sofort
+  - value: 1 Werktag
+    orderIndex: 1
+  - value: 2–3 Werktage
+    orderIndex: 2
+  - value: 5–7 Werktage
+    orderIndex: 3
+rules:
+# 1. Abhängig: Abholung gibt es nur im eigenen Laden in Deutschland
+- type: dependency
+  ifCategoryName: Versandart
+  ifValue: Abholung im Laden
+  thenCategoryName: Zielland
+  thenValue: Deutschland
+# 2. Verboten: Nachnahme wird nicht in die Schweiz zugestellt
+- type: exclude
+  ifCategoryName: Zahlungsart
+  ifValue: Nachnahme
+  thenCategoryName: Zielland
+  thenValue: Schweiz
+# 3. Verboten: Neukunden können nicht auf Rechnung bestellen
+- type: exclude
+  ifCategoryName: Kundentyp
+  ifValue: Neukunde
+  thenCategoryName: Zahlungsart
+  thenValue: Rechnung
+# 4. Kombinieren: In die Schweiz nur Standard oder Express (keine Abholung)
+- type: combine
+  ifCategoryName: Zielland
+  ifValue: Schweiz
+  thenCategoryName: Versandart
+  thenValuesJson: '["Standard", "Express"]'
+# 5. Abhängig: Geschäftskunden zahlen immer auf Rechnung
+- type: dependency
+  ifCategoryName: Kundentyp
+  ifValue: Geschäftskunde
+  thenCategoryName: Zahlungsart
+  thenValue: Rechnung

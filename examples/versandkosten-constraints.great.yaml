@@ -1,0 +1,140 @@
+schemaVersion: 1
+projectName: Versandkosten – Constraints (Beispiel)
+# Zeigt logische Constraints mit mehreren Bedingungen: "Verbieten" (forbid) und "Wenn-Dann" (implies),
+# verknüpft mit und/oder/nicht sowie "ist einer von".
+categories:
+- name: Bestellwert
+  orderIndex: 0
+  values:
+  - value: unter 20 €
+    riskWeight: 2
+  - value: 20–49 €
+    orderIndex: 1
+  - value: ab 50 €
+    orderIndex: 2
+- name: Gewicht
+  orderIndex: 1
+  values:
+  - value: bis 2 kg
+  - value: 2–10 kg
+    orderIndex: 1
+  - value: über 10 kg
+    orderIndex: 2
+    riskWeight: 3
+- name: Versandart
+  orderIndex: 2
+  values:
+  - value: Standard
+  - value: Express
+    orderIndex: 1
+    riskWeight: 2
+  - value: Spedition
+    orderIndex: 2
+    riskWeight: 2
+- name: Zielland
+  orderIndex: 3
+  values:
+  - value: Deutschland
+  - value: EU
+    orderIndex: 1
+  - value: Weltweit
+    orderIndex: 2
+    riskWeight: 3
+- name: Gutschein
+  orderIndex: 4
+  values:
+  - value: keiner
+  - value: versandkostenfrei
+    orderIndex: 1
+    riskWeight: 2
+- name: Versandkosten
+  orderIndex: 5
+  isResult: true
+  values:
+  - value: 0,00 €
+  - value: 4,90 €
+    orderIndex: 1
+  - value: 9,90 €
+    orderIndex: 2
+  - value: 19,90 €
+    orderIndex: 3
+  - value: 49,00 €
+    orderIndex: 4
+constraints:
+# 1. Wenn-Dann: Schwere Sendungen gehen immer per Spedition
+- name: Über 10 kg nur per Spedition
+  kind: implies
+  expression:
+    kind: implies
+    condition:
+      op: eq
+      category_id: Gewicht
+      value_id: über 10 kg
+    consequence:
+      op: eq
+      category_id: Versandart
+      value_id: Spedition
+# 2. Verbieten: Spedition lohnt sich nicht für leichte Pakete
+- name: Keine Spedition für leichte Pakete
+  kind: forbid
+  expression:
+    kind: forbid
+    condition:
+      op: and
+      args:
+      - op: eq
+        category_id: Versandart
+        value_id: Spedition
+      - op: eq
+        category_id: Gewicht
+        value_id: bis 2 kg
+# 3. Verbieten: Versandkostenfrei-Gutschein gilt nicht weltweit und nicht für Express
+- name: Gutschein nicht weltweit oder Express
+  kind: forbid
+  expression:
+    kind: forbid
+    condition:
+      op: and
+      args:
+      - op: eq
+        category_id: Gutschein
+        value_id: versandkostenfrei
+      - op: or
+        args:
+        - op: eq
+          category_id: Zielland
+          value_id: Weltweit
+        - op: eq
+          category_id: Versandart
+          value_id: Express
+# 4. Wenn-Dann: Weltweiter Versand erst ab 20 € Bestellwert
+- name: Weltweit erst ab 20 €
+  kind: implies
+  expression:
+    kind: implies
+    condition:
+      op: eq
+      category_id: Zielland
+      value_id: Weltweit
+    consequence:
+      op: not
+      arg:
+        op: eq
+        category_id: Bestellwert
+        value_id: unter 20 €
+# 5. Verbieten: Spedition nur innerhalb der EU (Deutschland oder EU)
+- name: Spedition nur Deutschland und EU
+  kind: forbid
+  expression:
+    kind: forbid
+    condition:
+      op: and
+      args:
+      - op: eq
+        category_id: Versandart
+        value_id: Spedition
+      - op: not_in
+        category_id: Zielland
+        value_ids:
+        - Deutschland
+        - EU

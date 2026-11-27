@@ -1,83 +1,94 @@
-"""Seed: Beispielprojekt Portoberechnung – REQ-4017."""
-from sqlalchemy.orm import Session
-from app.models import Project, Category, Value
+"""Beispielprojekte – REQ-4017.
 
+Quelle sind die Modelldateien unter examples/ (Format REQ-6013). Sie werden
+beim ersten Start und nach dem Zuruecksetzen der Datenbank importiert:
+
+- Portoberechnung (Beispiel): Kombinatorik mit Ergebnis-Kategorie "Portopreis"
+- Lieferbedingungen – Regeln: Abhaengig-, Verboten- und Kombinieren-Regeln
+- Versandkosten – Constraints: logische Constraints mit und/oder/nicht
+- Retourenabwicklung – Entscheidungstabelle: Ursachen und Wirkungen
+
+Ein Merker in app_state ("examples_version") verhindert, dass Beispiele, die der
+Nutzer geloescht hat, bei jedem Neustart wiederkommen. Kommen neue Beispiele hinzu,
+wird EXAMPLES_VERSION erhoeht; dann werden nur fehlende Beispiele ergaenzt.
+"""
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.models import AppState, Category, Project
+
+log = logging.getLogger(__name__)
 
 EXAMPLE_PROJECT_NAME = "Portoberechnung (Beispiel)"
+EXAMPLES_DIR = Path(__file__).resolve().parents[2] / "examples"
+EXAMPLES_VERSION = "2"
+_STATE_KEY = "examples_version"
 
 
-def seed_example_project(db: Session) -> None:
+def example_files() -> list[Path]:
+    """Alle Beispiel-Modelldateien in fester Reihenfolge."""
+    return sorted(EXAMPLES_DIR.glob("*.great.yaml"))
+
+
+def _fix_legacy_porto_result(db: Session) -> None:
+    """Aeltere Installationen: "Portopreis (Ergebnis)" war keine echte Ergebnis-Kategorie."""
+    project = db.query(Project).filter(Project.name == EXAMPLE_PROJECT_NAME).first()
+    if project is None:
+        return
+    category = (
+        db.query(Category)
+        .filter(Category.project_id == project.id, Category.name == "Portopreis (Ergebnis)")
+        .first()
+    )
+    if category is not None and not category.is_result:
+        category.name = "Portopreis"
+        category.is_result = True
+        db.commit()
+
+
+def seed_example_project(db: Session, force: bool = False) -> list[str]:
+    """Legt fehlende Beispielprojekte an (einmal je EXAMPLES_VERSION, oder immer mit force).
+
+    Returns:
+        Namen der neu angelegten Projekte.
     """
-    Legt das Beispielprojekt an falls es nicht existiert.
-    Wird beim App-Start aufgerufen.
-    """
-    existing = db.query(Project).filter(Project.name == EXAMPLE_PROJECT_NAME).first()
-    if existing:
-        return  # Bereits vorhanden
+    from app import model_io
 
-    project = Project(name=EXAMPLE_PROJECT_NAME)
-    db.add(project)
-    db.flush()
+    state = db.get(AppState, _STATE_KEY)
+    if not force and state is not None and state.value == EXAMPLES_VERSION:
+        return []
 
-    categories = [
-        {
-            "name": "Gewicht",
-            "values": [
-                {"value": "0–500g", "allowed": True, "risk_weight": 1},
-                {"value": "501g–1kg", "allowed": True, "risk_weight": 2},
-                {"value": "1kg–2kg", "allowed": True, "risk_weight": 2},
-                {"value": "über 2kg", "allowed": True, "risk_weight": 3},
-            ]
-        },
-        {
-            "name": "Größe",
-            "values": [
-                {"value": "Briefumschlag", "allowed": True, "risk_weight": 1},
-                {"value": "Großbrief", "allowed": True, "risk_weight": 1},
-                {"value": "Päckchen", "allowed": True, "risk_weight": 2},
-                {"value": "Paket", "allowed": True, "risk_weight": 3},
-            ]
-        },
-        {
-            "name": "Transportart",
-            "values": [
-                {"value": "Standard", "allowed": True, "risk_weight": 1},
-                {"value": "Express", "allowed": True, "risk_weight": 2},
-                {"value": "Overnight", "allowed": True, "risk_weight": 3},
-            ]
-        },
-        {
-            "name": "Zielland",
-            "values": [
-                {"value": "Deutschland", "allowed": True, "risk_weight": 1},
-                {"value": "EU", "allowed": True, "risk_weight": 2},
-                {"value": "Weltweit", "allowed": True, "risk_weight": 3},
-            ]
-        },
-        {
-            "name": "Portopreis (Ergebnis)",
-            "values": [
-                {"value": "0,85 €", "allowed": True, "risk_weight": 1},
-                {"value": "1,55 €", "allowed": True, "risk_weight": 1},
-                {"value": "2,70 €", "allowed": True, "risk_weight": 1},
-                {"value": "4,00 €", "allowed": True, "risk_weight": 1},
-                {"value": "6,90 €", "allowed": True, "risk_weight": 1},
-                {"value": "14,90 €", "allowed": True, "risk_weight": 1},
-            ]
-        },
-    ]
+    _fix_legacy_porto_result(db)
 
-    for cat_data in categories:
-        cat = Category(name=cat_data["name"], project_id=project.id)
-        db.add(cat)
-        db.flush()
-        for val_data in cat_data["values"]:
-            val = Value(
-                value=val_data["value"],
-                category_id=cat.id,
-                allowed=val_data["allowed"],
-                risk_weight=val_data["risk_weight"],
+    created: list[str] = []
+    files = example_files()
+    if not files:
+        log.warning("Keine Beispielprojekte gefunden unter %s", EXAMPLES_DIR)
+    for path in files:
+        try:
+            model = model_io.from_yaml(path.read_text(encoding="utf-8"))
+            exists = (
+                db.query(Project)
+                .filter(func.lower(Project.name) == model.project_name.lower())
+                .first()
             )
-            db.add(val)
+            if exists:
+                continue
+            project = model_io.apply_model(db, None, model.model_dump(mode="json"), "dict")
+            created.append(project.name)
+        except Exception:  # noqa: BLE001 - ein defektes Beispiel darf den Start nicht verhindern
+            db.rollback()
+            log.exception("Beispielprojekt %s konnte nicht angelegt werden", path.name)
 
+    if state is None:
+        state = AppState(key=_STATE_KEY, value=EXAMPLES_VERSION)
+        db.add(state)
+    else:
+        state.value = EXAMPLES_VERSION
     db.commit()
+    return created

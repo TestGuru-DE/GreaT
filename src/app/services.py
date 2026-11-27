@@ -43,7 +43,7 @@ def reset_database_state(db: Session) -> dict:
     db.commit()
 
     seed_system_dataclasses(db)
-    seed_example_project(db)
+    seed_example_project(db, force=True)  # Beispiele nach dem Zuruecksetzen wieder anlegen
     db.commit()
 
     admin_created = False

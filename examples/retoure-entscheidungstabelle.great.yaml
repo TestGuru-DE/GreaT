@@ -1,0 +1,49 @@
+schemaVersion: 1
+projectName: Retourenabwicklung – Entscheidungstabelle (Beispiel)
+# Ursachen (cause) und Wirkungen (effect) für die Entscheidungstabelle:
+# Im Reiter "Entscheidungstabelle" auf "Generieren" klicken. Bei 3 Ursachen entstehen 2³ = 8 Regeln.
+categories:
+- name: Ware beschädigt
+  orderIndex: 0
+  categoryType: cause
+  values:
+  - value: ja
+  - value: nein
+    orderIndex: 1
+- name: Rückgabe innerhalb 14 Tagen
+  orderIndex: 1
+  categoryType: cause
+  values:
+  - value: ja
+  - value: nein
+    orderIndex: 1
+- name: Originalverpackung vorhanden
+  orderIndex: 2
+  categoryType: cause
+  values:
+  - value: ja
+  - value: nein
+    orderIndex: 1
+- name: Kaufpreis erstatten
+  orderIndex: 3
+  categoryType: effect
+  values:
+  - value: voll
+  - value: anteilig
+    orderIndex: 1
+  - value: keine
+    orderIndex: 2
+- name: Ersatzlieferung
+  orderIndex: 4
+  categoryType: effect
+  values:
+  - value: ja
+  - value: nein
+    orderIndex: 1
+- name: Rücksendeetikett
+  orderIndex: 5
+  categoryType: effect
+  values:
+  - value: kostenlos
+  - value: kostenpflichtig
+    orderIndex: 1

@@ -13,11 +13,13 @@
    - 1.2 Erststart & Standardpasswort
    - 1.3 Passwort wechseln
    - 1.4 Projektuebersicht
+   - 1.5 Beispielprojekte
 2. [Projekte verwalten](#2-projekte-verwalten)
    - 2.1 Projekt anlegen
    - 2.2 Projekt loeschen
    - 2.3 Datenbank zuruecksetzen
-3. [Kategorien & Werte](#3-kategorien--werte)
+   - 2.4 Modell als Datei exportieren und importieren
+3. [Kategorien & Werte](#3-kategorien-werte)
    - 3.1 Kategorien anlegen
    - 3.2 Kategorien umbenennen & loeschen
    - 3.3 Kategorie-Typen (Normal, Ursache, Wirkung, Ergebnis)
@@ -27,6 +29,7 @@
    - 3.7 Risiko-Gewichtung
    - 3.8 Drag & Drop Sortierung
    - 3.9 BVA (Grenzwertanalyse)
+   - 3.10 Klassifikationsbaum
 4. [Entscheidungstabelle](#4-entscheidungstabelle)
    - 4.1 Ueberblick & Einstieg
    - 4.2 Ursache- und Wirkungskategorien
@@ -50,6 +53,7 @@
    - 5.4 Kombinieren (Combine)
    - 5.5 Regelvisualisierung
    - 5.6 Regelwidersprueche erkennen
+   - 5.7 Logische Constraints (mehrere Bedingungen)
 6. [Testfall-Generierung](#6-testfall-generierung)
    - 6.1 Generierungsstrategien ueberblick
    - 6.2 All Combinations
@@ -60,6 +64,8 @@
    - 6.7 MC/DC
    - 6.8 Risk-Based
    - 6.9 Regeln bei Generierung anwenden
+   - 6.10 Pflicht-Testfaelle (Seeds) und Lueckenschluss
+   - 6.11 Abdeckungsanzeige
 7. [Risikoabdeckung](#7-risikoabdeckung)
    - 7.1 Risikoabdeckung pro Testfall
    - 7.2 Risikoabdeckungs-Prozentsatz
@@ -69,6 +75,7 @@
    - 8.2 JSON-Export
    - 8.3 Excel-Export
    - 8.4 Fehlerwert-Kennzeichnung im Export
+   - 8.5 Sprache und lange Werte im Export
 9. [Datenklassen](#9-datenklassen)
    - 9.1 System-Datenklassen
    - 9.2 Eigene Datenklassen
@@ -77,14 +84,14 @@
    - 10.1 Erscheinungsbild (Themes)
    - 10.2 Maximale Anzahl Testfaelle
    - 10.3 Datensicherung
-11. [Benutzer & Rollen](#11-benutzer--rollen)
+11. [Benutzer & Rollen](#11-benutzer-rollen)
    - 11.1 Rollen: Admin, Editor, Viewer
    - 11.2 Projekt-Freigabe
    - 11.3 Benutzer verwalten
-12. [Tastaturnavigation & Shortcuts](#12-tastaturnavigation--shortcuts)
+12. [Tastaturnavigation & Shortcuts](#12-tastaturnavigation-shortcuts)
 13. [Glossar](#13-glossar)
 14. [Haeufige Fragen (FAQ)](#14-haeufige-fragen-faq)
- 15. [API-Einbindung](#15-api-einbindung-fuer-entwickler)
+15. [API-Einbindung](#15-api-einbindung-fuer-entwickler)
 
 ---
 
@@ -133,7 +140,7 @@ Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weiterge
 
 ### 1.4 Projektuebersicht
 
-Nach erfolgreicher Anmeldung gelangen Sie zur **Projektuebersicht**. Hier sehen Sie alle Projekte, auf die Sie Zugriff haben:
+Nach der Anmeldung sehen Sie links die **Seitenleiste** (Uebersicht, Projekte, Generierungen, Datenklassen, Einstellungen, Hilfe). Unter **Projekte** finden Sie alle Projekte, auf die Sie Zugriff haben. Die Suche oben in der Seitenleiste (Strg+K) filtert die Projektliste nach Namen.
 
 ![Projektuebersicht](./screenshots/03-projektuebersicht.png)
 
@@ -144,25 +151,47 @@ Nach erfolgreicher Anmeldung gelangen Sie zur **Projektuebersicht**. Hier sehen 
 | **Bulk-Delete** | Loescht mehrere Projekte auf einmal |
 | **Datenbank zuruecksetzen** | Stellt die Startkonfiguration wieder her (alle Daten gehen verloren) |
 
+### 1.5 Beispielprojekte
+
+Beim ersten Start und nach dem Zuruecksetzen der Datenbank legt G.R.E.A.T. vier Beispielprojekte an. Sie zeigen die wichtigsten Techniken an einem durchgehenden Thema (Versand eines Onlineshops):
+
+| Beispielprojekt | Zeigt |
+|-----------------|-------|
+| **Portoberechnung (Beispiel)** | Kategorien, Werte, Risiko-Gewichtung und eine Ergebnis-Kategorie (`Portopreis`), deren Wert Sie je Testfall als erwartetes Ergebnis eintragen |
+| **Lieferbedingungen – Regeln (Beispiel)** | Fuenf klassische Regeln aller drei Typen: Abhaengig, Verboten, Kombinieren (Kapitel 5) |
+| **Versandkosten – Constraints (Beispiel)** | Fuenf logische Constraints mit und/oder/nicht, "ist einer von" und Wenn-Dann (Kapitel 5.7) |
+| **Retourenabwicklung – Entscheidungstabelle (Beispiel)** | Drei Ursachen und drei Wirkungen; "Generieren" im Reiter Entscheidungstabelle ergibt 2³ = 8 Regeln (Kapitel 4) |
+
+Sie koennen die Beispiele bearbeiten oder loeschen. Geloeschte Beispiele kommen erst nach einem Zuruecksetzen der Datenbank wieder. Die Beispiele liegen zusaetzlich als Modelldateien im Ordner `examples/` (Kapitel 2.4).
+
 ---
 
 ## 2. Projekte verwalten
 
 ### 2.1 Projekt anlegen
 
-Klicken Sie auf **"Neues Projekt"** und geben Sie einen Namen ein. Das Projekt wird mit einer Beispielpopulierung gestartet (kann sofort bearbeitet werden).
+Geben Sie unter **Projekte** einen Namen in das Feld "Neues Projekt" ein und klicken Sie auf **"Anlegen"**. Das Projekt ist zunaechst leer.
 
 ### 2.2 Projekt loeschen
 
-Rechtsklick auf ein Projekt im Projektbaum oeffnet das Kontextmenue mit der Option **"Loeschen"**. Eine Bestatigungsforderung verhindert versehentliche Loeschungen.
+In der Projektliste loescht **"Loeschen"** ein einzelnes Projekt; mit den Kontrollkaestchen und dem Knopf **"Loeschen"** in der Auswahlleiste mehrere auf einmal. Eine Bestaetigung verhindert versehentliche Loeschungen.
 
 > **Achtung:** Alle Kategorien, Werte, Regeln und generierten Testfaelle des Projekts gehen unwiderruflich verloren.
 
 ### 2.3 Datenbank zuruecksetzen
 
-In den **Einstellungen** finden Sie den Button **"Datenbank zuruecksetzen"**. Dies loescht alle Projekte, Benutzer (außer dem Admin) und stellt die Startkonfiguration wieder her.
+In den **Einstellungen** finden Sie den Button **"Datenbank zuruecksetzen"**. Er loescht alle Projekte, Generierungen und eigenen Datenklassen und legt die Beispielprojekte (1.5) neu an. Benutzerkonten bleiben erhalten.
 
-> **Warnung:** Diese Aktion ist unwiderruflich. Sichern Sie wichtige Daten vorher (siehe 9.3).
+> **Warnung:** Diese Aktion ist unwiderruflich. Sichern Sie wichtige Daten vorher (siehe 10.3).
+
+### 2.4 Modell als Datei exportieren und importieren
+
+Ein Testmodell (Kategorien, Werte, Regeln, Constraints, Seed-Saetze) laesst sich als lesbare Datei speichern, z. B. um es zu versionieren oder weiterzugeben:
+
+- **Modell exportieren** (Kopf der Projektansicht): YAML (Standard) oder JSON. Generierungen, Benutzer und IDs sind nicht enthalten; Verweise erfolgen ueber Namen.
+- **Modell importieren**: als neues Projekt oder zur Aktualisierung eines bestehenden Projekts. Vor einer Aktualisierung zeigt eine Vorschau, was hinzukommt, sich aendert oder entfaellt. Bestehende Generierungen bleiben unveraendert.
+
+Die Datei wird beim Import geprueft: Pflichtfeld `schemaVersion` (Zahl), keine unbekannten Schluessel, eindeutige Kategorienamen (ohne Gross-/Kleinschreibung). Constraints, deren Kategorien oder Werte fehlen, werden als "ungueltig" importiert und gemeldet. Beispiele liegen im Ordner `examples/`.
 
 ---
 
@@ -205,7 +234,7 @@ Kategorien sind die Grundbausteine eines Testprojekts. Jede Kategorie entspricht
 
 ### 3.4 Werte verwalten
 
-Jede Kategorie kann beliebig viele Werte enthalten. Werte代表 die moeglichen Eingabewerte fuer einen Testparameter.
+Jede Kategorie kann beliebig viele Werte enthalten. Werte stellen die moeglichen Eingabewerte fuer einen Testparameter.
 
 ![Werte verwalten](./screenshots/03-04-werte-verwalten.png)
 
@@ -323,6 +352,27 @@ Fuer komplexe Szenarien mit mehreren erlaubten/verbotenen Bereichen:
 - Gueltige Werte werden als normale Werte angelegt
 - Ungueltige Werte (außerhalb der Bereiche) werden automatisch als **Fehlerwerte** (✕) markiert
 - Die Werte erscheinen in der Kategorie und koennen sofort fuer die Generierung verwendet werden
+
+---
+
+### 3.10 Klassifikationsbaum
+
+Der Reiter **Klassifikationsbaum** zeigt das Testmodell als Baum nach der Klassifikationsbaum-Methode: Wurzel, darunter die Kategorien (Klassifikationen), darunter deren Werte (Klassen). Unter dem Baum steht die Testfallmatrix mit einer Spalte je Klasse; ein Punkt (●) markiert die Klasse, die der Testfall verwendet.
+
+![Klassifikationsbaum](./screenshots/03-10-klassifikationsbaum.png)
+
+| Aktion | Bedienung |
+|--------|-----------|
+| Klassifikation oder Klasse hinzufuegen | "+ Klassifikation" bzw. "+ Klasse" |
+| Umbenennen | Doppelklick oder F2 |
+| Loeschen | Entf (mit Rueckfrage) |
+| Reihenfolge aendern | Ziehen oder Alt+Pfeiltaste |
+| Rueckgaengig / Wiederholen | Strg+Z / Strg+Y |
+| Zoomen | Strg+Mausrad, "+" und "−", "Einpassen" |
+| Manuellen Testfall anlegen | "+ Testfall", dann je Klassifikation eine Klasse anklicken; Regelverstoesse werden sofort markiert |
+| Exportieren | SVG oder PNG, wahlweise mit Matrix |
+
+Symbole: ★ Ergebnis-Kategorie, ⚠ Fehlerwert, ◆ Standardwert. Manuell angelegte Testfaelle lassen sich als Seed-Satz speichern (6.10).
 
 ---
 
@@ -703,6 +753,25 @@ Warnungen erscheinen als Toast-Nachrichten bei Regelanlage.
 
 ---
 
+### 5.7 Logische Constraints (mehrere Bedingungen)
+
+Klassische Regeln verbinden genau zwei Kategorien. **Logische Constraints** (Reiter **Constraints**) beschreiben Bedingungen ueber beliebig viele Kategorien:
+
+| Art | Bedeutung | Beispiel aus "Versandkosten – Constraints" |
+|-----|-----------|---------------------------------------------|
+| **Verbieten** (forbid) | Diese Kombination darf in keinem Testfall vorkommen | Versandart = Spedition **und** Gewicht = bis 2 kg |
+| **Wenn-Dann** (implies) | Wenn die Bedingung gilt, muss auch die Folge gelten | **Wenn** Gewicht = ueber 10 kg, **dann** Versandart = Spedition |
+
+Bausteine einer Bedingung:
+
+- **=** / **!=**: Kategorie hat (nicht) einen bestimmten Wert
+- **IN** / **NOT IN**: Kategorie hat einen bzw. keinen von mehreren Werten (z. B. Zielland NOT IN Deutschland, EU)
+- **UND-Gruppe**, **ODER-Gruppe** fuer mehrere Bedingungen; **NICHT** verneint eine Bedingung oder Gruppe (bis zu 5 Ebenen tief)
+
+Beim Speichern prueft G.R.E.A.T. den Constraint und nennt Werte, die danach in keinem gueltigen Testfall mehr vorkommen koennen. Wird eine verwendete Kategorie oder ein Wert geloescht, fragt G.R.E.A.T. vorher nach; betroffene Constraints werden als **ungueltig** markiert und bei der Generierung nicht angewendet, bis Sie sie bearbeiten. Die Generierung meldet nicht angewendete Constraints als Hinweis.
+
+---
+
 ## 6. Testfall-Generierung
 
 ### 6.1 Generierungsstrategien ueberblick
@@ -805,6 +874,20 @@ In der Generierungs-UI finden Sie die Option **"Regeln anwenden"** (Checkbox). W
 5. Combine-Regeln beschraenken erlaubte Werte
 
 > **Hinweis:** Regeln koennen die Anzahl der generierten Testfaelle deutlich reduzieren.
+
+---
+
+### 6.10 Pflicht-Testfaelle (Seeds) und Lueckenschluss
+
+**Seeds** sind Testfaelle, die in jeder Generierung enthalten sein muessen, z. B. aus Fehlerberichten oder Abnahmetests. Im Reiter **Seeds** legen Sie Seed-Saetze an, bearbeiten sie oder importieren sie aus einer CSV-Datei (Spaltenkoepfe = Kategorienamen). Ein leeres Feld bedeutet "beliebig": Die Generierung fuellt es passend auf; in der Testfalltabelle sind solche Felder *kursiv* markiert.
+
+Bei der Generierung waehlen Sie einen Seed-Satz aus. G.R.E.A.T. uebernimmt alle Seeds und ergaenzt nur die noch fehlenden Kombinationen der gewaehlten Staerke. Das Limit fuer die Testfallanzahl kuerzt nie Seeds, sondern nur die Ergaenzung (mit Hinweis).
+
+**Lueckenschluss:** Zu einer vorhandenen Generierung erzeugt "Luecken schliessen" eine neue Generierung, die die bisherigen Testfaelle behaelt und nur fehlende Kombinationen ergaenzt.
+
+### 6.11 Abdeckungsanzeige
+
+Die Generierungsuebersicht zeigt je Generierung die **2-wise-Abdeckung** in Prozent. Die Abdeckungsmatrix zeigt fuer jedes Kategorienpaar, wie viele moegliche Wertepaare abgedeckt sind (Heatmap). Kombinationen, die durch Regeln oder Constraints unmoeglich sind, zaehlen nicht als "moeglich". Fehlende Paare lassen sich als Liste oder CSV anzeigen und mit "Luecken schliessen" ergaenzen.
 
 ---
 
@@ -1096,39 +1179,44 @@ G.R.E.A.T. bietet eine **RESTful API** mit OpenAPI-Dokumentation, die es ermoeli
 
 | Eigenschaft | Wert |
 |-------------|------|
-| **Basis-URL** | `http://localhost:8000` (Standard) |
-| **OpenAPI-Docs** | `http://localhost:8000/docs` (Swagger UI) |
-| **ReDoc** | `http://localhost:8000/redoc` |
-| **Authentifizierung** | JWT (Access + Refresh Token in httpOnly Cookies) |
+| **Basis-URL** | `http://localhost:8000/api/v1` (empfohlen; `/api/...` bleibt als gleichwertiger Alias) |
+| **Anmeldung** | `/auth/*` (ohne `/api`) |
+| **OpenAPI-Docs** | `http://localhost:8000/docs` (Swagger UI), `http://localhost:8000/redoc` |
+| **Authentifizierung** | API-Token (`Authorization: Bearer great_pat_...`) fuer Skripte und CI; Sitzungs-Cookie in der Oberflaeche |
 | **Content-Type** | `application/json` |
+| **Sprache der Meldungen** | Header `Accept-Language: de` oder `en` |
+
+Die Pfade in 15.3 sind relativ zur Basis-URL angegeben, z. B. `/projects` = `http://localhost:8000/api/v1/projects`.
 
 ### 15.2 Authentifizierung
 
-Alle geschuetzten Endpoints erfordern eine Authentifizierung. Der Access-Token wird automatisch im Cookie `access_token` gespeichert.
+**Empfohlen fuer Skripte und CI: API-Token.** Unter **Einstellungen → API-Tokens** legen Sie ein Token an (Name, Ablaufdatum, Berechtigungen). Der Klartext wird **nur einmal** angezeigt; speichern Sie ihn als Geheimnis Ihrer CI (z. B. `GREAT_TOKEN`).
 
-**Login:**
+| Berechtigung (Scope) | Erlaubt |
+|----------------------|---------|
+| `projects:read` | Projekte, Kategorien, Generierungen lesen |
+| `projects:write` | Projekte und Modelle aendern |
+| `generate` | Testfaelle generieren, Luecken schliessen |
+| `export` | Testfaelle exportieren |
+| `models:read` / `models:write` | Modelldatei exportieren / importieren |
+
+Es gilt immer die Schnittmenge aus Rolle des Token-Besitzers und Scopes. Fehlt ein Scope, antwortet die API mit 403 `insufficient_scope`. Fuer Benutzerverwaltung, Passwortaenderung, Token-Verwaltung und Sicherung/Wiederherstellung sind Tokens gesperrt. Technische Nutzer (Rolle `api_user`) koennen sich nicht an der Oberflaeche anmelden; ein Admin legt ihre Tokens an.
+
 ```bash
-curl -X POST http://localhost:8000/auth/login \
-  -d "username=admin&password=changeme123!" \
-  -c cookies.txt
+export GREAT_URL=http://localhost:8000
+export GREAT_TOKEN=great_pat_...   # aus Einstellungen → API-Tokens
+
+curl -H "Authorization: Bearer $GREAT_TOKEN" "$GREAT_URL/api/v1/projects"
 ```
 
-**Mit Cookie weiterarbeiten:**
+**Alternativ: Anmeldung mit Benutzername und Passwort** (Sitzungs-Cookie, z. B. fuer schnelle Versuche):
+
 ```bash
-curl -b cookies.txt http://localhost:8000/auth/me
+curl -X POST "$GREAT_URL/auth/login" -d "username=admin&password=IHR-PASSWORT" -c cookies.txt
+curl -b cookies.txt "$GREAT_URL/auth/me"
 ```
 
-**Logout:**
-```bash
-curl -X POST http://localhost:8000/auth/logout -b cookies.txt
-```
-
-**Token erneuern (automatisch):**
-```bash
-curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
-```
-
-> **Hinweis:** Tokens werden in httpOnly Cookies gespeichert. Fuer Programmatic Access (z. B. Skripte) koennen Sie auch den Token aus dem Cookie extrahieren und als `Authorization: Bearer <token>` Header verwenden.
+> **Hinweis:** Das Passwort gehoert nie in die URL. Anfragen mit `?password=` werden abgewiesen; im Zugriffslog erscheinen solche Werte nur als `***`.
 
 ### 15.3 API-Endpunkte nach Kategorien
 
@@ -1284,48 +1372,37 @@ curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
 
 ### 15.5 Beispiel: Kompletter Workflow per API
 
-Dieses Beispiel zeigt, wie man ein Projekt anlegt, Kategorien hinzufuegt, Testfaelle generiert und das Ergebnis exportiert:
+Projekt anlegen, Kategorien und Werte hinzufuegen, generieren und exportieren (Token mit `projects:read`, `projects:write`, `generate`, `export`):
 
 ```bash
-# 1. Login
-curl -X POST http://localhost:8000/auth/login \
-  -d "username=admin&password=changeme123!" \
-  -c cookies.txt
+API="$GREAT_URL/api/v1"
+AUTH="Authorization: Bearer $GREAT_TOKEN"
 
-# 2. Projekt anlegen
-curl -X POST http://localhost:8000/projects \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Mein Projekt","description":"API-Test"}' \
-  -b cookies.txt -c cookies.txt
+# 1. Projekt anlegen (Antwort enthaelt "id")
+curl -s -X POST "$API/projects" -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{"name":"Browser-Matrix"}'
 
-# 3. Kategorie anlegen (Antwort enthaelt category_id)
-curl -X POST http://localhost:8000/projects/1/categories \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Browser","category_type":"cause"}' \
-  -b cookies.txt -c cookies.txt
+# 2. Kategorie anlegen (Antwort enthaelt "id")
+curl -s -X POST "$API/projects/1/categories" -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{"name":"Browser"}'
 
-# 4. Werte hinzufuegen
-curl -X POST http://localhost:8000/categories/1/values \
-  -H "Content-Type: application/json" \
-  -d '{"value":"Chrome"}' \
-  -b cookies.txt -c cookies.txt
+# 3. Werte hinzufuegen
+for v in Chrome Firefox Safari; do
+  curl -s -X POST "$API/categories/1/values" -H "$AUTH" -H "Content-Type: application/json" \
+    -d "{\"value\":\"$v\"}"
+done
 
-curl -X POST http://localhost:8000/categories/1/values \
-  -H "Content-Type: application/json" \
-  -d '{"value":"Firefox"}' \
-  -b cookies.txt -c cookies.txt
+# 4. Generieren und direkt als CSV erhalten, ohne die Generierung zu speichern
+curl -s -X POST "$API/projects/1/generate?export=csv&persist=false" -H "$AUTH" \
+  -H "Content-Type: application/json" -d '{"strategy":"pairwise"}' -o testfaelle.csv
 
-# 5. Testfaelle generieren
-curl -X POST http://localhost:8000/projects/1/generate \
-  -H "Content-Type: application/json" \
-  -d '{"strategy":"pairwise","strength":2}' \
-  -b cookies.txt -c cookies.txt
-
-# 6. Ergebnis als CSV exportieren
-curl -b cookies.txt \
-  http://localhost:8000/generations/1/export/csv \
-  -o testfaelle.csv
+# 5. Oder: generieren, speichern und spaeter in einem Testmanagement-Format exportieren
+GEN=$(curl -s -X POST "$API/projects/1/generate" -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{"strategy":"pairwise"}' | jq '.generation_id')
+curl -s "$API/generations/$GEN/export/xray-csv" -H "$AUTH" -o xray.csv
 ```
+
+Ein Projekt per Namen finden: `GET /projects?name=Browser-Matrix` (exakt, ohne Gross-/Kleinschreibung).
 
 ### 15.6 Fehlerbehandlung
 
@@ -1344,10 +1421,11 @@ Die API verwendet standardmaessige HTTP-Statuscodes:
 | `429` | Zu viele Anfragen (Rate Limiting) |
 | `500` | Interner Serverfehler |
 
-Fehlerantworten enthalten ein `detail`-Feld mit Beschreibung:
+Fehlerantworten enthalten ein `detail`-Feld mit Beschreibung und fuer feste Meldungen einen sprachneutralen `code`, auf den Skripte reagieren koennen:
 ```json
-{"detail": "Ungultige Anmeldedaten"}
+{"detail": "Projekt nicht gefunden", "code": "project_not_found"}
 ```
+Mit `Accept-Language: en` ist `detail` englisch; der `code` bleibt gleich.
 
 ### 15.7 Rate Limiting
 
@@ -1356,6 +1434,7 @@ Fehlerantworten enthalten ein `detail`-Feld mit Beschreibung:
 | `/auth/login` | 10 Versuche/Minute/IP |
 | `/auth/change-password` | 10 Versuche/Minute/Konto |
 | `/auth/first-start-hint` | 10 Requests/Minute/IP |
+| API-Token | 600 Anfragen/Minute je Token (`GREAT_TOKEN_RATE_LIMIT`) |
 
 Bei Uberschreitung: HTTP 429 mit `Retry-After` Header.
 
@@ -1375,3 +1454,75 @@ Mit **Authorize** tragen Sie ein API-Token ein (`great_pat_...`); alle `/api`-Au
 ---
 
 *Ende des Benutzerhandbuchs*
+
+### 15.9 Einbindung in CI/CD
+
+Die Beispiele erzeugen bei jedem Lauf frische Testfaelle aus einem Projekt und legen sie als Artefakt ab. Hinterlegen Sie dafuer `GREAT_URL` und `GREAT_TOKEN` (Token mit `projects:read`, `generate`, `export`) als Geheimnisse.
+
+**GitHub Actions**
+
+```yaml
+name: Testfaelle erzeugen
+on: [workflow_dispatch]
+jobs:
+  testcases:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Projekt-ID suchen und Testfaelle exportieren
+        env:
+          GREAT_URL: ${{ secrets.GREAT_URL }}
+          GREAT_TOKEN: ${{ secrets.GREAT_TOKEN }}
+        run: |
+          PID=$(curl -sf -H "Authorization: Bearer $GREAT_TOKEN" \
+            "$GREAT_URL/api/v1/projects?name=Portoberechnung%20(Beispiel)" | jq '.[0].id')
+          curl -sf -X POST -H "Authorization: Bearer $GREAT_TOKEN" -H "Content-Type: application/json" \
+            "$GREAT_URL/api/v1/projects/$PID/generate?export=json-data-driven&persist=false" \
+            -d '{"strategy":"pairwise"}' -o testcases.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testcases
+          path: testcases.json
+```
+
+**GitLab CI**
+
+```yaml
+testcases:
+  image: alpine:3.20
+  script:
+    - apk add --no-cache curl jq
+    - PID=$(curl -sf -H "Authorization: Bearer $GREAT_TOKEN" "$GREAT_URL/api/v1/projects?name=Portoberechnung%20(Beispiel)" | jq '.[0].id')
+    - >
+      curl -sf -X POST -H "Authorization: Bearer $GREAT_TOKEN" -H "Content-Type: application/json"
+      "$GREAT_URL/api/v1/projects/$PID/generate?export=gherkin&persist=false"
+      -d '{"strategy":"pairwise"}' -o testcases.feature
+  artifacts:
+    paths: [testcases.feature]
+```
+
+**Jenkins (Declarative Pipeline)**
+
+```groovy
+pipeline {
+  agent any
+  environment {
+    GREAT_URL   = 'http://great.intern:8000'
+    GREAT_TOKEN = credentials('great-token')   // Secret text
+  }
+  stages {
+    stage('Testfaelle') {
+      steps {
+        sh '''
+          PID=$(curl -sf -H "Authorization: Bearer $GREAT_TOKEN" "$GREAT_URL/api/v1/projects?name=Portoberechnung%20(Beispiel)" | jq '.[0].id')
+          curl -sf -X POST -H "Authorization: Bearer $GREAT_TOKEN" -H "Content-Type: application/json" \
+            "$GREAT_URL/api/v1/projects/$PID/generate?export=robot&persist=false" \
+            -d '{"strategy":"pairwise"}' -o testcases.robot
+        '''
+        archiveArtifacts artifacts: 'testcases.robot'
+      }
+    }
+  }
+}
+```
+
+Verfuegbare Formate fuer `export=`: `csv`, `json`, `xlsx`, `json-data-driven`, `gherkin`, `pytest`, `robot`, `markdown`, `xray-csv`, `testrail-csv`, `azuredevops-csv`.
