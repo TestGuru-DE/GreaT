@@ -49,6 +49,8 @@ export default function GenerationsPage() {
     }
   };
 
+  // Einmal beim Oeffnen laden; danach laden die Aktionen selbst neu
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load(); }, []);
 
   const handleDelete = async (gid: number) => {

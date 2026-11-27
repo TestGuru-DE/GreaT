@@ -59,12 +59,12 @@ export default function CoverageHeatmap({
     try {
       const data = await coverageApi.getHeatmap(generationId, selectedCatA, selectedCatB, {});
       setHeatmap(data);
-    } catch (e: any) {
-      setError(e.message || t('coverageView.loadError'));
+    } catch (e: unknown) {
+      setError((e instanceof Error && e.message) || t('coverageView.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [generationId, selectedCatA, selectedCatB]);
+  }, [generationId, selectedCatA, selectedCatB, t]);
 
   useEffect(() => {
     fetchData();

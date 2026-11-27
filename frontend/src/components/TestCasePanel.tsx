@@ -93,6 +93,7 @@ export default function TestCasePanel({ projectId }: Props) {
     "__testcaseId": tc.id,
     "__testcaseName": tc.name,
     "__hasError": tc.has_error_value ?? false,  // REQ-3063
+    "__filled": tc.filled_categories ?? [],  // Restbefund 9c
     ...tc.assignments,
   } as Record<string, unknown>));
   const { sorted, sortCol, sortDir, toggleSort } = useSortableTable(rows);
@@ -434,9 +435,14 @@ export default function TestCasePanel({ projectId }: Props) {
                       const resultCategory = resultCategoryByName[col];
                       const currentValue = String(row[col] ?? "");
                       if (!resultCategory?.editable) {
+                        // Restbefund 9c: von der Generierung aufgefuellte Seed-Felder kennzeichnen
+                        const filled = (row["__filled"] as string[]).includes(col);
                         return (
-                          <td key={col} className="px-3 py-1.5 text-theme-text">
+                          <td key={col} className={"px-3 py-1.5 text-theme-text" + (filled ? " italic" : "")}
+                            title={filled ? t('testCasePanel.filledBySeed') : undefined}
+                            data-filled={filled || undefined}>
                             {currentValue || "-"}
+                            {filled && <span className="sr-only"> ({t('testCasePanel.filledBySeed')})</span>}
                           </td>
                         );
                       }

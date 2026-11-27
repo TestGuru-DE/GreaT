@@ -20,14 +20,26 @@ class JsonDataDrivenExporter(BaseExporter):
         testcases = generation_view.get("testcases", [])
         categories = generation_view.get("categories", [])
 
+        # Restbefund 9b: Eine Kategorie namens "id" (o. ae.) ueberschrieb die Testfall-ID.
+        # Metadaten behalten ihre Namen; kollidierende Kategorien erhalten einen Suffix.
+        reserved = {"id", "has_error_value", "origin"}
+        keys: dict[str, str] = {}
+        for cat in categories:
+            key, n = cat, 2
+            while key in reserved or key in keys.values():
+                key = f"{cat} ({n})"
+                n += 1
+            keys[cat] = key
+
         result: list[dict] = []
         for tc in testcases:
             obj: dict = {
                 "id": tc["name"],
                 "has_error_value": tc.get("has_error_value", False),
+                "origin": tc.get("origin") or "generated",
             }
             for cat in categories:
-                obj[cat] = tc["assignments"].get(cat, "")
+                obj[keys[cat]] = tc["assignments"].get(cat, "")
             result.append(obj)
 
         return json.dumps(result, ensure_ascii=False, indent=2).encode("utf-8")

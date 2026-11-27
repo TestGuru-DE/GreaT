@@ -459,8 +459,11 @@ def validate_constraint_ast(
     if leaf_count > MAX_LEAF_NODES:
         warnings.append(f"Zu viele atomare Vergleiche: {leaf_count} (max {MAX_LEAF_NODES})")
 
-    from ..constraints.ast_parser import get_depth
-    depth = get_depth(ast_dict)
+    # Restbefund 9c: Tiefe so zaehlen wie die Pruefung (Ausdruck ohne Constraint-Huelle),
+    # damit "depth" und die Meldung "Maximale Verschachtelungstiefe" zusammenpassen.
+    from ..constraints.ast_parser import expression_depth
+    depth = max(expression_depth(payload.expression),
+                expression_depth(payload.consequence) if payload.consequence is not None else 0)
 
     return schemas.ConstraintValidateResponse(
         is_valid=is_valid and len(warnings) == 0,

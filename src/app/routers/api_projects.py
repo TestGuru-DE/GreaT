@@ -933,6 +933,20 @@ def generate_extended_bva_for_category(
     options = payload.options or {}
     results_list = []
 
+    # Restbefund C-14: Unbekannte oder zum Typ unpassende Optionen nicht still ignorieren
+    allowed_options = {
+        "number": set(),
+        "date": {"format", "extras"},
+        "time": {"format", "step", "extras"},
+        "datetime": {"step", "extras", "timezone"},
+        "strlen": {"charset", "extras"},
+    }[bva_type]
+    unknown = sorted(set(options) - allowed_options)
+    if unknown:
+        raise HTTPException(status_code=400, detail={
+            "code": "bva_unknown_option",
+            "detail": f"Unbekannte Option(en) fuer Typ {bva_type}: {', '.join(unknown)}"})
+
     try:
         if bva_type == "number":
             # Bestehende Logik fuer Zahlen

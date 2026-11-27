@@ -34,7 +34,7 @@ vi.mock("../../api/client", async (importOriginal) => {
 
 // Mock SeedImport component
 vi.mock("../SeedImport", () => ({
-  default: function MockSeedImport({ projectId, onClose }: { projectId: number; onClose: () => void }) {
+  default: function MockSeedImport({ onClose }: { projectId: number; onClose: () => void }) {
     return (
       <div data-testid="seed-import-mock">
         <span>CSV Import (mocked)</span>

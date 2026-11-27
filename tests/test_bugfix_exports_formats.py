@@ -247,7 +247,7 @@ def test_columns_follow_generation_not_current_model(auth_client):
     auth_client.post(f"/api/categories/{neu['id']}/values", json={"value": "Neu-Wert"})
 
     data = json.loads(_export(auth_client, gid, "json-data-driven"))
-    assert data == [{"id": "TC_1", "has_error_value": False, "Bleibt": "Bleibt-Wert", "Alt": "Alt-Wert"}]
+    assert data == [{"id": "TC_1", "has_error_value": False, "origin": "generated", "Bleibt": "Bleibt-Wert", "Alt": "Alt-Wert"}]
     md = _export(auth_client, gid, "markdown")
     header = next(line for line in md.splitlines() if line.startswith("| TC-ID"))
     assert header == "| TC-ID | Bleibt | Alt |"

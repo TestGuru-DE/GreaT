@@ -460,8 +460,10 @@ def apply_business_rules(
                 category_map=name2id,
                 value_map=val_name_map,
             ))
-        except (json.JSONDecodeError, Exception):
-            pass  # Ungueltige Constraints ueberspringen
+        except Exception as exc:  # noqa: BLE001 - jedes Problem fuehrt nur zum Ueberspringen
+            # R-10: nicht still schlucken, sondern im Log nachvollziehbar machen
+            import logging
+            logging.getLogger(__name__).warning("Constraint %s uebersprungen: %s", c.id, exc)
 
     engine = RuleEngine(rules=rules)
     result = engine.apply(list(assignments))

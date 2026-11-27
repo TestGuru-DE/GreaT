@@ -9,6 +9,17 @@ import type {
   Value, ValueCreate,
   GenerateRequest, GenerateResponse, TestCaseOut, RiskSummary, ResultCategory,
 } from "../types";
+// R-10: Gemeinsame Typen stehen in types/index.ts; hier nur weitergereicht (keine Doppeldefinition)
+import type {
+  ConstraintAtom, ConstraintGroup, ConstraintKind, ConstraintNode, ConstraintNot, ConstraintOp,
+  CoverageResponse, CoverageStat, DecisionTableCause, DecisionTableEffect, DecisionTableRow,
+  HeatmapCellData, HeatmapOverview, HeatmapPair, HeatmapResponse, LogicalConstraint, UncoveredTuple,
+} from "../types";
+export type {
+  ConstraintAtom, ConstraintGroup, ConstraintKind, ConstraintNode, ConstraintNot, ConstraintOp,
+  CoverageResponse, CoverageStat, DecisionTableCause, DecisionTableEffect, DecisionTableRow,
+  HeatmapCellData, HeatmapOverview, HeatmapPair, HeatmapResponse, LogicalConstraint, UncoveredTuple,
+};
 import { ApiError } from './ApiError';
 import { useAuthStore } from '../store/authStore';
 
@@ -306,23 +317,8 @@ export const datanodesApi = {
 };
 
 // --- Entscheidungstabelle (aus decisionTableStore.ts ausgelagert) ---
-export interface DecisionTableCause {
-  id: number;
-  name: string;
-  values?: string[];
-}
 
-export interface DecisionTableEffect {
-  id: number;
-  name: string;
-  values?: string[];
-}
 
-export interface DecisionTableRow {
-  id: number;
-  causes: Record<string, string>;
-  effects: Record<string, string | null>;
-}
 
 export interface DecisionTableChecksum {
   checksum: number;
@@ -438,39 +434,11 @@ export { authClient };
 // --- REQ-6001: Logische Constraints (ADR-020 AST-Format) ---
 // NEU: logicalConstraintsApi – bestehendes constraintsApi (REQ-5012) bleibt unveraendert
 
-export type ConstraintKind = "forbid" | "implies";
-export type ConstraintOp = "eq" | "ne" | "in" | "not_in" | "and" | "or" | "not";
 
-export interface ConstraintAtom {
-  op: "eq" | "ne" | "in" | "not_in";
-  category_id: number;
-  value_id: number;
-  value_ids?: number[]; // for in / not_in
-}
 
-export interface ConstraintGroup {
-  op: "and" | "or";
-  args: (ConstraintAtom | ConstraintGroup | ConstraintNot)[];
-}
 
-export interface ConstraintNot {
-  op: "not";
-  arg: ConstraintNode;
-}
 
-export type ConstraintNode = ConstraintAtom | ConstraintGroup | ConstraintNot;
 
-export interface LogicalConstraint {
-  id: number;
-  project_id: number;
-  name: string;
-  kind: ConstraintKind;
-  expression: ConstraintNode;
-  consequence?: ConstraintNode; // only for "implies"
-  is_valid: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 export interface ConstraintCreatePayload {
   name: string;
@@ -515,55 +483,12 @@ export const logicalConstraintsApi = {
 // REQ-6008: Coverage API
 // ============================================================================
 
-export interface CoverageStat {
-  t: number;
-  covered: number;
-  possible: number;
-  percentage: number;
-  excluded_by_rules: number;
-}
 
-export interface HeatmapPair {
-  cat_a: string;
-  cat_b: string;
-  coverage_pct: number;
-  covered: number;
-  possible: number;
-}
 
-export interface HeatmapOverview {
-  categories: string[];
-  pairs: HeatmapPair[];
-}
 
-export interface UncoveredTuple {
-  categories: string[];
-  values: string[];
-}
 
-export interface CoverageResponse {
-  generation_id: number;
-  coverage_1wise: CoverageStat;
-  coverage_2wise: CoverageStat;
-  coverage_3wise?: CoverageStat | null;
-  heatmap: HeatmapOverview;
-  uncovered_tuples_2wise: UncoveredTuple[];
-  cached: boolean;
-}
 
-export interface HeatmapCellData {
-  count: number;
-  status: "covered" | "uncovered" | "excluded";
-  testcase_ids: number[];
-}
 
-export interface HeatmapResponse {
-  cat_a: string;
-  cat_b: string;
-  rows: string[];
-  cols: string[];
-  cells: Record<string, HeatmapCellData>;
-}
 
 export const coverageApi = {
   getCoverage: (generationId: number, t: number = 2) =>

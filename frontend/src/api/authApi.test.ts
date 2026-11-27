@@ -1,5 +1,5 @@
-﻿// REQ-4001: Unit-Tests fuer Auth-API-Client (axios-basiert)
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+// REQ-4001: Unit-Tests fuer Auth-API-Client (axios-basiert)
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { authApi } from "./authApi";
 import * as clientModule from "./client";
 

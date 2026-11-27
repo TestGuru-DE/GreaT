@@ -8,7 +8,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { PortSettingsCard } from '../components/PortSettingsCard'
 import { MaxTestCasesSettingsCard } from '../components/MaxTestCasesSettingsCard' // REQ-4018
 import UserManagement from '../components/UserManagement' // REQ-4025
 import ApiTokensCard from '../components/ApiTokensCard' // REQ-6012
@@ -57,8 +56,8 @@ export default function SettingsPage() {
       setRestoreStatus(t('settings.backup.restore.success', { count: data.projects_restored }))
       setRestoreFile(null)
       setRestorePassword('')
-    } catch (e: any) {
-      setRestoreStatus(t('settings.backup.restore.error', { message: e.message }))
+    } catch (e: unknown) {
+      setRestoreStatus(t('settings.backup.restore.error', { message: e instanceof Error ? e.message : String(e) }))
     } finally {
       setIsLoading(false)
     }
@@ -126,7 +125,14 @@ export default function SettingsPage() {
         <h1 className="page-title text-theme-text">{t('settings.title')}</h1>
       </header>
 
-      <PortSettingsCard />
+      {/* B-49: Der Server-Port wird beim Start festgelegt, nicht im Browser */}
+      <section className="card bg-theme-surface p-6 mb-6">
+        <h2 className="text-xl font-bold text-theme-text mb-3">{t('portInfo.title')}</h2>
+        <p className="text-sm text-theme-text-secondary">
+          {t('portInfo.text', { port: window.location.port || (window.location.protocol === 'https:' ? '443' : '80') })}
+        </p>
+        <pre className="mt-3 text-sm bg-theme-surface-2 text-theme-text rounded-lg px-3 py-2 overflow-x-auto"><code>{t('portInfo.example')}</code></pre>
+      </section>
       <MaxTestCasesSettingsCard />
 
       <section className="card bg-theme-surface p-6 mb-6">

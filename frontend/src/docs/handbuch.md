@@ -905,6 +905,22 @@ Exportiert Testfaelle als `.xlsx`-Datei (openpyxl). Gleiche Spalten wie CSV, abe
 
 Alle Export-Formate enthalten eine Spalte/Field `Fehlerwert` (bzw. `has_error_value`), die **JA/NEIN** (bzw. `true/false`) angibt, ob der Testfall mindestens einen Fehlerwert enthaelt.
 
+In den Testmanagement-Formaten steht die Kennzeichnung so, dass sie beim Import erhalten bleibt; dort steht auch die Herkunft (Seed, Lueckenschluss):
+
+| Format | Fehlerwert | Herkunft |
+|--------|-----------|----------|
+| Xray (Jira) | Spalte `Labels`: `error-value` | `Labels`: `seed` bzw. `gap-fill` |
+| TestRail | Spalte `Error Value`: Yes/No | Spalte `Origin`: generated, seed, supplemented |
+| Azure DevOps | Spalte `Tags`: `error-value` (erste Zeile des Testfalls) | `Tags`: `seed` bzw. `gap-fill` |
+| JSON (data-driven) | `has_error_value` | `origin` |
+
+Im JSON-Format "data-driven" behalten `id`, `has_error_value` und `origin` ihre Bedeutung; eine Kategorie mit einem dieser Namen erscheint als `id (2)` usw.
+
+### 8.5 Sprache und lange Werte im Export
+
+- Spaltenkoepfe folgen der Sprache der Oberflaeche. Per API waehlt `?lang=de|en` die Sprache; ohne Angabe gilt der Header `Accept-Language`, sonst Deutsch.
+- Sehr lange Werte aus der Grenzwertanalyse (Stringlaenge ueber 500 Zeichen) speichert G.R.E.A.T. als Platzhalter, z. B. `<STR len=1001 charset=alnum>`. Beim Export der Testfaelle wird daraus eine echte Zeichenkette der angegebenen Laenge; derselbe Platzhalter ergibt immer dieselbe Zeichenkette. In der Oberflaeche und in der Modelldatei bleibt der Platzhalter stehen.
+
 ---
 
 ## 9. Datenklassen

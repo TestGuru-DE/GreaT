@@ -5,6 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { listTokens, revokeToken, ApiToken } from '../api/apiTokensApi';
 import ApiTokenCreateDialog from './ApiTokenCreateDialog';
 
+// Fehlermeldung aus ApiError/axios-Fehler oder beliebigem Wert
+function errorText(e: unknown): string {
+  const detail = (e as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  return e instanceof Error ? e.message : String(e);
+}
+
 export default function ApiTokensCard() {
   const { t } = useTranslation();
   const [tokens, setTokens] = useState<ApiToken[]>([]);
@@ -16,8 +23,8 @@ export default function ApiTokensCard() {
     try {
       const data = await listTokens();
       setTokens(data);
-    } catch (e: any) {
-      setError(e.response?.data?.detail || String(e));
+    } catch (e: unknown) {
+      setError(errorText(e));
     } finally {
       setLoading(false);
     }
@@ -30,8 +37,8 @@ export default function ApiTokensCard() {
     try {
       await revokeToken(id);
       setTokens(prev => prev.filter(tok => tok.id !== id));
-    } catch (e: any) {
-      setError(e.response?.data?.detail || String(e));
+    } catch (e: unknown) {
+      setError(errorText(e));
     }
   }, [t]);
 

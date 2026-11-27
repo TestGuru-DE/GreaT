@@ -372,15 +372,6 @@
     "heavyMetal": "Heavy Metal",
     "system": "System (OS)"
   },
-  "portSettings": {
-    "title": "Port Setting",
-    "label": "Preferred port",
-    "description": "Default is <strong>8000</strong>. <strong>5173</strong> remains the dev option only. A server restart is required after a change.",
-    "currentUrl": "Current local URL:",
-    "save": "Save",
-    "error": "Please enter a port between 1 and 65535.",
-    "success": "Port {{port}} saved. Restart required."
-  },
   "maxTestCases": {
     "title": "Maximum Number of Test Cases",
     "label": "Limit per generation",
@@ -1035,7 +1026,8 @@
     "riskBadge": "Risk coverage: {{percent}}%",
     "rename": "rename",
     "exportCsvTable": "CSV (table)",
-    "errorCaseTitle": "Error value test case"
+    "errorCaseTitle": "Error value test case",
+    "filledBySeed": "filled in automatically (empty in seed)"
   },
   "bvaValidation": {
     "outside": "outside",
@@ -1061,5 +1053,10 @@
   "decisionTableHelpExamples": {
     "size": "Size: S, M, L, XL",
     "color": "Colour: red, green, blue"
+  },
+  "portInfo": {
+    "title": "Server port",
+    "text": "The interface is running on port {{port}}. The port is set when starting the server: set the environment variable GREAT_PORT before Start.bat or Start.sh and restart the server.",
+    "example": "set GREAT_PORT=9000 && Start.bat"
   }
 }

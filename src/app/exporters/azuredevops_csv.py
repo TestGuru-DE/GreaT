@@ -13,7 +13,7 @@ from __future__ import annotations
 import csv
 import io
 
-from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_title
+from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_tags, testcase_title
 
 
 class AzureDevOpsCsvExporter(BaseExporter):
@@ -24,7 +24,7 @@ class AzureDevOpsCsvExporter(BaseExporter):
     media_type = "text/csv"
 
     HEADER = ["ID", "Work Item Type", "Title", "Test Step", "Step Action",
-              "Step Expected", "Area Path", "Assigned To", "State"]
+              "Step Expected", "Area Path", "Assigned To", "State", "Tags"]
 
     def render(self, generation_view: dict, options: dict) -> bytes:
         output = io.StringIO(newline="")
@@ -55,6 +55,8 @@ class AzureDevOpsCsvExporter(BaseExporter):
                     "",            # Area Path
                     "",            # Assigned To
                     "Design",
+                    # Restbefund 9b: Fehlerwert/Herkunft als Tags (nur in der Kopfzeile des Testfalls)
+                    "; ".join(testcase_tags(tc)) if number == 1 else "",
                 ])
 
         return output.getvalue().encode("utf-8")

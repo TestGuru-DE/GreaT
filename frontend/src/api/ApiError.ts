@@ -1,4 +1,4 @@
-﻿// B-42: ApiError-Klasse fuer typsichere Fehlerbehandlung
+// B-42: ApiError-Klasse fuer typsichere Fehlerbehandlung
 export class ApiError extends Error {
   public readonly status: number;
   public readonly code?: string;
@@ -18,7 +18,7 @@ function buildMessage(status: number, detail: unknown): string {
   if (status === 0) return 'Server nicht erreichbar';
   if (Array.isArray(detail)) {
     return detail
-      .map((e) => (typeof e === 'object' && e !== null && 'msg' in e ? (e as any).msg : String(e)))
+      .map((e) => (typeof e === 'object' && e !== null && 'msg' in e ? (e as { msg: unknown }).msg : String(e)))
       .join('; ');
   }
   if (typeof detail === 'string') return detail;

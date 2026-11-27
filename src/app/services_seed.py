@@ -285,6 +285,14 @@ def import_csv_seeds(
     if not categories:
         raise HTTPException(status_code=400, detail="Projekt hat keine Kategorien.")
 
+    # Restbefund 9c: Auch der CSV-Import lehnt doppelte Satznamen ab (wie das Anlegen)
+    if db.query(models.SeedSet).filter(models.SeedSet.project_id == project_id,
+                                        models.SeedSet.name == name).first():
+        raise HTTPException(
+            status_code=409,
+            detail=f"Seed-Satz '{name}' existiert bereits in diesem Projekt.",
+        )
+
     seeds, warnings = parse_csv_seeds(csv_text, categories)
 
     if len(seeds) > MAX_SEEDS:

@@ -34,12 +34,12 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
     try {
       const data = await coverageApi.getCoverage(generationId, 2);
       setCoverage(data);
-    } catch (e: any) {
-      setError(e.message || t("coverage.loadError"));
+    } catch (e: unknown) {
+      setError((e instanceof Error && e.message) || t("coverage.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [generationId]);
+  }, [generationId, t]);
 
   useEffect(() => {
     fetchCoverage();
@@ -70,7 +70,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
       return;
     }
     try {
-      const data = await coverageApi.getUncoveredTuples(generationId, 2, "json") as any;
+      const data = await coverageApi.getUncoveredTuples(generationId, 2, "json") as { tuples?: UncoveredTuple[] };
       setUncoveredTuples(data.tuples || []);
       setShowUncovered(true);
     } catch {

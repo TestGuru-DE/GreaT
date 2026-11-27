@@ -41,6 +41,21 @@ const DATA_TYPE_OPTIONS: { value: BVADataType; labelKey: string }[] = [
 ];
 
 // BUG C-02: Pruefung passend zum Datentyp (Zahlen-Pruefung blockierte Datum/Uhrzeit)
+// Restbefund C-14: Nur die zum Typ passenden Optionen senden (der Server lehnt fremde ab)
+const OPTIONS_BY_TYPE: Record<string, (keyof BVAExtendedOptions)[]> = {
+  date: ["format", "extras"],
+  time: ["format", "step", "extras"],
+  datetime: ["step", "extras", "timezone"],
+  strlen: ["charset", "extras"],
+};
+
+function optionsForType(type: BVADataType, options: BVAExtendedOptions): BVAExtendedOptions {
+  const allowed = OPTIONS_BY_TYPE[type] ?? [];
+  return Object.fromEntries(
+    Object.entries(options).filter(([key, value]) => allowed.includes(key as keyof BVAExtendedOptions) && value !== undefined),
+  ) as BVAExtendedOptions;
+}
+
 function validateRanges(type: BVADataType, ranges: BVARangeEntry[], options: BVAExtendedOptions = {}): string[] {
   if (type === "number") return validateMultiRangeBVAConfig(ranges);
   const errors = validateExtendedRanges(type, ranges);
@@ -112,6 +127,8 @@ export function BVADialog({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
+    // handleApply liest genau diese Zustaende; sie stehen in der Liste
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, config, dataType, extendedOptions, loading, onClose]);
 
   // Fokus auf ersten Input
@@ -145,7 +162,7 @@ export function BVADialog({
             allowed: r.allowed,
           })),
           points: config.pointsPerBoundary,
-          options: extendedOptions,
+          options: optionsForType(dataType, extendedOptions),
         });
         onApply(response.values.map(r => r.value)); // BUG C-03
       }

@@ -1,6 +1,6 @@
-﻿// REQ-4022: Tests fuer StaleDataWarning-Integration in ProjectDetailPage
+// REQ-4022: Tests fuer StaleDataWarning-Integration in ProjectDetailPage
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ProjectDetailPage from "../ProjectDetailPage";
 import { useProjectStore } from "../../store/projectStore";

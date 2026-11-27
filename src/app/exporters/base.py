@@ -182,6 +182,19 @@ class BaseExporter(ABC):
         return ""
 
 
+def testcase_tags(tc: dict) -> list[str]:
+    """Restbefund 9b: Kennzeichen fuer Testmanagement-Formate (Fehlerwert, Herkunft)."""
+    tags: list[str] = []
+    if tc.get("has_error_value"):
+        tags.append("error-value")
+    origin = tc.get("origin")
+    if origin == "seed":
+        tags.append("seed")
+    elif origin == "supplemented":
+        tags.append("gap-fill")
+    return tags
+
+
 def protect_formula(value: str) -> str:
     """Schuetzt vor Formel-Injection in CSV/XLS.
 

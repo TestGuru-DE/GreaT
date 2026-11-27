@@ -1,4 +1,4 @@
-﻿// REQ-1203: TypeScript-Interfaces fuer alle Pydantic-Schemas
+// REQ-1203: TypeScript-Interfaces fuer alle Pydantic-Schemas
 
 export interface Project {
   id: number;
@@ -93,6 +93,8 @@ export interface TestCaseOut {
   assignments: Record<string, string>;
   has_error_value?: boolean; // REQ-3063: Flag für Fehlerwert-Markierung
   risk_coverage?: number;      // REQ-3050: Risikoabdeckung (Summe risk_weight)
+  origin?: string | null;      // REQ-6009: "seed" | "supplemented" | "generated"
+  filled_categories?: string[]; // Restbefund 9c: von der Generierung aufgefuellte Seed-Felder
 }
 
 export interface ResultCategoryValue {

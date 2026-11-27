@@ -22,6 +22,7 @@ MESSAGES: dict[str, Tuple[str, str]] = {
                                   "Combine rule needs at least one target value"),
     "constraint_not_found": ("Constraint nicht gefunden", "Constraint not found"),
     "invalid_export_format": ("Unbekanntes Exportformat", "Unknown export format"),
+    "model_not_utf8": ("Die Modelldatei muss UTF-8-kodiert sein", "The model file must be UTF-8 encoded"),
     "persist_requires_export": ("persist=false ist nur zusammen mit export moeglich",
                                 "persist=false is only possible together with export"),
     "insufficient_scope_export": ("API-Token hat nicht den erforderlichen Scope: export",

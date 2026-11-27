@@ -1,4 +1,4 @@
-﻿// REQ-3045 (Sofort-Fix): SettingsPage enthaelt den ThemeSwitcher selbst - hier ist
+// REQ-3045 (Sofort-Fix): SettingsPage enthaelt den ThemeSwitcher selbst - hier ist
 // es besonders kritisch, dass die Seite dem Theme folgt, sonst wirkt ein
 // Theme-Wechsel fuer den Nutzer "wirkungslos". Vor dem Fix nutzte die Seite
 // hartkodierte "bg-white dark:bg-slate-800" / "text-slate-800" Klassen, die von
@@ -7,9 +7,6 @@ import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 import SettingsPage from "../SettingsPage";
 
-vi.mock("../../components/PortSettingsCard", () => ({
-  PortSettingsCard: () => <div data-testid="port-settings-mock" />,
-}));
 vi.mock("../../components/MaxTestCasesSettingsCard", () => ({
   MaxTestCasesSettingsCard: () => <div data-testid="max-testcases-mock" />,
 }));

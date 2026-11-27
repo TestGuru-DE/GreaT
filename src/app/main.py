@@ -334,6 +334,31 @@ app.include_router(api_generate.router, prefix="/api/v1")
 app.include_router(api_dataclasses.router, prefix="/api/v1")
 app.include_router(api_datanodes.router, prefix="/api/v1")
 app.include_router(api_coverage.router, prefix="/api/v1")  # REQ-6008: v1-Alias
+app.include_router(api_seed.router, prefix="/api/v1")      # REQ-6009: v1-Alias
+
+
+def _v1_alias(router):
+    """REQ-6012: /api/v1-Alias fuer Router, deren Pfade bereits mit /api/ beginnen.
+
+    Die Routen werden mit gekuerztem Pfad kopiert und unter /api/v1 eingebunden
+    (gleiche Endpunkte, Abhaengigkeiten und Schemas).
+    """
+    import copy
+    from fastapi import APIRouter
+    from fastapi.routing import APIRoute
+
+    stripped = APIRouter()
+    for route in router.routes:
+        if isinstance(route, APIRoute) and route.path.startswith("/api/") and not route.path.startswith("/api/v1/"):
+            clone = copy.copy(route)
+            clone.path = route.path[len("/api"):]
+            stripped.routes.append(clone)
+    return stripped
+
+
+for _router in (api_backup.router, api_decision_table.router, api_sharing.router,
+                api_users.router, api_users.password_router):
+    app.include_router(_v1_alias(_router), prefix="/api/v1")
 
 # ---------------------------------------------------------------------------
 # Komfort-Redirects (muessen VOR dem SPA-Fallback definiert werden)

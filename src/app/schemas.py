@@ -1,7 +1,7 @@
 # src/app/schemas.py
 import re
 from typing import List, Optional, Dict
-from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 from .name_validation import reject_control_chars  # BUG A-02
 
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9._@-]{3,50}$")
@@ -150,6 +150,8 @@ class TestCaseOut(BaseModel):
     has_error_value: bool = False  # REQ-3063: Flag für Fehlerwert-Markierung
     risk_coverage: float = 0.0  # REQ-3050: Summe der risk_weight aller Werte
     origin: Optional[str] = None  # REQ-6009: "seed" | "supplemented" | "generated"
+    # Restbefund 9c: Bei Seeds mit Luecken die Kategorien, die die Generierung aufgefuellt hat
+    filled_categories: List[str] = []
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -289,9 +291,18 @@ class BVARangeSchema(BaseModel):
 
 
 class BVAMultiRangeRequest(BaseModel):
-    """Request für Multi-Range BVA."""
+    """Request für Multi-Range BVA (nur Zahlen; andere Typen ueber /bva/extended)."""
     ranges: List[BVARangeSchema]
     points: int = Field(default=2, ge=2, le=4)  # 2, 3 oder 4
+    # Restbefund C-13: "type" wurde still ignoriert. Nur "number" ist hier zulaessig.
+    type: Optional[str] = None
+
+    @field_validator("type")
+    @classmethod
+    def validate_type(cls, v: Optional[str]) -> Optional[str]:
+        if v not in (None, "number"):
+            raise ValueError(f"/bva/ranges verarbeitet nur Zahlen; fuer type={v!r} /bva/extended verwenden")
+        return v
 
     @field_validator("ranges")
     @classmethod
@@ -310,7 +321,8 @@ class BVAExtendedRangeSchema(BaseModel):
     min_val: str
     max_val: str
     allowed: bool = True
-    type: str = "number"  # 'number', 'date', 'time', 'datetime', 'strlen'
+    # Restbefund C-13: Ein abweichender Typ pro Bereich wird abgelehnt (gilt nur der Typ der Anfrage)
+    type: Optional[str] = None  # 'number', 'date', 'time', 'datetime', 'strlen'
 
 
 class BVAExtendedRequest(BaseModel):
@@ -341,6 +353,13 @@ class BVAExtendedRequest(BaseModel):
         if not v:
             raise ValueError("Mindestens ein Bereich erforderlich")
         return v
+
+    @model_validator(mode="after")
+    def _range_types_match(self):
+        wrong = [r.type for r in self.ranges if r.type is not None and r.type != self.type]
+        if wrong:
+            raise ValueError(f"Bereichstyp {wrong[0]!r} passt nicht zum Typ der Anfrage {self.type!r}")
+        return self
 
 
 class BVAExtendedResult(BaseModel):

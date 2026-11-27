@@ -149,7 +149,8 @@ class GreatModel(BaseModel):
     Nicht enthalten: Generierungen, Benutzer, IDs, Zeitstempel.
     Referenzen innerhalb der Datei erfolgen ueber Namen.
     """
-    schema_version: int = Field(default=1, alias="schemaVersion")
+    # Restbefund 9b: Pflichtfeld und echte Zahl ("1" als Text wird abgelehnt)
+    schema_version: int = Field(alias="schemaVersion", strict=True)
     project_name: str = Field(min_length=1, max_length=200, alias="projectName")
 
     @field_validator("project_name")

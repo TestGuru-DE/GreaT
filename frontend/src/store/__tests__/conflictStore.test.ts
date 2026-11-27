@@ -1,5 +1,5 @@
-﻿// REQ-4022: Tests fuer conflictStore
-import { describe, it, expect, vi, beforeEach } from "vitest";
+// REQ-4022: Tests fuer conflictStore
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { useConflictStore } from "../conflictStore";
 

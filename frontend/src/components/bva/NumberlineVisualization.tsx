@@ -1,10 +1,10 @@
-﻿// REQ-3041, REQ-4015: NumberlineVisualization – SVG-Zahlenstrahl mit Markierungen und Fehlerwert-Kennzeichnung
+// REQ-3041, REQ-4015: NumberlineVisualization – SVG-Zahlenstrahl mit Markierungen und Fehlerwert-Kennzeichnung
 import { useTranslation } from "react-i18next";
-import type { BVAPoint } from "../../lib/bva-calc";
+import type { MultiRangeBVAPoint } from "../../lib/bva-calc";
 import Decimal from "decimal.js";
 
 interface NumberlineVisualizationProps {
-  points: BVAPoint[];
+  points: MultiRangeBVAPoint[];
   useSymbolicSpacing?: boolean;  // REQ-4015: Symbolische Abstände statt maßstabsgetreu
 }
 
@@ -61,7 +61,7 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
 
       {/* Marker fuer jeden Punkt */}
       {points.map((pt, idx) => {
-        const isError = (pt as any).isError;
+        const isError = pt.isError;
         const isBoundary = pt.type === "boundary";
         const x = getX(idx, pt.value);
         
@@ -114,7 +114,7 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
             >
               {pt.label}
             </text>
-            {(pt as any).sourceRange && (
+            {pt.sourceRange && (
               <text
                 x={x}
                 y={lineY + 58}
@@ -122,7 +122,7 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
                 fontSize="9"
                 fill="#94a3b8"
               >
-                {(pt as any).sourceRange}
+                {pt.sourceRange}
               </text>
             )}
           </g>

@@ -264,3 +264,19 @@ def get_depth(ast: dict) -> int:
         return (get_depth(arg) + 1) if isinstance(arg, dict) else 0
 
     return 0
+
+
+def expression_depth(expr) -> int:
+    """Verschachtelungstiefe wie in validate_expression gezaehlt (Blatt = 0, je and/or/not +1).
+
+    Restbefund 9c: Grundlage fuer das Feld "depth" der Validierung; gueltig ist depth <= MAX_DEPTH.
+    """
+    if not isinstance(expr, dict):
+        return 0
+    op = expr.get("op")
+    if op in BOOLEAN_OPS:
+        args = [a for a in expr.get("args", []) if isinstance(a, dict)]
+        return 1 + max((expression_depth(a) for a in args), default=0)
+    if op == "not":
+        return 1 + expression_depth(expr.get("arg"))
+    return 0

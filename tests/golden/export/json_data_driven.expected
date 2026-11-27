@@ -2,6 +2,7 @@
   {
     "id": "TC_1",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "Windows",
     "Eingabe": "mit|Pipe",
@@ -10,6 +11,7 @@
   {
     "id": "TC_2",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "Windows",
     "Eingabe": "mit\"Quote",
@@ -18,6 +20,7 @@
   {
     "id": "TC_3",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "Windows",
     "Eingabe": "Normal",
@@ -26,6 +29,7 @@
   {
     "id": "TC_4",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "macOS",
     "Eingabe": "mit|Pipe",
@@ -34,6 +38,7 @@
   {
     "id": "TC_5",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "macOS",
     "Eingabe": "mit\"Quote",
@@ -42,6 +47,7 @@
   {
     "id": "TC_6",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Chrome",
     "OS": "macOS",
     "Eingabe": "Normal",
@@ -50,6 +56,7 @@
   {
     "id": "TC_7",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "Windows",
     "Eingabe": "mit|Pipe",
@@ -58,6 +65,7 @@
   {
     "id": "TC_8",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "Windows",
     "Eingabe": "mit\"Quote",
@@ -66,6 +74,7 @@
   {
     "id": "TC_9",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "Windows",
     "Eingabe": "Normal",
@@ -74,6 +83,7 @@
   {
     "id": "TC_10",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "macOS",
     "Eingabe": "mit|Pipe",
@@ -82,6 +92,7 @@
   {
     "id": "TC_11",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "macOS",
     "Eingabe": "mit\"Quote",
@@ -90,6 +101,7 @@
   {
     "id": "TC_12",
     "has_error_value": false,
+    "origin": "generated",
     "Browser": "Firefox",
     "OS": "macOS",
     "Eingabe": "Normal",

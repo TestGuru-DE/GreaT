@@ -20,4 +20,9 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
+  {
+    // Tests: Mocks duerfen untypisiert sein
+    files: ["**/__tests__/**/*.{ts,tsx}", "**/*.test.{ts,tsx}", "src/test-setup.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "off" },
+  },
 );

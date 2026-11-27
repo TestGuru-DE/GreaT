@@ -1,4 +1,4 @@
-﻿// REQ-4001: Tests fuer ProtectedRoute
+// REQ-4001: Tests fuer ProtectedRoute
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
@@ -135,11 +135,8 @@ describe("ProtectedRoute - REQ-4001", () => {
   });
 
   it("nutzt Theme-Tokens fuer Loading-State", () => {
-    // Deferred-Pattern
-    let resolveLoadUser: () => void;
-    const loadUserPromise = new Promise<void>((resolve) => {
-      resolveLoadUser = resolve;
-    });
+    // Deferred-Pattern: das Laden bleibt offen, damit der Loading-State sichtbar ist
+    const loadUserPromise = new Promise<void>(() => {});
 
     vi.mocked(useAuthStore).mockImplementation((selector) => {
       const state = {

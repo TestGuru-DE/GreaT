@@ -53,7 +53,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
   const effectiveProjectId = projectId ?? 1;
   // REQ-5002/REQ-5003: Ursachen und Wirkungen des Projekts beim Oeffnen laden
   useEffect(() => {
-    const store = (useDecisionTableStore as any).getState?.();
+    const store = useDecisionTableStore.getState?.() as { loadCategories?: (projectId: number) => Promise<void> } | undefined;
     void store?.loadCategories?.(effectiveProjectId);
   }, [effectiveProjectId]);
 

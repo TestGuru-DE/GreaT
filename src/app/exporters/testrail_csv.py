@@ -10,7 +10,7 @@ from __future__ import annotations
 import csv
 import io
 
-from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_title
+from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_tags, testcase_title
 
 
 class TestRailCsvExporter(BaseExporter):
@@ -23,7 +23,7 @@ class TestRailCsvExporter(BaseExporter):
     def render(self, generation_view: dict, options: dict) -> bytes:
         output = io.StringIO(newline="")
         writer = csv.writer(output, delimiter=";", lineterminator="\r\n", quoting=csv.QUOTE_ALL)
-        writer.writerow(["Title", "Preconditions", "Steps", "Expected Result"])
+        writer.writerow(["Title", "Preconditions", "Steps", "Expected Result", "Error Value", "Origin"])
 
         categories = generation_view.get("categories", [])
         result_categories = generation_view.get("result_categories", [])
@@ -40,6 +40,9 @@ class TestRailCsvExporter(BaseExporter):
                 "",
                 protect_formula(steps),
                 protect_formula(expected_result(tc, result_categories)),
+                # Restbefund 9b: Fehlerwert und Herkunft (als benutzerdefinierte Felder importierbar)
+                "Yes" if tc.get("has_error_value") else "No",
+                tc.get("origin") or "generated",
             ])
 
         return output.getvalue().encode("utf-8")

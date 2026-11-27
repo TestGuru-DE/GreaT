@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setTheme, getTheme } from '../theme'
 
 describe('Dark Theme', () => {
@@ -7,7 +7,7 @@ describe('Dark Theme', () => {
     document.documentElement.className = ''
     
     // REQ-3062: Mock matchMedia for system theme
-    window.matchMedia = vi.fn().mockImplementation(query => ({
+    window.matchMedia = vi.fn().mockImplementation(__query => ({
       matches: false,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),

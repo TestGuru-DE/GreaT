@@ -86,7 +86,12 @@ async def import_model_new_project(
             detail=f"Datei zu gross. Maximum: {MAX_UPLOAD_BYTES // (1024 * 1024)} MB.",
         )
 
-    content = body.decode("utf-8")
+    try:
+        content = body.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Restbefund 9b: falsche Zeichenkodierung ist ein Eingabefehler, kein Serverfehler
+        raise HTTPException(status_code=400, detail={
+            "code": "model_not_utf8", "detail": "Die Modelldatei muss UTF-8-kodiert sein"})
 
     # Format ermitteln (aus Content-Type Header oder Query-Param)
     req_content_type = request.headers.get("content-type", content_type)

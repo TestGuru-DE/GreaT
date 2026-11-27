@@ -1,4 +1,4 @@
-﻿// REQ-4023: Projekt-Mitgliederverwaltung
+// REQ-4023: Projekt-Mitgliederverwaltung
 // Teil von EPIC-18 (Multi-User) / Sprint 13
 //
 // Ermoglicht dem Projekt-Owner/Admin, Team-Mitglieder
@@ -23,6 +23,8 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
 
   useEffect(() => {
     loadMembers();
+    // loadMembers liest nur projectId; neu laden genau bei Projektwechsel
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   async function loadMembers() {

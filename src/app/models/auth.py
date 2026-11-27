@@ -6,7 +6,7 @@ REQ-6012: API-Tokens fuer CI und Testwerkzeuge
 """
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, LargeBinary
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from ..database import Base
 import argon2

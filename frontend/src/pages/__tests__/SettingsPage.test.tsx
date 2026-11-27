@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from '../SettingsPage';
@@ -42,13 +42,9 @@ vi.mock("react-i18next", () => ({
         "settings.dataclasses.importBtn": "Importieren",
         "settings.dataclasses.importSuccess": "OK Import abgeschlossen ({{count}} Knoten)",
         "settings.dataclasses.importError": "Fehler: {{message}}",
-        "portSettings.title": "Port-Einstellung",
-        "portSettings.label": "Bevorzugter Port",
-        "portSettings.description": "Standard ist <strong>8000</strong>. <strong>5173</strong> bleibt nur die Dev-Option. Nach einer Aenderung muss der Server neu gestartet werden.",
-        "portSettings.currentUrl": "Aktuelle lokale URL:",
-        "portSettings.save": "Speichern",
-        "portSettings.error": "Bitte einen Port zwischen 1 und 65535 eingeben.",
-        "portSettings.success": "Port {{port}} gespeichert. Neustart erforderlich.",
+        "portInfo.title": "Server-Port",
+        "portInfo.text": "Die Oberfläche läuft auf Port {{port}}. Den Port legst du beim Start fest: Umgebungsvariable GREAT_PORT vor Start.bat oder Start.sh setzen und den Server neu starten.",
+        "portInfo.example": "set GREAT_PORT=9000 && Start.bat",
         "maxTestCases.title": "Maximale Anzahl Testfälle",
         "maxTestCases.label": "Obergrenze pro Generierung",
         "maxTestCases.description": "Standard ist <strong>{{default}}</strong>. Verhindert, dass eine Generierung unbegrenzt viele Testfälle erzeugt.",
@@ -99,11 +95,13 @@ beforeEach(() => {
 });
 
 describe('SettingsPage', () => {
-  it('renders the port settings block', () => {
+  // B-49: Kein Eingabefeld mehr (wirkte nur im Browser), sondern Hinweis auf GREAT_PORT
+  it('shows the server port hint instead of a port input', () => {
     render(<SettingsPage />);
 
-    expect(screen.getByText(/Port-Einstellung/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Bevorzugter Port/i)).toBeInTheDocument();
+    expect(screen.getByText(/Server-Port/i)).toBeInTheDocument();
+    expect(screen.getByText(/GREAT_PORT=9000/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Bevorzugter Port/i)).not.toBeInTheDocument();
   });
 
   it('does not render mojibake artifacts anywhere on the page', () => {

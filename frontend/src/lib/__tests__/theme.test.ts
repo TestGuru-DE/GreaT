@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { getTheme, setTheme, THEMES, getEffectiveTheme, setupSystemThemeSync } from '../theme'
 
 describe('Theme System', () => {
@@ -108,7 +108,7 @@ describe('System Theme', () => {
 
   it('getEffectiveTheme returns light when OS prefers light', () => {
     // Mock matchMedia to return light preference
-    window.matchMedia = vi.fn().mockImplementation(query => ({
+    window.matchMedia = vi.fn().mockImplementation(__query => ({
       matches: false,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),

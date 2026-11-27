@@ -10,7 +10,7 @@ from __future__ import annotations
 import csv
 import io
 
-from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_title
+from .base import BaseExporter, expected_result, protect_formula, sorted_testcases, testcase_tags, testcase_title
 
 
 class XrayCsvExporter(BaseExporter):
@@ -25,7 +25,7 @@ class XrayCsvExporter(BaseExporter):
         writer = csv.writer(output, delimiter=";", lineterminator="\r\n", quoting=csv.QUOTE_ALL)
         writer.writerow([
             "Test Case Identifier", "Summary", "Action", "Data",
-            "Expected Result", "Preconditions", "Test Type",
+            "Expected Result", "Preconditions", "Test Type", "Labels",
         ])
 
         categories = generation_view.get("categories", [])
@@ -45,6 +45,7 @@ class XrayCsvExporter(BaseExporter):
                 protect_formula(expected_result(tc, result_categories)),
                 "",  # Preconditions
                 "Manual",
+                " ".join(testcase_tags(tc)),  # Restbefund 9b: Fehlerwert/Herkunft als Jira-Labels
             ])
 
         return output.getvalue().encode("utf-8")

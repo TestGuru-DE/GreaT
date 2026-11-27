@@ -174,7 +174,17 @@ def _authenticate_with_api_token(
 
 
 def _is_api_token_blocked_path(path: str) -> bool:
-    """REQ-6012: Check if path is blocked for API tokens."""
+    """REQ-6012: Check if path is blocked for API tokens.
+
+    Die Sperre gilt gleich fuer /api/... und den Alias /api/v1/...
+    """
+    paths = {path}
+    if path.startswith("/api/v1/"):
+        paths.add("/api/" + path[len("/api/v1/"):])
+    return any(_matches_blocked(p) for p in paths)
+
+
+def _matches_blocked(path: str) -> bool:
     for blocked in BLOCKED_API_TOKEN_PATHS:
         if path == blocked or path.startswith(blocked + "/") or path.startswith(blocked + "?"):
             return True

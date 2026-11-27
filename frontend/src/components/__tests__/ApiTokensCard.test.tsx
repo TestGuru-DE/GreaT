@@ -35,7 +35,7 @@ vi.mock("../../api/apiTokensApi", () => ({
 
 // Mock ApiTokenCreateDialog
 vi.mock("../ApiTokenCreateDialog", () => ({
-  default: function MockApiTokenCreateDialog({ open, onClose, onCreated }: any) {
+  default: function MockApiTokenCreateDialog({ open, onClose }: any) {
     if (!open) return null;
     return (
       <div data-testid="token-create-dialog">

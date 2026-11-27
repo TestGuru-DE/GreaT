@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List
 
+from pydantic import ValidationError as PydanticValidationError
+
 from .models import GreatModel
 
 # Hoechste unterstuetzte Schema-Version
@@ -97,6 +99,12 @@ def validate_model(data: Dict[str, Any]) -> List[ValidationError]:
     # 4. Pydantic-Validierung (fuer Typen und Struktur)
     try:
         model = GreatModel(**data)
+    except PydanticValidationError as e:
+        # Restbefund 9b: Pfad mit Index statt nur "$"
+        for err in e.errors():
+            loc = "".join(f"[{part}]" if isinstance(part, int) else f".{part}" for part in err["loc"])
+            errors.append(ValidationError(path="$" + loc, message=err["msg"]))
+        return errors
     except Exception as e:
         errors.append(ValidationError(
             path="$",
@@ -107,22 +115,22 @@ def validate_model(data: Dict[str, Any]) -> List[ValidationError]:
     # 5. Eindeutigkeit der Kategorienamen (BUG A-13: ohne Gross-/Kleinschreibung,
     #    sonst schlaegt das Generieren spaeter mit 409 fehl)
     seen: set[str] = set()
-    for name in (c.name for c in model.categories):
+    for idx, name in enumerate(c.name for c in model.categories):
         if name.casefold() in seen:
             errors.append(ValidationError(
-                path=f"$.categories[].name",
+                path=f"$.categories[{idx}].name",
                 message=f"Doppelter Kategoriename: '{name}'",
             ))
         seen.add(name.casefold())
 
     # 6. Eindeutigkeit der Werte pro Kategorie
-    for cat in model.categories:
+    for cat_idx, cat in enumerate(model.categories):
         value_names = [v.value for v in cat.values]
         seen_values: set[str] = set()
-        for val in value_names:
+        for val_idx, val in enumerate(value_names):
             if val in seen_values:
                 errors.append(ValidationError(
-                    path=f"$.categories[].name='{cat.name}'.values[].value",
+                    path=f"$.categories[{cat_idx}].values[{val_idx}].value",
                     message=f"Doppelter Wert '{val}' in Kategorie '{cat.name}'",
                 ))
             seen_values.add(val)

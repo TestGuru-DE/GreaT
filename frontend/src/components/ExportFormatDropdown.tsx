@@ -129,31 +129,6 @@ export default function ExportFormatDropdown({
     [isOpen, allFormats.length],
   );
 
-  const handleMenuKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLUListElement>) => {
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setFocusedIndex((prev) =>
-          prev === null ? 0 : Math.min(prev + 1, allFormats.length - 1),
-        );
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setFocusedIndex((prev) =>
-          prev === null ? allFormats.length - 1 : Math.max(prev - 1, 0),
-        );
-      } else if (e.key === "Enter" && focusedIndex !== null) {
-        e.preventDefault();
-        handleExport(allFormats[focusedIndex]);
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        setIsOpen(false);
-        setFocusedIndex(null);
-        buttonRef.current?.focus();
-      }
-    },
-    [focusedIndex, allFormats],
-  );
-
   const handleExport = useCallback(
     async (format: ExportFormat) => {
       setIsOpen(false);
@@ -182,6 +157,31 @@ export default function ExportFormatDropdown({
       }
     },
     [generationId, generationName, filenamePrefix],
+  );
+
+  const handleMenuKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLUListElement>) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setFocusedIndex((prev) =>
+          prev === null ? 0 : Math.min(prev + 1, allFormats.length - 1),
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setFocusedIndex((prev) =>
+          prev === null ? allFormats.length - 1 : Math.max(prev - 1, 0),
+        );
+      } else if (e.key === "Enter" && focusedIndex !== null) {
+        e.preventDefault();
+        handleExport(allFormats[focusedIndex]);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setIsOpen(false);
+        setFocusedIndex(null);
+        buttonRef.current?.focus();
+      }
+    },
+    [focusedIndex, allFormats, handleExport],
   );
 
   return (

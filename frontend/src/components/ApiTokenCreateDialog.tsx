@@ -63,7 +63,7 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
       if (ownerId !== '') req.user_id = ownerId; // BUG A-01
       const res = await createToken(req);
       setCreatedToken(res.token);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e)); // ApiError liefert lesbare Meldung
     } finally {
       setLoading(false);

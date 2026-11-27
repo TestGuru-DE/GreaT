@@ -41,3 +41,25 @@ def escape_spreadsheet_value(value: Any) -> Any:
         return f"'{value}"
 
     return value
+
+
+def concrete_value(value: Any) -> Any:
+    """REQ-6007 / Restbefund 9b-9c: Symbolische Langwerte (<STR len=N charset=X>) fuer
+    Testfall-Exporte in echte Zeichenketten aufloesen.
+
+    Deterministisch: Der Seed haengt nur vom Platzhalter ab, derselbe Wert ergibt in jedem
+    Export dieselbe Zeichenkette. Andere Werte bleiben unveraendert.
+    """
+    if not isinstance(value, str) or not value.startswith("<STR "):
+        return value
+    import zlib
+    from combinatorics.symbolic_values import concretize_symbolic, is_symbolic
+
+    if not is_symbolic(value):
+        return value
+    return concretize_symbolic(value, seed=zlib.crc32(value.encode("utf-8")))
+
+
+def concrete_assignments(assignments: dict) -> dict:
+    """Alle Werte einer Belegung mit concrete_value aufloesen."""
+    return {k: concrete_value(v) for k, v in assignments.items()}

@@ -92,15 +92,16 @@ def login(
     if not user or not user.check_password(form_data.password):
         raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
 
+    # Deaktivierte Konten zuerst abweisen: sonst verriete die Antwort die Rolle api_user
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
+
     # REQ-6012: api_user kann sich nicht per Cookie/Login anmelden (nur per API-Token)
     if user.role == "api_user":
         raise HTTPException(
             status_code=403,
             detail="api_user kann sich nicht per Oberflaeche anmelden. Verwende ein API-Token.",
         )
-
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Konto ist deaktiviert")
 
     # B-08: Reset rate-limiter nach erfolgreichem Login
     login_rate_limiter.is_rate_limited(key, is_failure=False)

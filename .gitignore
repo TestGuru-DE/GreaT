@@ -68,7 +68,9 @@ frontend/.playwright/
 
 # Lokale Agent-/Copilot-Customizations (NUR lokal, NIEMALS ins oeffentliche Repo pushen!)
 # WICHTIG: Dateien bleiben auf der Festplatte erhalten, werden nur nicht getrackt.
-.github/
+# Ausnahme (N-05): CI-Workflows unter .github/workflows/ werden versioniert
+.github/*
+!.github/workflows/
 .vscode/
 userstorys und basisinfos/SYSTEM_v1.0.md
 userstorys und basisinfos/PROJECT_ASSESSMENT_CHECKLIST_v1.0.md

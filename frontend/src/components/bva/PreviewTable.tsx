@@ -1,9 +1,9 @@
 // REQ-3041, REQ-4015: PreviewTable – Live-Vorschau der zu erzeugenden Werte mit is_error
 import { useTranslation } from "react-i18next";
-import type { BVAPoint } from "../../lib/bva-calc";
+import type { MultiRangeBVAPoint } from "../../lib/bva-calc";
 
 interface PreviewTableProps {
-  points: BVAPoint[];
+  points: MultiRangeBVAPoint[];
   markAsErrorCase?: boolean;
 }
 
@@ -31,7 +31,7 @@ export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
         <tbody>
           {points.map((pt, idx) => {
             // REQ-4015: Prüfe ob is_error Feld vorhanden (MultiRangeBVAPoint)
-            const isError = (pt as any).isError;
+            const isError = pt.isError;
             const statusLabel = isError === true ? "Fehlerfall" : 
                                markAsErrorCase ? "Fehlerfall" :
                                "Erlaubt";
@@ -50,7 +50,7 @@ export function PreviewTable({ points, markAsErrorCase }: PreviewTableProps) {
                 </td>
                 <td className="px-3 py-2 text-theme-text-secondary">{pt.label}</td>
                 <td className="px-3 py-2 text-theme-text-secondary text-xs">
-                  {(pt as any).sourceRange ?? ""}
+                  {pt.sourceRange ?? ""}
                 </td>
                 <td className="px-3 py-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusBg}`}>

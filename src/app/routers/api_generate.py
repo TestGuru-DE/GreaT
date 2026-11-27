@@ -16,7 +16,7 @@ from ..auth_deps import require_api_capable, require_writer, require_scope
 from ..api_types import DbId
 from .. import models, schemas
 from ..config import get_max_testcases, get_max_combinations, get_generation_timeout, get_max_tuples  # REQ-4018: konfigurierbare Obergrenze
-from ..export_utils import escape_spreadsheet_value  # B-05: Formel-Injection verhindern
+from ..export_utils import concrete_assignments, concrete_value, escape_spreadsheet_value  # B-05, REQ-6007
 from combinatorics.utils import compute_cartesian_size
 from ..services import (
     load_categories_values,
@@ -114,6 +114,25 @@ def build_rule_engine_with_report(db: Session, pid: int) -> tuple[RuleEngine, li
     return RuleEngine(engine_rules), skipped
 
 
+def _export_lang(default: str):
+    """Exportsprache: ?lang=de|en, sonst Accept-Language (Sprache der Oberflaeche), sonst default.
+
+    Restbefund 9b: Exportspalten erschienen bisher immer deutsch, weil die Oberflaeche
+    fuer CSV/XLSX/JSON kein lang mitschickt.
+    """
+    def dependency(
+        request: Request,
+        lang: Optional[str] = Query(None, description="Sprache (de/en); ohne Angabe gilt Accept-Language"),
+    ) -> str:
+        if lang in ("de", "en"):
+            return lang
+        if request.headers.get("accept-language"):
+            from ..i18n.server_messages import detect_language
+            return detect_language(request.headers.get("accept-language"))
+        return default
+    return dependency
+
+
 class TestcaseCheckRequest(schemas.BaseModel):
     """REQ-6006 / BUG C-19: (Teil-)Belegung {Kategorie: Wert}."""
     assignment: dict
@@ -189,7 +208,7 @@ def generate(
     db: Session = Depends(get_db),
     export: Optional[str] = Query(None, description="REQ-6012: Ergebnis direkt in diesem Exportformat liefern"),
     persist: bool = Query(True, description="REQ-6012: false = Generierung nicht dauerhaft speichern (nur mit export)"),
-    lang: str = Query("de", description="Sprache (de/en) fuer den Export"),
+    lang: str = Depends(_export_lang("de")),
 ):
     import time as _time
 
@@ -516,7 +535,27 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
             "has_error_value": has_error,
             "risk_coverage": float(risk_coverage),
             "origin": tc.origin,  # REQ-6009
+            "filled_categories": [],
         })
+
+    # Restbefund 9c: Aufgefuellte Felder von Seeds kennzeichnen. Jeder Seed-Testfall wird dem
+    # ersten passenden Seed des Satzes zugeordnet; dessen leere Felder hat die Generierung belegt.
+    if gen.seed_set_id:
+        seed_cases = (
+            db.query(models.SeedCase)
+            .filter(models.SeedCase.seed_set_id == gen.seed_set_id)
+            .order_by(models.SeedCase.order_index, models.SeedCase.id)
+            .all()
+        )
+        open_seeds = [json.loads(sc.assignment_json or "{}") for sc in seed_cases]
+        for item in out:
+            if item["origin"] != "seed":
+                continue
+            for idx, seed in enumerate(open_seeds):
+                if all(v is None or item["assignments"].get(k) == v for k, v in seed.items()):
+                    item["filled_categories"] = [k for k, v in seed.items() if v is None]
+                    open_seeds.pop(idx)
+                    break
 
     # REQ-3051: Generierungsweite Risikoabdeckung berechnen
     category_risk_map = load_categories_values_weighted(db, gen.project_id)
@@ -627,7 +666,7 @@ def export_generation_csv(
     encoding: str = Query("utf-8-sig", description="z. B. utf-8-sig, utf-8, cp1252, iso-8859-1, utf-16le, utf-16be, utf-16"),
     excel: bool = Query(True, description="Wenn True: erste Zeile 'sep=;' für Excel"),
     bom: Optional[bool] = Query(None, description="BOM explizit setzen/entfernen; Standard je nach Encoding"),
-    lang: str = Query("de", description="Sprache (de/en) fuer Spaltenkoepfe"),
+    lang: str = Depends(_export_lang("de")),
     db: Session = Depends(get_db),
 ):
     gen = db.get(models.Generation, gen_id)
@@ -686,7 +725,7 @@ def export_generation_csv(
 
     for tc in tcs:
         a = assignment_from_testcase(db, tc.id)
-        row = [escape_spreadsheet_value(a.get(h, "")) for h in cat_headers]  # B-05
+        row = [escape_spreadsheet_value(concrete_value(a.get(h, ""))) for h in cat_headers]  # B-05, REQ-6007
         row += [tc.id, gen.id, gen.strategy]
         if include_status:
             row.append(status_for_assignment(gen.project_id, a, db))
@@ -746,7 +785,7 @@ def export_generation_csv(
 @router.get("/generations/{gen_id}/export/json")
 def export_generation_json(
     gen_id: DbId,
-    lang: str = Query("de", description="Sprache (de/en), fuer Zukunftserweiterungen"),
+    lang: str = Depends(_export_lang("de")),
     db: Session = Depends(get_db),
 ):
     """Exportiert alle Testfälle einer Generation als strukturiertes JSON.
@@ -796,7 +835,7 @@ def export_generation_json(
         has_error = any(val in error_values for val in assignments.values() if val)
         testcases_out.append({
             "name": tc.name,
-            "assignments": assignments,
+            "assignments": concrete_assignments(assignments),  # REQ-6007: symbolische Werte aufloesen
             "has_error_value": has_error,
         })
 
@@ -822,7 +861,7 @@ def export_generation_json(
 @router.get("/generations/{gen_id}/export/xlsx")
 def export_generation_xlsx(
     gen_id: DbId,
-    lang: str = Query("de", description="Sprache (de/en) fuer Spaltenkoepfe"),
+    lang: str = Depends(_export_lang("de")),
     db: Session = Depends(get_db),
 ):
     """Exportiert alle Testfälle einer Generation als Excel-Datei (.xlsx).
@@ -904,7 +943,7 @@ def export_generation_xlsx(
             elif cat_name is None:
                 cat_name = f"cat#{v.category_id}"
             assignments[cat_name] = v.value
-        row_data = [assignments.get(h, "") for h in cat_headers]
+        row_data = [concrete_value(assignments.get(h, "")) for h in cat_headers]  # REQ-6007
         row_data += [tc.id, gen.id, gen.strategy]
         # REQ-3063: Fehlerwert markieren
         has_error = any(val in error_values for val in assignments.values() if val)
@@ -943,7 +982,7 @@ from ..exporters import get_exporter
 def export_generation_format(
     gen_id: DbId,
     format: str,
-    lang: str = Query("en", description="Sprache (de/en) fuer Gherkin"),
+    lang: str = Depends(_export_lang("en")),
     deterministic: bool = Query(False, description="Deterministischer Export (fixes Datum)"),
     values: str | None = Query(None, description="Komma-separierte TC-Namen (Teilmengen-Auswahl)"),
     db: Session = Depends(get_db),
@@ -1032,8 +1071,9 @@ def export_generation_format(
         testcases_out.append({
             "id": tc.id,
             "name": tc.name,
-            "assignments": assignments,
+            "assignments": concrete_assignments(assignments),  # REQ-6007: symbolische Werte aufloesen
             "has_error_value": has_error,
+            "origin": tc.origin,  # REQ-6009 / Restbefund 9b: Herkunft im Export
         })
 
     generation_view = {

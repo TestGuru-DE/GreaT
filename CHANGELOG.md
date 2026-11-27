@@ -50,6 +50,18 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Komfort-Endpunkt `generate?export=...&persist=...` (A-09):** Mit `export` (csv, json, xlsx oder ein Format aus REQ-6011) kommt das Ergebnis direkt im Exportformat; mit `persist=false` wird nichts gespeichert. Unbekanntes Format: 422 `invalid_export_format`; `persist=false` ohne `export`: 422 `persist_requires_export`; per Token ist zusaetzlich der Scope `export` noetig.
 - **Modell-Import prueft Referenzen und Schluessel (A-13):** Constraints mit unbekannten Kategorien/Werten (oder Zahlen-IDs) werden als ungueltig importiert und in `warnings` gemeldet; Kategorienamen, die sich nur in Gross-/Kleinschreibung unterscheiden, und unbekannte Schluessel (z. B. `categoriez`) werden abgelehnt; `PUT .../model` auf den Namen eines anderen Projekts liefert 409 `project_name_exists`. Seed-Saetze sind jetzt Teil der Modelldatei (`seedSets`).
 
+### 🔧 Restbefunde
+- **Zugriffslog ohne Geheimnisse (N-06):** Werte von `password`, `token` u. ae. in der URL werden im Log geschwaerzt.
+- **Login:** Ein deaktiviertes Konto erhaelt "Konto ist deaktiviert", ohne die Rolle `api_user` zu verraten.
+- **`/api/v1` fuer alle Pfade:** Auch Sicherung, Entscheidungstabelle, Freigaben, Seed-Saetze, Lueckenschluss und Benutzerverwaltung sind unter `/api/v1/...` erreichbar; die Sperre fuer API-Tokens gilt fuer beide Pfade.
+- **Modelldatei:** `schemaVersion` ist Pflicht und muss eine Zahl sein; nicht UTF-8-kodierte Dateien ergeben 400 statt 500; Fehlermeldungen nennen den Pfad mit Index (`$.categories[2].name`). Neues Beispiel `examples/portoberechnung.great.yaml`.
+- **Exporte:** Xray, TestRail und Azure DevOps enthalten Fehlerwert und Herkunft; JSON "data-driven" enthaelt `origin`, eine Kategorie namens `id` ueberschreibt die Testfall-ID nicht mehr; Spaltenkoepfe folgen der Sprache der Oberflaeche; symbolische Langwerte (`<STR len=...>`) werden beim Export aufgeloest.
+- **Constraints:** `/validate` meldet die Tiefe so, wie sie geprueft wird (gueltig bis 5).
+- **Seeds:** Der CSV-Import lehnt einen vorhandenen Satznamen ab (409); von der Generierung aufgefuellte Seed-Felder sind in der Testfalltabelle kursiv markiert (API: `filled_categories`).
+- **Grenzwertanalyse (C-13, C-14):** `/bva/ranges` lehnt `type` ungleich `number` ab; abweichende Bereichstypen und unbekannte Optionen werden mit 4xx gemeldet statt ignoriert.
+- **Einstellungen (B-49):** Die Karte "Bevorzugter Port" ist entfernt, sie wirkte nur im Browser. Stattdessen Hinweis auf `GREAT_PORT` beim Start.
+- **Repository:** CI-Workflow fuer Backend- und Frontend-Tests (`.github/workflows/`), `.env.example` mit allen Umgebungsvariablen, aktueller Kommentar in `requirements.txt`, doppelte Typdefinitionen entfernt, ESLint ohne Warnungen.
+
 ### 🎨 Oberflaeche
 - **Neues Design im Apple-Stil:** Linke Seitenleiste mit Suche (Strg+K), Abschnitten und farbigen Icon-Kacheln (einklappbar), grosse Seitentitel, Karten mit sichtbarem Rand, Segment-Reiter, gefuellte Eingabefelder, einheitliche Knoepfe, Hinweisbanner und Toasts mit Statussymbol; Linien-Icons statt Emojis.
 - **Themes:** "Normal" ist jetzt Graphit (dunkel), neu waehlbar ist "Hell"; "Dunkel" ist tiefschwarz; Steampunk, Regenbogen und Heavy Metal bleiben. Theme-Auswahl mit Farbvorschau.
@@ -61,7 +73,9 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - Doppelte Handbuchkopie `documentation/handbuch.md` entfernt (massgeblich: `frontend/src/docs/handbuch.md`), ungenutztes Modul `frontend/src/lib/bva-extended.ts` und eine alte Fehlerantwort `release-response.json` entfernt.
 
 ### ⚠️ Hinweise fuer API-Nutzer
-- Modelldateien mit unbekannten Schluesseln werden abgelehnt (400) statt still ignoriert.
+- Modelldateien mit unbekannten Schluesseln werden abgelehnt (400) statt still ignoriert; `schemaVersion` ist Pflicht (Zahl).
+- Exporte: neue Spalten `Labels` (Xray), `Error Value`/`Origin` (TestRail), `Tags` (Azure DevOps), Feld `origin` (JSON data-driven). CSV/XLSX/JSON-Spalten folgen ohne `lang` dem Header `Accept-Language`.
+- `/bva/ranges` mit `type` ungleich `number` liefert 422; `/bva/extended` lehnt unbekannte Optionen mit 400 `bva_unknown_option` ab.
 - Tokens brauchen jetzt fuer jeden Endpunkt den passenden Scope, z. B. `projects:read` zusaetzlich zu `export`, um Projekte und Generierungen aufzulisten.
 - `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
 - Exporte: Azure-DevOps-CSV nutzt Komma statt Semikolon; Xray-, TestRail- und Azure-CSV enthalten keine `#`-Kopfzeile mehr; Gherkin-, Robot- und pytest-Dateien sind anders aufgebaut (siehe oben).
