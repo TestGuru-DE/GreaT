@@ -21,6 +21,11 @@ MESSAGES: dict[str, Tuple[str, str]] = {
     "combine_rule_needs_target": ("Combine-Regel benötigt mindestens einen Zielwert",
                                   "Combine rule needs at least one target value"),
     "constraint_not_found": ("Constraint nicht gefunden", "Constraint not found"),
+    "invalid_export_format": ("Unbekanntes Exportformat", "Unknown export format"),
+    "persist_requires_export": ("persist=false ist nur zusammen mit export moeglich",
+                                "persist=false is only possible together with export"),
+    "insufficient_scope_export": ("API-Token hat nicht den erforderlichen Scope: export",
+                                  "The API token lacks the required scope: export"),
     "model_content_type": ("Content-Type muss 'text/yaml' oder 'application/json' sein",
                            "Content-Type must be 'text/yaml' or 'application/json'"),
     "constraint_reference_invalid": (

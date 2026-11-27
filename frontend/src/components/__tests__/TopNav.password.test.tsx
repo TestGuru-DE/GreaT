@@ -66,7 +66,7 @@ describe("TopNav - REQ-4028 Passwort aendern Navigation", () => {
         changePassword: vi.fn(),
         setLanguage: vi.fn(),
       };
-      // @ts-expect-error
+      // @ts-expect-error -- Teil-State im Mock
       return selector(state);
     });
   });

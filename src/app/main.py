@@ -104,6 +104,18 @@ def custom_openapi():
             "description": "REQ-6012: API-Token fuer CI und Testwerkzeuge. Format: great_pat_<random>",
         }
     }
+    # BUG A-08: Jede /api-Operation verlangt Bearer-Token oder Sitzungs-Cookie,
+    # damit "Authorize" in Swagger UI tatsaechlich wirkt.
+    openapi_schema["components"]["securitySchemes"]["CookieAuth"] = {
+        "type": "apiKey", "in": "cookie", "name": "access_token",
+        "description": "Sitzungs-Cookie nach Anmeldung in der Oberflaeche",
+    }
+    for path, operations in openapi_schema.get("paths", {}).items():
+        if not path.startswith("/api/"):
+            continue
+        for operation in operations.values():
+            if isinstance(operation, dict) and "responses" in operation:
+                operation.setdefault("security", [{"HTTPBearer": []}, {"CookieAuth": []}])
     app.openapi_schema = openapi_schema
     return openapi_schema
 

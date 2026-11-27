@@ -19,11 +19,6 @@ export default function UserManagement() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
 
-  // Nur fuer Admins sichtbar
-  if (!user || user.role !== "admin") {
-    return null;
-  }
-
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,9 +35,11 @@ export default function UserManagement() {
   const [newRole, setNewRole] = useState<Role>("viewer");
   const [changePasswordValue, setChangePasswordValue] = useState("");
 
+  const isAdmin = user?.role === "admin";
+
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (isAdmin) loadUsers();
+  }, [isAdmin]);
 
   async function loadUsers() {
     try {
@@ -138,6 +135,11 @@ export default function UserManagement() {
 
   function roleLabel(role: string): string {
     return t(`userManagement.roles.${role}`);
+  }
+
+  // Nur fuer Admins sichtbar (nach allen Hooks, Regeln der Hooks)
+  if (!isAdmin) {
+    return null;
   }
 
   return (

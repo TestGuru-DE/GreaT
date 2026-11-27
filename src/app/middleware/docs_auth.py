@@ -5,6 +5,8 @@ RISK-S-007: OpenAPI-Schema offenlegt interne API-Strukturen (Score 12, HIGH)
 
 Diese Middleware schuetzt /docs, /redoc und /openapi.json durch
 Authentifizierung und Rollenpruefung (admin/editor).
+BUG A-08 (REQ-6012): Zusaetzlich genuegt ein beliebiges gueltiges API-Token
+(`Authorization: Bearer great_pat_...`), damit Pipelines das Schema laden koennen.
 
 WICHTIG: In main.py muss diese Middleware ZULETZT hinzugefuegt werden,
 weil Starlette-Middleware LIFO (Last-In-First-Out) ausgefuehrt wird.
@@ -17,7 +19,7 @@ from starlette.responses import RedirectResponse, JSONResponse, Response
 from starlette.status import HTTP_403_FORBIDDEN, HTTP_302_FOUND
 
 from ..database import SessionLocal
-from ..auth_deps import _validate_token_and_load_user
+from ..auth_deps import _extract_bearer_token, _validate_token_and_load_user
 from ..models.auth import User
 
 
@@ -40,6 +42,24 @@ def _get_user_from_token(token: str, db) -> User | None:
     """
     user, _ = _validate_token_and_load_user(token, db)
     return user
+
+
+def _has_valid_api_token(request: Request, db) -> bool:
+    """BUG A-08: Gueltiges, aktives API-Token im Authorization-Header?"""
+    from ..api_token_service import verify_api_token
+    from ..rate_limiter import token_failure_rate_limiter
+
+    raw = _extract_bearer_token(request)
+    if not raw:
+        return False
+    client_ip = request.client.host if request.client else "unknown"
+    if token_failure_rate_limiter.peek(client_ip)[0]:
+        return False
+    result = verify_api_token(db, raw)
+    if result is None:
+        token_failure_rate_limiter.is_rate_limited(client_ip)  # Fehlversuch zaehlen
+        return False
+    return result[2] == "ok"
 
 
 class DocsAuthMiddleware(BaseHTTPMiddleware):
@@ -67,11 +87,12 @@ class DocsAuthMiddleware(BaseHTTPMiddleware):
         db = SessionLocal()
         try:
             user = _get_user_from_token(token, db)
+            allowed = bool(user and user.role in ALLOWED_ROLES) or _has_valid_api_token(request, db)
         finally:
             db.close()
 
         # Not authenticated or wrong role
-        if not user or user.role not in ALLOWED_ROLES:
+        if not allowed:
             # Browser request? Redirect to login
             accept = request.headers.get("accept", "")
             if "text/html" in accept:

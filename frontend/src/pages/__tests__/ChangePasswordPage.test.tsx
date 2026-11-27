@@ -175,7 +175,7 @@ describe("ChangePasswordPage - REQ-4028", () => {
           mockSetPasswordChangeRequired(false);
         },
       };
-      // @ts-expect-error
+      // @ts-expect-error -- Teil-State im Mock
       return selector(state);
     });
 

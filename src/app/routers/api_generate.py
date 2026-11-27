@@ -8,7 +8,7 @@ import csv
 import json
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -185,15 +185,31 @@ def _timeout_error(timeout) -> HTTPException:
 def generate(
     pid: DbId,
     payload: schemas.GenerateRequest,
+    request: Request,
     db: Session = Depends(get_db),
-    export: Optional[str] = None,  # REQ-6012: Komfort-Endpunkt (csv/json)
-    persist: bool = True,          # REQ-6012: persist=false = keine dauerhafte Generierung
+    export: Optional[str] = Query(None, description="REQ-6012: Ergebnis direkt in diesem Exportformat liefern"),
+    persist: bool = Query(True, description="REQ-6012: false = Generierung nicht dauerhaft speichern (nur mit export)"),
+    lang: str = Query("de", description="Sprache (de/en) fuer den Export"),
 ):
     import time as _time
 
     project = db.get(models.Project, pid)
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+
+    # BUG A-09: Komfort-Endpunkt – Parameter vor der Generierung pruefen
+    if export is not None:
+        if export not in _GENERATE_EXPORT_FORMATS and get_exporter(export) is None:
+            raise HTTPException(status_code=422, detail={
+                "code": "invalid_export_format", "detail": "Unbekanntes Exportformat"})
+        api_auth = getattr(request.state, "api_token_auth", None)
+        if api_auth and not api_auth[1].has_scope("export"):
+            raise HTTPException(status_code=403, detail="API-Token hat nicht den erforderlichen Scope: export",
+                                headers={"X-Error-Code": "insufficient_scope"})
+    elif not persist:
+        raise HTTPException(status_code=422, detail={
+            "code": "persist_requires_export",
+            "detail": "persist=false ist nur zusammen mit export moeglich"})
 
     # limit Validation via Pydantic (ge=1, le=100000) – kein manueller Check mehr
 
@@ -396,6 +412,16 @@ def generate(
                     value=persisted_assignment[cat.name],
                 )
             )
+
+    if export is not None:
+        # BUG A-09: Export aus derselben Sitzung; bei persist=false wird alles verworfen.
+        db.flush()
+        response = _export_generation(db, gen.id, export, lang)
+        if persist:
+            db.commit()
+        else:
+            db.rollback()
+        return response
 
     db.commit()
 
@@ -1039,3 +1065,22 @@ def export_generation_format(
             "Content-Disposition": f'attachment; filename="generation_{gen.id}{exporter.file_extension}"',
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# BUG A-09: Komfort-Endpunkt generate?export=…&persist=…
+# ---------------------------------------------------------------------------
+
+_GENERATE_EXPORT_FORMATS = ("csv", "json", "xlsx")
+
+
+def _export_generation(db: Session, gen_id: int, fmt: str, lang: str):
+    """Liefert eine (ggf. noch nicht festgeschriebene) Generierung im Exportformat."""
+    if fmt == "csv":
+        return export_generation_csv(gen_id, include_status=False, encoding="utf-8-sig",
+                                     excel=True, bom=None, lang=lang, db=db)
+    if fmt == "json":
+        return export_generation_json(gen_id, lang=lang, db=db)
+    if fmt == "xlsx":
+        return export_generation_xlsx(gen_id, lang=lang, db=db)
+    return export_generation_format(gen_id, fmt, lang=lang, deterministic=False, values=None, db=db)

@@ -1170,6 +1170,7 @@ curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
 | Methode | Endpoint | Beschreibung | Rolle |
 |---------|----------|-------------|-------|
 | `POST` | `/projects/{pid}/generate` | Testfaelle generieren | Writer |
+| `POST` | `/projects/{pid}/generate?export=csv&persist=false` | Testfaelle direkt im Exportformat liefern (csv, json, xlsx oder ein Testmanagement-Format); `persist=false` speichert keine Generierung. Per Token zusaetzlich Scope `export` | Writer |
 | `GET` | `/projects/{pid}/generations` | Alle Generierungen eines Projekts | Alle |
 | `GET` | `/generations/{gid}/testcases` | Testfaelle einer Generierung | Alle |
 | `PATCH` | `/testcases/{tcid}/assignments` | Testfall-Assignments aendern | Writer |
@@ -1249,8 +1250,8 @@ curl -X POST http://localhost:8000/auth/refresh -b cookies.txt -c cookies.txt
 |---------|----------|-------------|-------|
 | `GET` | `/health` | Health-Check | — |
 | `GET` | `/strategies` | Verfuegbare Generierungsstrategien | — |
-| `GET` | `/docs` | OpenAPI-Dokumentation (Swagger) | Admin/Editor |
-| `GET` | `/redoc` | ReDoc-Dokumentation | Admin/Editor |
+| `GET` | `/docs` | OpenAPI-Dokumentation (Swagger) | Admin/Editor oder gueltiges API-Token |
+| `GET` | `/redoc` | ReDoc-Dokumentation | Admin/Editor oder gueltiges API-Token |
 
 ### 15.4 Rollen und Berechtigungen
 
@@ -1348,6 +1349,8 @@ Die vollstaendige OpenAPI-Spezifikation (Swagger) ist unter `http://localhost:80
 - Requests direkt im Browser testen
 - Request/Response-Schemas einsehen
 - Die OpenAPI-Spezifikation als JSON/YAML herunterladen (`/openapi.json`)
+
+Mit **Authorize** tragen Sie ein API-Token ein (`great_pat_...`); alle `/api`-Aufrufe aus der Swagger-Oberflaeche senden es dann als `Authorization: Bearer`. Auch `/openapi.json` laesst sich mit einem beliebigen gueltigen API-Token abrufen.
 
 > **Tipp fuer CI/CD:** Laden Sie `/openapi.json` herunter und verwenden Sie Tools wie `openapi-generator`, um Client-Bibliotheken in verschiedenen Programmiersprachen zu generieren.
 

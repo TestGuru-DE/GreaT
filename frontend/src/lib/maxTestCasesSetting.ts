@@ -1,5 +1,5 @@
 import { tr } from "./i18nText";
-﻿// REQ-4018: Maximale Anzahl Testfaelle als konfigurierbares Setting (Default 1000).
+// REQ-4018: Maximale Anzahl Testfaelle als konfigurierbares Setting (Default 1000).
 // Analog zum Port-Setting (PortSettingsCard) wird der Wert lokal im Browser
 // gespeichert. Anders als beim Port wirkt diese Einstellung sofort (kein
 // Server-Neustart noetig), da sie bei jeder Generierung als 'limit' an das

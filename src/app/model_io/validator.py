@@ -104,16 +104,16 @@ def validate_model(data: Dict[str, Any]) -> List[ValidationError]:
         ))
         return errors  # Kein weitergehender Check bei strukturellen Fehlern
 
-    # 5. Eindeutigkeit der Kategorienamen
-    category_names = [c.name for c in model.categories]
+    # 5. Eindeutigkeit der Kategorienamen (BUG A-13: ohne Gross-/Kleinschreibung,
+    #    sonst schlaegt das Generieren spaeter mit 409 fehl)
     seen: set[str] = set()
-    for name in category_names:
-        if name in seen:
+    for name in (c.name for c in model.categories):
+        if name.casefold() in seen:
             errors.append(ValidationError(
                 path=f"$.categories[].name",
                 message=f"Doppelter Kategoriename: '{name}'",
             ))
-        seen.add(name)
+        seen.add(name.casefold())
 
     # 6. Eindeutigkeit der Werte pro Kategorie
     for cat in model.categories:
@@ -162,4 +162,63 @@ def validate_model(data: Dict[str, Any]) -> List[ValidationError]:
                         message=f"Wert '{rule.then_value}' existiert nicht in Kategorie '{rule.then_category_name}'",
                     ))
 
+    # 8. BUG A-13: Referenzen in Seed-Saetzen (Constraints mit falschen Referenzen
+    #    werden nach REQ-6001 AK-10 nicht abgelehnt, sondern als ungueltig importiert)
+    values_by_cat = {c.name: {v.value for v in c.values} for c in model.categories}
+    for i, seed_set in enumerate(model.seed_sets):
+        for j, case in enumerate(seed_set.cases):
+            for cat_name, value in case.items():
+                path = f"$.seedSets[{i}].cases[{j}]"
+                if cat_name not in values_by_cat:
+                    errors.append(ValidationError(path, f"Kategorie '{cat_name}' existiert nicht"))
+                elif value is not None and value not in values_by_cat[cat_name]:
+                    errors.append(ValidationError(
+                        path, f"Wert '{value}' existiert nicht in Kategorie '{cat_name}'"))
+
+    return errors
+
+
+def constraint_reference_errors(expr: Any, values_by_cat: Dict[str, set], path: str) -> List[ValidationError]:
+    """BUG A-13: Jede Kategorie- und Wertreferenz eines Constraints muss im Modell existieren.
+
+    Referenzen erfolgen ueber Namen (`category_id`/`category_name` = Kategoriename,
+    `value_id`/`value_name`/`value_ids`/`value_names` = Wertname). Zahlen-IDs sind in
+    einer Modelldatei bedeutungslos und werden abgelehnt.
+    """
+    errors: List[ValidationError] = []
+    if isinstance(expr, list):
+        for k, item in enumerate(expr):
+            errors.extend(constraint_reference_errors(item, values_by_cat, f"{path}[{k}]"))
+        return errors
+    if not isinstance(expr, dict):
+        return errors
+
+    cat_ref = expr.get("category_id", expr.get("category_name"))
+    category = None
+    if cat_ref is not None:
+        if not isinstance(cat_ref, str):
+            errors.append(ValidationError(path, "Kategorien werden ueber ihren Namen referenziert, nicht ueber eine ID"))
+        elif cat_ref not in values_by_cat:
+            errors.append(ValidationError(path, f"Kategorie '{cat_ref}' existiert nicht"))
+        else:
+            category = cat_ref
+
+    value_refs: list = []
+    for key in ("value_id", "value_name"):
+        if key in expr:
+            value_refs.append(expr[key])
+    for key in ("value_ids", "value_names"):
+        if isinstance(expr.get(key), list):
+            value_refs.extend(expr[key])
+    for ref in value_refs:
+        if not isinstance(ref, str):
+            errors.append(ValidationError(path, "Werte werden ueber ihren Namen referenziert, nicht ueber eine ID"))
+        elif cat_ref is None:
+            errors.append(ValidationError(path, f"Wert '{ref}' ohne Kategorie"))
+        elif category is not None and ref not in values_by_cat[category]:
+            errors.append(ValidationError(path, f"Wert '{ref}' existiert nicht in Kategorie '{category}'"))
+
+    for key, child in expr.items():
+        if isinstance(child, (dict, list)) and key not in ("value_ids", "value_names"):
+            errors.extend(constraint_reference_errors(child, values_by_cat, f"{path}.{key}"))
     return errors

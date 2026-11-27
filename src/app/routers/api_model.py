@@ -19,6 +19,7 @@ from app.logging_config import get_logger
 from app.models.auth import User
 
 from app import model_io
+from app.model_io.applier import ProjectNameConflict
 
 router = APIRouter(prefix="/api/v1/projects", tags=["model-io"])
 log = get_logger(__name__)
@@ -108,6 +109,7 @@ async def import_model_new_project(
         "status": "ok",
         "projectId": project.id,
         "projectName": project.name,
+        "warnings": list(getattr(project, "import_warnings", None) or []),  # BUG A-13
     }
 
 
@@ -171,6 +173,11 @@ def update_project_model(
 
     try:
         updated = model_io.apply_model(db, project_id, data, "dict")
+    except ProjectNameConflict as e:
+        db.rollback()
+        raise HTTPException(status_code=409, detail={
+            "code": "project_name_exists",
+            "detail": f"Ein Projekt mit dem Namen '{e}' existiert bereits."})
     except ValueError as e:
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
@@ -183,4 +190,5 @@ def update_project_model(
         "status": "ok",
         "projectId": updated.id,
         "projectName": updated.name,
+        "warnings": list(getattr(updated, "import_warnings", None) or []),  # BUG A-13
     }

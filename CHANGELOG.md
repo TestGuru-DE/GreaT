@@ -46,8 +46,16 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Generierungsuebersicht meldet Fehler (B-47)** beim Laden, Loeschen und Umbenennen statt sie zu verschlucken.
 - **Lesbare Knoepfe in der Projektliste (B-34):** "Oeffnen" und "Loeschen" mit ausreichendem Kontrast.
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
+- **OpenAPI per API-Token (A-08):** `/openapi.json`, `/docs` und `/redoc` sind auch mit einem gueltigen API-Token (`Authorization: Bearer ...`) abrufbar; alle `/api`-Operationen deklarieren `security` (Bearer oder Sitzungs-Cookie), "Authorize" in Swagger UI wirkt.
+- **Komfort-Endpunkt `generate?export=...&persist=...` (A-09):** Mit `export` (csv, json, xlsx oder ein Format aus REQ-6011) kommt das Ergebnis direkt im Exportformat; mit `persist=false` wird nichts gespeichert. Unbekanntes Format: 422 `invalid_export_format`; `persist=false` ohne `export`: 422 `persist_requires_export`; per Token ist zusaetzlich der Scope `export` noetig.
+- **Modell-Import prueft Referenzen und Schluessel (A-13):** Constraints mit unbekannten Kategorien/Werten (oder Zahlen-IDs) werden als ungueltig importiert und in `warnings` gemeldet; Kategorienamen, die sich nur in Gross-/Kleinschreibung unterscheiden, und unbekannte Schluessel (z. B. `categoriez`) werden abgelehnt; `PUT .../model` auf den Namen eines anderen Projekts liefert 409 `project_name_exists`. Seed-Saetze sind jetzt Teil der Modelldatei (`seedSets`).
+
+### 🧹 Aufraeumen
+- Interne Arbeitsdokumente, Agentenkonfiguration und Planungsunterlagen aus dem Repository entfernt (R-07); Release-Notes zu v1.11.0 korrigiert (R-08).
+- Doppelte Handbuchkopie `documentation/handbuch.md` entfernt (massgeblich: `frontend/src/docs/handbuch.md`), ungenutztes Modul `frontend/src/lib/bva-extended.ts` und eine alte Fehlerantwort `release-response.json` entfernt.
 
 ### ⚠️ Hinweise fuer API-Nutzer
+- Modelldateien mit unbekannten Schluesseln werden abgelehnt (400) statt still ignoriert.
 - Tokens brauchen jetzt fuer jeden Endpunkt den passenden Scope, z. B. `projects:read` zusaetzlich zu `export`, um Projekte und Generierungen aufzulisten.
 - `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
 - Exporte: Azure-DevOps-CSV nutzt Komma statt Semikolon; Xray-, TestRail- und Azure-CSV enthalten keine `#`-Kopfzeile mehr; Gherkin-, Robot- und pytest-Dateien sind anders aufgebaut (siehe oben).
@@ -92,13 +100,18 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 
 ## [1.11.0] – 2026-11-23 – Methodik: Constraints, Coverage, Seeds, BVA, Klassifikationsbaum, Hierarchie
 
+> **Korrektur (R-08):** Diese Release-Notes meldeten Funktionen als fertig, die in v1.11.0 nicht nutzbar waren:
+> - **REQ-6008 Heatmap** und **REQ-6009 Seeds/Lueckenschluss:** Die Oberflaeche war nicht eingebunden (nur per API nutzbar). Eingebunden ab der naechsten Version, siehe [Unreleased] (K-09).
+> - **REQ-6016 Hierarchische Klassen:** Nur als Geruest vorhanden. Die Generierung wertet die Hierarchie nicht aus; "Verfeinern" legt eine flache Kategorie an. Die Funktion gilt als **nicht umgesetzt**.
+> - Die Zahlenangaben zu Tests beziehen sich auf den damaligen Stand und schliessen diese Gerueste ein.
+
 ### ✨ Neue Features
 - **REQ-6001**: **Logische Constraints** – ConstraintBuilder im Frontend, API CRUD+Validate, Live-Validierung, Edit-Fix fuer bestehende Constraints
-- **REQ-6008**: **Abdeckungsanzeige als Heatmap** – coverage.py erweitert, 3 API-Endpoints, CoverageHeatmap-Komponente, Okabe-Ito Farbschema, hierarchie-aware
-- **REQ-6009**: **Pflicht-Testfaelle (Seeds) + Lueckenschluss** – Backend: seed-Logik in combinatorics/, API-Endpunkte, 92 Tests; Frontend: Seed-Dialog, Lueckenschluss-UI, 62 Tests; Gesamt 154 Tests
+- **REQ-6008**: **Abdeckungsanzeige als Heatmap** (Oberflaeche erst ab [Unreleased] eingebunden) – coverage.py erweitert, 3 API-Endpoints, CoverageHeatmap-Komponente, Okabe-Ito Farbschema, hierarchie-aware
+- **REQ-6009**: **Pflicht-Testfaelle (Seeds) + Lueckenschluss** (Oberflaeche erst ab [Unreleased] eingebunden) – Backend: seed-Logik in combinatorics/, API-Endpunkte, 92 Tests; Frontend: Seed-Dialog, Lueckenschluss-UI, 62 Tests; Gesamt 154 Tests
 - **REQ-6007**: **Grenzwertanalyse fuer Datum, Uhrzeit, Stringlaenge** – BVA erweitert: 2/3/4-Punkt-Methode fuer alle Typen, symbolische Werte (>500 Zeichen), Unicode-Codepoints, API mit type-Feld, 98 Tests
 - **REQ-6006**: **Klassifikationsbaum-Ansicht** – SVG-Baum (Wurzel → Kategorien → Werte), Testfallmatrix darunter, Zoom (Strg+Mausrad/+/-/Einpassen), Bearbeiten (Doppelklick/F2, Entf, +Kategorie), Export SVG/PNG, 18 Tests
-- **REQ-6016**: **Hierarchische Klassen (Verfeinerung)** – HierarchyDescriptor, max 3 Ebenen, enforce_hierarchy() Post-Processing, DependencyRule + ForbiddenRule Constraints, RefineDialog im Klassifikationsbaum, 15 Tests
+- **REQ-6016**: **Hierarchische Klassen (Verfeinerung)** (nicht umgesetzt, nur Geruest) – HierarchyDescriptor, max 3 Ebenen, enforce_hierarchy() Post-Processing, DependencyRule + ForbiddenRule Constraints, RefineDialog im Klassifikationsbaum, 15 Tests
 
 ### 🔧 Technical
 - **Backend**: Neue Module `hierarchy.py`, `hierarchy_constraints.py`, `symbolic_values.py`; coverage.py erweitert; boundary_value.py erweitert (date/time/datetime/strlen)

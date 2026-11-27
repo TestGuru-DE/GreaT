@@ -25,7 +25,7 @@ class ModelValue(BaseModel):
     order_index: int = Field(default=0, ge=0, alias="orderIndex")
     is_default: bool = Field(default=False, alias="isDefault")
 
-    model_config = ConfigDict(frozen=False, populate_by_name=True)
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")  # BUG A-13
 
     @field_validator("vtype")
     @classmethod
@@ -48,7 +48,7 @@ class ModelCategory(BaseModel):
     category_type: str = Field(default="standard", alias="categoryType")
     values: List[ModelValue] = Field(default_factory=list)
 
-    model_config = ConfigDict(frozen=False, populate_by_name=True)
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")  # BUG A-13
 
     @field_validator("name")
     @classmethod
@@ -77,7 +77,7 @@ class ModelRule(BaseModel):
     then_value: str = Field(default="", alias="thenValue")
     then_values_json: Optional[str] = Field(default=None, alias="thenValuesJson")
 
-    model_config = ConfigDict(frozen=False, populate_by_name=True)
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")  # BUG A-13
 
     @field_validator("type")
     @classmethod
@@ -98,7 +98,7 @@ class ModelDecisionConstraint(BaseModel):
     targets: Dict[str, Any] = Field(default_factory=dict)
     description: Optional[str] = None
 
-    model_config = ConfigDict(frozen=False, populate_by_name=True)
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")  # BUG A-13
 
 
 # ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ class ModelConstraint(BaseModel):
     expression: Dict[str, Any] = Field(default_factory=dict, description="JSON-AST mit category_name/value_name")
     is_valid: bool = Field(default=True)
 
-    model_config = ConfigDict(frozen=False, populate_by_name=True)
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")  # BUG A-13
 
     @field_validator("kind")
     @classmethod
@@ -124,6 +124,19 @@ class ModelConstraint(BaseModel):
         if v not in ("forbid", "implies"):
             raise ValueError(f"kind must be 'forbid' or 'implies', got '{v}'")
         return v
+
+
+# ---------------------------------------------------------------------------
+# REQ-6009 / BUG A-13: Seed-Satz (Belegung ueber Kategorienamen)
+# ---------------------------------------------------------------------------
+
+class ModelSeedSet(BaseModel):
+    """Seed-Satz mit Pflicht-Testfaellen; je Fall {Kategorie: Wert oder null}."""
+
+    name: str = Field(min_length=1, max_length=300)
+    cases: List[Dict[str, Optional[str]]] = Field(default_factory=list)
+
+    model_config = ConfigDict(frozen=False, populate_by_name=True, extra="forbid")
 
 
 # ---------------------------------------------------------------------------
@@ -155,9 +168,13 @@ class GreatModel(BaseModel):
         alias="constraints",
     )
 
+    # REQ-6009 / BUG A-13: Seed-Saetze gehoeren zum Modell
+    seed_sets: List[ModelSeedSet] = Field(default_factory=list, alias="seedSets")
+
     model_config = ConfigDict(
         populate_by_name=True,
         frozen=False,
+        extra="forbid",  # BUG A-13: Tippfehler wie "categoriez" werden abgelehnt
     )
 
     @field_validator("schema_version")

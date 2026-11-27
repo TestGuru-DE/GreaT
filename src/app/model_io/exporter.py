@@ -139,8 +139,18 @@ def export_model(db: Session, project_id: int) -> GreatModel:
             is_valid=c.is_valid,
         ))
 
+    # BUG A-13 / REQ-6009: Seed-Saetze (Belegung ueber Kategorienamen)
+    import json as _json
+    from .models import ModelSeedSet
+    seed_sets = []
+    for seed_set in sorted(project.seed_sets, key=lambda s: (s.name, s.id)):
+        cases = [_json.loads(sc.assignment_json or "{}")
+                 for sc in sorted(seed_set.seed_cases, key=lambda c: (c.order_index, c.id))]
+        seed_sets.append(ModelSeedSet(name=seed_set.name, cases=cases))
+
     result = GreatModel(
         schema_version=1,
+        seed_sets=seed_sets,
         project_name=project.name,
         categories=categories,
         rules=rules,

@@ -41,7 +41,7 @@
 
 | ID | Vorschlag | Original-Quelle |
 |---|---|---|
-| V16 | Onboarding-Tour: Kurze geführte Einführung für Erstnutzer (Schritt-für-Schritt durch Projekt anlegen → Kategorien → Generieren) | UX Lead |
+| V16 | Onboarding-Tour: Kurze geführte Einführung für Erstnutzer (Schritt-für-Schritt durch Projekt anlegen → Kategorien → Generieren) | UX |
 
 ### Geparkte Requirements
 
@@ -85,3 +85,20 @@ Keine spezifischen Requirements derzeit – abhängig von UX-Evaluationsergebnis
 ---
 
 *Weitere geparkte Themen werden hier ergänzt.*
+## 🎨 Oberflaeche: modernes Design und lesbare Themes (aufgenommen 2026-11-27)
+
+**Entscheidung:** Die Oberflaeche soll ansprechender gestaltet werden. Umsetzung als eigener Themenblock nach dem Fehlerabbau.
+
+### Anforderungen
+
+- Alle Themes muessen trotz Farbwahl in **allen Menues und Untermenues** ein gut sichtbares und lesbares Schriftbild haben (Kontrast mindestens WCAG 2.1 AA: 4,5:1 fuer Text, 3:1 fuer grosse Schrift und Bedienelemente).
+- Gestaltung: modernes, Apple-aehnliches Design (ruhige Flaechen, klare Typografie, grosszuegige Abstaende, dezente Rundungen und Schatten, zurueckhaltende Akzentfarbe).
+- Gilt fuer **alle** Oberflaechenansichten (Start, Projekte, Projektreiter, Generierungen, Einstellungen, Benutzerverwaltung, Hilfe, Dialoge).
+
+### Technische Hinweise
+
+- Farben ausschliesslich ueber die Theme-Tokens (`theme-*`), keine festen Farbklassen in Komponenten.
+- Kontrast je Theme automatisiert pruefen (Token-Paare Text/Hintergrund), damit neue Themes die Regel nicht brechen.
+- Vorher Bestandsaufnahme: Bildschirmfotos aller Ansichten je Theme.
+
+---

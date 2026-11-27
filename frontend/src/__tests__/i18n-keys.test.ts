@@ -163,7 +163,7 @@ describe("A-14: im Code verwendete Uebersetzungsschluessel", () => {
     const missing: string[] = [];
     for (const file of sourceFiles(srcDir)) {
       const text = fs.readFileSync(file, "utf-8");
-      for (const m of text.matchAll(/t\(\s*["'`]([\w-]+(?:\.[\w-]+)+)["'`]/g)) {
+      for (const m of text.matchAll(/\bt\(\s*["'`]([\w-]+(?:\.[\w-]+)+)["'`]/g)) {
         if (!hasKey(translationDE, m[1]) || !hasKey(translationEN, m[1])) {
           missing.push(`${path.relative(srcDir, file)}: ${m[1]}`);
         }

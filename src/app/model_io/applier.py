@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models
@@ -58,6 +59,28 @@ def apply_model(
         return _update_existing_project(db, project_id, model)
 
 
+class ProjectNameConflict(ValueError):
+    """BUG A-13: Zielname gehoert bereits einem anderen Projekt."""
+
+
+def _project_by_name(db: Session, name: str) -> Optional[models.Project]:
+    """Projekt mit diesem Namen, ohne Gross-/Kleinschreibung (wie beim Anlegen)."""
+    return db.query(models.Project).filter(func.lower(models.Project.name) == name.lower()).first()
+
+
+def _apply_seed_sets(db: Session, project: models.Project, model: GreatModel) -> None:
+    """BUG A-13 / REQ-6009: Seed-Saetze aus dem Modell anlegen."""
+    import json as json_mod
+
+    for seed_set_data in model.seed_sets:
+        seed_set = models.SeedSet(project_id=project.id, name=seed_set_data.name)
+        db.add(seed_set)
+        db.flush()
+        for index, case in enumerate(seed_set_data.cases):
+            db.add(models.SeedCase(seed_set_id=seed_set.id, order_index=index,
+                                   assignment_json=json_mod.dumps(case, ensure_ascii=False)))
+
+
 def _create_new_project(db: Session, model: GreatModel) -> models.Project:
     """Erstellt ein neues Projekt aus dem Modell.
 
@@ -66,12 +89,12 @@ def _create_new_project(db: Session, model: GreatModel) -> models.Project:
     name = model.project_name
 
     # Namenskonflikt-Handling
-    existing = db.query(models.Project).filter(models.Project.name == name).first()
+    existing = _project_by_name(db, name)
     if existing:
         counter = 1
         while True:
             candidate = f"{name}_imported_{counter}"
-            if not db.query(models.Project).filter(models.Project.name == candidate).first():
+            if not _project_by_name(db, candidate):
                 name = candidate
                 break
             counter += 1
@@ -86,6 +109,7 @@ def _create_new_project(db: Session, model: GreatModel) -> models.Project:
     _apply_rules(db, project, model, cat_name_to_id)
     _apply_decision_constraints(db, project, model)
     _apply_constraints(db, project, model, cat_name_to_id, catval_to_id)
+    _apply_seed_sets(db, project, model)
 
     db.commit()
     log.info("model_imported_new", project_id=project.id, project_name=project.name)
@@ -106,6 +130,11 @@ def _update_existing_project(
     project = db.query(models.Project).filter(models.Project.id == project_id).first()
     if not project:
         raise ValueError(f"Project {project_id} not found")
+
+    # BUG A-13: Umbenennen auf den Namen eines anderen Projekts ist ein Konflikt
+    other = _project_by_name(db, model.project_name)
+    if other is not None and other.id != project.id:
+        raise ProjectNameConflict(model.project_name)
 
     # Projektname aktualisieren (falls geaendert)
     project.name = model.project_name
@@ -138,6 +167,12 @@ def _update_existing_project(
     _apply_rules(db, project, model, cat_name_to_id)
     _apply_decision_constraints(db, project, model)
     _apply_constraints(db, project, model, cat_name_to_id, catval_to_id)
+    if "seed_sets" in model.model_fields_set:
+        # Aeltere Dateien ohne seedSets lassen vorhandene Seed-Saetze unberuehrt
+        for seed_set in list(project.seed_sets):
+            db.delete(seed_set)
+        db.flush()
+        _apply_seed_sets(db, project, model)
 
     db.commit()
     log.info("model_updated", project_id=project.id, project_name=project.name)
@@ -343,6 +378,11 @@ def _apply_constraints(
                 resolved[k] = v
         return resolved
 
+    from .validator import constraint_reference_errors
+    values_by_cat = {c.name: {v.value for v in c.values} for c in model.categories}
+    warnings: list[str] = getattr(project, "import_warnings", None) or []
+    project.import_warnings = warnings
+
     for c_data in model.constraints:
         expr_raw = c_data.expression
         if not isinstance(expr_raw, dict):
@@ -369,7 +409,14 @@ def _apply_constraints(
                     return True
             return False
 
-        if _has_none_ids(expr_resolved):
+        # BUG A-13: Jede Referenz muss im Modell existieren (Namen, keine IDs);
+        # sonst wird das Constraint ungueltig importiert und gemeldet.
+        reference_errors = constraint_reference_errors(expr_raw, values_by_cat, "expression")
+        if reference_errors and c_data.is_valid:
+            warnings.append(f"Constraint '{c_data.name}' wurde als ungueltig importiert: "
+                            + "; ".join(e.message for e in reference_errors))
+
+        if reference_errors or _has_none_ids(expr_resolved):
             log.warning("Constraint '%s' has unresolved references, marking invalid", c_data.name)
             import json as json_mod
             c = models.Constraint(
