@@ -1,4 +1,4 @@
-﻿// REQ-4024: Audit-Trail-Tooltip (wer hat zuletzt geaendert)
+// REQ-4024: Audit-Trail-Tooltip (wer hat zuletzt geaendert)
 // Teil von EPIC-18 (Multi-User) / Sprint 13
 // REQ-6005 Slice 3: i18n Datumsformate
 //
@@ -39,9 +39,9 @@ export default function AuditTooltip({
       <span className="text-xs text-theme-text-secondary cursor-help border-b border-dotted border-theme-text-secondary">
         {entityType}
       </span>
-      <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-800 rounded shadow-lg whitespace-nowrap">
+      <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-theme-bg bg-theme-text rounded shadow-lg whitespace-nowrap">
         {tooltipText}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-theme-text" />
       </div>
     </div>
   );

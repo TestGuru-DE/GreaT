@@ -1,4 +1,4 @@
-﻿// REQ-3052: Tests für Office-ähnliche Tabellenansicht
+// REQ-3052: Tests für Office-ähnliche Tabellenansicht
 // BUGFIX React #300 (REQ-1208, REQ-2001, REQ-3052, REQ-4018, REQ-5006): Rules-of-Hooks-Verletzung im Panel
 import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
@@ -180,9 +180,9 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     vi.mocked(useGenerateStore).mockReturnValue(storeWithError);
     const { container } = render(<TestCasePanel projectId={1} />);
     
-    const errorRow = container.querySelector(".bg-red-50");
+    const errorRow = container.querySelector(".bg-theme-danger-soft");
     expect(errorRow).toBeInTheDocument();
-    expect(errorRow).toHaveClass("border-l-4", "border-l-red-500");
+    expect(errorRow).toHaveClass("border-l-4", "border-l-theme-danger");
   });
 
   it("rendert Ergebnis-Spalten als editierbare Eingaben mit Auswahlwerten", async () => {
@@ -266,9 +266,9 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     const { container } = render(<TestCasePanel projectId={1} />);
 
     expect(screen.getByText(/Risikoabdeckung: 80%/)).toBeInTheDocument();
-    const badge = container.querySelector(".bg-green-100");
+    const badge = container.querySelector(".bg-theme-success-soft");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-green-800", "border-green-300");
+    expect(badge).toHaveClass("text-theme-success", "border-theme-success-border");
   });
 
   it("zeigt gelbes Badge bei Risikoabdeckung zwischen 50% und 79%", () => {
@@ -279,9 +279,9 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     const { container } = render(<TestCasePanel projectId={1} />);
 
     expect(screen.getByText(/Risikoabdeckung: 60%/)).toBeInTheDocument();
-    const badge = container.querySelector(".bg-yellow-100");
+    const badge = container.querySelector(".bg-theme-warning-soft");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-yellow-800", "border-yellow-300");
+    expect(badge).toHaveClass("text-theme-warning", "border-theme-warning-border");
   });
 
   it("zeigt rotes Badge bei Risikoabdeckung unter 50%", () => {
@@ -292,9 +292,9 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     const { container } = render(<TestCasePanel projectId={1} />);
 
     expect(screen.getByText(/Risikoabdeckung: 30%/)).toBeInTheDocument();
-    const badge = container.querySelector(".bg-red-100");
+    const badge = container.querySelector(".bg-theme-danger-soft");
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass("text-red-800", "border-red-300");
+    expect(badge).toHaveClass("text-theme-danger", "border-theme-danger-border");
   });
 
   it("zeigt Grenzwert 50% als gelb (nicht rot)", () => {
@@ -304,8 +304,8 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     });
     const { container } = render(<TestCasePanel projectId={1} />);
 
-    expect(container.querySelector(".bg-yellow-100")).toBeInTheDocument();
-    expect(container.querySelector(".bg-red-100")).not.toBeInTheDocument();
+    expect(container.querySelector(".bg-theme-warning-soft")).toBeInTheDocument();
+    expect(container.querySelector(".bg-theme-danger-soft")).not.toBeInTheDocument();
   });
 
   it("zeigt absolute Werte (total/max) neben dem Badge", () => {

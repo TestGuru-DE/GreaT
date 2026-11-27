@@ -1,4 +1,4 @@
-﻿// REQ-4018: Hierarchische Datenklassen - Baumansicht
+// REQ-4018: Hierarchische Datenklassen - Baumansicht
 // REQ-6005: i18n
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,7 +86,7 @@ export function DataNodeTree({
                   <button
                     title={t('dataNodeTree.addChild')}
                     onClick={() => { setAddingChild(node.id); setAddingValue(null); }}
-                    className="text-xs px-1.5 py-0.5 rounded bg-primary-600 text-white hover:bg-opacity-90"
+                    className="text-xs px-1.5 py-0.5 rounded bg-theme-accent text-white hover:bg-opacity-90"
                   >
                     + {t('dataNodeTree.group')}
                   </button>
@@ -100,7 +100,7 @@ export function DataNodeTree({
                   <button
                     title={t('dataNodeTree.delete')}
                     onClick={() => onDelete?.(node.id)}
-                    className="text-xs px-1.5 py-0.5 rounded text-red-500 hover:bg-red-50"
+                    className="text-xs px-1.5 py-0.5 rounded text-theme-danger hover:bg-theme-danger-soft"
                   >
                     ✕
                   </button>
@@ -128,7 +128,7 @@ export function DataNodeTree({
                     }
                   }}
                   placeholder={t('dataNodeTree.childPlaceholder')}
-                  className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
+                  className="px-2 py-1 text-xs border border-theme-border rounded bg-theme-surface flex-1"
                 />
                 <button 
                   onClick={() => {
@@ -138,7 +138,7 @@ export function DataNodeTree({
                       setAddingChild(null);
                     }
                   }} 
-                  className="text-xs px-2 py-1 bg-primary-600 text-white rounded"
+                  className="text-xs px-2 py-1 bg-theme-accent text-white rounded"
                 >
                   ✓
                 </button>
@@ -171,7 +171,7 @@ export function DataNodeTree({
                     }
                   }}
                   placeholder={t('dataNodeTree.valuePlaceholder')}
-                  className="px-2 py-1 text-xs border border-theme-border rounded bg-white flex-1"
+                  className="px-2 py-1 text-xs border border-theme-border rounded bg-theme-surface flex-1"
                 />
                 <button 
                   onClick={() => {
@@ -181,7 +181,7 @@ export function DataNodeTree({
                       setAddingValue(null);
                     }
                   }} 
-                  className="text-xs px-2 py-1 bg-primary-600 text-white rounded"
+                  className="text-xs px-2 py-1 bg-theme-accent text-white rounded"
                 >
                   ✓
                 </button>

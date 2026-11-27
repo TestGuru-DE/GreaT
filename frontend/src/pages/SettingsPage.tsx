@@ -1,4 +1,4 @@
-﻿// REQ-3002 + REQ-3045: Einstellungen + Theme-System
+// REQ-3002 + REQ-3045: Einstellungen + Theme-System
 // REQ-4011: Datensicherung & Wiederherstellung
 // REQ-4012: BugMagnet-Import
 // REQ-4025: Benutzerverwaltung
@@ -121,22 +121,24 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-6 py-12 bg-theme-bg">
-      <h1 className="text-2xl font-bold text-theme-text mb-6">{t('settings.title')}</h1>
+    <main className="page page-narrow">
+      <header className="page-header">
+        <h1 className="page-title text-theme-text">{t('settings.title')}</h1>
+      </header>
 
       <PortSettingsCard />
       <MaxTestCasesSettingsCard />
 
-      <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-3">{t('settings.appearance.title')}</h2>
+      <section className="card bg-theme-surface p-6 mb-6">
+        <h2 className="text-xl font-bold text-theme-text mb-3">{t('settings.appearance.title')}</h2>
         <p className="text-sm text-theme-text-secondary mb-4">
           {t('settings.appearance.description')}
         </p>
         <ThemeSwitcher />
       </section>
 
-      <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.backup.title')}</h2>
+      <section className="card bg-theme-surface p-6 mb-6">
+        <h2 className="text-xl font-bold text-theme-text mb-4">{t('settings.backup.title')}</h2>
         <div className="space-y-4">
           <div className="border border-theme-border rounded-lg p-4">
             <h3 className="font-medium text-theme-text mb-3">{t('settings.backup.create.title')}</h3>
@@ -191,8 +193,8 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.database.title')}</h2>
+      <section className="card bg-theme-surface p-6 mb-6">
+        <h2 className="text-xl font-bold text-theme-text mb-4">{t('settings.database.title')}</h2>
         <div className="space-y-3">
           <p className="text-sm text-theme-text-secondary">
             {t('settings.database.description')}
@@ -201,7 +203,7 @@ export default function SettingsPage() {
             type="button"
             onClick={() => setResetDialogOpen(true)}
             disabled={isLoading}
-            className="px-4 py-2 bg-theme-danger hover:opacity-90 disabled:opacity-50 text-theme-accent-text rounded transition"
+            className="px-4 py-2 bg-theme-danger-fill hover:opacity-90 disabled:opacity-50 text-theme-accent-text rounded transition"
           >
             {t('settings.database.resetBtn')}
           </button>
@@ -223,7 +225,7 @@ export default function SettingsPage() {
             </p>
 
             <div className="flex flex-col gap-2">
-              <button type="button" onClick={() => handleDatabaseReset('confirm')} className="w-full px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm">
+              <button type="button" onClick={() => handleDatabaseReset('confirm')} className="w-full px-4 py-2 bg-theme-danger-fill text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm">
                 {t('settings.database.dialog.yesDoIt')}
               </button>
 
@@ -239,11 +241,11 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <section className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('settings.dataclasses.title')}</h2>
+      <section className="card bg-theme-surface p-6 mb-6">
+        <h2 className="text-xl font-bold text-theme-text mb-4">{t('settings.dataclasses.title')}</h2>
         <div className="space-y-3">
           <p className="text-sm text-theme-text-secondary" dangerouslySetInnerHTML={{ __html: t('settings.dataclasses.description') }} />
-          <a href="https://github.com/gojko/bugmagnet/blob/master/template/config.json" target="_blank" rel="noopener noreferrer" className="text-xs text-theme-accent hover:underline block">
+          <a href="https://github.com/gojko/bugmagnet/blob/master/template/config.json" target="_blank" rel="noopener noreferrer" className="text-xs text-theme-link hover:underline block">
             {t('settings.dataclasses.source')}
           </a>
           <button onClick={handleBugMagnetImport} disabled={importing} className="px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover disabled:opacity-50 text-theme-accent-text rounded transition">

@@ -1,4 +1,4 @@
-﻿// Startseite mit Apple-Style Kacheln fuer Hauptaktivitaeten
+// Startseite mit Apple-Style Kacheln fuer Hauptaktivitaeten
 // Erreichbar via: TopNav "Home"-Button oder Klick auf "G.R.E.A.T." Logo
 // REQ-6005: i18n
 import { useNavigate } from 'react-router-dom';
@@ -27,42 +27,42 @@ const TILES: Tile[] = [
     descriptionKey: 'home.tiles.projects.description',
     icon: FolderOpen,
     to: '/projects',
-    color: 'from-blue-500 to-blue-600',
+    color: 'tile-blue',
   },
   {
     labelKey: 'home.tiles.dataclasses.label',
     descriptionKey: 'home.tiles.dataclasses.description',
     icon: Database,
     to: '/dataclasses',
-    color: 'from-emerald-500 to-emerald-600',
+    color: 'tile-green',
   },
   {
     labelKey: 'home.tiles.generations.label',
     descriptionKey: 'home.tiles.generations.description',
     icon: Play,
     to: '/generations',
-    color: 'from-violet-500 to-violet-600',
+    color: 'tile-violet',
   },
   {
     labelKey: 'home.tiles.settings.label',
     descriptionKey: 'home.tiles.settings.description',
     icon: Settings,
     to: '/settings',
-    color: 'from-amber-500 to-amber-600',
+    color: 'tile-orange',
   },
   {
     labelKey: 'home.tiles.changePassword.label',
     descriptionKey: 'home.tiles.changePassword.description',
     icon: KeyRound,
     to: '/account/password',
-    color: 'from-rose-500 to-rose-600',
+    color: 'tile-pink',
   },
   {
     labelKey: 'home.tiles.apiDocs.label',
     descriptionKey: 'home.tiles.apiDocs.description',
     icon: Code2,
     to: '/docs',
-    color: 'from-slate-500 to-slate-600',
+    color: 'tile-gray',
   },
 ];
 
@@ -71,19 +71,19 @@ export default function HomePage() {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-theme-bg to-theme-surface flex flex-col items-center justify-center px-6 py-12">
-      {/* Header */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-theme-text mb-3 tracking-tight">
+    <div className="max-w-6xl px-6 md:px-10 py-10">
+      {/* Kopf: grosser Titel und Untertitel (Redesign) */}
+      <header className="mb-10">
+        <h1 className="text-4xl md:text-5xl font-bold text-theme-text tracking-tight mb-3">
           {t('home.title')}
         </h1>
-        <p className="text-lg text-theme-text-secondary max-w-md mx-auto">
+        <p className="text-lg text-theme-text-secondary max-w-2xl">
           {t('home.subtitle')}
         </p>
-      </div>
+      </header>
 
-      {/* Kacheln Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-5 max-w-3xl w-full">
+      <h2 className="text-theme-text mb-4">{t('home.sectionTitle')}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         {TILES.map((tile) => {
           const Icon = tile.icon;
           const isExternal = tile.to.startsWith('/docs');
@@ -93,48 +93,30 @@ export default function HomePage() {
               key={tile.labelKey}
               onClick={() => {
                 if (isExternal) {
-                  window.open('http://localhost:8000' + tile.to, '_blank', 'noopener');
+                  // API-Doku liegt auf demselben Server wie die Oberflaeche
+                  window.open(tile.to, '_blank', 'noopener');
                 } else {
                   navigate(tile.to);
                 }
               }}
-              className="group relative flex flex-col items-start text-left p-6 rounded-2xl
-                         bg-white/60 dark:bg-white/5 backdrop-blur-xl
-                         border border-gray-200/50 dark:border-white/10
-                         shadow-lg shadow-black/5 dark:shadow-black/20
-                         hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30
-                         hover:-translate-y-1 hover:border-gray-300/60 dark:hover:border-white/20
-                         transition-all duration-300 ease-out
-                         focus:outline-none focus:ring-2 focus:ring-theme-accent/50 focus:ring-offset-2"
+              className="card group relative flex items-start gap-4 text-left p-5 hover:bg-theme-surface-hover hover:border-theme-border-strong transition-colors"
             >
-              {/* Icon mit Gradient-Hintergrund */}
-              <div
-                className={`flex items-center justify-center w-12 h-12 rounded-xl
-                           bg-gradient-to-br ${tile.color} mb-4
-                           shadow-md group-hover:scale-110 transition-transform duration-300`}
-              >
-                <Icon className="w-6 h-6 text-white" strokeWidth={2} />
-              </div>
-
-              {/* Label und Beschreibung */}
-              <h3 className="text-base font-semibold text-theme-text mb-1 group-hover:text-theme-accent transition-colors">
-                {t(tile.labelKey)}
-              </h3>
-              <p className="text-xs text-theme-text-secondary leading-snug">
-                {t(tile.descriptionKey)}
-              </p>
-
-              {/* Externer-Link Indikator */}
+              <span className={`icon-tile icon-tile-lg ${tile.color}`} aria-hidden="true">
+                <Icon className="w-6 h-6" strokeWidth={2} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-lg font-semibold text-theme-text mb-1">{t(tile.labelKey)}</span>
+                <span className="block text-sm text-theme-text-secondary leading-snug">{t(tile.descriptionKey)}</span>
+              </span>
               {isExternal && (
-                <ArrowUpRight className="absolute top-4 right-4 w-4 h-4 text-theme-text-secondary/40 group-hover:text-theme-accent/60 transition-colors" />
+                <ArrowUpRight className="absolute top-4 right-4 w-4 h-4 text-theme-text-muted" aria-hidden="true" />
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Footer */}
-      <p className="mt-12 text-xs text-theme-text-secondary/50">
+      <p className="mt-12 text-xs text-theme-text-muted">
         {t('home.footer', { version: __APP_VERSION__ })}
       </p>
     </div>

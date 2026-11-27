@@ -117,7 +117,7 @@ Beim allerersten Start des Systems zeigt die Login-Seite das **Standardpasswort*
 
 ![Passwortwechsel](./screenshots/02-passwortwechsel.png)
 
-Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Auch spaeter koennen Sie Ihr Passwort ueber die Top-Navigation unter **"Passwort aendern"** wechseln.
+Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Auch spaeter koennen Sie Ihr Passwort ueber die Seitenleiste unter **"Passwort aendern"** wechseln.
 
 **Anforderungen an das neue Passwort:**
 
@@ -938,16 +938,17 @@ Beim Anlegen einer Kategorie koennen Sie eine bestehende Datenklasse als Vorlage
 
 ![Theme-Auswahl](./screenshots/09-01-themes.png)
 
-G.R.E.A.T. unterstuetzt mehrere Themes:
+G.R.E.A.T. unterstuetzt mehrere Themes. Alle haben dieselbe Gestaltung (Seitenleiste, Karten, Icon-Kacheln) und sind in allen Menues und Dialogen gut lesbar (Kontrast nach WCAG AA, automatisch geprueft):
 
 | Theme | Beschreibung |
 |-------|-------------|
-| **☀️ Normal** | HSV-Farben: dunkelblauer Hintergrund, weiße Schrift, roter Akzent |
-| **🌙 Dark** | Dunkles Theme mit lila Akzenten |
-| **⚙️ Steampunk** | Braun/Gold in Steampunk-Aesthetik |
-| **🌈 Rainbow** | Helles Theme mit pinken/lila Akzenten |
-| **🤘 Heavy Metal** | Schwarz/Rot, hochkontrastierend |
-| **🖥️ System (OS)** | Folgt der Betriebssystem-Einstellung: hell bei Light-Mode, dunkel bei Dark-Mode |
+| **Normal (Graphit)** | Standard: dunkler Graphit-Hintergrund, helle Schrift, blauer Akzent |
+| **Hell** | Heller Hintergrund, weisse Karten, dunkle Schrift, blauer Akzent |
+| **Dunkel** | Tiefschwarzer Hintergrund, blauer Akzent |
+| **Steampunk** | Braun/Gold in Steampunk-Aesthetik |
+| **Regenbogen** | Helles Theme mit pinken/lila Akzenten |
+| **Heavy Metal** | Schwarz/Rot |
+| **System (OS)** | Folgt der Betriebssystem-Einstellung: Hell bei Light-Mode, Dunkel bei Dark-Mode |
 
 Die Auswahl wird automatisch im Browser gespeichert (localStorage).
 
@@ -1013,6 +1014,7 @@ Admins koennen ueber die Einstellungen neue Benutzer anlegen, Rollen zuweisen un
 | Tastenkombination | Aktion |
 |------------------|--------|
 | **F1** | Hilfe oeffnen/schliessen |
+| **Strg+K** | Suche in der Seitenleiste (Projekte nach Namen filtern) |
 | **F2** | Ausgewaehltes Element umbenennen |
 | **Enter** | Bestatigen / Kategorie expandieren |
 | **Escape** | Schliessen / Abbrechen |
@@ -1066,7 +1068,7 @@ Der Wert ist als Fehlerwert markiert (`allowed=False`). Testfaelle mit diesem We
 Ergebnis-Kategorien (`is_result=True`) sind nicht an der automatischen Generierung beteiligt. Sie dienen der manuellen Eingabe von Erwartungswerten nach der Generierung.
 
 **Wie wechsle ich vom Standardpasswort?**
-Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Spaeter: Top-Navigation → "Passwort aendern".
+Nach der Erstanmeldung werden Sie automatisch zur Passwortwechsel-Seite weitergeleitet. Spaeter: Seitenleiste → "Passwort aendern".
 
 ---
 

@@ -1,4 +1,4 @@
-﻿// REQ-4028 AK-3: Seite "Passwort aendern" fuer alle Rollen
+// REQ-4028 AK-3: Seite "Passwort aendern" fuer alle Rollen
 // REQ-6005: i18n
 import { useState, FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -85,17 +85,19 @@ export default function ChangePasswordPage() {
   const displayError = clientError || serverError;
 
   return (
-    <main className="max-w-md mx-auto px-6 py-12 bg-theme-bg">
-      <h1 className="text-2xl font-bold text-theme-text mb-6">{t('changePassword.title')}</h1>
+    <main className="page" style={{ maxWidth: "34rem" }}>
+      <header className="page-header">
+        <h1 className="page-title text-theme-text">{t('changePassword.title')}</h1>
+      </header>
 
       {success ? (
-        <div className="bg-green-100 text-green-700 p-4 rounded-lg" role="alert">
+        <div className="bg-theme-success-soft text-theme-success p-4 rounded-lg" role="alert">
           {t('changePassword.success')}
         </div>
       ) : (
         <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6">
           {displayError && (
-            <div className="bg-red-100 text-red-700 p-3 rounded mb-4" role="alert">
+            <div className="bg-theme-danger-soft text-theme-danger p-3 rounded mb-4" role="alert">
               {displayError}
             </div>
           )}
@@ -113,7 +115,7 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                className="mt-1 block w-full rounded-md border border-theme-border shadow-sm focus:border-theme-accent focus:ring-theme-accent bg-theme-surface text-theme-text"
                 required
                 autoFocus
               />
@@ -132,7 +134,7 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                className="mt-1 block w-full rounded-md border border-theme-border shadow-sm focus:border-theme-accent focus:ring-theme-accent bg-theme-surface text-theme-text"
                 required
                 minLength={MIN_PASSWORD_LENGTH}
               />
@@ -153,7 +155,7 @@ export default function ChangePasswordPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+                className="mt-1 block w-full rounded-md border border-theme-border shadow-sm focus:border-theme-accent focus:ring-theme-accent bg-theme-surface text-theme-text"
                 required
                 minLength={MIN_PASSWORD_LENGTH}
               />
@@ -161,7 +163,7 @@ export default function ChangePasswordPage() {
 
             <button
               type="submit"
-              className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+              className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-theme-accent hover:bg-theme-accent-hover disabled:opacity-50"
             >
               {t('changePassword.changeBtn')}
             </button>

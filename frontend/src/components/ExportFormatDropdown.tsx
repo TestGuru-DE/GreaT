@@ -198,7 +198,7 @@ export default function ExportFormatDropdown({
         aria-expanded={isOpen}
         aria-haspopup="menu"
         aria-label={t("export.menu.buttonTitle")}
-        className="text-xs px-2 py-1 border border-slate-200 rounded hover:bg-slate-100 text-black inline-flex items-center gap-1"
+        className="text-xs px-2 py-1 border border-theme-border rounded hover:bg-theme-surface-hover text-theme-text inline-flex items-center gap-1"
       >
         <span>{t("export.menu.button")}</span>
         <span
@@ -214,12 +214,12 @@ export default function ExportFormatDropdown({
         <ul
           role="menu"
           onKeyDown={handleMenuKeyDown}
-          className="absolute right-0 top-full mt-1 w-56 bg-white border border-slate-200 rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto"
+          className="absolute right-0 top-full mt-1 w-56 bg-theme-surface border border-theme-border rounded-lg shadow-lg z-50 py-1 max-h-80 overflow-y-auto"
         >
           {EXPORT_GROUPS.map((group) => (
             <li key={group.groupKey}>
               {/* Group header */}
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-theme-text-muted border-b border-theme-border">
                 {t(`export.menu.${group.groupKey}`)}
               </div>
               {group.formats.map((fmt) => {
@@ -237,12 +237,12 @@ export default function ExportFormatDropdown({
                     onMouseEnter={() => setFocusedIndex(globalIdx)}
                     className={`w-full text-left px-3 py-1.5 text-sm flex items-center justify-between gap-2 transition-colors ${
                       isFocused
-                        ? "bg-sky-50 text-sky-700"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-theme-accent-soft text-theme-link"
+                        : "text-theme-text hover:bg-theme-surface-hover"
                     }`}
                   >
                     <span>{t(`export.menu.${fmt.labelKey}`)}</span>
-                    <span className="text-xs text-slate-400 shrink-0">
+                    <span className="text-xs text-theme-text-muted shrink-0">
                       {fmt.extension}
                     </span>
                   </button>

@@ -1,4 +1,4 @@
-﻿// REQ-NEU: Grafische Regeldarstellung als SVG-Visualisierung
+// REQ-NEU: Grafische Regeldarstellung als SVG-Visualisierung
 // Zeigt Verbindungen zwischen Werten verschiedener Kategorien als farbige Linien
 // Regeltypen: exclude (rot/verboten), dependency (violett/abhängig), combine (grün/kombinieren)
 import { useTranslation } from "react-i18next";
@@ -6,6 +6,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
 import type { Category, Value } from "../types";
+import { ClipboardList } from "lucide-react";
 
 interface Props { projectId: number; }
 
@@ -153,9 +154,9 @@ export default function RuleVisualization({ projectId }: Props) {
   if (rules.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-theme-text-secondary text-xs text-center">
-        <span className="text-2xl mb-2 opacity-50">📋</span>
+        <ClipboardList className="w-7 h-7 mb-2 text-theme-text-muted" aria-hidden="true" />
         <p>{t('ruleVisualization.empty')}</p>
-        <p className="mt-1 opacity-70">{t('ruleVisualization.emptyHint')}</p>
+        <p className="mt-1 text-theme-text-secondary">{t("ruleVisualization.emptyHint")}</p>
       </div>
     );
   }

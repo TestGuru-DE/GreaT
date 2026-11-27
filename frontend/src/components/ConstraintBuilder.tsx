@@ -18,6 +18,7 @@ import type {
   ConstraintCreatePayload,
 } from "../api/client";
 import type { Category, Value } from "../types";
+import { Pencil, TriangleAlert } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
 /*  Helper types for the builder's editable state                     */
@@ -220,14 +221,14 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
 
   return (
     <div className={`flex flex-wrap items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors ${
-      isNegated ? "bg-amber-50 border-amber-200" : "bg-white border-slate-200"
+      isNegated ? "bg-theme-warning-soft border-theme-warning-border" : "bg-theme-surface border-theme-border"
     }`}>
       {/* NOT toggle */}
       <button
         type="button"
         onClick={onWrapNot}
         className={`text-xs font-semibold px-1.5 py-0.5 rounded transition-colors ${
-          isNegated ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+          isNegated ? "bg-theme-warning-soft text-theme-warning font-bold" : "bg-theme-surface-2 text-theme-text-secondary hover:bg-theme-surface-hover"
         }`}
         title={t("constraintBuilder.not")}
       >
@@ -238,7 +239,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
       <select
         value={atom.category_id}
         onChange={(e) => onChange({ ...atom, category_id: Number(e.target.value) })}
-        className="px-2 py-1 text-xs border border-slate-300 rounded bg-white text-black"
+        className="px-2 py-1 text-xs border border-theme-border rounded bg-theme-surface text-theme-text"
         aria-label={t("constraintBuilder.category")}
       >
         {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -248,7 +249,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
       <select
         value={atom.op}
         onChange={(e) => onChange({ ...atom, op: e.target.value as BuilderOp })}
-        className="px-2 py-1 text-xs border border-slate-300 rounded bg-white text-black"
+        className="px-2 py-1 text-xs border border-theme-border rounded bg-theme-surface text-theme-text"
         aria-label={t("constraintBuilder.operator")}
       >
         {[
@@ -261,7 +262,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
 
       {/* Value(s) */}
       {isMulti ? (
-        <div className="flex flex-wrap gap-1 px-2 py-1 border border-slate-300 rounded bg-white min-h-[26px]">
+        <div className="flex flex-wrap gap-1 px-2 py-1 border border-theme-border rounded bg-theme-surface min-h-[26px]">
           {vals.map((v) => {
             const checked = atom.value_ids.includes(v.id);
             return (
@@ -273,7 +274,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
                   onChange({ ...atom, value_ids: ids, value_id: ids[0] ?? v.id });
                 }}
                 className={`px-1.5 py-0.5 rounded text-xs transition-colors ${
-                  checked ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  checked ? "bg-theme-accent text-white" : "bg-theme-surface-2 text-theme-text-secondary hover:bg-theme-surface-hover"
                 }`}
               >
                 {v.value}
@@ -285,7 +286,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
         <select
           value={atom.value_id}
           onChange={(e) => onChange({ ...atom, value_id: Number(e.target.value) })}
-          className="px-2 py-1 text-xs border border-slate-300 rounded bg-white text-black"
+          className="px-2 py-1 text-xs border border-theme-border rounded bg-theme-surface text-theme-text"
           aria-label={t("constraintBuilder.value")}
         >
           {vals.map((v) => <option key={v.id} value={v.id}>{v.value}</option>)}
@@ -296,7 +297,7 @@ function AtomEditor({ atom, categories, catValues, onChange, onRemove, onWrapNot
       <button
         type="button"
         onClick={onRemove}
-        className="text-slate-400 hover:text-red-500 text-lg leading-none ml-1"
+        className="text-theme-text-muted hover:text-theme-danger text-lg leading-none ml-1"
         title={t("common.delete")}
       >
         ×
@@ -343,17 +344,17 @@ function GroupEditor({ group, categories, catValues, onChange, onRemove }: Group
   const isNegated = (index: number) => group.children[index]?._type === "not";
 
   return (
-    <div className="ml-4 border-l-2 border-slate-300 pl-3 space-y-2">
+    <div className="ml-4 border-l-2 border-theme-border pl-3 space-y-2">
       <div className="flex items-center gap-2">
         <span className={`text-xs font-bold px-2 py-0.5 rounded ${
-          group.op === "and" ? "bg-sky-100 text-sky-700" : "bg-violet-100 text-violet-700"
+          group.op === "and" ? "bg-theme-accent-soft text-theme-link" : "bg-theme-accent-soft text-theme-link"
         }`}>
           {group.op === "and" ? t("constraintBuilder.andGroup") : t("constraintBuilder.orGroup")}
         </span>
         <button
           type="button"
           onClick={() => onChange({ ...group, op: group.op === "and" ? "or" : "and" })}
-          className="text-xs text-slate-400 hover:text-slate-600"
+          className="text-xs text-theme-text-muted hover:text-theme-text-secondary"
           title={t("constraintBuilder.addGroup")}
         >
           {t("constraintBuilder.addGroup")}
@@ -361,7 +362,7 @@ function GroupEditor({ group, categories, catValues, onChange, onRemove }: Group
         <button
           type="button"
           onClick={onRemove}
-          className="text-slate-400 hover:text-red-500 text-sm"
+          className="text-theme-text-muted hover:text-theme-danger text-sm"
           title={t("common.delete")}
         >
           ×
@@ -398,7 +399,7 @@ function GroupEditor({ group, categories, catValues, onChange, onRemove }: Group
         if (child._type === "not") {
           return (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-xs font-bold text-amber-600">{t("constraintBuilder.not")}</span>
+              <span className="text-xs font-bold text-theme-warning">{t("constraintBuilder.not")}</span>
               {child.child._type === "atom" && (
                 <AtomEditor
                   atom={child.child}
@@ -433,21 +434,21 @@ function GroupEditor({ group, categories, catValues, onChange, onRemove }: Group
             const firstVal = catValues[firstCat]?.[0]?.id ?? 0;
             addChild(createAtom(firstCat, firstVal));
           }}
-          className="text-xs text-sky-600 hover:text-sky-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.addCondition")}
         </button>
         <button
           type="button"
           onClick={() => addChild(createAndGroup())}
-          className="text-xs text-sky-600 hover:text-sky-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.andGroup")}
         </button>
         <button
           type="button"
           onClick={() => addChild(createOrGroup())}
-          className="text-xs text-violet-600 hover:text-violet-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.orGroup")}
         </button>
@@ -491,9 +492,9 @@ function ConditionBuilder({ nodes, categories, catValues, onChange, label }: Con
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</h4>
+      <h4 className="text-xs font-semibold text-theme-text-secondary uppercase tracking-wide">{label}</h4>
       {nodes.length === 0 && (
-        <p className="text-xs text-slate-400 italic">{t("constraintBuilder.emptyCondition")}</p>
+        <p className="text-xs text-theme-text-muted italic">{t("constraintBuilder.emptyCondition")}</p>
       )}
       {nodes.map((node, i) => {
         if (node._type === "atom") {
@@ -525,7 +526,7 @@ function ConditionBuilder({ nodes, categories, catValues, onChange, label }: Con
         if (node._type === "not") {
           return (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-xs font-bold text-amber-600">{t("constraintBuilder.not")}</span>
+              <span className="text-xs font-bold text-theme-warning">{t("constraintBuilder.not")}</span>
               {node.child._type === "atom" && (
                 <AtomEditor
                   atom={node.child}
@@ -559,21 +560,21 @@ function ConditionBuilder({ nodes, categories, catValues, onChange, label }: Con
             const firstVal = catValues[firstCat]?.[0]?.id ?? 0;
             addNode(createAtom(firstCat, firstVal));
           }}
-          className="text-xs text-sky-600 hover:text-sky-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.addCondition")}
         </button>
         <button
           type="button"
           onClick={() => addNode(createAndGroup())}
-          className="text-xs text-sky-600 hover:text-sky-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.andGroup")}
         </button>
         <button
           type="button"
           onClick={() => addNode(createOrGroup())}
-          className="text-xs text-violet-600 hover:text-violet-800"
+          className="text-xs text-theme-link hover:text-theme-link"
         >
           + {t("constraintBuilder.orGroup")}
         </button>
@@ -803,17 +804,17 @@ export default function ConstraintBuilder({ projectId }: Props) {
     });
   };
 
-  if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t("common.loading")}</p>;
+  if (loading) return <p className="text-theme-text-muted text-sm animate-pulse">{t("common.loading")}</p>;
   if (categories.length === 0) {
     if (msg && msg.type === "error") return (
       <div className="text-center py-8">
-        <div className="px-3 py-2 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700 inline-block">
+        <div className="px-3 py-2 rounded-lg text-sm bg-theme-danger-soft border border-theme-danger-border text-theme-danger inline-block">
           {msg.text}
         </div>
       </div>
     );
     return (
-      <div className="text-center py-8 text-slate-400">
+      <div className="text-center py-8 text-theme-text-muted">
         <p className="text-sm">{t("constraintBuilder.needOneCategory")}</p>
       </div>
     );
@@ -824,16 +825,16 @@ export default function ConstraintBuilder({ projectId }: Props) {
       {/* Builder + Preview (two-pane) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Builder */}
-        <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50 space-y-4">
-          <h3 className="text-sm font-semibold text-slate-700">
+        <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2 space-y-4">
+          <h3 className="text-sm font-semibold text-theme-text">
             {editingId ? t("common.edit") : t("constraintBuilder.title")}
           </h3>
 
           {msg && (
             <div className={`px-3 py-2 rounded-lg text-sm ${
-              msg.type === "ok" ? "bg-green-50 border border-green-200 text-green-700" :
-              msg.type === "warn" ? "bg-amber-50 border border-amber-200 text-amber-700" :
-              "bg-red-50 border border-red-200 text-red-700"
+              msg.type === "ok" ? "bg-theme-success-soft border border-theme-success-border text-theme-success" :
+              msg.type === "warn" ? "bg-theme-warning-soft border border-theme-warning-border text-theme-warning" :
+              "bg-theme-danger-soft border border-theme-danger-border text-theme-danger"
             }`}>
               {msg.text}
             </div>
@@ -841,23 +842,23 @@ export default function ConstraintBuilder({ projectId }: Props) {
 
           {/* Name */}
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t("constraintBuilder.name")}</label>
+            <label className="text-xs font-medium text-theme-text-secondary mb-1 block">{t("constraintBuilder.name")}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("constraintBuilder.namePlaceholder")}
-              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+              className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
             />
           </div>
 
           {/* Kind */}
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t("constraintBuilder.kind")}</label>
+            <label className="text-xs font-medium text-theme-text-secondary mb-1 block">{t("constraintBuilder.kind")}</label>
             <select
               value={kind}
               onChange={(e) => setKind(e.target.value as ConstraintKind)}
-              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+              className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
             >
               <option value="forbid">{t("constraintBuilder.forbid")}</option>
               <option value="implies">{t("constraintBuilder.implies")}</option>
@@ -888,14 +889,14 @@ export default function ConstraintBuilder({ projectId }: Props) {
           <div className="flex gap-2">
             <button
               onClick={handleSave}
-              className="flex-1 py-2 bg-sky-600 text-white text-sm font-medium rounded-xl hover:bg-sky-700 transition-colors"
+              className="flex-1 py-2 bg-theme-accent text-white text-sm font-medium rounded-xl hover:bg-theme-accent-hover transition-colors"
             >
               {t("constraintBuilder.save")}
             </button>
             {editingId && (
               <button
                 onClick={resetForm}
-                className="px-4 py-2 bg-slate-200 text-slate-700 text-sm rounded-xl hover:bg-slate-300 transition-colors"
+                className="px-4 py-2 bg-theme-surface-hover text-theme-text text-sm rounded-xl hover:bg-theme-surface-hover transition-colors"
               >
                 {t("common.cancel")}
               </button>
@@ -904,13 +905,13 @@ export default function ConstraintBuilder({ projectId }: Props) {
         </div>
 
         {/* Right: Preview */}
-        <div className="border border-slate-200 rounded-2xl p-4 bg-white flex flex-col">
+        <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface flex flex-col">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-slate-700">{t("constraintBuilder.textPreview")}</h3>
+            <h3 className="text-sm font-semibold text-theme-text">{t("constraintBuilder.textPreview")}</h3>
             <button
               type="button"
               onClick={handleCopy}
-              className="text-xs text-sky-600 hover:text-sky-800"
+              className="text-xs text-theme-link hover:text-theme-link"
               disabled={!textPreview}
             >
               {copied ? t("constraintBuilder.copied") : t("constraintBuilder.copy")}
@@ -918,11 +919,11 @@ export default function ConstraintBuilder({ projectId }: Props) {
           </div>
           <div className="flex-1 overflow-auto">
             {textPreview ? (
-              <pre className="text-sm font-mono text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-xl p-4 border border-slate-200">
+              <pre className="text-sm font-mono text-theme-text whitespace-pre-wrap bg-theme-surface-2 rounded-xl p-4 border border-theme-border">
                 {textPreview}
               </pre>
             ) : (
-              <p className="text-xs text-slate-400 italic">{t("constraintBuilder.emptyCondition")}</p>
+              <p className="text-xs text-theme-text-muted italic">{t("constraintBuilder.emptyCondition")}</p>
             )}
           </div>
         </div>
@@ -930,11 +931,11 @@ export default function ConstraintBuilder({ projectId }: Props) {
 
       {/* Existing constraints list */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-2">
+        <h3 className="text-sm font-semibold text-theme-text mb-2">
           {t("constraintBuilder.title")} ({constraints.length})
         </h3>
         {constraints.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-4">{t("constraintBuilder.noConstraints")}</p>
+          <p className="text-xs text-theme-text-muted text-center py-4">{t("constraintBuilder.noConstraints")}</p>
         ) : (
           <ul className="space-y-2">
             {constraints.map((c) => {
@@ -944,8 +945,8 @@ export default function ConstraintBuilder({ projectId }: Props) {
                   key={c.id}
                   className={`flex items-start gap-3 px-3 py-2.5 border rounded-xl text-sm ${
                     invalid
-                      ? "bg-slate-100 border-slate-300 text-slate-400"
-                      : "bg-white border-slate-200 hover:bg-slate-50 text-black"
+                      ? "bg-theme-surface-2 border-theme-border text-theme-text-muted"
+                      : "bg-theme-surface border-theme-border hover:bg-theme-surface-hover text-theme-text"
                   }`}
                 >
                   <div className="flex-1 min-w-0">
@@ -953,18 +954,18 @@ export default function ConstraintBuilder({ projectId }: Props) {
                       <span className="font-medium truncate">{c.name}</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded ${
                         c.kind === "forbid"
-                          ? "bg-red-50 text-red-600 border border-red-200"
-                          : "bg-emerald-50 text-emerald-600 border border-emerald-200"
+                          ? "bg-theme-danger-soft text-theme-danger border border-theme-danger-border"
+                          : "bg-theme-success-soft text-theme-success border border-theme-success-border"
                       }`}>
                         {c.kind === "forbid" ? t("constraintBuilder.forbid") : t("constraintBuilder.implies")}
                       </span>
                       {invalid && (
-                        <span className="text-xs text-amber-600">
-                          ⚠️ {t("constraintBuilder.invalidConstraint", { reason: t("constraintBuilder.invalidReasonDeletedReference") })}
+                        <span className="text-xs text-theme-warning">
+                          <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />{t("constraintBuilder.invalidConstraint", { reason: t("constraintBuilder.invalidReasonDeletedReference") })}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    <p className="text-xs text-theme-text-secondary mt-0.5 truncate">
                       {(() => {
                         const { condition, consequence } = extractConstraintAST(c);
                         return buildTextPreview(c.kind, condition, consequence, categories, catValues);
@@ -974,14 +975,14 @@ export default function ConstraintBuilder({ projectId }: Props) {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => startEdit(c)}
-                      className="text-slate-400 hover:text-sky-600 text-sm"
+                      className="text-theme-text-muted hover:text-theme-link text-sm"
                       title={t("constraintBuilder.edit")}
                     >
-                      ✏️
+                      <Pencil className="w-4 h-4" aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => handleDelete(c)}
-                      className="text-slate-300 hover:text-red-500 text-lg leading-none"
+                      className="text-theme-text-muted hover:text-theme-danger text-lg leading-none"
                       title={t("constraintBuilder.deleteTitle")}
                     >
                       ×

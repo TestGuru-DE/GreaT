@@ -56,7 +56,7 @@ describe("REQ-6005: i18n Infrastructure", () => {
   });
 
   it("should translate nav.home correctly in German", () => {
-    expect(i18n.t("nav.home", { lng: "de" })).toBe("Home");
+    expect(i18n.t("nav.home", { lng: "de" })).toBe("Übersicht");
   });
 
   it("should translate nav.projects correctly in English", () => {

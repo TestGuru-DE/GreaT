@@ -1,4 +1,4 @@
-﻿// REQ-4001: Login-Seite fuer JWT-basierte Authentifizierung
+// REQ-4001: Login-Seite fuer JWT-basierte Authentifizierung
 // REQ-4027: Erststart-Hinweis (Standardbenutzer/Standardpasswort)
 // REQ-6005: i18n + LanguageSwitcher
 import { useState, FormEvent, useEffect } from "react";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { getFirstStartHint } from "../api/authApi";
 import { DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD } from "../lib/defaultCredentials";
 import LanguageSwitcher from "../components/LanguageSwitcher";
+import { LayoutGrid } from "lucide-react";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -51,17 +52,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-theme-bg">
-      <div className="max-w-md w-full space-y-8 bg-theme-surface p-8 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-center text-theme-text flex-1">
+      <div className="card max-w-md w-full space-y-7 p-8 mx-4">
+        <div className="flex items-center gap-3">
+          <span className="icon-tile icon-tile-lg tile-blue" aria-hidden="true"><LayoutGrid className="w-6 h-6" /></span>
+          <h1 className="text-2xl font-bold tracking-tight text-theme-text flex-1">
             {t("login.title")}
-          </h2>
+          </h1>
           {/* REQ-6005: LanguageSwitcher auf Login-Seite */}
           <LanguageSwitcher />
         </div>
 
         {error && (
-          <div className="bg-red-100 text-red-700 p-3 rounded" role="alert">
+          <div className="banner banner-danger text-sm" role="alert">
             {error}
           </div>
         )}
@@ -70,7 +72,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="username"
-              className="block text-sm font-medium text-theme-text"
+              className="field-label"
             >
               {t("login.username")}
             </label>
@@ -79,7 +81,7 @@ export default function LoginPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+              className="input"
               required
               autoFocus
             />
@@ -94,7 +96,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-theme-text"
+              className="field-label"
             >
               {t("login.password")}
             </label>
@@ -103,7 +105,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white text-gray-900"
+              className="input"
               required
             />
             {/* REQ-4027 AK-2: Standardpasswort-Hinweis unter dem Feld "Passwort" */}
@@ -117,7 +119,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            className="btn-primary w-full !py-2.5"
           >
             {isLoading ? t("login.submitLoading") : t("login.submit")}
           </button>

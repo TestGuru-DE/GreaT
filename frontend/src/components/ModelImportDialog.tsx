@@ -254,7 +254,7 @@ export default function ModelImportDialog({ projects, onClose, onProjectCreated,
               />
               {file ? (
                 <div className="flex items-center justify-center gap-2 text-sm text-theme-text">
-                  <FileText className="w-4 h-4 text-theme-accent" />
+                  <FileText className="w-4 h-4 text-theme-link" />
                   <span className="font-medium">{file.name}</span>
                   <span className="text-theme-text-muted text-xs">
                     ({formatNumber(file.size / 1024)} KB)

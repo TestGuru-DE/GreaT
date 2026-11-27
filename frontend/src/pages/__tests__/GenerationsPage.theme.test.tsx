@@ -1,4 +1,4 @@
-﻿// REQ-3045/3046/3047/3049: Generierungen-Seite muss in Kern-Themes lesbar bleiben
+// REQ-3045/3046/3047/3049: Generierungen-Seite muss in Kern-Themes lesbar bleiben
 // REQ-6011: Export-Menü-Dropdown
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
@@ -76,7 +76,7 @@ describe("GenerationsPage - Theme-Kontrast in Normal/Dark/Steampunk/Heavy Metal"
     render(<GenerationsPage />);
 
     const heading = await screen.findByRole("heading", { name: "Alle Generierungen" });
-    const panel = heading.parentElement as HTMLElement;
+    const panel = heading.closest("main")!.querySelector("div.card") as HTMLElement;
     expect(panel).toHaveClass("bg-theme-surface");
     expect(panel).not.toHaveClass("bg-white");
     // Component uses text-theme-text for all text

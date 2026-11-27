@@ -1,4 +1,4 @@
-﻿// REQ-3045: Theme-System - TopNav ist auf JEDER Seite sichtbar (auch Projektansicht) und
+// REQ-3045: Theme-System - TopNav ist auf JEDER Seite sichtbar (auch Projektansicht) und
 // muss deshalb Theme-Tokens statt hartkodiertem bg-white / dark:-Varianten nutzen.
 // Das Theme-System setzt "theme-dark" (nicht "dark") auf <html>, daher greifen
 // Tailwind "dark:"-Klassen bei diesem class-Namensschema NIE.
@@ -17,7 +17,7 @@ describe("TopNav - REQ-3045 Theme-Frame", () => {
     const header = container.querySelector("header");
     expect(header).not.toBeNull();
     expect(header!.className).not.toMatch(/\bbg-white\b/);
-    expect(header!.className).toMatch(/\bbg-theme-(bg|surface)\b/);
+    expect(header!.className).toMatch(/\bbg-theme-(bg|surface|sidebar)\b/);
   });
 
   it("Header verlaesst sich nicht auf wirkungslose dark:-Klassen", () => {

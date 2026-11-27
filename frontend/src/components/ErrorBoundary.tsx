@@ -1,9 +1,10 @@
-﻿// BUGFIX: Error Boundary - verhindert schwarzen Bildschirm bei Render-Fehlern
+// BUGFIX: Error Boundary - verhindert schwarzen Bildschirm bei Render-Fehlern
 // REQ-4001, REQ-1208, REQ-2001
 // B-45: Theme-Tokens statt hartkodierter Farben
 // REQ-6005: i18n
 import { tr } from "../lib/i18nText";
 import { Component, ReactNode } from "react";
+import { TriangleAlert } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -30,9 +31,9 @@ export default class ErrorBoundary extends Component<Props, State> {
       return this.props.fallback || (
         <div className="min-h-screen bg-theme-bg flex items-center justify-center p-8">
           <div className="max-w-md w-full bg-theme-surface border-2 border-theme-danger rounded-2xl p-6 text-center">
-            <div className="text-4xl mb-4">⚠️</div>
+            <TriangleAlert className="w-10 h-10 mx-auto mb-4 text-theme-danger" aria-hidden="true" />
             <h2 className="text-lg font-bold text-theme-danger mb-2">
-              {this.props.fallback ? "" : "Ein Fehler ist aufgetreten"}
+              {tr("errorBoundary.title", "Ein Fehler ist aufgetreten")}
             </h2>
             <p className="text-sm text-theme-text-secondary mb-4">
               {this.props.fallback ? "" : "Die Anwendung konnte nicht korrekt geladen werden."}
@@ -42,7 +43,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </pre>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 text-sm font-medium"
+              className="mt-4 px-4 py-2 bg-theme-danger-fill text-theme-accent-text rounded-lg hover:opacity-90 text-sm font-medium"
             >
               {tr("errorBoundary.reload", "Seite neu laden")}
             </button>

@@ -1,4 +1,4 @@
-﻿// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
+// REQ-1208 + REQ-1214 + REQ-2001 + REQ-2004 + REQ-3052 + REQ-4016: Testfall-Generierung mit Office-ähnlicher Tabelle
 // REQ-6005 Slice 3: i18n Datums-/Zahlenformate, Export-Spaltenkoepfe
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,7 @@ import { useDecisionTableStore } from "../store/decisionTableStore";
 import { useSortableTable } from "../hooks/useSortableTable";
 import { useFormattedNumber } from "../hooks/useFormattedNumber";
 import type { Strategy } from "../types";
+import { Download, Pencil, TriangleAlert } from "lucide-react";
 
 const STRATEGIES: { value: Strategy; label: string }[] = [
   { value: "each", label: "Each Choice (empfohlen)" },
@@ -171,30 +172,30 @@ export default function TestCasePanel({ projectId }: Props) {
   };
 
   const sortIcon = (col: string) => {
-    if (sortCol !== col) return <span className="text-slate-300 ml-1">↕</span>;
-    return <span className="text-sky-600 ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
+    if (sortCol !== col) return <span className="text-theme-text-muted ml-1">↕</span>;
+    return <span className="text-theme-link ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>;
   };
 
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Steuerung – Neu generieren */}
-      <div className="flex gap-3 items-end flex-wrap border-b border-slate-100 pb-3">
+      <div className="flex gap-3 items-end flex-wrap border-b border-theme-border pb-3">
         {dtMode && (
-          <p className="w-full text-xs text-amber-700">
+          <p className="w-full text-xs text-theme-warning">
             {t('testCasePanel.dtModeActive')}
           </p>
         )}
         <div>
-          <label className="block text-xs text-slate-500 mb-1 font-medium">{t('testCasePanel.strategy')}</label>
+          <label className="block text-xs text-theme-text-secondary mb-1 font-medium">{t('testCasePanel.strategy')}</label>
           <select value={strategy} onChange={(e) => setStrategy(e.target.value as Strategy)} disabled={dtMode}
-            className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+            className="px-3 py-1.5 text-sm rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent">
             {STRATEGIES.map((s) => (
               <option key={s.value} value={s.value}>{t(`testCasePanel.strategies.${s.value}`)}</option>
             ))}
           </select>
         </div>
         {/* REQ-3005: Mit Regeln generieren */}
-        <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+        <label className="flex items-center gap-2 text-sm text-theme-text-secondary cursor-pointer">
           <input
             type="checkbox"
             checked={applyRules}
@@ -202,30 +203,30 @@ export default function TestCasePanel({ projectId }: Props) {
               applyRulesTouched.current = true;
               setApplyRules(e.target.checked);
             }}
-            className="rounded border-slate-300 text-sky-600 focus:ring-sky-400"
+            className="rounded border-theme-border text-theme-link focus:ring-theme-accent"
           />
           {t('testCasePanel.applyRules')}
         </label>
         {/* BUG-3: T-Wise Stärke Eingabe */}
         {strategy === "t_wise" && (
           <div>
-            <label className="block text-xs text-slate-500 mb-1 font-medium">{t('testCasePanel.tStrength')}</label>
+            <label className="block text-xs text-theme-text-secondary mb-1 font-medium">{t('testCasePanel.tStrength')}</label>
             <input
               type="number"
               min="1"
               max="5"
               value={tStrength}
               onChange={(e) => setTStrength(Number(e.target.value))}
-              className="px-3 py-1.5 text-sm w-16 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="px-3 py-1.5 text-sm w-16 rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent"
             />
           </div>
         )}
         {seedCapable && seedSets.length > 0 && (
           <div>
-            <label htmlFor="seed-set-select" className="block text-xs text-slate-500 mb-1 font-medium">{t('seeds.generateWith')}</label>
+            <label htmlFor="seed-set-select" className="block text-xs text-theme-text-secondary mb-1 font-medium">{t('seeds.generateWith')}</label>
             <select id="seed-set-select" value={seedSetId ?? ""}
               onChange={(e) => setSeedSetId(e.target.value ? Number(e.target.value) : null)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+              className="px-3 py-1.5 text-sm rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent">
               <option value="">{t('seeds.none')}</option>
               {seedSets.map((s) => (
                 <option key={s.id} value={s.id}>{s.name} ({s.seed_count})</option>
@@ -238,20 +239,20 @@ export default function TestCasePanel({ projectId }: Props) {
           if (seedCapable && seedSetId) generate(projectId, applyRules, ts, seedSetId);
           else generate(projectId, applyRules, ts);
         }} disabled={loading || dtMode}
-          className="px-4 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
+          className="px-4 py-1.5 bg-theme-accent text-white text-sm rounded-lg hover:bg-theme-accent-hover disabled:opacity-50 font-medium">
           {loading ? t('testCasePanel.generating') : t('testCasePanel.regenerate')}
         </button>
 
         {/* History-Dropdown – vorherige Generierungen laden */}
         {generations.length > 0 && (
           <div className="ml-2">
-            <label className="block text-xs text-slate-500 mb-1 font-medium">
+            <label className="block text-xs text-theme-text-secondary mb-1 font-medium">
               {t('testCasePanel.loadPrevious')}
             </label>
             <select
               value={generationId ?? ""}
               onChange={(e) => { if (e.target.value) loadGeneration(Number(e.target.value)); }}
-              className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 max-w-xs"
+              className="px-3 py-1.5 text-sm rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent max-w-xs"
               disabled={generationsLoading}
             >
               <option value="">{t('testCasePanel.chooseGeneration')}</option>
@@ -271,7 +272,7 @@ export default function TestCasePanel({ projectId }: Props) {
                       <input
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
-                        className="text-xs px-2 py-0.5 border border-sky-400 rounded focus:outline-none"
+                        className="text-xs px-2 py-0.5 border border-theme-accent rounded focus:outline-none"
                         onKeyDown={async (e) => {
                           if (e.key === "Enter" && editingName.trim()) {
                             setSavingName(true);
@@ -294,16 +295,16 @@ export default function TestCasePanel({ projectId }: Props) {
                             setEditingName(null);
                           }
                         }}
-                        className="text-xs px-2 py-0.5 bg-sky-500 text-white rounded hover:bg-sky-600"
+                        className="text-xs px-2 py-0.5 bg-theme-accent text-white rounded hover:bg-theme-accent-hover"
                       >✓</button>
-                      <button onClick={() => setEditingName(null)} className="text-xs px-2 py-0.5 border rounded hover:bg-slate-50">✗</button>
+                      <button onClick={() => setEditingName(null)} className="text-xs px-2 py-0.5 border rounded hover:bg-theme-surface-hover">✗</button>
                     </>
                   ) : (
                     <button
                       onClick={() => setEditingName(currentGen.name)}
-                      className="text-xs text-slate-400 hover:text-sky-500 underline"
+                      className="text-xs text-theme-text-muted hover:text-theme-link underline"
                       title={t('testCasePanel.editName')}
-                    >✏️ umbenennen</button>
+                    ><Pencil className="w-3.5 h-3.5 inline-block align-[-2px] mr-1" aria-hidden="true" />{t('testCasePanel.rename')}</button>
                   )}
                 </div>
               ) : null;
@@ -313,23 +314,23 @@ export default function TestCasePanel({ projectId }: Props) {
 
         {testcases.length > 0 && (
           <div className="flex gap-2 ml-auto items-center">
-            <span className="text-xs text-slate-400">{t('testCasePanel.count', { count })}</span>
+            <span className="text-xs text-theme-text-muted">{t('testCasePanel.count', { count })}</span>
             {/* REQ-3052: Client-seitiger CSV-Export */}
             <button onClick={exportTableAsCSV}
-              className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              className="px-3 py-1.5 text-xs bg-theme-success-fill text-white rounded-lg hover:bg-theme-success-fill font-medium"
               title={t('testCasePanel.exportCsvTitle')}>
-              📥 CSV (Tabelle)
+              <Download className="w-4 h-4" aria-hidden="true" />{t('testCasePanel.exportCsvTable')}
             </button>
             <button onClick={() => handleExport("json")}
-              className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50">
+              className="px-3 py-1.5 text-xs border border-theme-border rounded-lg hover:bg-theme-surface-hover">
               JSON
             </button>
             <button onClick={() => handleExport("xlsx")}
-              className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50">
+              className="px-3 py-1.5 text-xs border border-theme-border rounded-lg hover:bg-theme-surface-hover">
               Excel
             </button>
             <button onClick={() => handleExport("csv")}
-              className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg hover:bg-slate-50">
+              className="px-3 py-1.5 text-xs border border-theme-border rounded-lg hover:bg-theme-surface-hover">
               CSV (API)
             </button>
           </div>
@@ -337,12 +338,12 @@ export default function TestCasePanel({ projectId }: Props) {
       </div>
 
       {error && (
-        <div className="px-4 py-2 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">{error}</div>
+        <div className="px-4 py-2 bg-theme-danger-soft border border-theme-danger-border rounded-lg text-theme-danger text-sm">{error}</div>
       )}
 
       {/* BUG R-05: Hinweise der Generierung (z. B. nicht angewendete Constraints) */}
       {warnings.length > 0 && (
-        <ul role="status" data-testid="generation-warnings" className="px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm list-disc list-inside">
+        <ul role="status" data-testid="generation-warnings" className="px-4 py-2 bg-theme-warning-soft border border-theme-warning-border rounded-lg text-theme-warning text-sm list-disc list-inside">
           {warnings.map((w, i) => <li key={i}>{w}</li>)}
         </ul>
       )}
@@ -353,24 +354,24 @@ export default function TestCasePanel({ projectId }: Props) {
           <div
             className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${
               riskSummary.risk_coverage_percent >= 80
-                ? "bg-green-100 text-green-800 border border-green-300"
+                ? "bg-theme-success-soft text-theme-success border border-theme-success-border"
                 : riskSummary.risk_coverage_percent >= 50
-                ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
-                : "bg-red-100 text-red-800 border border-red-300"
+                ? "bg-theme-warning-soft text-theme-warning border border-theme-warning-border"
+                : "bg-theme-danger-soft text-theme-danger border border-theme-danger-border"
             }`}
             title={t('testCasePanel.riskTitle', { percent: riskSummary.risk_coverage_percent })}
           >
             <span className="text-base">🛡️</span>
             <span>{t('testCasePanel.riskBadge', { percent: riskSummary.risk_coverage_percent })}</span>
           </div>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-theme-text-muted">
             ({formatNumber(riskSummary.total_risk)} / {formatNumber(riskSummary.max_possible_risk)})
           </span>
         </div>
       )}
 
       {testcases.length === 0 && !loading ? (
-        <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+        <div className="flex-1 flex flex-col items-center justify-center text-theme-text-muted border-2 border-dashed border-theme-border rounded-xl">
           <span className="text-3xl mb-2">?</span>
           <p className="text-sm font-medium">{t('testCasePanel.emptyTitle')}</p>
           <p className="text-xs mt-1">
@@ -380,22 +381,22 @@ export default function TestCasePanel({ projectId }: Props) {
           </p>
         </div>
       ) : loading ? (
-        <div className="flex-1 flex items-center justify-center text-slate-400 text-sm animate-pulse">
+        <div className="flex-1 flex items-center justify-center text-theme-text-muted text-sm animate-pulse">
           {t('testCasePanel.loading')}
         </div>
       ) : (
-        <div className="flex-1 overflow-auto rounded-xl border border-slate-200 shadow-sm">
+        <div className="flex-1 overflow-auto rounded-xl border border-theme-border shadow-sm">
           <table className="w-full text-sm border-collapse">
             {/* REQ-3052: Sticky Header mit Schatten beim Scrollen */}
-            <thead className="sticky top-0 z-10 bg-slate-50 shadow-md">
+            <thead className="sticky top-0 z-10 bg-theme-surface-2 shadow-md">
               <tr>
-                <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 w-12 select-none">
+                <th className="px-3 py-2 text-left text-xs font-medium text-theme-text-secondary bg-theme-surface-2 border-b-2 border-theme-border w-12 select-none">
                   #
                 </th>
                 {/* REQ-3050: Risiko-Spalte */}
                 <th
                   onClick={() => toggleSort("Risiko")}
-                  className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 cursor-pointer hover:bg-slate-100 select-none whitespace-nowrap w-16"
+                  className="px-3 py-2 text-left text-xs font-medium text-theme-text-secondary bg-theme-surface-2 border-b-2 border-theme-border cursor-pointer hover:bg-theme-surface-hover select-none whitespace-nowrap w-16"
                   title={t('testCasePanel.riskColumnTitle')}
                 >
                   Risiko{sortIcon("Risiko")}
@@ -403,7 +404,7 @@ export default function TestCasePanel({ projectId }: Props) {
                 {columns.map((col) => (
                   <th key={col}
                     onClick={() => toggleSort(col)}
-                    className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 cursor-pointer hover:bg-slate-100 select-none whitespace-nowrap">
+                    className="px-3 py-2 text-left text-xs font-medium text-theme-text-secondary bg-theme-surface-2 border-b-2 border-theme-border cursor-pointer hover:bg-theme-surface-hover select-none whitespace-nowrap">
                     {col}{sortIcon(col)}
                   </th>
                 ))}
@@ -418,23 +419,23 @@ export default function TestCasePanel({ projectId }: Props) {
                 const risk = Number(row["Risiko"] ?? 0);
                 return (
                   <tr key={i} className={
-                    "border-b border-slate-100 hover:bg-sky-50 transition-colors " +
+                    "border-b border-theme-border hover:bg-theme-accent-soft transition-colors " +
                     (hasError 
-                      ? "bg-red-50 border-l-4 border-l-red-500" 
-                      : i % 2 === 0 ? "bg-white" : "bg-slate-50/50")
+                      ? "bg-theme-danger-soft border-l-4 border-l-theme-danger" 
+                      : i % 2 === 0 ? "bg-theme-surface" : "bg-theme-surface-2")
                   }>
-                    <td className="px-3 py-1.5 text-slate-400 text-xs flex items-center gap-1">
+                    <td className="px-3 py-1.5 text-theme-text-muted text-xs flex items-center gap-1">
                       {String(row["#"] ?? "")}
-                      {hasError && <span title="Fehlerwert-Testfall" className="text-red-500 text-sm">⚠️</span>}
+                      {hasError && <span title={t('testCasePanel.errorCaseTitle')} className="text-theme-danger"><TriangleAlert className="w-4 h-4 inline-block" aria-hidden="true" /></span>}
                     </td>
                     {/* REQ-3050: Risiko-Zelle */}
-                    <td className="px-3 py-1.5 text-slate-700 font-medium text-xs">{formatNumber(risk)}</td>
+                    <td className="px-3 py-1.5 text-theme-text font-medium text-xs">{formatNumber(risk)}</td>
                     {columns.map((col) => {
                       const resultCategory = resultCategoryByName[col];
                       const currentValue = String(row[col] ?? "");
                       if (!resultCategory?.editable) {
                         return (
-                          <td key={col} className="px-3 py-1.5 text-slate-700">
+                          <td key={col} className="px-3 py-1.5 text-theme-text">
                             {currentValue || "-"}
                           </td>
                         );
@@ -465,10 +466,10 @@ export default function TestCasePanel({ projectId }: Props) {
                             }}
                             placeholder={t('testCasePanel.resultPlaceholder')}
                             className={
-                              "w-full min-w-36 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 " +
+                              "w-full min-w-36 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent " +
                               (draftValue.trim()
-                                ? "border-slate-300 bg-white text-slate-700"
-                                : "border-amber-300 bg-amber-50 text-slate-500")
+                                ? "border-theme-border bg-theme-surface text-theme-text"
+                                : "border-theme-warning-border bg-theme-warning-soft text-theme-text-secondary")
                             }
                           />
                           <datalist id={`result-options-${resultCategory.id}`}>

@@ -1,4 +1,4 @@
-﻿// REQ-3045 (Sofort-Fix): ProjectsPage ist die Startseite der App und muss dem
+// REQ-3045 (Sofort-Fix): ProjectsPage ist die Startseite der App und muss dem
 // aktiven Theme folgen. Vor dem Fix verwendete die Seite hartkodierte
 // "bg-slate-50 dark:bg-slate-900" / "bg-white dark:bg-slate-800" / "text-slate-800"
 // Klassen. Das Theme-System setzt aber die Klasse "theme-dark" (nicht "dark") auf
@@ -12,6 +12,7 @@ import { useProjectStore } from "../../store/projectStore";
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => vi.fn(),
+  useSearchParams: () => [new URLSearchParams(), vi.fn()],
 }));
 
 vi.mock("../../store/projectStore", () => ({
@@ -43,21 +44,18 @@ describe("ProjectsPage - REQ-3045 Theme-Tokens statt hartkodierter Light-Farben"
     expect(root.className).toMatch(/\bbg-theme-bg\b/);
   });
 
-  it("Header entfernt (B-33: kein redundanter Header mehr)", () => {
-    const { container } = render(<ProjectsPage />);
-    const header = container.querySelector("header");
-    expect(header).toBeNull();
-  });
-
-  it("Kein h1 mehr (B-33: TopNav zeigt aktiven Kontext)", () => {
+  // Redesign (PO-Vorgabe 27.11.2026): grosser Seitentitel wie im Designbeispiel ersetzt B-33
+  it("zeigt den Seitentitel als h1 mit Theme-Text-Token", () => {
     const { container } = render(<ProjectsPage />);
     const heading = container.querySelector("h1");
-    expect(heading).toBeNull();
+    expect(heading).not.toBeNull();
+    expect(heading!.className).toMatch(/\bpage-title\b/);
+    expect(heading!.className).toMatch(/\btext-theme-text\b/);
   });
 
   it("Karten-Container (Projekte-Panel) nutzt Theme-Surface-Token statt bg-white", () => {
     const { container } = render(<ProjectsPage />);
-    const panel = container.querySelector("main > div");
+    const panel = container.querySelector("main > div.card");
     expect(panel).not.toBeNull();
     expect(panel!.className).not.toMatch(/\bbg-white\b/);
     expect(panel!.className).toMatch(/\bbg-theme-surface\b/);

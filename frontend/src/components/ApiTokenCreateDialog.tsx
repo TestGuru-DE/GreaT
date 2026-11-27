@@ -6,6 +6,7 @@ import { createToken, CreateTokenRequest } from '../api/apiTokensApi';
 import { expiresAtToDays } from '../lib/tokenExpiry';
 import { useAuthStore } from '../store/authStore';
 import { usersApi, type AppUser } from '../api/usersApi';
+import { TriangleAlert } from "lucide-react";
 
 const ALL_SCOPES = [
   'projects:read',
@@ -90,48 +91,48 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-lg">
-        <h2 className="text-xl font-bold mb-4 dark:text-white">
+      <div className="bg-theme-surface rounded-lg shadow-xl p-6 w-full max-w-lg">
+        <h2 className="text-xl font-bold mb-4 ">
           {t('settings.apiTokens.createTitle')}
         </h2>
 
         {!createdToken ? (
           <>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-1 ">
                 {t('settings.apiTokens.name')} *
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full border rounded px-3 py-2 "
                 placeholder={t('settings.apiTokens.namePlaceholder')}
               />
             </div>
 
             {isAdmin && technicalUsers.length > 0 && (
               <div className="mb-4">
-                <label htmlFor="token-owner" className="block text-sm font-medium mb-1 dark:text-gray-300">
+                <label htmlFor="token-owner" className="block text-sm font-medium mb-1 ">
                   {t('settings.apiTokens.owner')}
                 </label>
                 <select
                   id="token-owner"
                   value={ownerId}
                   onChange={(e) => setOwnerId(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="w-full border rounded px-3 py-2 "
                 >
                   <option value="">{t('settings.apiTokens.ownerSelf')}</option>
                   {technicalUsers.map((u) => (
                     <option key={u.id} value={u.id}>{u.username}</option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">{t('settings.apiTokens.ownerHint')}</p>
+                <p className="text-xs text-theme-text-secondary mt-1">{t('settings.apiTokens.ownerHint')}</p>
               </div>
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-1 ">
                 {t('settings.apiTokens.expiresAt')} *
               </label>
               <input
@@ -140,13 +141,13 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
                 onChange={e => setExpiresAt(e.target.value)}
                 min={new Date().toISOString().slice(0, 10)}
                 max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
-                className="w-full border rounded px-3 py-2 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                className="w-full border rounded px-3 py-2 "
               />
-              <p className="text-xs text-gray-500 mt-1">{t('settings.apiTokens.expiresAtHint')}</p>
+              <p className="text-xs text-theme-text-secondary mt-1">{t('settings.apiTokens.expiresAtHint')}</p>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2 dark:text-gray-300">
+              <label className="block text-sm font-medium mb-2 ">
                 {t('settings.apiTokens.scopes')}
               </label>
               <div className="space-y-2">
@@ -158,8 +159,8 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
                       onChange={() => toggleScope(scope)}
                       className="rounded"
                     />
-                    <span className="text-sm dark:text-gray-300">
-                      <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{scope}</code>
+                    <span className="text-sm ">
+                      <code className="bg-theme-surface-2 px-1 rounded">{scope}</code>
                       {' '}{t(`settings.apiTokens.scopeDescriptions.${scope}`)}
                     </span>
                   </label>
@@ -167,16 +168,16 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
               </div>
             </div>
 
-            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+            {error && <p className="text-theme-danger text-sm mb-4">{error}</p>}
 
             <div className="flex justify-end gap-2">
-              <button onClick={handleClose} className="px-4 py-2 rounded border dark:border-gray-600 dark:text-white">
+              <button onClick={handleClose} className="px-4 py-2 rounded border ">
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={loading}
-                className="px-4 py-2 rounded bg-blue-600 text-white disabled:opacity-50"
+                className="px-4 py-2 rounded bg-theme-accent text-white disabled:opacity-50"
               >
                 {loading ? t('common.loading') : t('settings.apiTokens.createButton')}
               </button>
@@ -184,24 +185,24 @@ export default function ApiTokenCreateDialog({ open, onClose, onCreated }: Props
           </>
         ) : (
           <>
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700 rounded p-4 mb-4">
-              <p className="text-yellow-800 dark:text-yellow-200 text-sm mb-2">
-                ⚠️ {t('settings.apiTokens.warning')}
+            <div className="bg-theme-warning-soft border border-theme-warning-border rounded p-4 mb-4">
+              <p className="text-theme-warning text-sm mb-2">
+                <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />{t('settings.apiTokens.warning')}
               </p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded px-3 py-2 text-sm font-mono break-all">
+                <code className="flex-1 bg-theme-surface border rounded px-3 py-2 text-sm font-mono break-all">
                   {createdToken}
                 </code>
                 <button
                   onClick={handleCopy}
-                  className="px-3 py-2 rounded border dark:border-gray-600 dark:text-white text-sm whitespace-nowrap"
+                  className="px-3 py-2 rounded border text-sm whitespace-nowrap"
                 >
                   {t('settings.apiTokens.copyButton')}
                 </button>
               </div>
             </div>
             <div className="flex justify-end">
-              <button onClick={handleConfirm} className="px-4 py-2 rounded bg-blue-600 text-white">
+              <button onClick={handleConfirm} className="px-4 py-2 rounded bg-theme-accent text-white">
                 {t('settings.apiTokens.understood')}
               </button>
             </div>

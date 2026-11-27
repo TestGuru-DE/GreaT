@@ -1,4 +1,4 @@
-﻿// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
+// REQ-1207 + REQ-1208 + REQ-1215 + REQ-1216 + REQ-3001 + REQ-3009: Projektdetail – dreispaltige Ansicht
 // REQ-6005: i18n
 // REQ-6013: Modell-Export/Import
 import { useEffect, useState } from "react";
@@ -22,6 +22,7 @@ import { useConflictStore } from "../store/conflictStore";
 import { projectsApi } from "../api/client";
 import { ApiError } from "../api/ApiError";
 import { useToastStore } from "../components/Toast";
+import { Pencil, Upload } from "lucide-react";
 
 type RightTab = "generate" | "rules" | "constraints" | "generations" | "seeds" | "decision" | "classification";
 
@@ -80,18 +81,15 @@ export default function ProjectDetailPage() {
   }
 
   if (!id || isNaN(projectId)) {
-    return <div className="p-8 text-red-500">{t('projectDetail.invalidId')}</div>;
+    return <div className="p-8 text-theme-danger">{t('projectDetail.invalidId')}</div>;
   }
 
   // REQ-3045: Theme-Tokens statt hartkodierter Light-Farben, damit Frames dem aktiven Theme folgen
-  const tabClass = (tab: RightTab) =>
-    "px-4 py-2 text-sm font-medium rounded-t-lg mr-1 transition-colors " +
-    (rightTab === tab
-      ? "bg-theme-bg text-theme-accent border border-theme-border border-b-theme-bg"
-      : "text-theme-text-secondary hover:text-theme-text hover:bg-theme-surface-hover");
+  // Redesign: Reiter als Segmentsteuerung (Stil aus .segmented in index.css)
+  const tabClass = (tab: RightTab) => "whitespace-nowrap transition-colors " + (rightTab === tab ? "is-active" : "");
 
   return (
-    <div className="flex flex-col bg-theme-bg" style={{ minHeight: "calc(100vh - 56px)" }}>
+    <div className="flex flex-col bg-theme-bg min-h-screen">
       <StaleDataWarning
         visible={conflictVisible}
         modifiedBy={conflict?.modifiedBy}
@@ -100,9 +98,9 @@ export default function ProjectDetailPage() {
         onClose={() => onConflictClose()}
       />
       {/* Breadcrumb-Header */}
-      <header className="bg-theme-surface border-b border-theme-border px-6 py-3 flex items-center gap-4">
+      <header className="bg-theme-bg px-6 md:px-8 pt-6 pb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
         <button onClick={() => navigate("/projects")}
-          className="text-theme-text-secondary hover:text-theme-text text-sm flex items-center gap-1">
+          className="btn-ghost !px-2 text-sm w-full justify-start sm:w-auto">
           {t('projectDetail.backToProjects')}
         </button>
         {renaming ? (
@@ -114,22 +112,23 @@ export default function ProjectDetailPage() {
               aria-label={t('projectDetail.projectNameLabel')}
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
-              className="px-2 py-1 text-sm rounded border border-theme-border bg-theme-bg text-theme-text"
+              className="input !w-72"
             />
-            <button type="submit" className="text-sm text-theme-accent">{t('projectDetail.saveName')}</button>
-            <button type="button" className="text-sm text-theme-text-secondary" onClick={() => setRenaming(false)}>{t('projectDetail.cancelRename')}</button>
+            <button type="submit" className="btn-primary">{t('projectDetail.saveName')}</button>
+            <button type="button" className="btn-secondary" onClick={() => setRenaming(false)}>{t('projectDetail.cancelRename')}</button>
           </form>
         ) : (
           <>
-            <h1 className="text-base font-bold text-theme-text">
+            <h1 className="page-title text-theme-text !text-3xl">
               {t('projectDetail.title', { name: projectName })}
             </h1>
             {project && (
               <button
                 type="button"
-                className="text-sm text-theme-text-secondary hover:text-theme-text"
+                className="btn-ghost text-sm"
                 onClick={() => { setNameDraft(project.name); setRenaming(true); }}
               >
+                <Pencil className="w-4 h-4" aria-hidden="true" />
                 {t('projectDetail.rename')}
               </button>
             )}
@@ -139,10 +138,10 @@ export default function ProjectDetailPage() {
               <button
                 type="button"
                 onClick={() => setShowImportDialog(true)}
-                className="flex items-center gap-1 text-sm text-theme-text-secondary hover:text-theme-text border border-theme-border rounded-lg px-3 py-1 transition-colors"
+                className="btn-secondary"
                 title={t("modelImport.button")}
               >
-                <span className="text-xs">📥</span>
+                <Upload className="w-4 h-4" aria-hidden="true" />
                 <span>{t("modelImport.button")}</span>
               </button>
             </div>
@@ -151,18 +150,18 @@ export default function ProjectDetailPage() {
       </header>
 
       {/* Dreispaltige Ansicht: Kategorien + Regeln-Visualisierung + Tabs */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_280px_1fr] gap-4 p-4 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[300px_280px_1fr] gap-4 px-6 md:px-8 py-4 min-h-0">
         {/* Linke Spalte: Kategorienbaum */}
-        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-4 overflow-auto">
-          <h2 className="text-base font-semibold text-theme-text mb-3">
+        <div className="card bg-theme-surface rounded-2xl p-4 overflow-auto">
+          <h2 className="text-lg font-bold text-theme-text mb-3">
             {t('projectDetail.categoriesTitle')}
           </h2>
           <CategoryTree projectId={projectId} />
         </div>
 
         {/* Mittlere Spalte: Regeln-Visualisierung (REQ-NEU) */}
-        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm overflow-hidden flex flex-col min-h-0 hidden lg:flex">
-          <h2 className="text-xs font-semibold text-theme-text-secondary uppercase tracking-wide px-3 pt-3 mb-1">
+        <div className="card bg-theme-surface rounded-2xl overflow-hidden flex-col min-h-0 hidden lg:flex">
+          <h2 className="text-lg font-bold text-theme-text px-4 pt-4 mb-1">
             {t('projectDetail.ruleConnections')}
           </h2>
           <div className="flex-1 overflow-hidden px-1 pb-1">
@@ -171,8 +170,9 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Rechte Spalte: Tabs */}
-        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm flex flex-col min-h-0 min-w-0">
-          <div className="flex border-b border-theme-border px-4 pt-3">
+        <div className="card bg-theme-surface rounded-2xl flex flex-col min-h-0 min-w-0">
+          <div className="px-4 pt-4 pb-1 overflow-x-auto [scrollbar-width:thin]">
+          <div className="segmented">
             <button onClick={() => setRightTab("generate")} className={tabClass("generate")}>
               {t('projectDetail.tabGenerate')}
             </button>
@@ -195,6 +195,7 @@ export default function ProjectDetailPage() {
             <button onClick={() => setRightTab("classification")} className={tabClass("classification")}>
               {t('projectDetail.tabClassification', { defaultValue: 'Klassifikationsbaum' })}
             </button>
+          </div>
           </div>
 
           <div className="flex-1 p-4 flex flex-col min-h-0 min-w-0 overflow-auto">

@@ -1,4 +1,4 @@
-﻿// REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
+// REQ-1207: Kategorienbaum mit Drag&Drop (REQ-1209), Kontextmenue (REQ-1211),
 // Inline-Edit (REQ-1213), Keyboard-Shortcuts (REQ-1210), Toast (REQ-1212), Undo/Redo (REQ-3053)
 // REQ-3054: Pfeiltasten-Navigation, F2, Enter, Delete, Escape
 // REQ-6005: i18n
@@ -251,8 +251,8 @@ export default function CategoryTree({ projectId }: Props) {
     ];
   };
 
-  if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t('categoryTree.loading')}</p>;
-  if (error) return <p className="text-red-500 text-sm">{error}</p>;
+  if (loading) return <p className="text-theme-text-muted text-sm animate-pulse">{t('categoryTree.loading')}</p>;
+  if (error) return <p className="text-theme-danger text-sm">{error}</p>;
 
   return (
     <div>
@@ -268,7 +268,7 @@ export default function CategoryTree({ projectId }: Props) {
       <form onSubmit={handleAddCategory} className="flex gap-2 mb-4">
         <select aria-label={t('categoryTree.categoryType.normal')} value={newCatKind}
           onChange={(e) => setNewCatKind(e.target.value as typeof newCatKind)}
-          className="px-2 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
+          className="shrink-0 max-w-[7.5rem] px-2 py-1.5 text-sm rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent">
           <option value="normal">{t('categoryTree.categoryType.normal')}</option>
           <option value="ergebnis">{t('categoryTree.categoryType.ergebnis')}</option>
           <option value="ursache">{t('categoryTree.categoryType.ursache')}</option>
@@ -277,16 +277,17 @@ export default function CategoryTree({ projectId }: Props) {
         <input ref={newCatRef} value={newCatName}
           onChange={(e) => setNewCatName(e.target.value)}
           placeholder={t('categoryTree.newCategoryPlaceholder')}
-          className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400"
+          className="flex-1 min-w-0 px-3 py-1.5 text-sm rounded-lg border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent"
         />
         <button type="submit" disabled={!newCatName.trim()}
-          className="px-3 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-40 font-bold">
+          aria-label={t('categoryTree.newCategoryPlaceholder')}
+          className="shrink-0 px-3 py-1.5 bg-theme-accent text-white text-sm rounded-lg hover:bg-theme-accent-hover disabled:opacity-40 font-bold">
           +
         </button>
       </form>
 
       {categories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+        <div className="flex flex-col items-center justify-center py-12 text-theme-text-muted">
           <span className="text-4xl mb-2">+</span>
           <p className="text-sm">{t('categoryTree.noCategories')}</p>
           <p className="text-xs mt-1">{t('categoryTree.noCategoriesHint')}</p>
@@ -311,19 +312,19 @@ export default function CategoryTree({ projectId }: Props) {
               onContextMenu={(e) => openCtxCat(e, cat.id)}
               className={
                 "border rounded-xl overflow-hidden transition-all cursor-grab " +
-                (selectedCatId === cat.id ? "border-sky-400 shadow-sm" : "border-slate-200") +
+                (selectedCatId === cat.id ? "border-theme-accent shadow-sm" : "border-theme-border") +
                 (dragOverId === cat.id ? " opacity-60 scale-95" : "") +
-                (focusedCatIndex === idx ? " ring-2 ring-theme-primary ring-offset-1" : "")
+                (focusedCatIndex === idx ? " ring-2 ring-theme-accent ring-offset-1" : "")
               }
             >
               {/* Kategorie-Header */}
               <div
-                className={"flex items-center justify-between px-3 py-2 hover:bg-slate-50 " +
-                  (selectedCatId === cat.id ? "bg-sky-50" : "bg-slate-50")}
+                className={"flex items-center justify-between px-3 py-2 hover:bg-theme-surface-hover " +
+                  (selectedCatId === cat.id ? "bg-theme-accent-soft" : "bg-theme-surface-2")}
                 onClick={(e) => { e.stopPropagation(); toggleExpand(cat.id); }}
               >
-                <span className="flex items-center gap-2 font-medium text-sm text-slate-700 min-w-0">
-                  <span className="text-slate-400 w-4 text-center select-none flex-shrink-0">
+                <span className="flex items-center gap-2 font-medium text-sm text-theme-text min-w-0">
+                  <span className="text-theme-text-muted w-4 text-center select-none flex-shrink-0">
                     {expanded[cat.id] ? "v" : ">"}
                   </span>
                   {editingCat === cat.id ? (
@@ -335,7 +336,7 @@ export default function CategoryTree({ projectId }: Props) {
                         if (e.key === "Escape") setEditingCat(null);
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="flex-1 px-1 py-0.5 text-sm border border-sky-400 rounded focus:outline-none"
+                      className="flex-1 px-1 py-0.5 text-sm border border-theme-accent rounded focus:outline-none"
                     />
                   ) : (
                     <span onDoubleClick={(e) => { e.stopPropagation(); startEditCat(cat.id, cat.name); }}
@@ -343,13 +344,13 @@ export default function CategoryTree({ projectId }: Props) {
                   )}
                   {/* REQ-5002/REQ-4016: Kategorie-Typ visuell anzeigen */}
                   {cat.category_type === "cause" && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ursache')}>U</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-theme-accent-soft text-theme-link rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ursache')}>U</span>
                   )}
                   {cat.category_type === "effect" && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-green-100 text-green-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.wirkung')}>W</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-theme-success-soft text-theme-success rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.wirkung')}>W</span>
                   )}
                   {cat.is_result && (
-                    <span className="ml-1 flex-shrink-0 text-xs bg-purple-100 text-purple-700 rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ergebnis')}>E</span>
+                    <span className="ml-1 flex-shrink-0 text-xs bg-theme-accent-soft text-theme-link rounded-full px-1.5 py-0.5" title={t('categoryTree.categoryType.ergebnis')}>E</span>
                   )}
                   {/* Werte-Zaehler Badge (Bugfix: '-' wenn noch nicht geladen) */}
                   <span
@@ -359,7 +360,7 @@ export default function CategoryTree({ projectId }: Props) {
                         setExpanded((s) => ({ ...s, [cat.id]: true }));
                       }
                     }}
-                    className="ml-1 flex-shrink-0 text-xs bg-slate-200 text-slate-600 rounded-full px-1.5 py-0.5 font-normal cursor-pointer hover:bg-slate-300 transition-colors"
+                    className="ml-1 flex-shrink-0 text-xs bg-theme-surface-hover text-theme-text-secondary rounded-full px-1.5 py-0.5 font-normal cursor-pointer hover:bg-theme-surface-hover transition-colors"
                     title={values[cat.id] ? t('categoryTree.valuesCount', { count: (values[cat.id]).length }) : t('categoryTree.loadValues')}
                   >
                     {values[cat.id] ? (values[cat.id]).length : "…"}
@@ -370,11 +371,11 @@ export default function CategoryTree({ projectId }: Props) {
                   <button
                     onClick={(e) => { e.stopPropagation(); setBvaDialogOpen({ id: cat.id, name: cat.name }); }}
                     title={t('categoryTree.contextMenu.bva')}
-                    className="text-slate-400 hover:text-sky-600 text-xs px-1.5 py-0.5 rounded hover:bg-sky-50 transition-colors"
+                    className="text-theme-text-muted hover:text-theme-link text-xs px-1.5 py-0.5 rounded hover:bg-theme-accent-soft transition-colors"
                   >
                     ≈
                   </button>
-                  <span className="text-slate-300 text-xs select-none cursor-grab" title={t('categoryTree.keyboardHelp.sort')}>
+                  <span className="text-theme-text-muted text-xs select-none cursor-grab" title={t('categoryTree.keyboardHelp.sort')}>
                     :::
                   </span>
                 </span>
@@ -382,17 +383,17 @@ export default function CategoryTree({ projectId }: Props) {
 
               {/* Werte-Liste */}
               {expanded[cat.id] && (
-                <div className="px-3 py-2 bg-white border-t border-slate-100">
+                <div className="px-3 py-2 bg-theme-surface border-t border-theme-border">
                   <ul className="space-y-0.5 mb-2">
                     {(values[cat.id] ?? []).length === 0 ? (
-                      <li className="text-slate-400 text-xs italic py-1">{t('categoryTree.noValues')}</li>
+                      <li className="text-theme-text-muted text-xs italic py-1">{t('categoryTree.noValues')}</li>
                     ) : (
                       (values[cat.id] ?? []).map((v) => (
                         <li key={v.id}
                           onContextMenu={(e) => openCtxVal(e, cat.id, v.id)}
                           onClick={() => { setSelectedValId({ catId: cat.id, valId: v.id }); setSelectedCatId(null); }}
-                          className={"flex items-center justify-between text-sm py-0.5 px-1 rounded hover:bg-slate-50 group" +
-                            (selectedValId?.valId === v.id ? " bg-sky-50 ring-1 ring-sky-300" : "")}>
+                          className={"flex items-center justify-between text-sm py-0.5 px-1 rounded hover:bg-theme-surface-hover group" +
+                            (selectedValId?.valId === v.id ? " bg-theme-accent-soft ring-1 ring-theme-accent" : "")}>
                           {editingVal?.valId === v.id ? (
                             <input autoFocus value={editingValName}
                               onChange={(e) => setEditingValName(e.target.value)}
@@ -401,23 +402,23 @@ export default function CategoryTree({ projectId }: Props) {
                                 if (e.key === "Enter") confirmEditVal(cat.id, v.id);
                                 if (e.key === "Escape") setEditingVal(null);
                               }}
-                              className="flex-1 px-1 py-0.5 text-sm border border-sky-400 rounded focus:outline-none"
+                              className="flex-1 px-1 py-0.5 text-sm border border-theme-accent rounded focus:outline-none"
                             />
                           ) : (
                             <>
                               <span
                                 onDoubleClick={() => startEditVal(cat.id, v.id, v.value)}
-                                className={"text-slate-700 flex-1 truncate " +
-                                  (v.risk_weight > 2 ? "text-orange-700 font-medium" : "")}>
-                                {v.is_default && <span className="mr-1 text-amber-500 font-bold" title={t('categoryTree.contextMenu.setDefault')}>★</span>}
+                                className={"text-theme-text flex-1 truncate " +
+                                  (v.risk_weight > 2 ? "text-theme-warning font-medium" : "")}>
+                                {v.is_default && <span className="mr-1 text-theme-warning font-bold" title={t('categoryTree.contextMenu.setDefault')}>★</span>}
                                 {v.value}
                                 {v.risk_weight > 2 && (
-                                  <span className="ml-1 text-xs bg-orange-100 text-orange-600 rounded px-1">
+                                  <span className="ml-1 text-xs bg-theme-warning-soft text-theme-warning rounded px-1">
                                     R{v.risk_weight}
                                   </span>
                                 )}
                                 {v.allowed === false && (
-                                  <span className="ml-1 text-xs bg-red-100 text-red-600 rounded px-1 font-bold" title={t('categoryTree.keyboardHelp.delete')}>✕</span>
+                                  <span className="ml-1 text-xs bg-theme-danger-soft text-theme-danger rounded px-1 font-bold" title={t('categoryTree.keyboardHelp.delete')}>✕</span>
                                 )}
                               </span>
                               <div className="flex items-center gap-1 transition-opacity">
@@ -432,7 +433,7 @@ export default function CategoryTree({ projectId }: Props) {
                                     await categoriesApi.updateProperties(v.id, { risk_weight: rw });
                                     fetchValues(cat.id);
                                   }}
-                                  className="w-10 px-1 py-0.5 text-xs border border-slate-200 rounded text-center focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                  className="w-10 px-1 py-0.5 text-xs border border-theme-border rounded text-center focus:outline-none focus:ring-1 focus:ring-theme-accent"
                                 />
                                 <select
                                   value={v.vtype ?? "string"}
@@ -442,7 +443,7 @@ export default function CategoryTree({ projectId }: Props) {
                                     await categoriesApi.updateProperties(v.id, { vtype: e.target.value });
                                     fetchValues(cat.id);
                                   }}
-                                  className="text-xs border border-slate-200 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                                  className="text-xs border border-theme-border rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-theme-accent"
                                 >
                                   {["string","number","date","time","boolean","email","text"].map((t2) => (
                                     <option key={t2} value={t2}>{t2}</option>
@@ -457,13 +458,13 @@ export default function CategoryTree({ projectId }: Props) {
                                     await categoriesApi.updateProperties(v.id, { allowed: !e.target.checked });
                                     fetchValues(cat.id);
                                   }}
-                                  className="rounded border-slate-300 text-red-500"
+                                  className="rounded border-theme-border text-theme-danger"
                                 />
                               </div>
                               <button onClick={() => deleteValue(cat.id, v.id)
                                 .then((done) => { if (done) toast.add(t("categoryTree.toast.valueDeleted")); })
                                 .catch(() => toast.add(t("categoryTree.toast.error"), "error"))}
-                                className="opacity-0 group-hover:opacity-100 text-red-300 hover:text-red-500 text-xs ml-2 transition-opacity">
+                                className="opacity-0 group-hover:opacity-100 text-theme-danger hover:text-theme-danger text-xs ml-2 transition-opacity">
                                 x
                               </button>
                             </>
@@ -478,10 +479,10 @@ export default function CategoryTree({ projectId }: Props) {
                       onChange={(e) => setNewValue((s) => ({ ...s, [cat.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddValue(cat.id); } }}
                       placeholder={t('categoryTree.newValuePlaceholder')}
-                      className="flex-1 px-2 py-1 text-xs rounded border border-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                      className="flex-1 px-2 py-1 text-xs rounded border border-theme-border focus:outline-none focus:ring-1 focus:ring-theme-accent"
                     />
                     <button onClick={() => handleAddValue(cat.id)}
-                      className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-xs rounded border border-slate-200">
+                      className="px-2 py-1 bg-theme-surface-2 hover:bg-theme-surface-hover text-xs rounded border border-theme-border">
                       +
                     </button>
                   </div>
@@ -535,7 +536,7 @@ export default function CategoryTree({ projectId }: Props) {
       )}
 
       {/* Tastatur-Hilfe */}
-      <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400 space-y-0.5">
+      <div className="mt-4 pt-3 border-t border-theme-border text-xs text-theme-text-muted space-y-0.5">
         <p>{t('categoryTree.keyboardHelp.newCategory')} &nbsp; {t('categoryTree.keyboardHelp.delete')} &nbsp; {t('categoryTree.keyboardHelp.rename')}</p>
         <p>{t('categoryTree.keyboardHelp.contextMenu')} &nbsp; {t('categoryTree.keyboardHelp.sort')}</p>
         <p>{t('categoryTree.keyboardHelp.undo')} &nbsp; {t('categoryTree.keyboardHelp.redo')}</p>

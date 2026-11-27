@@ -141,7 +141,7 @@ describe("ExportFormatDropdown - REQ-6011", () => {
     // The focused item has tabindex="0" and the sky-50 background
     const focusedItem = menuItems.find((item) => item.getAttribute("tabindex") === "0");
     expect(focusedItem).toBeInTheDocument();
-    expect(focusedItem).toHaveClass("bg-sky-50");
+    expect(focusedItem).toHaveClass("bg-theme-accent-soft");
   });
 
   it("führt Export bei Enter auf fokussiertem Item aus", async () => {

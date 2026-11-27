@@ -5,6 +5,7 @@ import { useSeedStore } from "../store/seedStore";
 import { categoriesApi } from "../api/client";
 import type { Category, SeedCase, SeedSet } from "../types";
 import SeedImport from "./SeedImport";
+import { TriangleAlert } from "lucide-react";
 
 interface Props {
   projectId: number;
@@ -88,35 +89,35 @@ export default function SeedManager({ projectId }: Props) {
       {/* Message */}
       {msg && (
         <div className={`px-3 py-2 rounded-lg text-sm ${
-          msg.type === "ok" ? "bg-green-50 border border-green-200 text-green-700" :
-          msg.type === "warn" ? "bg-amber-50 border border-amber-200 text-amber-700" :
-          "bg-red-50 border border-red-200 text-red-700"
+          msg.type === "ok" ? "bg-theme-success-soft border border-theme-success-border text-theme-success" :
+          msg.type === "warn" ? "bg-theme-warning-soft border border-theme-warning-border text-theme-warning" :
+          "bg-theme-danger-soft border border-theme-danger-border text-theme-danger"
         }`}>
-          {msg.type === "warn" && "⚠️ "}{msg.text}
+          {msg.type === "warn" && <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />}{msg.text}
         </div>
       )}
 
       {error && (
-        <div className="px-3 py-2 rounded-lg text-sm bg-red-50 border border-red-200 text-red-700">
+        <div className="px-3 py-2 rounded-lg text-sm bg-theme-danger-soft border border-theme-danger-border text-theme-danger">
           {error}
         </div>
       )}
 
       {/* Header + Actions */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-800">
+        <h2 className="text-lg font-semibold text-theme-text">
           {t("seedManager.title", { defaultValue: "Seed-Saetze" })}
         </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setShowCreate(true)}
-            className="px-3 py-1.5 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+            className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded-lg hover:bg-theme-accent-hover transition-colors"
           >
             {t("seedManager.newSet", { defaultValue: "+ Neuer Satz" })}
           </button>
           <button
             onClick={() => setShowImport(true)}
-            className="px-3 py-1.5 text-sm bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-3 py-1.5 text-sm bg-theme-surface border border-theme-border text-theme-text rounded-lg hover:bg-theme-surface-hover transition-colors"
           >
             {t("seedManager.importCsv", { defaultValue: "CSV Import" })}
           </button>
@@ -125,8 +126,8 @@ export default function SeedManager({ projectId }: Props) {
 
       {/* Create Dialog */}
       {showCreate && (
-        <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">
+        <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2">
+          <h3 className="text-sm font-semibold text-theme-text mb-3">
             {t("seedManager.createTitle", { defaultValue: "Neuer Seed-Satz" })}
           </h3>
           <div className="flex gap-2">
@@ -135,18 +136,18 @@ export default function SeedManager({ projectId }: Props) {
               value={newSetName}
               onChange={(e) => setNewSetName(e.target.value)}
               placeholder={t("seedManager.setNamePlaceholder", { defaultValue: "Name des Seed-Satzes" })}
-              className="flex-1 px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+              className="flex-1 px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
             <button
               onClick={handleCreate}
-              className="px-4 py-1.5 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+              className="px-4 py-1.5 text-sm bg-theme-accent text-white rounded-lg hover:bg-theme-accent-hover transition-colors"
             >
               {t("seedManager.saveBtn", { defaultValue: "Speichern" })}
             </button>
             <button
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+              className="px-3 py-1.5 text-sm text-theme-text-secondary hover:text-theme-text transition-colors"
             >
               {t("seedManager.cancel", { defaultValue: "Abbrechen" })}
             </button>
@@ -156,9 +157,9 @@ export default function SeedManager({ projectId }: Props) {
 
       {/* Seed-Saetze Liste */}
       {loading ? (
-        <p className="text-sm text-slate-400 animate-pulse">{t("seedManager.loading", { defaultValue: "Laden..." })}</p>
+        <p className="text-sm text-theme-text-muted animate-pulse">{t("seedManager.loading", { defaultValue: "Laden..." })}</p>
       ) : seedSets.length === 0 ? (
-        <p className="text-sm text-slate-400 text-center py-8">
+        <p className="text-sm text-theme-text-muted text-center py-8">
           {t("seedManager.noSets", { defaultValue: "Noch keine Seed-Saetze. Erstellen oder importieren." })}
         </p>
       ) : (
@@ -168,23 +169,23 @@ export default function SeedManager({ projectId }: Props) {
               key={ss.id}
               className={`flex items-center justify-between px-4 py-3 border rounded-xl text-sm transition-colors ${
                 currentSet?.id === ss.id
-                  ? "bg-sky-50 border-sky-300"
-                  : "bg-white border-slate-200 hover:bg-slate-50"
+                  ? "bg-theme-accent-soft border-theme-accent"
+                  : "bg-theme-surface border-theme-border hover:bg-theme-surface-hover"
               }`}
             >
               <button
                 onClick={() => handleSelectSet(ss.id)}
                 className="flex-1 text-left"
               >
-                <div className="font-medium text-slate-800">{ss.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="font-medium text-theme-text">{ss.name}</div>
+                <div className="text-xs text-theme-text-secondary">
                   {ss.seed_count} {t("seedManager.seeds", { defaultValue: "Seeds" })}
                   {ss.created_at && ` · ${new Date(ss.created_at).toLocaleDateString("de-DE")}`}
                 </div>
               </button>
               <button
                 onClick={() => handleDeleteSet(ss.id)}
-                className="ml-3 text-slate-300 hover:text-red-500 transition-colors text-lg leading-none"
+                className="ml-3 text-theme-text-muted hover:text-theme-danger transition-colors text-lg leading-none"
                 title={t("seedManager.deleteTitle", { defaultValue: "Loeschen" })}
               >
                 ×
@@ -237,8 +238,8 @@ function SeedEditor({
 
   if (categories.length === 0) {
     return (
-      <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
-        <p className="text-sm text-slate-400">
+      <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2">
+        <p className="text-sm text-theme-text-muted">
           {t("seedManager.needCategories", { defaultValue: "Zuerst Kategorien anlegen." })}
         </p>
       </div>
@@ -246,21 +247,21 @@ function SeedEditor({
   }
 
   return (
-    <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
+    <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-700">
+        <h3 className="text-sm font-semibold text-theme-text">
           {t("seedManager.editorTitle", { defaultValue: "Seeds bearbeiten" })}: {seedSet.name}
         </h3>
         <div className="flex gap-2">
           <button
             onClick={onAddSeed}
-            className="px-3 py-1 text-xs bg-white border border-slate-300 text-slate-600 rounded-lg hover:bg-slate-50 transition-colors"
+            className="px-3 py-1 text-xs bg-theme-surface border border-theme-border text-theme-text-secondary rounded-lg hover:bg-theme-surface-hover transition-colors"
           >
             + {t("seedManager.addSeed", { defaultValue: "Seed" })}
           </button>
           <button
             onClick={onSave}
-            className="px-3 py-1 text-xs bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors"
+            className="px-3 py-1 text-xs bg-theme-accent text-white rounded-lg hover:bg-theme-accent-hover transition-colors"
           >
             {t("seedManager.saveSet", { defaultValue: "Satz speichern" })}
           </button>
@@ -268,7 +269,7 @@ function SeedEditor({
       </div>
 
       {seedSet.seed_cases.length === 0 ? (
-        <p className="text-xs text-slate-400 text-center py-4">
+        <p className="text-xs text-theme-text-muted text-center py-4">
           {t("seedManager.noSeeds", { defaultValue: "Noch keine Seeds. Fuege welche hinzu." })}
         </p>
       ) : (
@@ -305,8 +306,8 @@ function SeedRow({ index, seed, categories, onAssignmentChange, onRemove }: Seed
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg">
-      <span className="text-xs font-mono text-slate-400 w-6 text-right">{index + 1}</span>
+    <div className="flex items-center gap-2 px-3 py-2 bg-theme-surface border border-theme-border rounded-lg">
+      <span className="text-xs font-mono text-theme-text-muted w-6 text-right">{index + 1}</span>
       <div className="flex-1 grid grid-cols-[repeat(auto-fill,minmax(120px,1fr))] gap-1">
         {categories.map((cat) => {
           // Werte der Kategorie als Optionen
@@ -315,7 +316,7 @@ function SeedRow({ index, seed, categories, onAssignmentChange, onRemove }: Seed
           const currentValue = seed.assignment[cat.name] ?? "";
           return (
             <div key={cat.id} className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-400 w-16 truncate" title={cat.name}>
+              <span className="text-[10px] text-theme-text-muted w-16 truncate" title={cat.name}>
                 {cat.name.length > 8 ? cat.name.slice(0, 8) + "…" : cat.name}
               </span>
               <input
@@ -323,7 +324,7 @@ function SeedRow({ index, seed, categories, onAssignmentChange, onRemove }: Seed
                 value={currentValue ?? ""}
                 placeholder={t("seedManager.anyPlaceholder", { defaultValue: "(any)" })}
                 onChange={(e) => onAssignmentChange(index, cat.name, e.target.value)}
-                className="flex-1 min-w-0 px-1.5 py-0.5 text-xs border border-slate-200 rounded bg-slate-50 focus:outline-none focus:ring-1 focus:ring-sky-400 text-black"
+                className="flex-1 min-w-0 px-1.5 py-0.5 text-xs border border-theme-border rounded bg-theme-surface-2 focus:outline-none focus:ring-1 focus:ring-theme-accent text-theme-text"
               />
             </div>
           );
@@ -331,7 +332,7 @@ function SeedRow({ index, seed, categories, onAssignmentChange, onRemove }: Seed
       </div>
       <button
         onClick={onRemove}
-        className="text-slate-300 hover:text-red-500 transition-colors text-sm leading-none"
+        className="text-theme-text-muted hover:text-theme-danger transition-colors text-sm leading-none"
         title={t("seedManager.removeSeed", { defaultValue: "Seed entfernen" })}
       >
         ×

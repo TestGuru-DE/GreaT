@@ -1,4 +1,4 @@
-﻿// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
+// REQ-3003 + REQ-3004: Tests fuer den Regeleditor in RulesPanel (Formular, direktes Speichern, Konflikt-Warnung)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import RulesPanel from "../RulesPanel";
@@ -128,11 +128,11 @@ describe("RulesPanel - REQ-3003 Regeleditor (Formular + direktes Speichern)", ()
     await screen.findByText("Neue Regel anlegen");
     const [typeSelect, ifCatSelect, ifValSelect, thenCatSelect, thenValSelect] = comboboxes();
 
-    expect(typeSelect).toHaveClass("text-black");
-    expect(ifCatSelect).toHaveClass("text-black");
-    expect(ifValSelect).toHaveClass("text-black");
-    expect(thenCatSelect).toHaveClass("text-black");
-    expect(thenValSelect).toHaveClass("text-black");
+    expect(typeSelect).toHaveClass("text-theme-text");
+    expect(ifCatSelect).toHaveClass("text-theme-text");
+    expect(ifValSelect).toHaveClass("text-theme-text");
+    expect(thenCatSelect).toHaveClass("text-theme-text");
+    expect(thenValSelect).toHaveClass("text-theme-text");
   });
 
   it.each([
@@ -158,7 +158,7 @@ describe("RulesPanel - REQ-3003 Regeleditor (Formular + direktes Speichern)", ()
     const list = await screen.findByRole("list");
     const ruleItem = within(list).getByText("rot").closest("li");
     expect(ruleItem).not.toBeNull();
-    expect(ruleItem!).toHaveClass("text-black");
+    expect(ruleItem!).toHaveClass("text-theme-text");
   });
 
   it("speichert eine neue Regel direkt ueber den Editor und zeigt sie danach in der Regelanzeige", async () => {
@@ -236,7 +236,7 @@ describe("RulesPanel - REQ-3004 Regelwiderspruch-Erkennung", () => {
     const list = screen.getByRole("list");
     const ruleItem = within(list).getByText("rot").closest("li");
     expect(ruleItem).not.toBeNull();
-    expect(ruleItem!.className).toMatch(/amber/);
+    expect(ruleItem!.className).toMatch(/warning/);
 
     // Speichern ist trotzdem möglich (Warnung, kein Hard-Block) - Regel wurde trotzdem uebernommen
     expect(await screen.findByText("1 Regel")).toBeInTheDocument();
@@ -264,6 +264,6 @@ describe("RulesPanel - REQ-3004 Regelwiderspruch-Erkennung", () => {
 
     const list = screen.getByRole("list");
     const ruleItem = within(list).getByText("rot").closest("li");
-    expect(ruleItem!.className).not.toMatch(/amber/);
+    expect(ruleItem!.className).not.toMatch(/warning/);
   });
 });

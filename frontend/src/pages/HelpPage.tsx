@@ -1,4 +1,4 @@
-﻿// In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
+// In-App-Hilfe: Rendert das Handbuch als Markdown + INFO-Section
 // Erreichbar via: TopNav "?"-Button oder F1-Taste
 // REQ-6005: i18n for chapter labels and UI elements
 import { useState, useEffect, useRef } from 'react';
@@ -231,18 +231,18 @@ export default function HelpPage() {
     : handbookContent;
 
   return (
-    <div className="flex min-h-[calc(100vh-80px)]">
+    <div className="flex min-h-screen">
       {/* Sidebar Navigation */}
-      <aside className="w-64 flex-shrink-0 bg-theme-surface border-r border-theme-border p-4 overflow-y-auto max-h-[calc(100vh-80px)]">
-        <h2 className="text-sm font-bold text-theme-accent mb-3">{t('help.toc')}</h2>
+      <aside className="w-64 flex-shrink-0 border-r border-theme-border p-4 overflow-y-auto max-h-screen sticky top-0">
+        <h2 className="text-xs font-semibold text-theme-text-secondary px-2 mb-2">{t('help.toc')}</h2>
         <nav className="space-y-1">
           {CHAPTER_KEYS.map((chapter) => (
             <button
               key={chapter.id}
               onClick={() => setActiveChapter(chapter.id)}
-              className={`block w-full text-left text-xs py-1 px-2 rounded transition-colors ${
+              className={`block w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${
                 activeChapter === chapter.id
-                  ? 'bg-theme-accent/20 text-theme-accent font-medium'
+                  ? 'bg-theme-surface-hover text-theme-text font-medium'
                   : 'text-theme-text-secondary hover:text-theme-text hover:bg-theme-surface-hover'
               }`}
             >
@@ -253,11 +253,11 @@ export default function HelpPage() {
       </aside>
 
       {/* Hauptinhalt */}
-      <main ref={mainRef} className="flex-1 p-8 overflow-y-auto max-h-[calc(100vh-80px)]">
+      <main ref={mainRef} className="flex-1 px-10 py-10 overflow-y-auto max-h-screen">
         <div className="max-w-3xl mx-auto">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
-            h1: ({ children }) => <h1 id={extractId(children)} className="text-2xl font-bold text-theme-text mb-4 pb-2 border-b border-theme-border">{children}</h1>,
-            h2: ({ children }) => <h2 id={extractId(children)} className="text-xl font-semibold text-theme-text mt-8 mb-3">{children}</h2>,
+            h1: ({ children }) => <h1 id={extractId(children)} className="page-title mb-6">{children}</h1>,
+            h2: ({ children }) => <h2 id={extractId(children)} className="text-2xl font-bold text-theme-text mt-10 mb-3">{children}</h2>,
             h3: ({ children }) => <h3 id={extractId(children)} className="text-lg font-medium text-theme-text mt-6 mb-2">{children}</h3>,
             p: ({ children }) => <p className="text-sm text-theme-text-secondary mb-4 leading-relaxed">{children}</p>,
             ul: ({ children }) => <ul className="list-disc list-inside text-sm text-theme-text-secondary mb-4 space-y-1">{children}</ul>,
@@ -270,7 +270,7 @@ export default function HelpPage() {
             code: ({ children }) => <code className="bg-theme-surface-hover text-theme-text px-1 py-0.5 rounded text-xs font-mono">{children}</code>,
             pre: ({ children }) => <pre className="bg-theme-surface-hover text-theme-text p-4 rounded my-4 overflow-x-auto text-xs font-mono">{children}</pre>,
             blockquote: ({ children }) => <blockquote className="border-l-4 border-theme-accent pl-4 my-4 text-sm text-theme-text-secondary italic">{children}</blockquote>,
-            a: ({ href, children }) => <a href={href} className="text-theme-accent hover:underline">{children}</a>,
+            a: ({ href, children }) => <a href={href} className="text-theme-link hover:underline">{children}</a>,
             img: ({ src, alt }) => {
               // Mappe relativen Pfad zur importierten URL
               const resolvedSrc = SCREENSHOT_MAP[src as string] || src;

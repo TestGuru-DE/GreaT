@@ -1,4 +1,4 @@
-﻿import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 // REQ-5003 + REQ-5004 + REQ-5005: Entscheidungstabelle-Komponente
 // Layout: Ursachen oben, Wirkungen unten, Regeln als Spalten
@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useDecisionTableStore } from "../store/decisionTableStore";
 import ConstraintDialog from "./ConstraintDialog";
 import DecisionTableHelp from "./DecisionTableHelp";
+import { ClipboardList, Search, TriangleAlert } from "lucide-react";
 
 interface DecisionTableProps {
   projectId?: number;
@@ -68,7 +69,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
     return (
       <div className="px-4 py-3 bg-theme-danger/10 border border-theme-danger rounded-lg text-theme-danger text-sm">
         <div className="flex items-start gap-2">
-          <span className="text-lg flex-shrink-0">⚠️</span>
+          <TriangleAlert className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
           <div>
             <p className="font-medium">{t('decisionTableView.generateError')}</p>
             <p className="mt-1 text-xs">{error}</p>
@@ -84,7 +85,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
   if (rules.length === 0 && causes.length === 0 && effects.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-theme-text-secondary">
-        <span className="text-3xl mb-2">📋</span>
+        <ClipboardList className="w-8 h-8 mb-2 text-theme-text-muted" aria-hidden="true" />
         <p className="text-sm font-medium">{t('decisionTableView.emptyTitle')}</p>
         <p className="text-xs mt-1">
           {t('decisionTableView.emptyHint')}
@@ -102,28 +103,28 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
           <div className="flex gap-2">
             <button
               onClick={() => void generate?.(effectiveProjectId)}
-              className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
+              className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded-md hover:opacity-90 transition-opacity"
               aria-label={t('decisionTableView.generate')}
             >
               {t('decisionTableView.generate')}
             </button>
             <button
               onClick={() => runCollapse(effectiveProjectId)}
-              className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
+              className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded-md hover:opacity-90 transition-opacity"
               aria-label={t('decisionTableView.collapse')}
             >
-              📦 Zusammenfassen{collapsedCount > 0 && ` (${collapsedCount} reduziert)`}
+              {t('decisionTableView.collapse')}{collapsedCount > 0 && ` (${t('decisionTableView.collapsedCount', { count: collapsedCount })})`}
             </button>
             <button
               onClick={() => runValidate(effectiveProjectId)}
-              className="px-3 py-1.5 text-sm border border-theme-border text-theme-text rounded-md hover:bg-theme-bg-hover transition-colors"
-              aria-label="Entscheidungstabelle pruefen"
+              className="px-3 py-1.5 text-sm border border-theme-border text-theme-text rounded-md hover:bg-theme-surface-hover transition-colors"
+              aria-label={t('decisionTableView.validateLabel')}
             >
-              🔍 Pruefen
+              <Search className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />{t('decisionTableView.validate')}
             </button>
             <button
               onClick={() => setShowHelpDialog(true)}
-              className="px-3 py-1.5 text-sm border border-theme-border text-theme-text rounded-md hover:bg-theme-bg-hover transition-colors"
+              className="px-3 py-1.5 text-sm border border-theme-border text-theme-text rounded-md hover:bg-theme-surface-hover transition-colors"
               aria-label={t('decisionTableView.help')}
             >
               ❓ Hilfe
@@ -135,10 +136,10 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
             <div
               className={`p-3 rounded ${
                 checksum.status === "complete"
-                  ? "bg-green-50 border border-green-200 text-green-800"
+                  ? "bg-theme-success-soft border border-theme-success-border text-theme-success"
                   : checksum.status === "overlap"
-                    ? "bg-yellow-50 border border-yellow-200 text-yellow-800"
-                    : "bg-red-50 border border-red-200 text-red-800"
+                    ? "bg-theme-warning-soft border border-theme-warning-border text-theme-warning"
+                    : "bg-theme-danger-soft border border-theme-danger-border text-theme-danger"
               }`}
             >
               <strong>{t('decisionTableView.checksum')}</strong> {checksum.checksum} / {checksum.expected} –{" "}
@@ -152,9 +153,9 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
               {contradictions.map((c, i) => (
                 <div
                   key={i}
-                  className="p-2 bg-red-50 border border-red-200 text-red-800 rounded text-sm"
+                  className="p-2 bg-theme-danger-soft border border-theme-danger-border text-theme-danger rounded text-sm"
                 >
-                  ⚠️ {c.message}
+                  <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />{c.message}
                 </div>
               ))}
             </div>
@@ -162,7 +163,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
 
           {/* Luecken */}
           {gaps.length > 0 && (
-            <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded">
+            <div className="p-2 bg-theme-warning-soft border border-theme-warning-border text-theme-warning rounded">
               <p className="text-sm font-medium">{t('decisionTableView.gaps', { count: gaps.length })}</p>
               <div className="max-h-32 overflow-y-auto mt-1">
                 {gaps.map((g, i) => (
@@ -181,7 +182,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
         <div className="mb-3 flex justify-end">
           <button
             onClick={() => setShowConstraintDialog(true)}
-            className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
+            className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded-md hover:opacity-90 transition-opacity"
             aria-label={t('decisionTableView.addConstraint')}
           >
             {t('decisionTableView.addConstraint')}
@@ -193,22 +194,22 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
       <div className="flex gap-2 mb-3 flex-wrap">
         <button
           onClick={() => setEffectMode(effectMode === "binary" ? "text" : "binary")}
-          className="px-3 py-1.5 text-sm border border-theme-border rounded-md text-theme-text hover:bg-theme-bg-hover"
+          className="px-3 py-1.5 text-sm border border-theme-border rounded-md text-theme-text hover:bg-theme-surface-hover"
         >
           {effectMode === "binary" ? "📝 Text-Modus" : "☑️ Binar-Modus"}
         </button>
 
         <button
           onClick={() => setEnableOverride(!enableOverride)}
-          className={`px-3 py-1.5 text-sm rounded-md ${enableOverride ? "bg-red-600 text-white" : "border border-theme-border text-theme-text hover:bg-theme-bg-hover"}`}
+          className={`px-3 py-1.5 text-sm rounded-md ${enableOverride ? "bg-theme-danger-fill text-white" : "border border-theme-border text-theme-text hover:bg-theme-surface-hover"}`}
         >
-          {enableOverride ? "⚠️ Override AKTIV" : "Override-Modus"}
+          {enableOverride ? t('decisionTableView.overrideActive') : t('decisionTableView.overrideMode')}
         </button>
       </div>
 
       {enableOverride && (
-        <div className="p-2 mb-3 bg-red-50 border border-red-200 text-red-800 rounded text-sm">
-          ⚠️ Override-Modus: Niedrig-priorisierte Wirkungen werden zu Don't Care (—)
+        <div className="p-2 mb-3 bg-theme-danger-soft border border-theme-danger-border text-theme-danger rounded text-sm">
+          <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />{t('decisionTableView.overrideHint')}
         </div>
       )}
 
@@ -244,7 +245,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                     <select
                       value={rule.causes[cause.id] ?? "Y"}
                       onChange={(e) => updateCause(rule.id, cause.id, e.target.value)}
-                      className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-primary rounded"
+                      className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-accent rounded"
                       aria-label={t('decisionTableView.ruleCell', { id: rule.id, name: cause.name })}
                     >
                       <option value="Y">{"Y"}</option>
@@ -261,7 +262,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
               <tr>
                 <td
                   colSpan={rules.length + 1}
-                  className="border-t-2 border-b-2 border-theme-border bg-theme-bg-muted p-1 text-xs text-theme-text-secondary text-center"
+                  className="border-t-2 border-b-2 border-theme-border bg-theme-surface-2 p-1 text-xs text-theme-text-secondary text-center"
                 >
                   ───────────── {t('decisionTableView.separator')} ─────────────
                 </td>
@@ -278,7 +279,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                     <select
                       value={effectPriorities[effect.id] ?? 999}
                       onChange={(e) => setEffectPriority(effect.id, parseInt(e.target.value))}
-                      className="text-xs border border-theme-border rounded px-1 py-0.5 bg-theme-bg-input text-theme-text"
+                      className="text-xs border border-theme-border rounded px-1 py-0.5 bg-theme-surface-2 text-theme-text"
                       aria-label={t('decisionTableView.priorityFor', { name: effect.name })}
                       title={t('decisionTableView.priorityHint')}
                     >
@@ -320,7 +321,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                             e.target.value ? (e.target.value as string | null) : null
                           )
                         }
-                        className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-primary rounded"
+                        className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-accent rounded"
                         aria-label={t('decisionTableView.ruleCell', { id: rule.id, name: effect.name })}
                       >
                         <option value="">·</option>

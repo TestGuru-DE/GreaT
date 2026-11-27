@@ -1,4 +1,4 @@
-﻿// REQ-4001: ProtectedRoute - Wendet alle untergeordneten Routes nur fuer authentifizierte User
+// REQ-4001: ProtectedRoute - Wendet alle untergeordneten Routes nur fuer authentifizierte User
 // REQ-4028 AK-1: Route-Guard: Bei passwordChangeRequired=true auf /account/password umleiten
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/authStore";
@@ -37,7 +37,7 @@ export default function ProtectedRoute() {
   if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-theme-bg">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-theme-accent" />
       </div>
     );
   }

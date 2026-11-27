@@ -332,7 +332,7 @@ describe("ConstraintBuilder - User Workflows", () => {
       });
 
       // Bearbeiten
-      const editButtons = screen.getAllByText("\u270f\ufe0f");
+      const editButtons = screen.getAllByTitle("Bearbeiten");
       fireEvent.click(editButtons[0]);
       await waitFor(() => {
         expect(screen.getByText("Bearbeiten")).toBeInTheDocument();
@@ -380,7 +380,7 @@ describe("ConstraintBuilder - User Workflows", () => {
       });
 
       // Bearbeiten
-      const editButtons = screen.getAllByText("\u270f\ufe0f");
+      const editButtons = screen.getAllByTitle("Bearbeiten");
       fireEvent.click(editButtons[0]);
       await waitFor(() => {
         expect(screen.getByText("Bearbeiten")).toBeInTheDocument();

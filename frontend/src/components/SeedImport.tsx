@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useSeedStore } from "../store/seedStore";
+import { TriangleAlert } from "lucide-react";
 
 interface Props {
   projectId: number;
@@ -42,25 +43,25 @@ export default function SeedImport({ projectId, onClose }: Props) {
   };
 
   return (
-    <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
-      <h3 className="text-sm font-semibold text-slate-700 mb-3">
+    <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2">
+      <h3 className="text-sm font-semibold text-theme-text mb-3">
         {t("seedImport.title", { defaultValue: "CSV Import" })}
       </h3>
 
       {msg && (
         <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${
-          msg.type === "ok" ? "bg-green-50 border border-green-200 text-green-700" :
-          msg.type === "warn" ? "bg-amber-50 border border-amber-200 text-amber-700" :
-          "bg-red-50 border border-red-200 text-red-700"
+          msg.type === "ok" ? "bg-theme-success-soft border border-theme-success-border text-theme-success" :
+          msg.type === "warn" ? "bg-theme-warning-soft border border-theme-warning-border text-theme-warning" :
+          "bg-theme-danger-soft border border-theme-danger-border text-theme-danger"
         }`}>
-          {msg.type === "warn" && "⚠️ "}{msg.text}
+          {msg.type === "warn" && <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />}{msg.text}
         </div>
       )}
 
       <div className="space-y-3">
         {/* Name */}
         <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">
+          <label className="text-xs font-medium text-theme-text-secondary mb-1 block">
             {t("seedImport.setNameLabel", { defaultValue: "Name des Seed-Satzes" })}
           </label>
           <input
@@ -68,13 +69,13 @@ export default function SeedImport({ projectId, onClose }: Props) {
             value={setName}
             onChange={(e) => setSetName(e.target.value)}
             placeholder={t("seedImport.setNamePlaceholder", { defaultValue: "z.B. Meine Seeds" })}
-            className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+            className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
           />
         </div>
 
         {/* File Drop Zone */}
         <div>
-          <label className="text-xs font-medium text-slate-500 mb-1 block">
+          <label className="text-xs font-medium text-theme-text-secondary mb-1 block">
             {t("seedImport.fileLabel", { defaultValue: "CSV-Datei" })}
           </label>
           <div
@@ -82,20 +83,20 @@ export default function SeedImport({ projectId, onClose }: Props) {
             onDragOver={(e) => e.preventDefault()}
             className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors ${
               file
-                ? "border-sky-300 bg-sky-50"
-                : "border-slate-300 hover:border-slate-400"
+                ? "border-theme-accent bg-theme-accent-soft"
+                : "border-theme-border hover:border-theme-border-strong"
             }`}
           >
             {file ? (
-              <div className="text-sm text-sky-700">
+              <div className="text-sm text-theme-link">
                 📄 {file.name}
               </div>
             ) : (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-theme-text-muted">
                 {t("seedImport.dropText", { defaultValue: "CSV-Datei hier ablegen oder..." })}
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-sky-600 underline ml-1"
+                  className="text-theme-link underline ml-1"
                 >
                   {t("seedImport.browse", { defaultValue: "durchsuchen" })}
                 </button>
@@ -112,8 +113,8 @@ export default function SeedImport({ projectId, onClose }: Props) {
         </div>
 
         {/* Format Info */}
-        <div className="text-xs text-slate-400 bg-white border border-slate-200 rounded-lg p-3">
-          <p className="font-medium text-slate-500 mb-1">
+        <div className="text-xs text-theme-text-muted bg-theme-surface border border-theme-border rounded-lg p-3">
+          <p className="font-medium text-theme-text-secondary mb-1">
             {t("seedImport.formatTitle", { defaultValue: "CSV-Format" })}
           </p>
           <p>
@@ -121,7 +122,7 @@ export default function SeedImport({ projectId, onClose }: Props) {
               defaultValue: "Erste Zeile: Kategorien (Kopfzeile). Jede weitere Zeile: Werte. Leer = (any/null). Trennzeichen: Komma oder Semikolon (auto-erkennung).",
             })}
           </p>
-          <pre className="mt-2 text-[10px] bg-slate-50 rounded p-2 overflow-x-auto">
+          <pre className="mt-2 text-[10px] bg-theme-surface-2 rounded p-2 overflow-x-auto">
             {t("seedImport.formatExample", {
               defaultValue: "KategorieA,KategorieB,KategorieC\nWert1,,Wert3\n,Vert2,Vert3",
             })}
@@ -132,14 +133,14 @@ export default function SeedImport({ projectId, onClose }: Props) {
         <div className="flex gap-2 justify-end">
           <button
             onClick={handleCancel}
-            className="px-3 py-1.5 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+            className="px-3 py-1.5 text-sm text-theme-text-secondary hover:text-theme-text transition-colors"
           >
             {t("seedImport.cancel", { defaultValue: "Abbrechen" })}
           </button>
           <button
             onClick={handleImport}
             disabled={!setName.trim() || !file || loading}
-            className="px-4 py-1.5 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-1.5 text-sm bg-theme-accent text-white rounded-lg hover:bg-theme-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading
               ? t("seedImport.importing", { defaultValue: "Importiere..." })

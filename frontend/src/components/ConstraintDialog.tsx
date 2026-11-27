@@ -132,7 +132,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
                 setSelectedItems([]);
                 setError(null);
               }}
-              className="w-full rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-bg-input"
+              className="w-full rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-surface-2"
             >
               {CONSTRAINT_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -161,7 +161,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
               {items.map((item) => (
                 <label
                   key={item.id}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-theme-bg-hover cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-theme-surface-hover cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -198,7 +198,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-bg-input"
+              className="w-full rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-surface-2"
               placeholder="z.B. 'Nur eine Zahlungsmethode moeglich'"
             />
           </div>
@@ -215,7 +215,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="px-4 py-2 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-theme-accent text-white rounded-md hover:opacity-90 disabled:opacity-50"
             >
               {loading ? "..." : "Hinzufuegen"}
             </button>
@@ -231,7 +231,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
                 {existingConstraints.map((c) => (
                   <li key={c.id} className="flex items-center justify-between text-sm">
                     <span className="text-theme-text">
-                      <span className="font-mono bg-theme-bg-muted px-1 rounded">{c.type}</span>
+                      <span className="font-mono bg-theme-surface-2 px-1 rounded">{c.type}</span>
                       {" "}–{" "}
                       {Array.isArray(c.targets)
                         ? c.targets.map((id) => getItemName(id)).join(", ")

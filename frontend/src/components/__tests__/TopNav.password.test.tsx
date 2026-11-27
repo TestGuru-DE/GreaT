@@ -1,4 +1,4 @@
-﻿// REQ-4028 AK-3: Tests fuer "Passwort aendern" Eintrag in TopNav
+// REQ-4028 AK-3: Tests fuer "Passwort aendern" Eintrag in TopNav
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
@@ -88,7 +88,7 @@ describe("TopNav - REQ-4028 Passwort aendern Navigation", () => {
       </MemoryRouter>
     );
 
-    const link = screen.getByText("Passwort aendern");
+    const link = screen.getByText("Passwort aendern").closest("a");
     expect(link).toHaveAttribute("href", "/account/password");
   });
 });

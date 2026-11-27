@@ -1,4 +1,4 @@
-﻿// REQ-4025: Benutzerverwaltung (Admin-only)
+// REQ-4025: Benutzerverwaltung (Admin-only)
 // REQ-6005: i18n
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -159,13 +159,13 @@ export default function UserManagement() {
       </div>
 
       {error && (
-        <p className="mb-3 text-sm text-theme-danger bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <p className="mb-3 text-sm text-theme-danger bg-theme-danger-soft border border-theme-danger-border rounded-lg px-3 py-2">
           {error}
         </p>
       )}
 
       {success && (
-        <p className="mb-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+        <p className="mb-3 text-sm text-theme-success bg-theme-success-soft border border-theme-success-border rounded-lg px-3 py-2">
           {success}
         </p>
       )}
@@ -201,8 +201,8 @@ export default function UserManagement() {
                     onClick={() => handleToggleActive(u)}
                     className={`px-2 py-1 rounded text-xs font-medium transition ${
                       u.is_active
-                        ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
-                        : "bg-gray-100 text-gray-500 border border-gray-200"
+                        ? "bg-theme-success-soft text-theme-success border border-theme-success-border"
+                        : "bg-theme-surface-2 text-theme-text-secondary border border-theme-border"
                     }`}
                     aria-label={`${u.username} ${u.is_active ? t('userManagement.actions.deactivate') : t('userManagement.actions.activate')}`}
                   >
@@ -217,7 +217,7 @@ export default function UserManagement() {
                         setChangePasswordValue("");
                         setError(null);
                       }}
-                      className="text-xs text-theme-accent hover:underline"
+                      className="text-xs text-theme-link hover:underline"
                     >
                       {t('userManagement.actions.changePassword')}
                     </button>
@@ -321,7 +321,7 @@ export default function UserManagement() {
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleDeleteUser}
-                className="w-full px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm"
+                className="w-full px-4 py-2 bg-theme-danger-fill text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm"
               >
                 {t('userManagement.deleteDialog.confirmBtn')}
               </button>

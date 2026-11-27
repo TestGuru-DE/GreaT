@@ -1,4 +1,4 @@
-﻿// REQ-4022: StaleDataWarning-Banner bei 409-Conflict
+// REQ-4022: StaleDataWarning-Banner bei 409-Conflict
 // Teil von EPIC-18 (Multi-User) / Sprint 12
 //
 // Zeigt ein deutliches Banner wenn Daten veraltet sind (Optimistic Concurrency Conflict).
@@ -81,7 +81,7 @@ export default function StaleDataWarning({
           <div className="mt-3 flex gap-2 justify-end">
             <button
               onClick={onReload}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-theme-accent-text bg-theme-warning hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-warning"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-theme-accent-text bg-theme-warning-soft hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-theme-warning"
             >
               {t('staleDataWarning.reload')}
             </button>
@@ -117,7 +117,7 @@ export default function StaleDataWarning({
                   setShowConfirm(false);
                   onOverwrite();
                 }}
-                className="px-4 py-2 text-sm font-medium text-theme-accent-text bg-theme-danger hover:opacity-90 rounded-md"
+                className="px-4 py-2 text-sm font-medium text-theme-accent-text bg-theme-danger-fill hover:opacity-90 rounded-md"
               >
                 {t('staleDataWarning.confirmOverwrite.confirm')}
               </button>

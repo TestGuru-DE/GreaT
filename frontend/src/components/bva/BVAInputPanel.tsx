@@ -1,4 +1,4 @@
-﻿// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
+// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
 import { useTranslation } from "react-i18next";
 import type { BVAConfig } from "../../lib/bva-calc";
 import { validateBVAConfig, validateMultiRangeBVAConfig } from "../../lib/bva-calc";
@@ -87,29 +87,29 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
       {hasRanges ? (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="block text-sm font-medium text-slate-700">
+            <label className="block text-sm font-medium text-theme-text">
               {t('bvaInput.ranges')}
             </label>
             <button
               type="button"
               onClick={addRange}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-theme-accent-soft text-theme-link hover:bg-theme-accent-soft"
             >
               {t('bvaInput.addRange')}
             </button>
           </div>
           <div className="space-y-3">
             {(config.ranges ?? []).map((range, idx) => (
-              <div key={range.id} className="rounded-lg border border-slate-200 p-3 space-y-3">
+              <div key={range.id} className="rounded-lg border border-theme-border p-3 space-y-3">
                 <div className="flex items-center justify-between gap-2">
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-theme-text-secondary">
                     Bereich {idx + 1}: {rangeSummary(range.minVal, range.maxVal)}
                   </div>
                   {(config.ranges ?? []).length > 1 && (
                     <button
                       type="button"
                       onClick={() => removeRange(idx)}
-                      className="text-xs text-red-600 hover:text-red-700"
+                      className="text-xs text-theme-danger hover:text-theme-danger"
                     >
                       Entfernen
                     </button>
@@ -119,7 +119,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                   <div>
                     <label
                       htmlFor={`bva-range-min-${range.id}`}
-                      className="block text-xs font-medium text-slate-600 mb-1"
+                      className="block text-xs font-medium text-theme-text-secondary mb-1"
                     >
                       Minimum
                     </label>
@@ -130,14 +130,14 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                       value={range.minVal}
                       onChange={(e) => updateRange(idx, { minVal: e.target.value })}
                       placeholder={placeholderMin}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                      className="w-full px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-theme-accent focus:border-theme-accent"
                       autoFocus={idx === 0}
                     />
                   </div>
                   <div>
                     <label
                       htmlFor={`bva-range-max-${range.id}`}
-                      className="block text-xs font-medium text-slate-600 mb-1"
+                      className="block text-xs font-medium text-theme-text-secondary mb-1"
                     >
                       Maximum
                     </label>
@@ -148,15 +148,15 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                       value={range.maxVal}
                       onChange={(e) => updateRange(idx, { maxVal: e.target.value })}
                       placeholder={placeholderMax}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                      className="w-full px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-theme-accent focus:border-theme-accent"
                     />
                   </div>
-                  <label className="flex items-center gap-2 text-sm text-slate-700 self-end pb-2">
+                  <label className="flex items-center gap-2 text-sm text-theme-text self-end pb-2">
                     <input
                       type="checkbox"
                       checked={range.allowed}
                       onChange={(e) => updateRange(idx, { allowed: e.target.checked })}
-                      className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
+                      className="w-4 h-4 text-theme-link focus:ring-2 focus:ring-theme-accent"
                     />
                     Erlaubt
                   </label>
@@ -170,7 +170,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
           {/* Min/Max-Eingabe */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="bva-min" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="bva-min" className="block text-sm font-medium text-theme-text mb-1">
                 Minimum
               </label>
               <input
@@ -180,12 +180,12 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 value={config.min}
                 onChange={(e) => handleMinChange(e.target.value)}
                 placeholder={t('bvaInput.minPlaceholder')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-theme-accent focus:border-theme-accent"
                 autoFocus
               />
             </div>
             <div>
-              <label htmlFor="bva-max" className="block text-sm font-medium text-slate-700 mb-1">
+              <label htmlFor="bva-max" className="block text-sm font-medium text-theme-text mb-1">
                 Maximum
               </label>
               <input
@@ -195,14 +195,14 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 value={config.max}
                 onChange={(e) => handleMaxChange(e.target.value)}
                 placeholder={t('bvaInput.maxPlaceholder')}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
+                className="w-full px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-theme-accent focus:border-theme-accent"
               />
             </div>
           </div>
 
           {/* Erlaubt/Fehlerfall */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-theme-text mb-2">
               {t('bvaInput.markAs')}
             </label>
             <div className="flex gap-4">
@@ -212,9 +212,9 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                   name="errorCase"
                   checked={!config.markAsErrorCase}
                   onChange={() => handleErrorCaseChange(false)}
-                  className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
+                  className="w-4 h-4 text-theme-link focus:ring-2 focus:ring-theme-accent"
                 />
-                <span className="text-sm text-slate-700">{t('bvaInput.allowed')}</span>
+                <span className="text-sm text-theme-text">{t('bvaInput.allowed')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -222,9 +222,9 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                   name="errorCase"
                   checked={config.markAsErrorCase === true}
                   onChange={() => handleErrorCaseChange(true)}
-                  className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
+                  className="w-4 h-4 text-theme-link focus:ring-2 focus:ring-theme-accent"
                 />
-                <span className="text-sm text-slate-700">{t('bvaInput.errorCase')}</span>
+                <span className="text-sm text-theme-text">{t('bvaInput.errorCase')}</span>
               </label>
             </div>
           </div>
@@ -233,7 +233,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
 
       {/* Punkte-Auswahl */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-sm font-medium text-theme-text mb-2">
           Punkte pro Grenze
         </label>
         <div className="flex gap-4">
@@ -244,9 +244,9 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 name="points"
                 checked={config.pointsPerBoundary === pts}
                 onChange={() => handlePointsChange(pts)}
-                className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
+                className="w-4 h-4 text-theme-link focus:ring-2 focus:ring-theme-accent"
               />
-              <span className="text-sm text-slate-700">{t('bvaInput.points', { count: pts })}</span>
+              <span className="text-sm text-theme-text">{t('bvaInput.points', { count: pts })}</span>
             </label>
           ))}
         </div>
@@ -254,9 +254,9 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
 
       {/* Validierungsfehler */}
       {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+        <div className="bg-theme-danger-soft border border-theme-danger-border rounded-lg p-3">
           {errors.map((err, idx) => (
-            <p key={idx} className="text-sm text-red-700">
+            <p key={idx} className="text-sm text-theme-danger">
               {err}
             </p>
           ))}

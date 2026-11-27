@@ -1,7 +1,8 @@
-﻿// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
+// REQ-1204 + REQ-2002: Projektliste mit Checkboxen fuer Bulk-Delete und Generierungs-Pruefung
 // REQ-6005: i18n
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { FolderOpen, Plus, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useProjectStore } from "../store/projectStore";
 import { generateApi } from "../api/client";
@@ -28,6 +29,9 @@ export default function ProjectsPage() {
   } | null>(null);
 
   const navigate = useNavigate();
+  // Suche aus der Seitenleiste (?q=...): filtert die angezeigte Liste
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = (searchParams.get("q") || "").trim().toLowerCase();
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
@@ -156,27 +160,32 @@ export default function ProjectsPage() {
         />
       )}
 
-      <main className="max-w-3xl mx-auto px-6 py-8">
-        <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6">
-          <h2 className="text-lg font-semibold mb-4 text-theme-text">{t('projects.title')}</h2>
+      <main className="page">
+        <header className="page-header">
+          <h1 className="page-title text-theme-text">{t('projects.title')}</h1>
+          <p className="page-subtitle">{t('projects.subtitle')}</p>
+        </header>
+        <div className="card bg-theme-surface p-6">
           <form onSubmit={handleCreate} className="flex gap-3 mb-6">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder={t('projects.newProject')}
-              className="flex-1 px-3 py-2 rounded-lg border border-theme-border bg-theme-bg text-theme-text text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent"
+              aria-label={t('projects.newProject')}
+              className="input flex-1"
             />
             <button type="submit" disabled={creating || !newName.trim()}
-              className="px-4 py-2 bg-theme-accent text-theme-accent-text text-sm rounded-lg hover:bg-theme-accent-hover disabled:opacity-50">
+              className="btn-primary">
+              <Plus className="w-4 h-4" aria-hidden="true" />
               {creating ? t('projects.createBtnLoading') : t('projects.createBtn')}
             </button>
           </form>
 
           {error && (
-            <div className="mb-4 px-4 py-2 bg-theme-surface border-2 border-theme-danger rounded-lg text-theme-danger text-sm">{error}</div>
+            <div className="banner banner-danger mb-4 text-sm" role="alert">{error}</div>
           )}
           {msg && (
-            <div className={`mb-4 px-4 py-2 rounded-lg text-sm border-2 bg-theme-surface ${msg.ok ? "border-theme-success text-theme-success" : "border-theme-warning text-theme-warning"}`}>
+            <div className={`banner mb-4 text-sm ${msg.ok ? "banner-success" : "banner-warning"}`}>
               {msg.text}
             </div>
           )}
@@ -184,12 +193,12 @@ export default function ProjectsPage() {
           {/* Auswahl-Toolbar */}
           {projects.length > 0 && (
             <div className="mb-2 flex gap-2 items-center px-1">
-              <button onClick={toggleAll} className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover">
+              <button onClick={toggleAll} className="btn-secondary !text-xs !py-1">
                 {selected.size === projects.length ? t('projects.deselectAll') : t('projects.selectAll')}
               </button>
               <button
                 onClick={() => setSelected(new Set(projects.filter((p) => !selected.has(p.id)).map((p) => p.id)))}
-                className="text-xs px-2 py-1 border border-theme-border rounded text-theme-text-secondary hover:bg-theme-surface-hover"
+                className="btn-secondary !text-xs !py-1"
               >
                 {t('projects.invertSelection')}
               </button>
@@ -198,15 +207,22 @@ export default function ProjectsPage() {
 
           {/* Bulk-Aktions-Toolbar */}
           {selected.size > 0 && (
-            <div className="mb-3 flex gap-2 items-center px-3 py-2 bg-theme-surface border-2 border-theme-accent rounded-lg">
-              <span className="text-sm text-theme-accent font-medium">{t('projects.selected', { count: selected.size })}</span>
+            <div className="banner banner-info mb-3 items-center !py-2">
+              <span className="text-sm text-theme-link font-medium">{t('projects.selected', { count: selected.size })}</span>
               <button onClick={handleBulkDelete} disabled={working}
-                className="px-3 py-1 text-sm bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 disabled:opacity-50 ml-2">
+                className="btn-danger ml-2">
                 {working ? t('projects.bulkDeleteChecking') : t('projects.bulkDelete')}
               </button>
               <button onClick={() => setSelected(new Set())} className="ml-auto text-xs text-theme-text-secondary hover:text-theme-text">
                 {t('projects.deselectAllBtn')}
               </button>
+            </div>
+          )}
+
+          {query && (
+            <div className="mb-3 flex items-center gap-2 text-sm text-theme-text-secondary">
+              <span>{t('projects.searchActive', { query: searchParams.get("q") })}</span>
+              <button className="btn-ghost !py-0.5 !px-2 text-sm" onClick={() => setSearchParams({})}>{t('projects.searchClear')}</button>
             </div>
           )}
 
@@ -226,11 +242,11 @@ export default function ProjectsPage() {
                   </th>
                   <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-12">{t('projects.id')}</th>
                   <th className="px-4 py-2 text-left text-theme-text-secondary font-medium">{t('projects.name')}</th>
-                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-40">{t('projects.actions')}</th>
+                  <th className="px-4 py-2 text-left text-theme-text-secondary font-medium w-56">{t('projects.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {projects.map((p) => (
+                {projects.filter((p) => !query || p.name.toLowerCase().includes(query)).map((p) => (
                   <tr key={p.id}
                     className={"border-b border-theme-border hover:bg-theme-surface-hover " + (selected.has(p.id) ? "bg-theme-surface-hover" : "")}>
                     <td className="px-2 py-2">
@@ -241,9 +257,9 @@ export default function ProjectsPage() {
                     <td className="px-4 py-2">
                       {/* B-34: Beschriftung in Textfarbe (Kontrast), Gefahr ueber den Rahmen */}
                       <button onClick={() => navigate("/projects/" + p.id)}
-                        className="px-2 py-0.5 mr-2 text-sm rounded border border-theme-border text-theme-text hover:bg-theme-surface-hover">{t('projects.open')}</button>
+                        className="btn-secondary !py-1 mr-2"><FolderOpen className="w-4 h-4" aria-hidden="true" />{t('projects.open')}</button>
                       <button onClick={() => handleDeleteSingle(p)} disabled={working}
-                        className="px-2 py-0.5 text-sm rounded border-2 border-theme-danger text-theme-text hover:bg-theme-surface-hover disabled:opacity-50">{t('projects.delete')}</button>
+                        className="btn-secondary !py-1 !border-theme-danger-border hover:!text-theme-danger"><Trash2 className="w-4 h-4" aria-hidden="true" />{t('projects.delete')}</button>
                     </td>
                   </tr>
                 ))}

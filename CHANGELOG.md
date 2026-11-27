@@ -50,6 +50,12 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - **Komfort-Endpunkt `generate?export=...&persist=...` (A-09):** Mit `export` (csv, json, xlsx oder ein Format aus REQ-6011) kommt das Ergebnis direkt im Exportformat; mit `persist=false` wird nichts gespeichert. Unbekanntes Format: 422 `invalid_export_format`; `persist=false` ohne `export`: 422 `persist_requires_export`; per Token ist zusaetzlich der Scope `export` noetig.
 - **Modell-Import prueft Referenzen und Schluessel (A-13):** Constraints mit unbekannten Kategorien/Werten (oder Zahlen-IDs) werden als ungueltig importiert und in `warnings` gemeldet; Kategorienamen, die sich nur in Gross-/Kleinschreibung unterscheiden, und unbekannte Schluessel (z. B. `categoriez`) werden abgelehnt; `PUT .../model` auf den Namen eines anderen Projekts liefert 409 `project_name_exists`. Seed-Saetze sind jetzt Teil der Modelldatei (`seedSets`).
 
+### 🎨 Oberflaeche
+- **Neues Design im Apple-Stil:** Linke Seitenleiste mit Suche (Strg+K), Abschnitten und farbigen Icon-Kacheln (einklappbar), grosse Seitentitel, Karten mit sichtbarem Rand, Segment-Reiter, gefuellte Eingabefelder, einheitliche Knoepfe, Hinweisbanner und Toasts mit Statussymbol; Linien-Icons statt Emojis.
+- **Themes:** "Normal" ist jetzt Graphit (dunkel), neu waehlbar ist "Hell"; "Dunkel" ist tiefschwarz; Steampunk, Regenbogen und Heavy Metal bleiben. Theme-Auswahl mit Farbvorschau.
+- **Lesbarkeit in allen Themes:** Alle festen Tailwind-Farben (887 Stellen) wurden durch Theme-Tokens ersetzt; jedes Text-/Flaechenpaar erreicht in jedem Theme mindestens 4,5:1 (WCAG AA). Ein Test prueft die Kontraste und verbietet feste Farbklassen.
+- Restliche fest codierte Texte in Entscheidungstabelle, Testfallansicht und Fehlerseite uebersetzt; Suche aus der Seitenleiste filtert die Projektliste (`/projects?q=...`); API-Doku-Kachel oeffnet `/docs` auf demselben Server (bisher fest `localhost:8000`).
+
 ### 🧹 Aufraeumen
 - Interne Arbeitsdokumente, Agentenkonfiguration und Planungsunterlagen aus dem Repository entfernt (R-07); Release-Notes zu v1.11.0 korrigiert (R-08).
 - Doppelte Handbuchkopie `documentation/handbuch.md` entfernt (massgeblich: `frontend/src/docs/handbuch.md`), ungenutztes Modul `frontend/src/lib/bva-extended.ts` und eine alte Fehlerantwort `release-response.json` entfernt.

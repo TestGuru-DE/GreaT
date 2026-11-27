@@ -1,4 +1,4 @@
-﻿// REQ-5013/5014/5019/5020: DecisionTable Optimization Tests
+// REQ-5013/5014/5019/5020: DecisionTable Optimization Tests
 import "../../i18n"; // Texte in deutscher Sprache (A-14)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
@@ -65,18 +65,18 @@ describe("DecisionTable Optimization - REQ-5013/5014/5019/5020", () => {
 
   it("zeigt 'Zusammenfassen' Button wenn projectId uebergeben", () => {
     render(<DecisionTable projectId={1} />);
-    expect(screen.getByText(/Zusammenfassen/)).toBeInTheDocument();
+    expect(screen.getByText(/Regeln zusammenfassen/)).toBeInTheDocument();
   });
 
   it("zeigt 'Pruefen' Button wenn projectId uebergeben", () => {
     render(<DecisionTable projectId={1} />);
-    expect(screen.getByText(/Pruefen/)).toBeInTheDocument();
+    expect(screen.getByText(/Prüfen/)).toBeInTheDocument();
   });
 
   it("zeigt keinen Optimierungsbereich ohne projectId", () => {
     render(<DecisionTable />);
-    expect(screen.queryByText(/Zusammenfassen/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/Pruefen/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Regeln zusammenfassen/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Prüfen/)).not.toBeInTheDocument();
   });
 
   it("zeigt collapsedCount im Button-Text", () => {
@@ -162,14 +162,14 @@ describe("DecisionTable Optimization - REQ-5013/5014/5019/5020", () => {
 
   it("ruft runCollapse beim Button-Klick auf", () => {
     render(<DecisionTable projectId={1} />);
-    const btn = screen.getByText(/Zusammenfassen/);
+    const btn = screen.getByText(/Regeln zusammenfassen/);
     fireEvent.click(btn);
     expect(mockRunCollapse).toHaveBeenCalledWith(1);
   });
 
   it("ruft runValidate beim Button-Klick auf", () => {
     render(<DecisionTable projectId={1} />);
-    const btn = screen.getByText(/Pruefen/);
+    const btn = screen.getByText(/Prüfen/);
     fireEvent.click(btn);
     expect(mockRunValidate).toHaveBeenCalledWith(1);
   });

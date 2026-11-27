@@ -1,4 +1,4 @@
-﻿// REQ-3009: Globale Generierungsübersicht (alle Projekte)
+// REQ-3009: Globale Generierungsübersicht (alle Projekte)
 // REQ-6005: i18n
 // REQ-6011: Export-Menü-Dropdown
 // BUG K-09: Abdeckung (REQ-6008) und Lückenschluss (REQ-6009) eingebunden
@@ -9,6 +9,7 @@ import type { GenerationSummary } from "../api/client";
 import { useFormattedDate } from "../hooks/useFormattedDate";
 import ExportFormatDropdown from "../components/ExportFormatDropdown";
 import CoverageOverviewMatrix from "../components/CoverageOverviewMatrix";
+import { ClipboardList } from "lucide-react";
 
 interface GenWithProject extends GenerationSummary {
   projectId: number;
@@ -107,12 +108,14 @@ export default function GenerationsPage() {
   };
 
   return (
-    <main className="max-w-5xl mx-auto px-6 py-8 bg-theme-bg min-h-screen">
-      <div className="bg-theme-surface rounded-2xl border border-theme-border shadow-sm p-6 text-theme-text">
-        <h2 className="text-lg font-semibold text-theme-text mb-4">{t('generations.title')}</h2>
+    <main className="page">
+      <header className="page-header">
+        <h1 className="page-title text-theme-text">{t('generations.title')}</h1>
+      </header>
+      <div className="card bg-theme-surface p-6 text-theme-text">
 
         {msg && (
-          <div className="mb-4 px-4 py-2 bg-theme-surface border border-theme-success rounded-lg text-theme-success text-sm">
+          <div className="banner banner-success mb-4 text-sm">
             {msg}
           </div>
         )}
@@ -127,7 +130,7 @@ export default function GenerationsPage() {
           <p className="text-theme-text-secondary text-sm">{t('generations.loading')}</p>
         ) : items.length === 0 ? (
           <div className="text-center py-12 text-theme-text-muted">
-            <p className="text-3xl mb-2">📋</p>
+            <ClipboardList className="w-8 h-8 mx-auto mb-2 text-theme-text-muted" aria-hidden="true" />
             <p>{t('generations.empty')}</p>
           </div>
         ) : (
@@ -161,7 +164,7 @@ export default function GenerationsPage() {
                       />
                     ) : (
                       <span
-                        className="cursor-pointer text-theme-text hover:text-theme-accent"
+                        className="cursor-pointer text-theme-text hover:text-theme-link"
                         onDoubleClick={() => startEdit(g)}
                         title={t('generations.renameTitle')}
                       >

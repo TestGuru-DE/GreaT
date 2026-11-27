@@ -1,4 +1,4 @@
-﻿/**
+/**
  * REQ-5018: Cause-Effect-Graph-Visualisierung
  * Ursachen links, Wirkungen rechts, Constraints als Kanten
  * SVG-basierte Graph-Ansicht mit Hover-Feedback und Legend
@@ -242,10 +242,10 @@ export default function CauseEffectGraph({ projectId }: CauseEffectGraphProps) {
       {/* Legend */}
       <div className="p-3 flex flex-wrap gap-4 text-xs text-theme-text-secondary border-t border-theme-border">
         <span>
-          <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-1"></span>Ursache
+          <span className="inline-block w-3 h-3 rounded-full bg-theme-accent mr-1"></span>Ursache
         </span>
         <span>
-          <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-1"></span>Wirkung
+          <span className="inline-block w-3 h-3 rounded-full bg-theme-success-fill mr-1"></span>Wirkung
         </span>
         {Object.entries(EDGE_COLORS).map(([type, color]) => (
           <span key={type}>

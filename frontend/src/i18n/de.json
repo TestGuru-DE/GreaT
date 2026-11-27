@@ -1,6 +1,6 @@
 {
   "nav": {
-    "home": "Home",
+    "home": "Übersicht",
     "projects": "Projekte",
     "dataclasses": "Datenklassen",
     "generations": "Generierungen",
@@ -8,8 +8,13 @@
     "changePassword": "Passwort aendern",
     "help": "Hilfe (F1)",
     "apiDocs": "API-Docs",
-    "logout": "Logout",
-    "logoutTitle": "Abmelden ({{username}})"
+    "logout": "Abmelden",
+    "logoutTitle": "Abmelden ({{username}})",
+    "search": "Suchen",
+    "searchShortcut": "Strg K",
+    "sectionWork": "Arbeitsbereich",
+    "sectionAccount": "Konto und Hilfe",
+    "toggleSidebar": "Seitenleiste ein- oder ausklappen"
   },
   "login": {
     "title": "G.R.E.A.T. – Anmelden",
@@ -87,7 +92,8 @@
         "label": "API-Docs",
         "description": "OpenAPI-Schnittstelle"
       }
-    }
+    },
+    "sectionTitle": "Bereiche"
   },
   "projects": {
     "title": "Projekte",
@@ -111,7 +117,10 @@
     "id": "ID",
     "name": "Name",
     "actions": "Aktionen",
-    "selectCheckbox": "Alle auswählen"
+    "selectCheckbox": "Alle auswählen",
+    "subtitle": "Lege Projekte an und öffne sie, um Kategorien, Regeln und Testfälle zu bearbeiten.",
+    "searchActive": "Gefiltert nach „{{query}}“",
+    "searchClear": "Filter aufheben"
   },
   "projectDetail": {
     "invalidId": "Ungültige Projekt-ID",
@@ -148,11 +157,11 @@
       "coverage2wise": "2-wise %"
     },
     "actions": {
-      "edit": "✏️",
+      "edit": "Umbenennen",
       "json": "JSON",
       "excel": "Excel",
       "csv": "CSV",
-      "delete": "🗑️",
+      "delete": "Löschen",
       "coverage": "Abdeckung",
       "gapFill": "Lücken schließen"
     },
@@ -172,13 +181,13 @@
     "deleteTitle": "Löschen"
   },
   "dataClasses": {
-    "title": "🗂️ Datenklassen-Bibliothek",
-    "tabMine": "📁 Meine Datenklassen ({{count}})",
-    "tabSystem": "📋 Beispiele ({{count}})",
-    "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
+    "title": "Datenklassen-Bibliothek",
+    "tabMine": "Meine Datenklassen ({{count}})",
+    "tabSystem": "Beispiele ({{count}})",
+    "tabBugMagnet": "Bug Magnet Import ({{count}})",
     "importExport": "Import / Export:",
-    "exportBtn": "📤 Exportieren",
-    "importBtn": "📥 Importieren",
+    "exportBtn": "Exportieren",
+    "importBtn": "Importieren",
     "newCategory": "+ Neue Kategorie anlegen",
     "newCategoryPlaceholder": "Name der neuen Kategorie...",
     "createBtn": "Anlegen",
@@ -188,16 +197,16 @@
     "emptyMineHint": "Klicke auf \"+ Neue Kategorie anlegen\" um zu starten",
     "bugMagnetDesc": "Beispielklassen von <strong>Bug Magnet</strong> – für die Inhalte ist der Urheber verantwortlich.",
     "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
-    "importing": "⏳ Importiere...",
-    "refresh": "🔄 Aktualisieren",
+    "importing": "Importiere...",
+    "refresh": "Aktualisieren",
     "emptySystem": "Noch keine Beispieldaten – klicke auf \"Importieren\".",
     "errorCreate": "Fehler beim Anlegen: {{error}}",
     "errorAddValue": "Fehler beim Hinzufügen: {{error}}",
     "errorDelete": "Fehler beim Löschen: {{error}}",
     "errorImport": "Fehler beim Import: {{error}}",
-    "importSuccess": "✅ {{count}} Klassen importiert",
-    "bugMagnetImportSuccess": "✅ {{count}} Knoten importiert",
-    "bugMagnetImportError": "❌ Import fehlgeschlagen: {{error}}"
+    "importSuccess": "{{count}} Klassen importiert",
+    "bugMagnetImportSuccess": "{{count}} Knoten importiert",
+    "bugMagnetImportError": "Import fehlgeschlagen: {{error}}"
   },
   "settings": {
     "title": "Einstellungen",
@@ -355,12 +364,13 @@
     "cancel": "Nein – abbrechen"
   },
   "themeSwitcher": {
-    "normal": "☀️ Normal",
-    "dark": "🌙 Dark",
-    "steampunk": "⚙️ Steampunk",
-    "rainbow": "🌈 Rainbow",
-    "heavyMetal": "🤘 Heavy Metal",
-    "system": "🖥️ System (OS)"
+    "normal": "Normal (Graphit)",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "steampunk": "Steampunk",
+    "rainbow": "Regenbogen",
+    "heavyMetal": "Heavy Metal",
+    "system": "System (OS)"
   },
   "portSettings": {
     "title": "Port-Einstellung",
@@ -511,7 +521,7 @@
     "ifLabel": "Wenn",
     "thenLabel": "Dann",
     "excludeLabel": "Nicht mit",
-    "conflictWarning": "⚠️ Regelwiderspruch mit Regel #{{ids}}",
+    "conflictWarning": "Regelwiderspruch mit Regel #{{ids}}",
     "deleteConfirm": "Regel löschen?",
     "deleteTitle": "Regel löschen",
     "saved": "Regel gespeichert.",
@@ -525,7 +535,7 @@
     "categoryFallback": "Kategorie #{{id}}"
   },
   "decisionTableHelp": {
-    "title": "📋 Entscheidungstabelle – Hilfe",
+    "title": "Entscheidungstabelle – Hilfe",
     "close": "Schliessen",
     "back": "← Zurueck",
     "next": "Weiter →",
@@ -535,7 +545,7 @@
       "content": "Erstelle mindestens <strong>eine Ursache</strong> und <strong>eine Wirkung</strong>.",
       "cause": "Ursache (Condition): Eine Bedingung, die eintreten kann (z.B. \"Benutzer ist angemeldet\")",
       "effect": "Wirkung (Effect): Eine Aktion oder Ergebnis (z.B. \"Zugriff gewaehrt\")",
-      "warning": "⚠️ Der Button \"Entscheidungstabelle\" ist erst aktiv, wenn BEIDE Typen existieren!"
+      "warning": "Der Button \"Entscheidungstabelle\" ist erst aktiv, wenn BEIDE Typen existieren!"
     },
     "step2": {
       "title": "Schritt 2: Werte zuweisen (optional)",
@@ -545,11 +555,11 @@
     },
     "step3": {
       "title": "Schritt 3: Tabelle generieren",
-      "content": "Klicke auf den Button <strong>\"📋 Entscheidungstabelle\"</strong>:",
+      "content": "Klicke auf den Button <strong>\"Entscheidungstabelle\"</strong>:",
       "firstClick": "Erster Klick: Aktiviert den Modus",
-      "secondClick": "Zweiter Klick (\"⚡ Generieren\"): Erstellt die Tabelle",
+      "secondClick": "Zweiter Klick (\"Generieren\"): Erstellt die Tabelle",
       "info": "Die Tabelle zeigt alle moeglichen Kombinationen deiner Ursachen (2^N Regeln).",
-      "tip": "💡 Bei 3 Ursachen = 2³ = 8 Regeln. Bei 5 Ursachen = 2⁵ = 32 Regeln."
+      "tip": "Bei 3 Ursachen = 2³ = 8 Regeln. Bei 5 Ursachen = 2⁵ = 32 Regeln."
     },
     "step4": {
       "title": "Schritt 4: Wirkungen ausfuellen",
@@ -570,10 +580,10 @@
     },
     "step6": {
       "title": "Schritt 6: Pruefen und optimieren",
-      "content": "Nutze die Buttons <strong>\"📦 Zusammenfassen\"</strong> und <strong>\"🔍 Pruefen\"</strong>:",
+      "content": "Nutze die Buttons <strong>\"Zusammenfassen\"</strong> und <strong>\"Pruefen\"</strong>:",
       "collapse": "<strong>Zusammenfassen:</strong> Fasst redundante Regeln automatisch zusammen (Collapsing)",
       "check": "<strong>Pruefen:</strong> Zeigt an, ob die Tabelle vollstaendig ist, ob Widersprueche oder Luecken existieren",
-      "legend": "✅ Gruen = Vollstaendig | 🟡 Gelb = Uberschneidungen | 🔴 Rot = Luecken"
+      "legend": "Grün = vollständig | Gelb = Überschneidungen | Rot = Lücken"
     }
   },
   "dataNodeTree": {
@@ -974,7 +984,13 @@
     "priorityHint": "Priorität (1 = höchste, 999 = keine)",
     "none": "Keine",
     "checksum": "Prüfsumme:",
-    "gaps": "{{count}} Lücke(n) in der Abdeckung"
+    "gaps": "{{count}} Lücke(n) in der Abdeckung",
+    "collapsedCount": "{{count}} reduziert",
+    "validate": "Prüfen",
+    "validateLabel": "Entscheidungstabelle prüfen",
+    "overrideActive": "Override aktiv",
+    "overrideMode": "Override-Modus",
+    "overrideHint": "Override-Modus: Niedrig priorisierte Wirkungen werden zu Don't Care (—)"
   },
   "ruleVisualization": {
     "exclude": "Verboten",
@@ -1016,7 +1032,10 @@
     "riskColumnTitle": "Risikoabdeckung (Summe der Risikogewichte)",
     "resultPlaceholder": "Ergebnis wählen oder eingeben",
     "count": "{{count}} Testfälle",
-    "riskBadge": "Risikoabdeckung: {{percent}}%"
+    "riskBadge": "Risikoabdeckung: {{percent}}%",
+    "rename": "umbenennen",
+    "exportCsvTable": "CSV (Tabelle)",
+    "errorCaseTitle": "Fehlerwert-Testfall"
   },
   "bvaValidation": {
     "outside": "außerhalb",

@@ -1,4 +1,4 @@
-﻿// REQ-3053: Undo/Redo Toolbar-Komponente
+// REQ-3053: Undo/Redo Toolbar-Komponente
 // REQ-6005: i18n
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -29,12 +29,12 @@ export default function UndoRedoToolbar({ canUndo, canRedo, onUndo, onRedo }: Un
   }, [onUndo, onRedo, canUndo, canRedo])
 
   return (
-    <div className="flex gap-1 mb-3 pb-2 border-b border-slate-100">
+    <div className="flex gap-1 mb-3 pb-2 border-b border-theme-border">
       <button
         onClick={onUndo}
         disabled={!canUndo}
         title={t('undoRedo.undoTitle')}
-        className="px-2 py-1 text-xs rounded border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-300 transition-colors"
+        className="px-2 py-1 text-xs rounded border border-theme-border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-theme-surface-hover hover:border-theme-border transition-colors"
       >
         ↩ {t('undoRedo.undo')}
       </button>
@@ -42,7 +42,7 @@ export default function UndoRedoToolbar({ canUndo, canRedo, onUndo, onRedo }: Un
         onClick={onRedo}
         disabled={!canRedo}
         title={t('undoRedo.redoTitle')}
-        className="px-2 py-1 text-xs rounded border border-slate-200 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 hover:border-slate-300 transition-colors"
+        className="px-2 py-1 text-xs rounded border border-theme-border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-theme-surface-hover hover:border-theme-border transition-colors"
       >
         ↪ {t('undoRedo.redo')}
       </button>

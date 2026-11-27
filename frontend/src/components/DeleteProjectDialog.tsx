@@ -1,4 +1,4 @@
-﻿// REQ-2002: Dialog fuer Loeschen von Projekten mit verknuepften Generierungen
+// REQ-2002: Dialog fuer Loeschen von Projekten mit verknuepften Generierungen
 // REQ-6005: i18n
 import { useTranslation } from "react-i18next";
 import type { Project } from "../types";
@@ -42,7 +42,7 @@ export default function DeleteProjectDialog({ projects, generationCount, onConfi
         <div className="flex flex-col gap-2">
           <button
             onClick={onConfirm}
-            className="w-full px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm"
+            className="w-full px-4 py-2 bg-theme-danger-fill text-theme-accent-text rounded-lg hover:opacity-90 font-medium text-sm"
           >
             {t('deleteProjectDialog.confirm')}
           </button>

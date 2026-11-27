@@ -122,7 +122,7 @@ function RefineDialog({ categoryId, valueName, onClose, onSuccess }: {
           <button className="px-3 py-1 text-sm border border-theme-border rounded" onClick={onClose}>
             {t("classificationTree.refineDialog.cancel")}
           </button>
-          <button className="px-3 py-1 text-sm bg-sky-700 text-white rounded disabled:opacity-50"
+          <button className="px-3 py-1 text-sm bg-theme-accent text-white rounded disabled:opacity-50"
             onClick={submit} disabled={loading || !name.trim()}>
             {loading ? "…" : t("classificationTree.refineDialog.create")}
           </button>
@@ -500,7 +500,7 @@ export default function ClassificationTreeView({ projectId }: Props) {
 
       {/* Baum + Matrix */}
       <div ref={containerRef} tabIndex={0} onKeyDown={onKeyDown}
-        className="relative flex-1 min-h-[240px] overflow-auto rounded border border-theme-border focus:outline-none focus:ring-2 focus:ring-sky-500"
+        className="relative flex-1 min-h-[240px] overflow-auto rounded border border-theme-border focus:outline-none focus:ring-2 focus:ring-theme-accent"
         aria-label={t("classificationTree.canvasLabel")}
         onPointerUp={() => { dragRef.current = null; }}>
         <svg ref={svgRef} data-tree="true" xmlns="http://www.w3.org/2000/svg"
@@ -556,7 +556,7 @@ export default function ClassificationTreeView({ projectId }: Props) {
         {/* Umbenennen direkt am Element */}
         {editing && (
           <input autoFocus aria-label={t("classificationTree.rename")}
-            className="absolute px-1 text-sm border-2 border-sky-700 rounded bg-white text-slate-900"
+            className="absolute px-1 text-sm border-2 border-theme-accent rounded bg-theme-surface text-theme-text"
             style={{
               left: editing.node.x * zoom, top: editing.node.y * zoom,
               width: Math.max(80, editing.node.width * zoom), height: Math.max(24, editing.node.height * zoom / 1.5),

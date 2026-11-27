@@ -1,4 +1,4 @@
-﻿// REQ-1204 + REQ-2003 + REQ-3001: Routing + Toast-Container + Top-Navigation
+// REQ-1204 + REQ-2003 + REQ-3001: Routing + Toast-Container + Navigation (Seitenleiste)
 // REQ-3062: System theme sync
 // B-45: ErrorBoundary um alle Routes
 // REQ-6005: I18nextProvider
@@ -38,10 +38,11 @@ export default function App() {
   return (
     // REQ-6005: I18nextProvider um alles wrappen
     <I18nextProvider i18n={i18n}>
-      <div className="min-h-screen bg-theme-bg text-theme-text flex flex-col">
+      {/* Redesign: linke Seitenleiste + Inhaltsbereich */}
+      <div className="min-h-screen bg-theme-bg text-theme-text flex">
         {!isPublicPage && <TopNav />}
         <ErrorBoundary>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <Routes>
               {/* REQ-4001 / REQ-4028: Login ist oeffentlich, alles andere nur mit Anmeldung */}
               <Route path="/login" element={<LoginPage />} />

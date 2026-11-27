@@ -521,7 +521,7 @@ describe("ConstraintBuilder - REQ-6001", () => {
       await waitFor(() => {
         expect(screen.getByText("Kein rotes S")).toBeInTheDocument();
       });
-      expect(screen.getAllByText("\u270f\ufe0f").length).toBeGreaterThan(0);
+      expect(screen.getAllByTitle("Bearbeiten").length).toBeGreaterThan(0);
     });
 
     it("zeigt Constraint-Anzahl in der Ueberschrift", async () => {
@@ -593,7 +593,7 @@ describe("ConstraintBuilder - REQ-6001", () => {
         expect(screen.getByText("Kein rotes S")).toBeInTheDocument();
       });
 
-      const editButtons = screen.getAllByText("\u270f\ufe0f");
+      const editButtons = screen.getAllByTitle("Bearbeiten");
       fireEvent.click(editButtons[0]);
       await waitFor(() => {
         expect(screen.getByText("Bearbeiten")).toBeInTheDocument();

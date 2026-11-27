@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { ThemeSwitcher } from '../ThemeSwitcher'
 
@@ -53,7 +53,7 @@ describe('ThemeSwitcher', () => {
   it('active theme is visually highlighted', () => {
     render(<ThemeSwitcher />)
     const normalBtn = screen.getByText(/Normal/i).closest('button')
-    expect(normalBtn).toHaveClass('ring-2')
+    expect(normalBtn).toHaveAttribute('aria-pressed', 'true')
   })
 
   // REQ-3045 (Sofort-Fix): Buttons nutzten hartkodierte bg-blue-50/bg-gray-100 statt

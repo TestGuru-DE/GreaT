@@ -1,17 +1,18 @@
-﻿// REQ-1216 + REQ-3003 + REQ-3004: Regeleditor und Regelanzeige in React
+// REQ-1216 + REQ-3003 + REQ-3004: Regeleditor und Regelanzeige in React
 // REQ-6005: i18n
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
 import type { Category } from "../types";
+import { TriangleAlert } from "lucide-react";
 
 interface Props { projectId: number; }
 
 const TYPE_BADGE: Record<string, string> = {
-  exclude:    "bg-red-50 text-red-600 border border-red-200",
-  dependency: "bg-violet-50 text-violet-600 border border-violet-200",
-  combine:    "bg-emerald-50 text-emerald-600 border border-emerald-200",
+  exclude:    "bg-theme-danger-soft text-theme-danger border border-theme-danger-border",
+  dependency: "bg-theme-accent-soft text-theme-link border border-theme-accent",
+  combine:    "bg-theme-success-soft text-theme-success border border-theme-success-border",
 };
 
 type RuleWithConflict = Rule & { conflict_with?: number[] };
@@ -116,9 +117,9 @@ export default function RulesPanel({ projectId }: Props) {
     }));
   };
 
-  if (loading) return <p className="text-slate-400 text-sm animate-pulse">{t('rulesPanel.loading')}</p>;
+  if (loading) return <p className="text-theme-text-muted text-sm animate-pulse">{t('rulesPanel.loading')}</p>;
   if (categories.length < 2) return (
-    <div className="text-center py-8 text-slate-400">
+    <div className="text-center py-8 text-theme-text-muted">
       <p className="text-sm">{t('rulesPanel.needTwoCategories')}</p>
     </div>
   );
@@ -129,27 +130,27 @@ export default function RulesPanel({ projectId }: Props) {
   return (
     <div className="flex flex-col gap-5">
       {/* Regel anlegen – REQ-3003 */}
-      <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">{t('rulesPanel.createTitle')}</h3>
+      <div className="border border-theme-border rounded-2xl p-4 bg-theme-surface-2">
+        <h3 className="text-sm font-semibold text-theme-text mb-3">{t('rulesPanel.createTitle')}</h3>
 
         {msg && (
           <div className={`mb-3 px-3 py-2 rounded-lg text-sm ${
-            msg.type === "ok" ? "bg-green-50 border border-green-200 text-green-700" :
-            msg.type === "warn" ? "bg-amber-50 border border-amber-200 text-amber-700" :
-            "bg-red-50 border border-red-200 text-red-700"
+            msg.type === "ok" ? "bg-theme-success-soft border border-theme-success-border text-theme-success" :
+            msg.type === "warn" ? "bg-theme-warning-soft border border-theme-warning-border text-theme-warning" :
+            "bg-theme-danger-soft border border-theme-danger-border text-theme-danger"
           }`}>
-            {msg.type === "warn" && "⚠️ "}{msg.text}
+            {msg.type === "warn" && <TriangleAlert className="w-4 h-4 inline-block align-[-3px] mr-1" aria-hidden="true" />}{msg.text}
           </div>
         )}
 
         <div className="grid grid-cols-1 gap-3">
           {/* Typ */}
           <div>
-            <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.typeLabel')}</label>
+            <label className="text-xs font-medium text-theme-text-secondary mb-1 block">{t('rulesPanel.typeLabel')}</label>
             <select
               value={form.type}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+              className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
             >
               {[
                 { val: 'exclude', key: 'rulesPanel.typeLabels.exclude' },
@@ -164,21 +165,21 @@ export default function RulesPanel({ projectId }: Props) {
           {/* Wenn-Block */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.ifCategoryLabel')}</label>
+              <label className="text-xs font-medium text-theme-text-secondary mb-1 block">{t('rulesPanel.ifCategoryLabel')}</label>
               <select
                 value={form.if_cat}
                 onChange={(e) => setForm((f) => ({ ...f, if_cat: Number(e.target.value) }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+                className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
               >
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t('rulesPanel.valueLabel')}</label>
+              <label className="text-xs font-medium text-theme-text-secondary mb-1 block">{t('rulesPanel.valueLabel')}</label>
               <select
                 value={form.if_val}
                 onChange={(e) => setForm((f) => ({ ...f, if_val: e.target.value }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+                className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
               >
                 {ifVals.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
@@ -188,23 +189,23 @@ export default function RulesPanel({ projectId }: Props) {
           {/* Dann-Block */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">
+              <label className="text-xs font-medium text-theme-text-secondary mb-1 block">
                 {form.type === "exclude" ? t('rulesPanel.thenCategoryLabelExclude') : t('rulesPanel.thenCategoryLabel')}
               </label>
               <select
                 value={form.then_cat}
                 onChange={(e) => setForm((f) => ({ ...f, then_cat: Number(e.target.value) }))}
-                className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+                className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
               >
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">
+              <label className="text-xs font-medium text-theme-text-secondary mb-1 block">
                 {form.type === "combine" ? t('rulesPanel.thenValueLabelCombine') : t('rulesPanel.valueLabel')}
               </label>
               {form.type === "combine" ? (
-                <div className="flex flex-wrap gap-1 p-2 border border-slate-300 rounded-lg bg-white min-h-[34px]">
+                <div className="flex flex-wrap gap-1 p-2 border border-theme-border rounded-lg bg-theme-surface min-h-[34px]">
                   {thenVals.map((v) => (
                     <button
                       key={v}
@@ -212,8 +213,8 @@ export default function RulesPanel({ projectId }: Props) {
                       onClick={() => toggleCombineVal(v)}
                       className={`px-2 py-0.5 rounded text-xs transition-colors ${
                         form.then_vals.includes(v)
-                          ? "bg-sky-500 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? "bg-theme-accent text-white"
+                          : "bg-theme-surface-2 text-theme-text-secondary hover:bg-theme-surface-hover"
                       }`}
                     >
                       {v}
@@ -224,7 +225,7 @@ export default function RulesPanel({ projectId }: Props) {
                 <select
                   value={form.then_val}
                   onChange={(e) => setForm((f) => ({ ...f, then_val: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-400 bg-white text-black"
+                  className="w-full px-3 py-1.5 text-sm border border-theme-border rounded-lg focus:outline-none focus:ring-1 focus:ring-theme-accent bg-theme-surface text-theme-text"
                 >
                   {thenVals.map((v) => <option key={v} value={v}>{v}</option>)}
                 </select>
@@ -234,7 +235,7 @@ export default function RulesPanel({ projectId }: Props) {
 
           <button
             onClick={handleCreate}
-            className="w-full py-2 bg-sky-600 text-white text-sm font-medium rounded-xl hover:bg-sky-700 transition-colors"
+            className="w-full py-2 bg-theme-accent text-white text-sm font-medium rounded-xl hover:bg-theme-accent-hover transition-colors"
           >
             {t('rulesPanel.saveBtn')}
           </button>
@@ -243,64 +244,64 @@ export default function RulesPanel({ projectId }: Props) {
 
       {/* Regelanzeige */}
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-2">
+        <h3 className="text-sm font-semibold text-theme-text mb-2">
           {t('rulesPanel.ruleCount', { count: rules.length })}
         </h3>
         {rules.length === 0 ? (
-          <p className="text-xs text-slate-400 text-center py-4">{t('rulesPanel.noRules')}</p>
+          <p className="text-xs text-theme-text-muted text-center py-4">{t('rulesPanel.noRules')}</p>
         ) : (
           <ul className="space-y-2">
             {rules.map((rule) => {
               const hasConflict = (rule.conflict_with?.length ?? 0) > 0;
               return (
                 <li key={rule.id}
-                  className={`flex items-start gap-3 px-3 py-2.5 border rounded-xl text-sm text-black ${
+                  className={`flex items-start gap-3 px-3 py-2.5 border rounded-xl text-sm text-theme-text ${
                     hasConflict
-                      ? "bg-amber-50 border-amber-300"
-                      : "bg-white border-slate-200 hover:bg-slate-50"
+                      ? "bg-theme-warning-soft border-theme-warning-border"
+                      : "bg-theme-surface border-theme-border hover:bg-theme-surface-hover"
                   }`}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-xs font-semibold text-black uppercase tracking-wide">{t('rulesPanel.ifLabel')}</span>
-                      <span className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-xs font-medium truncate max-w-24">
+                      <span className="text-xs font-semibold text-theme-text uppercase tracking-wide">{t('rulesPanel.ifLabel')}</span>
+                      <span className="px-2 py-0.5 bg-theme-warning-soft border border-theme-warning-border text-theme-warning rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.if_category_id)}
                       </span>
-                      <span className="text-black">=</span>
-                      <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-xs font-mono truncate max-w-24">
+                      <span className="text-theme-text">=</span>
+                      <span className="px-2 py-0.5 bg-theme-surface-2 rounded-lg text-xs font-mono truncate max-w-24">
                         {rule.if_value}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                      <span className="text-xs font-semibold text-black uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-theme-text uppercase tracking-wide">
                         {rule.type === "exclude" ? t('rulesPanel.excludeLabel') : t('rulesPanel.thenLabel')}
                       </span>
-                      <span className="px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700 rounded-lg text-xs font-medium truncate max-w-24">
+                      <span className="px-2 py-0.5 bg-theme-accent-soft border border-theme-accent text-theme-link rounded-lg text-xs font-medium truncate max-w-24">
                         {catName(rule.then_category_id)}
                       </span>
-                      <span className="text-black">=</span>
+                      <span className="text-theme-text">=</span>
                       {rule.then_values_json ? (
-                        <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-xs font-mono">
+                        <span className="px-2 py-0.5 bg-theme-surface-2 rounded-lg text-xs font-mono">
                           {JSON.parse(rule.then_values_json).join(", ")}
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 bg-slate-100 rounded-lg text-xs font-mono truncate max-w-24">
+                        <span className="px-2 py-0.5 bg-theme-surface-2 rounded-lg text-xs font-mono truncate max-w-24">
                           {rule.then_value}
                         </span>
                       )}
                     </div>
                     {hasConflict && (
-                      <p className="text-xs text-amber-600 mt-1">
+                      <p className="text-xs text-theme-warning mt-1">
                         {t('rulesPanel.conflictWarning', { ids: rule.conflict_with!.join(", #") })}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className={"text-xs px-1.5 py-0.5 rounded " + (TYPE_BADGE[rule.type] ?? "bg-slate-100 text-slate-600")}>
+                    <span className={"text-xs px-1.5 py-0.5 rounded " + (TYPE_BADGE[rule.type] ?? "bg-theme-surface-2 text-theme-text-secondary")}>
                       {rule.type}
                     </span>
                     <button
                       onClick={() => handleDelete(rule.id)}
-                      className="text-slate-300 hover:text-red-500 transition-colors text-lg leading-none"
+                      className="text-theme-text-muted hover:text-theme-danger transition-colors text-lg leading-none"
                       title={t('rulesPanel.deleteTitle')}
                     >
                       ×

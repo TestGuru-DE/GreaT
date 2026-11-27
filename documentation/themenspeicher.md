@@ -87,7 +87,7 @@ Keine spezifischen Requirements derzeit – abhängig von UX-Evaluationsergebnis
 *Weitere geparkte Themen werden hier ergänzt.*
 ## 🎨 Oberflaeche: modernes Design und lesbare Themes (aufgenommen 2026-11-27)
 
-**Entscheidung:** Die Oberflaeche soll ansprechender gestaltet werden. Umsetzung als eigener Themenblock nach dem Fehlerabbau.
+**Status:** Umgesetzt (Graphit-Design nach Designbeispiel des Projektinhabers, linke Seitenleiste, Hell/Dunkel/System plus farbige Themes, automatischer Kontrast- und Farbklassentest). Offen: Bildschirmfotos im Handbuch erneuern.
 
 ### Anforderungen
 

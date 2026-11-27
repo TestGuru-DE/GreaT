@@ -1,4 +1,4 @@
-﻿// REQ-4018: DataClassesPage komplett auf DataNode-Baum umgestellt
+// REQ-4018: DataClassesPage komplett auf DataNode-Baum umgestellt
 // REQ-6005: i18n
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -108,8 +108,8 @@ export default function DataClassesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold text-theme-text">{t('dataClasses.title')}</h1>
+    <div className="page space-y-6">
+      <h1 className="page-title text-theme-text">{t('dataClasses.title')}</h1>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-theme-border">
@@ -117,7 +117,7 @@ export default function DataClassesPage() {
           onClick={() => setActiveTab('mine')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'mine'
-              ? 'border-primary-600 text-primary-600'
+              ? 'border-theme-accent text-theme-link'
               : 'border-transparent text-theme-text-muted hover:text-theme-text'
           }`}
         >
@@ -127,7 +127,7 @@ export default function DataClassesPage() {
           onClick={() => setActiveTab('system')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             activeTab === 'system'
-              ? 'border-primary-600 text-primary-600'
+              ? 'border-theme-accent text-theme-link'
               : 'border-transparent text-theme-text-muted hover:text-theme-text'
           }`}
         >
@@ -143,7 +143,7 @@ export default function DataClassesPage() {
             <a
               href="/api/datanodes/export-user"
               download="my-dataclasses.json"
-              className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:opacity-90 transition-opacity"
+              className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded hover:opacity-90 transition-opacity"
             >
               {t('dataClasses.exportBtn')}
             </a>
@@ -166,11 +166,11 @@ export default function DataClassesPage() {
                   if (e.key === 'Escape') { setAddingRoot(false); setNewRootName(''); }
                 }}
                 placeholder={t('dataClasses.newCategoryPlaceholder')}
-                className="flex-1 px-3 py-1.5 text-sm border border-theme-border rounded bg-white text-theme-text"
+                className="flex-1 px-3 py-1.5 text-sm border border-theme-border rounded bg-theme-surface text-theme-text"
               />
               <button 
                 onClick={handleAddRoot}
-                className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:opacity-90 transition-opacity"
+                className="px-3 py-1.5 text-sm bg-theme-accent text-white rounded hover:opacity-90 transition-opacity"
               >
                 {t('dataClasses.createBtn')}
               </button>
@@ -184,7 +184,7 @@ export default function DataClassesPage() {
           ) : (
             <button
               onClick={() => setAddingRoot(true)}
-              className="px-4 py-2 bg-primary-600 text-white rounded hover:opacity-90 text-sm font-medium transition-opacity"
+              className="px-4 py-2 bg-theme-accent text-white rounded hover:opacity-90 text-sm font-medium transition-opacity"
             >
               {t('dataClasses.newCategory')}
             </button>
@@ -219,14 +219,14 @@ export default function DataClassesPage() {
               href="https://github.com/gojko/bugmagnet/blob/master/template/config.json"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary-600 hover:underline block"
+              className="text-xs text-theme-link hover:underline block"
             >
               {t('dataClasses.bugMagnetSource')}
             </a>
             <button
               onClick={handleBugMagnetImport}
               disabled={importing}
-              className="px-4 py-2 bg-primary-600 text-white rounded hover:opacity-90 disabled:opacity-40 text-sm transition-opacity"
+              className="px-4 py-2 bg-theme-accent text-white rounded hover:opacity-90 disabled:opacity-40 text-sm transition-opacity"
             >
               {importing ? t('dataClasses.importing') : bugmagnetImported ? t('dataClasses.refresh') : t('dataClasses.importBtn')}
             </button>

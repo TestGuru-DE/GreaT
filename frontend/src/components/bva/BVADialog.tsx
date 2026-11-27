@@ -1,4 +1,4 @@
-﻿// REQ-3041, REQ-6007: BVADialog – Modal-Container fuer Grenzwertanalyse
+// REQ-3041, REQ-6007: BVADialog – Modal-Container fuer Grenzwertanalyse
 import { useEffect, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { BVAInputPanel } from "./BVAInputPanel";
@@ -179,17 +179,17 @@ export function BVADialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bva-dialog-title"
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[90vh] overflow-auto"
+        className="bg-theme-surface rounded-2xl shadow-2xl border border-theme-border w-full max-w-3xl max-h-[90vh] overflow-auto"
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-sky-50 to-blue-50 px-6 py-4 border-b border-slate-200">
+        <div className="bg-theme-surface-2 px-6 py-4 border-b border-theme-border">
           <h2
             id="bva-dialog-title"
-            className="text-lg font-bold text-slate-800"
+            className="text-lg font-bold text-theme-text"
           >
             {t('bvaDialog.title', { categoryName })}
           </h2>
-          <p className="text-sm text-slate-600 mt-1">
+          <p className="text-sm text-theme-text-secondary mt-1">
             {t('bvaDialog.category')}: <span className="font-semibold">{categoryName}</span>
           </p>
         </div>
@@ -200,7 +200,7 @@ export function BVADialog({
           <div className="flex items-center gap-3">
             <label
               htmlFor="bva-data-type"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-medium text-theme-text"
             >
               {t('bvaDialog.dataType.label')}
             </label>
@@ -208,7 +208,7 @@ export function BVADialog({
               id="bva-data-type"
               value={dataType}
               onChange={(e) => handleDataTypeChange(e.target.value as BVADataType)}
-              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500"
+              className="px-3 py-2 border border-theme-border rounded-lg focus:ring-2 focus:ring-theme-accent"
               aria-label={t('bvaDialog.dataType.label')}
             >
               {DATA_TYPE_OPTIONS.map((opt) => (
@@ -223,17 +223,17 @@ export function BVADialog({
 
           {/* BUG C-02: Typspezifische Optionen (REQ-6007) */}
           {dataType !== "number" && (
-            <fieldset className="rounded-lg border border-slate-200 p-3 space-y-3" data-testid="bva-options">
-              <legend className="px-1 text-sm font-medium text-slate-700">{optionLabel("title")}</legend>
+            <fieldset className="rounded-lg border border-theme-border p-3 space-y-3" data-testid="bva-options">
+              <legend className="px-1 text-sm font-medium text-theme-text">{optionLabel("title")}</legend>
               <div className="flex flex-wrap gap-4">
                 {(dataType === "date" || dataType === "time") && (
-                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <label className="flex items-center gap-2 text-sm text-theme-text">
                     {optionLabel("format")}
                     <select
                       aria-label={optionLabel("format")}
                       value={extendedOptions.format ?? ""}
                       onChange={(e) => setOption({ format: e.target.value })}
-                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                      className="px-2 py-1 border border-theme-border rounded-lg"
                     >
                       {(dataType === "date" ? DATE_FORMATS : TIME_FORMATS).map((f) => (
                         <option key={f} value={f}>{optionLabel(`formats.${f}`)}</option>
@@ -242,13 +242,13 @@ export function BVADialog({
                   </label>
                 )}
                 {(dataType === "time" || dataType === "datetime") && (
-                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <label className="flex items-center gap-2 text-sm text-theme-text">
                     {optionLabel("step")}
                     <select
                       aria-label={optionLabel("step")}
                       value={extendedOptions.step ?? "minute"}
                       onChange={(e) => setOption({ step: e.target.value })}
-                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                      className="px-2 py-1 border border-theme-border rounded-lg"
                     >
                       {STEPS.map((st) => (
                         <option key={st} value={st}>{optionLabel(`steps.${st}`)}</option>
@@ -258,7 +258,7 @@ export function BVADialog({
                 )}
                 {/* BUG C-10: optionale Zeitzone (ISO-8601-Offset) fuer Datum+Uhrzeit */}
                 {dataType === "datetime" && (
-                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <label className="flex items-center gap-2 text-sm text-theme-text">
                     {optionLabel("timezone")}
                     <input
                       type="text"
@@ -268,21 +268,21 @@ export function BVADialog({
                       placeholder="+02:00"
                       title={optionLabel("timezoneHint")}
                       aria-invalid={validateTimezone(extendedOptions.timezone) !== null}
-                      className="w-24 px-2 py-1 border border-slate-300 rounded-lg"
+                      className="w-24 px-2 py-1 border border-theme-border rounded-lg"
                     />
                     {validateTimezone(extendedOptions.timezone) && (
-                      <span role="alert" className="text-xs text-red-600">{optionLabel("timezoneHint")}</span>
+                      <span role="alert" className="text-xs text-theme-danger">{optionLabel("timezoneHint")}</span>
                     )}
                   </label>
                 )}
                 {dataType === "strlen" && (
-                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <label className="flex items-center gap-2 text-sm text-theme-text">
                     {optionLabel("charset")}
                     <select
                       aria-label={optionLabel("charset")}
                       value={extendedOptions.charset ?? "alnum"}
                       onChange={(e) => setOption({ charset: e.target.value })}
-                      className="px-2 py-1 border border-slate-300 rounded-lg"
+                      className="px-2 py-1 border border-theme-border rounded-lg"
                     >
                       {CHARSETS.map((c) => (
                         <option key={c} value={c}>{optionLabel(`charsets.${c}`)}</option>
@@ -292,15 +292,15 @@ export function BVADialog({
                 )}
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-600 mb-1">{optionLabel("extras")}</p>
+                <p className="text-xs font-medium text-theme-text-secondary mb-1">{optionLabel("extras")}</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   {EXTRAS_BY_TYPE[dataType].map((key) => (
-                    <label key={key} className="flex items-center gap-2 text-sm text-slate-700">
+                    <label key={key} className="flex items-center gap-2 text-sm text-theme-text">
                       <input
                         type="checkbox"
                         checked={Boolean(extendedOptions.extras?.[key])}
                         onChange={(e) => setExtra(key, e.target.checked)}
-                        className="w-4 h-4 text-sky-600"
+                        className="w-4 h-4 text-theme-link"
                       />
                       {optionLabel(`extraLabels.${key}`)}
                     </label>
@@ -312,8 +312,8 @@ export function BVADialog({
 
           {/* Visualisierung */}
           {points.length > 0 && (
-            <div className="bg-slate-50 rounded-lg p-4">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">
+            <div className="bg-theme-surface-2 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-theme-text mb-3">
                 {t('bvaDialog.numberline')}
               </h3>
               <NumberlineVisualization points={points} />
@@ -323,7 +323,7 @@ export function BVADialog({
           {/* Vorschau */}
           {points.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-2">
+              <h3 className="text-sm font-semibold text-theme-text mb-2">
                 {t('bvaDialog.preview', { count: points.length })}
               </h3>
               <PreviewTable
@@ -335,26 +335,26 @@ export function BVADialog({
 
           {/* Backend-Fehler */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-700 font-semibold">{t('common.error')}</p>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
+            <div className="bg-theme-danger-soft border border-theme-danger-border rounded-lg p-4">
+              <p className="text-sm text-theme-danger font-semibold">{t('common.error')}</p>
+              <p className="text-sm text-theme-danger mt-1">{error}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+        <div className="bg-theme-surface-2 px-6 py-4 border-t border-theme-border flex justify-end gap-3">
           <button
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-theme-text bg-theme-surface border border-theme-border rounded-lg hover:bg-theme-surface-hover disabled:opacity-50"
           >
             {t('bvaDialog.cancel')}
           </button>
           <button
             onClick={handleApply}
             disabled={!isValid || loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-sky-600 rounded-lg hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 text-sm font-medium text-white bg-theme-accent rounded-lg hover:bg-theme-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? t('bvaDialog.applying') : t('bvaDialog.apply')}
           </button>

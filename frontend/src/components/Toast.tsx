@@ -1,5 +1,6 @@
-﻿// REQ-1212: Toast-Benachrichtigungen
+// REQ-1212: Toast-Benachrichtigungen
 import { create } from "zustand";
+import { CircleAlert, CircleCheck, Info } from "lucide-react";
 
 type ToastType = "success" | "error" | "info";
 
@@ -38,16 +39,17 @@ export function ToastContainer() {
         <div
           key={t.id}
           onClick={() => remove(t.id)}
-          className={
-            "flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg cursor-pointer text-sm font-medium " +
-            (t.type === "success"
-              ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
-              : t.type === "error"
-              ? "bg-red-50 border border-red-200 text-red-800"
-              : "bg-sky-50 border border-sky-200 text-sky-800")
-          }
+          // Redesign: Toast als Karte mit Rand und farbigem Statussymbol (wie im Beispiel)
+          className="card flex items-start gap-3 px-4 py-3 cursor-pointer text-sm font-medium text-theme-text shadow-[var(--shadow-pop)]"
+          role={t.type === "error" ? "alert" : "status"}
         >
-          <span>{t.type === "success" ? "OK" : t.type === "error" ? "!" : "i"}</span>
+          {t.type === "success" ? (
+            <CircleCheck className="w-5 h-5 shrink-0 text-theme-success" aria-label="OK" />
+          ) : t.type === "error" ? (
+            <CircleAlert className="w-5 h-5 shrink-0 text-theme-danger" aria-label="!" />
+          ) : (
+            <Info className="w-5 h-5 shrink-0 text-theme-link" aria-label="i" />
+          )}
           <span>{t.message}</span>
         </div>
       ))}

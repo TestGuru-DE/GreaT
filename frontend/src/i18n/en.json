@@ -1,6 +1,6 @@
 {
   "nav": {
-    "home": "Home",
+    "home": "Overview",
     "projects": "Projects",
     "dataclasses": "Data Classes",
     "generations": "Generations",
@@ -8,8 +8,13 @@
     "changePassword": "Change Password",
     "help": "Help (F1)",
     "apiDocs": "API Docs",
-    "logout": "Logout",
-    "logoutTitle": "Log out ({{username}})"
+    "logout": "Sign out",
+    "logoutTitle": "Log out ({{username}})",
+    "search": "Search",
+    "searchShortcut": "Ctrl K",
+    "sectionWork": "Workspace",
+    "sectionAccount": "Account and help",
+    "toggleSidebar": "Collapse or expand sidebar"
   },
   "login": {
     "title": "G.R.E.A.T. – Login",
@@ -87,7 +92,8 @@
         "label": "API Docs",
         "description": "OpenAPI interface"
       }
-    }
+    },
+    "sectionTitle": "Areas"
   },
   "projects": {
     "title": "Projects",
@@ -111,7 +117,10 @@
     "id": "ID",
     "name": "Name",
     "actions": "Actions",
-    "selectCheckbox": "Select all"
+    "selectCheckbox": "Select all",
+    "subtitle": "Create projects and open them to edit categories, rules and test cases.",
+    "searchActive": "Filtered by \"{{query}}\"",
+    "searchClear": "Clear filter"
   },
   "projectDetail": {
     "invalidId": "Invalid project ID",
@@ -148,11 +157,11 @@
       "coverage2wise": "2-wise %"
     },
     "actions": {
-      "edit": "✏️",
+      "edit": "Rename",
       "json": "JSON",
       "excel": "Excel",
       "csv": "CSV",
-      "delete": "🗑️",
+      "delete": "Delete",
       "coverage": "Coverage",
       "gapFill": "Fill gaps"
     },
@@ -172,13 +181,13 @@
     "deleteTitle": "Delete"
   },
   "dataClasses": {
-    "title": "🗂️ Data Class Library",
-    "tabMine": "📁 My Data Classes ({{count}})",
-    "tabSystem": "📋 Examples ({{count}})",
-    "tabBugMagnet": "🐛 Bug Magnet Import ({{count}})",
+    "title": "Data Class Library",
+    "tabMine": "My Data Classes ({{count}})",
+    "tabSystem": "Examples ({{count}})",
+    "tabBugMagnet": "Bug Magnet Import ({{count}})",
     "importExport": "Import / Export:",
-    "exportBtn": "📤 Export",
-    "importBtn": "📥 Import",
+    "exportBtn": "Export",
+    "importBtn": "Import",
     "newCategory": "+ Create new category",
     "newCategoryPlaceholder": "Name of new category...",
     "createBtn": "Create",
@@ -188,16 +197,16 @@
     "emptyMineHint": "Click \"+ Create new category\" to get started",
     "bugMagnetDesc": "Example classes from <strong>Bug Magnet</strong> – the author is responsible for the content.",
     "bugMagnetSource": "github.com/gojko/bugmagnet/blob/master/template/config.json",
-    "importing": "⏳ Importing...",
-    "refresh": "🔄 Refresh",
+    "importing": "Importing...",
+    "refresh": "Refresh",
     "emptySystem": "No example data yet – click \"Import\".",
     "errorCreate": "Error creating: {{error}}",
     "errorAddValue": "Error adding: {{error}}",
     "errorDelete": "Error deleting: {{error}}",
     "errorImport": "Error importing: {{error}}",
-    "importSuccess": "✅ {{count}} classes imported",
-    "bugMagnetImportSuccess": "✅ {{count}} nodes imported",
-    "bugMagnetImportError": "❌ Import failed: {{error}}"
+    "importSuccess": "{{count}} classes imported",
+    "bugMagnetImportSuccess": "{{count}} nodes imported",
+    "bugMagnetImportError": "Import failed: {{error}}"
   },
   "settings": {
     "title": "Settings",
@@ -336,7 +345,7 @@
     }
   },
   "errorBoundary": {
-    "title": "An error has occurred",
+    "title": "An error occurred",
     "message": "The application could not be loaded correctly.",
     "unknownError": "Unknown error",
     "reload": "Reload page",
@@ -355,12 +364,13 @@
     "cancel": "No – cancel"
   },
   "themeSwitcher": {
-    "normal": "☀️ Normal",
-    "dark": "🌙 Dark",
-    "steampunk": "⚙️ Steampunk",
-    "rainbow": "🌈 Rainbow",
-    "heavyMetal": "🤘 Heavy Metal",
-    "system": "🖥️ System (OS)"
+    "normal": "Normal (graphite)",
+    "light": "Light",
+    "dark": "Dark",
+    "steampunk": "Steampunk",
+    "rainbow": "Rainbow",
+    "heavyMetal": "Heavy Metal",
+    "system": "System (OS)"
   },
   "portSettings": {
     "title": "Port Setting",
@@ -511,7 +521,7 @@
     "ifLabel": "If",
     "thenLabel": "Then",
     "excludeLabel": "Not with",
-    "conflictWarning": "⚠️ Rule conflict with rule #{{ids}}",
+    "conflictWarning": "Rule conflict with rule #{{ids}}",
     "deleteConfirm": "Delete rule?",
     "deleteTitle": "Delete rule",
     "saved": "Rule saved.",
@@ -525,7 +535,7 @@
     "categoryFallback": "Category #{{id}}"
   },
   "decisionTableHelp": {
-    "title": "📋 Decision Table – Help",
+    "title": "Decision Table – Help",
     "close": "Close",
     "back": "← Back",
     "next": "Next →",
@@ -535,7 +545,7 @@
       "content": "Create at least <strong>one cause</strong> and <strong>one effect</strong>.",
       "cause": "Cause (Condition): A condition that can occur (e.g. \"User is logged in\")",
       "effect": "Effect (Action): An action or result (e.g. \"Access granted\")",
-      "warning": "⚠️ The \"Decision Table\" button is only active when BOTH types exist!"
+      "warning": "The \"Decision Table\" button is only active when BOTH types exist!"
     },
     "step2": {
       "title": "Step 2: Assign values (optional)",
@@ -545,11 +555,11 @@
     },
     "step3": {
       "title": "Step 3: Generate table",
-      "content": "Click the <strong>\"📋 Decision Table\"</strong> button:",
+      "content": "Click the <strong>\"Decision Table\"</strong> button:",
       "firstClick": "First click: Activates the mode",
-      "secondClick": "Second click (\"⚡ Generate\"): Creates the table",
+      "secondClick": "Second click (\"Generate\"): Creates the table",
       "info": "The table shows all possible combinations of your causes (2^N rules).",
-      "tip": "💡 With 3 causes = 2³ = 8 rules. With 5 causes = 2⁵ = 32 rules."
+      "tip": "With 3 causes = 2³ = 8 rules. With 5 causes = 2⁵ = 32 rules."
     },
     "step4": {
       "title": "Step 4: Fill in effects",
@@ -570,10 +580,10 @@
     },
     "step6": {
       "title": "Step 6: Check and optimize",
-      "content": "Use the <strong>\"📦 Collapse\"</strong> and <strong>\"🔍 Check\"</strong> buttons:",
+      "content": "Use the <strong>\"Collapse\"</strong> and <strong>\"Check\"</strong> buttons:",
       "collapse": "<strong>Collapse:</strong> Automatically merges redundant rules (Collapsing)",
       "check": "<strong>Check:</strong> Shows whether the table is complete, has contradictions or gaps",
-      "legend": "✅ Green = Complete | 🟡 Yellow = Overlaps | 🔴 Red = Gaps"
+      "legend": "Green = complete | Yellow = overlaps | Red = gaps"
     }
   },
   "dataNodeTree": {
@@ -974,7 +984,13 @@
     "priorityHint": "Priority (1 = highest, 999 = none)",
     "none": "None",
     "checksum": "Checksum:",
-    "gaps": "{{count}} gap(s) in coverage"
+    "gaps": "{{count}} gap(s) in coverage",
+    "collapsedCount": "{{count}} reduced",
+    "validate": "Check",
+    "validateLabel": "Check decision table",
+    "overrideActive": "Override active",
+    "overrideMode": "Override mode",
+    "overrideHint": "Override mode: low-priority effects become don't care (—)"
   },
   "ruleVisualization": {
     "exclude": "Forbidden",
@@ -1016,7 +1032,10 @@
     "riskColumnTitle": "Risk coverage (sum of risk weights)",
     "resultPlaceholder": "Choose or enter a result",
     "count": "{{count}} test cases",
-    "riskBadge": "Risk coverage: {{percent}}%"
+    "riskBadge": "Risk coverage: {{percent}}%",
+    "rename": "rename",
+    "exportCsvTable": "CSV (table)",
+    "errorCaseTitle": "Error value test case"
   },
   "bvaValidation": {
     "outside": "outside",

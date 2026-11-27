@@ -1,8 +1,5 @@
-﻿export const THEMES = ['normal', 'dark', 'steampunk', 'rainbow', 'heavy-metal', 'system'] as const
+export const THEMES = ['normal', 'light', 'dark', 'steampunk', 'rainbow', 'heavy-metal', 'system'] as const
 export type ThemeName = typeof THEMES[number]
-
-// Interne Theme-Klassen (nicht direkt waehlbar)
-const INTERNAL_THEMES = ['light'] as const
 
 const STORAGE_KEY = 'great-theme'
 const THEME_PREFIX = 'theme-'
@@ -17,26 +14,14 @@ export function setTheme(theme: ThemeName): void {
   // REQ-3062: Resolve 'system' to effective theme
   const effectiveTheme = getEffectiveTheme(theme)
 
-  // Alle alten Theme-Klassen entfernen (inklusive interne)
+  // Alle Theme-Klassen entfernen, dann die wirksame setzen.
+  // "Normal" = Graphit-Design aus :root (keine Klasse); System -> light oder dark.
   THEMES.forEach(t => {
     document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
   })
-  INTERNAL_THEMES.forEach(t => {
-    document.documentElement.classList.remove(`${THEME_PREFIX}${t}`)
-  })
-
-  // Neue Theme-Klasse setzen
-  if (effectiveTheme !== 'normal' && effectiveTheme !== 'light') {
-    // dark, steampunk, rainbow, heavy-metal
+  if (effectiveTheme !== 'normal') {
     document.documentElement.classList.add(`${THEME_PREFIX}${effectiveTheme}`)
-  } else if (theme === 'normal') {
-    // REQ-3045: Explizites "Normal" -> HSV-Farben (:root, keine Klasse benoetigt)
-    // Keine Klasse setzen — :root hat HSV-Farben
-  } else if (theme === 'system' && effectiveTheme === 'light') {
-    // System=Light -> .theme-light Klasse
-    document.documentElement.classList.add(`${THEME_PREFIX}light`)
   }
-  // else: system=dark -> .theme-dark (wird durch effectiveTheme='dark' oben gesetzt)
 
   localStorage.setItem(STORAGE_KEY, theme)
 }

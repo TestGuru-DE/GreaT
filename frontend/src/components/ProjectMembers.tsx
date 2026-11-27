@@ -101,12 +101,12 @@ export default function ProjectMembers({ projectId }: ProjectMembersProps) {
           value={newUserId}
           onChange={(e) => setNewUserId(e.target.value)}
           placeholder="User-ID"
-          className="flex-1 rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-bg-input"
+          className="flex-1 rounded-md border border-theme-border px-3 py-2 text-theme-text bg-theme-surface-2"
         />
         <button
           onClick={addMember}
           disabled={loading || !newUserId}
-          className="px-4 py-2 text-sm font-medium text-white bg-theme-primary rounded-md hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-white bg-theme-accent rounded-md hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "..." : "Hinzufuegen"}
         </button>

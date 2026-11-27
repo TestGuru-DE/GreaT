@@ -12,23 +12,23 @@ const diffConfig: Record<DiffCategory, { labelKey: string; icon: string; colorAd
   categories: {
     labelKey: "modelImport.categories",
     icon: "📁",
-    colorAdded: "text-green-600 dark:text-green-400",
-    colorModified: "text-yellow-600 dark:text-yellow-400",
-    colorRemoved: "text-red-600 dark:text-red-400",
+    colorAdded: "text-theme-success ",
+    colorModified: "text-theme-warning ",
+    colorRemoved: "text-theme-danger ",
   },
   values: {
     labelKey: "modelImport.values",
     icon: "🏷️",
-    colorAdded: "text-green-600 dark:text-green-400",
-    colorModified: "text-yellow-600 dark:text-yellow-400",
-    colorRemoved: "text-red-600 dark:text-red-400",
+    colorAdded: "text-theme-success ",
+    colorModified: "text-theme-warning ",
+    colorRemoved: "text-theme-danger ",
   },
   rules: {
     labelKey: "modelImport.rules",
     icon: "📏",
-    colorAdded: "text-green-600 dark:text-green-400",
-    colorModified: "text-yellow-600 dark:text-yellow-400",
-    colorRemoved: "text-red-600 dark:text-red-400",
+    colorAdded: "text-theme-success ",
+    colorModified: "text-theme-warning ",
+    colorRemoved: "text-theme-danger ",
   },
 };
 
