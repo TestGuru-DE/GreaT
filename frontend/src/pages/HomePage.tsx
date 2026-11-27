@@ -135,7 +135,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <p className="mt-12 text-xs text-theme-text-secondary/50">
-        {t('home.footer')}
+        {t('home.footer', { version: __APP_VERSION__ })}
       </p>
     </div>
   );

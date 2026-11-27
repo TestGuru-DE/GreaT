@@ -3,6 +3,7 @@
 // REQ-6005: Sprachpraferenz
 import { create } from "zustand";
 import { authApi } from "../api/authApi";
+import { applyLanguage } from "../lib/language";
 import type { UserInfo } from "../api/authApi";
 
 interface AuthState {
@@ -40,6 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const requiresChange = !!user.password_change_required;
       // REQ-6005: Sprache vom Server laden
       const lang = user.language as "de" | "en" | null;
+      applyLanguage(lang); // BUG A-15: gespeicherte Sprache nach dem Login anwenden
       set({ user, isLoading: false, passwordChangeRequired: requiresChange, language: lang });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
@@ -63,6 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const requiresChange = !!user.password_change_required;
       // REQ-6005: Sprache vom Server laden
       const lang = user.language as "de" | "en" | null;
+      applyLanguage(lang); // BUG A-15: auch beim Neuladen der Seite
       set({ user, passwordChangeRequired: requiresChange, language: lang });
     } catch {
       set({ user: null, passwordChangeRequired: false, language: null });

@@ -1,6 +1,7 @@
 // BUG C-02: Eingabepruefung und Optionen der Grenzwertanalyse fuer Datum,
 // Uhrzeit, Datum+Uhrzeit und Stringlaenge (REQ-6007). Die Zahlen-Pruefung
 // (validateMultiRangeBVAConfig) blockierte hier gueltige Eingaben.
+import { tr } from "./i18nText";
 import type { BVADataType, BVAExtendedOptions } from "../api/bva";
 import type { BVARangeEntry } from "./bva-calc";
 
@@ -85,11 +86,18 @@ const PARSERS: Record<ExtendedType, (raw: string) => number | null> = {
   strlen: parseLength,
 };
 
-const FORMAT_HINT: Record<ExtendedType, string> = {
+const FORMAT_FALLBACK: Record<ExtendedType, string> = {
   date: "Datum im Format JJJJ-MM-TT erwartet",
   time: "Uhrzeit im Format HH:MM oder HH:MM:SS erwartet",
   datetime: "Datum+Uhrzeit im Format JJJJ-MM-TTTHH:MM erwartet",
   strlen: "Ganze Zahl >= 0 erwartet",
+};
+
+const FORMAT_HINT: Record<ExtendedType, string> = {
+  date: "bvaValidation.formatDate",
+  time: "bvaValidation.formatTime",
+  datetime: "bvaValidation.formatDatetime",
+  strlen: "bvaValidation.formatStrlen",
 };
 
 /** BUG C-10: Zeitzone leer (keine) oder ISO-8601-Offset wie +02:00, -05:30, Z. */
@@ -97,7 +105,7 @@ const TIMEZONE_RE = /^(Z|[+-](0\d|1[0-4]):[0-5]\d)$/i;
 
 export function validateTimezone(raw: string | undefined): string | null {
   const value = (raw ?? "").trim();
-  return value === "" || TIMEZONE_RE.test(value) ? null : "Zeitzone im Format +HH:MM, -HH:MM oder Z erwartet";
+  return value === "" || TIMEZONE_RE.test(value) ? null : tr("bvaValidation.formatTimezone", "Zeitzone im Format +HH:MM, -HH:MM oder Z erwartet");
 }
 
 /**
@@ -108,25 +116,25 @@ export function validateTimezone(raw: string | undefined): string | null {
  */
 export function validateExtendedRanges(type: ExtendedType, ranges: BVARangeEntry[]): string[] {
   const errors: string[] = [];
-  if (!ranges.length) return ["Mindestens ein Bereich erforderlich"];
+  if (!ranges.length) return [tr("bvaValidation.needRange", "Mindestens ein Bereich erforderlich")];
   const parse = PARSERS[type];
   const parsed: { idx: number; min: number; max: number }[] = [];
   ranges.forEach((range, idx) => {
-    const prefix = `Bereich ${idx + 1}`;
+    const prefix = tr("bvaValidation.rangePrefix", "Bereich {{n}}", { n: idx + 1 });
     const minRaw = range.minVal.trim();
     const maxRaw = range.maxVal.trim();
     if (!minRaw || !maxRaw) {
-      errors.push(`${prefix}: Minimum und Maximum erforderlich`);
+      errors.push(tr("bvaValidation.minAndMaxRequired", "{{prefix}}: Minimum und Maximum erforderlich", { prefix }));
       return;
     }
     const min = parse(minRaw);
     const max = parse(maxRaw);
     if (min === null || max === null) {
-      errors.push(`${prefix}: ${FORMAT_HINT[type]}`);
+      errors.push(`${prefix}: ${tr(FORMAT_HINT[type], FORMAT_FALLBACK[type])}`);
       return;
     }
     if (type !== "time" && min > max) {
-      errors.push(`${prefix}: Minimum ist größer als Maximum`);
+      errors.push(tr("bvaValidation.minGreaterMax", "{{prefix}}: Minimum ist größer als Maximum", { prefix }));
       return;
     }
     parsed.push({ idx, min, max });
@@ -135,7 +143,7 @@ export function validateExtendedRanges(type: ExtendedType, ranges: BVARangeEntry
     const ordered = [...parsed].sort((a, b) => a.min - b.min);
     for (let i = 1; i < ordered.length; i++) {
       if (ordered[i].min <= ordered[i - 1].max) {
-        errors.push(`Bereich ${ordered[i - 1].idx + 1} und Bereich ${ordered[i].idx + 1} überschneiden sich`);
+        errors.push(tr("bvaValidation.rangesOverlap", "Bereich {{a}} und Bereich {{b}} überschneiden sich", { a: ordered[i - 1].idx + 1, b: ordered[i].idx + 1 }));
       }
     }
   }

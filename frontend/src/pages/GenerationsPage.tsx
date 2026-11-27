@@ -27,6 +27,9 @@ export default function GenerationsPage() {
   const [coverageId, setCoverageId] = useState<number | null>(null);
   const [fillingId, setFillingId] = useState<number | null>(null);
 
+  // B-47: Fehler werden angezeigt statt als unbehandelte Promise-Fehler zu enden
+  const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
+
   const load = async () => {
     setLoading(true);
     try {
@@ -38,6 +41,8 @@ export default function GenerationsPage() {
       }));
       all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setItems(all);
+    } catch (e) {
+      showError(e);
     } finally {
       setLoading(false);
     }
@@ -47,10 +52,15 @@ export default function GenerationsPage() {
 
   const handleDelete = async (gid: number) => {
     if (!confirm(t("generations.deleteConfirm"))) return;
-    await generateApi.deleteGeneration(gid);
-    setItems((prev) => prev.filter((g) => g.id !== gid));
-    setMsg(t("generations.deleteSuccess"));
-    setTimeout(() => setMsg(null), 3000);
+    setError(null);
+    try {
+      await generateApi.deleteGeneration(gid);
+      setItems((prev) => prev.filter((g) => g.id !== gid));
+      setMsg(t("generations.deleteSuccess"));
+      setTimeout(() => setMsg(null), 3000);
+    } catch (e) {
+      showError(e);
+    }
   };
 
   // BUG K-09 / REQ-6009: Lücken schließen erzeugt eine neue Generierung
@@ -87,9 +97,13 @@ export default function GenerationsPage() {
 
   const saveEdit = async (gid: number) => {
     if (!editName.trim()) return;
-    const updated = await generateApi.renameGeneration(gid, editName.trim());
-    setItems((prev) => prev.map((g) => g.id === gid ? { ...g, name: updated.name } : g));
-    setEditingId(null);
+    try {
+      const updated = await generateApi.renameGeneration(gid, editName.trim());
+      setItems((prev) => prev.map((g) => g.id === gid ? { ...g, name: updated.name } : g));
+      setEditingId(null);
+    } catch (e) {
+      showError(e); // B-47: Eingabe bleibt offen, Fehler sichtbar
+    }
   };
 
   return (

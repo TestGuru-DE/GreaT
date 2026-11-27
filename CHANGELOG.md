@@ -39,6 +39,12 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
   - Kontrast >= 4,5:1 in allen Themes, Ergebnis/Fehlerwert/Standard mit Symbol und Beschriftung, Legende (C-21, C-22).
   - Strg+Mausrad zoomt nur den Baum; "Einpassen" passt an die verfuegbare Flaeche an (C-23).
   - Reihenfolge der Werte ist aenderbar (`PATCH /api/categories/{id}/values/reorder`) und gilt fuer Anzeige und Generierung.
+- **Englische Oberflaeche vollstaendig (A-14):** Testfall-Generierung, Entscheidungstabelle, Grenzwertanalyse, Regelvisualisierung, Constraint-Dialog, Abdeckungsansicht, Fehlerseite, Info-Seite und Pruefmeldungen sind uebersetzt; keine rohen HTML-Entities mehr (`&ndash;`, `&amp;`, `&middot;`); die Versionsangabe auf der Startseite kommt aus `package.json` (bisher fest "v1.8.0"). Der Schutztest gegen fest codierte Texte gilt jetzt ohne Ausnahmeliste, ein weiterer Test prueft gleiche Schluessel in DE und EN.
+- **Sprache (A-15):** Die gespeicherte Sprache des Nutzers gilt nach dem Login und beim Neuladen; Browsersprache `en-*` ergibt Englisch; aktive Sprache im Umschalter gut lesbar.
+- **Serverfehler mit Code und in der gewaehlten Sprache (A-16):** Feste Fehlermeldungen erhalten einen sprachneutralen `code` und werden nach `Accept-Language` deutsch oder englisch geliefert (ohne Header: deutsch).
+- **Keine doppelte Spalte nach Umbenennen einer Kategorie (B-18):** Testfallansicht sowie CSV-/XLSX-Export ordnen umbenannte Kategorien ueber ihre ID zu; nur geloeschte Kategorien behalten ihren gespeicherten Namen als eigene Spalte.
+- **Generierungsuebersicht meldet Fehler (B-47)** beim Laden, Loeschen und Umbenennen statt sie zu verschlucken.
+- **Lesbare Knoepfe in der Projektliste (B-34):** "Oeffnen" und "Loeschen" mit ausreichendem Kontrast.
 - **Geloeschte Werte wirken nicht mehr still in Constraints weiter (K-02, REQ-6001 AK-10):** Loeschen einer referenzierten Kategorie bzw. eines referenzierten Werts liefert zuerst 409 `constraint_reference` mit den betroffenen Constraints; die Oberflaeche fragt nach. Nach Bestaetigung (`force=true`) werden die Constraints als ungueltig markiert, in der Liste angezeigt und bei der Generierung nicht angewendet, bis sie bearbeitet werden.
 
 ### ⚠️ Hinweise fuer API-Nutzer
@@ -46,6 +52,7 @@ Alle wesentlichen Änderungen an diesem Projekt werden in dieser Datei dokumenti
 - `DELETE /api/categories/{id}` und `DELETE /api/values/{id}` koennen 409 `constraint_reference` liefern; mit `?force=true` wird trotzdem geloescht.
 - Exporte: Azure-DevOps-CSV nutzt Komma statt Semikolon; Xray-, TestRail- und Azure-CSV enthalten keine `#`-Kopfzeile mehr; Gherkin-, Robot- und pytest-Dateien sind anders aufgebaut (siehe oben).
 - Grenzwertanalyse mit mehreren Bereichen (`/bva/ranges`, `/bva/extended`): Min > Max liefert 400 statt stiller Vertauschung. Die einfache Zahlen-BVA (`/bva`, REQ-0306) vertauscht weiterhin automatisch. Zahlen sind auf Betrag < 10^15 und 10 Nachkommastellen begrenzt.
+- Fehlerantworten enthalten zusaetzlich das Feld `code` (z. B. `{"detail": "Projekt nicht gefunden", "code": "project_not_found"}`); mit `Accept-Language: en` ist `detail` englisch.
 - 429-Antworten des Token-Rate-Limits haben das Format `{"detail": {"code": "rate_limit_exceeded", "detail": "..."}}`.
 
 ---

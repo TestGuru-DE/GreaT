@@ -60,7 +60,7 @@ export default function CoverageHeatmap({
       const data = await coverageApi.getHeatmap(generationId, selectedCatA, selectedCatB, {});
       setHeatmap(data);
     } catch (e: any) {
-      setError(e.message || "Fehler beim Laden der Heatmap");
+      setError(e.message || t('coverageView.loadError'));
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ export default function CoverageHeatmap({
       {availableCategories.length >= 2 && (
         <div className="coverage-heatmap-selectors">
           <label>
-            Kategorie A:
+            {t('coverageView.categoryA')}
             <select
               value={selectedCatA}
               onChange={(e) => {
@@ -113,7 +113,7 @@ export default function CoverageHeatmap({
             </select>
           </label>
           <label>
-            Kategorie B:
+            {t('coverageView.categoryB')}
             <select
               value={selectedCatB}
               onChange={(e) => {

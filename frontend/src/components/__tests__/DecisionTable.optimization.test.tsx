@@ -1,4 +1,5 @@
 ﻿// REQ-5013/5014/5019/5020: DecisionTable Optimization Tests
+import "../../i18n"; // Texte in deutscher Sprache (A-14)
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import DecisionTable from "../DecisionTable";
@@ -102,7 +103,7 @@ describe("DecisionTable Optimization - REQ-5013/5014/5019/5020", () => {
     });
     render(<DecisionTable projectId={1} />);
     expect(screen.getByText(/Vollstaendig/)).toBeInTheDocument();
-    expect(screen.getByText(/Checksum:/)).toBeInTheDocument();
+    expect(screen.getByText(/Prüfsumme:/)).toBeInTheDocument();
   });
 
   it("zeigt Checksum bei 'overlap' Status gelb", () => {
@@ -156,7 +157,7 @@ describe("DecisionTable Optimization - REQ-5013/5014/5019/5020", () => {
     render(<DecisionTable projectId={1} />);
     // Spezifischer: "Luecke: Y,N nicht abgedeckt" (nicht der Header)
     expect(screen.getByText("Luecke: Y,N nicht abgedeckt")).toBeInTheDocument();
-    expect(screen.getByText(/Luecke\(n\) in der Abdeckung/)).toBeInTheDocument();
+    expect(screen.getByText(/Lücke\(n\) in der Abdeckung/)).toBeInTheDocument();
   });
 
   it("ruft runCollapse beim Button-Klick auf", () => {

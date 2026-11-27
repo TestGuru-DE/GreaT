@@ -450,23 +450,26 @@ def get_testcases(gid: int, db: Session = Depends(get_db)):
 
     result_categories = load_result_categories(db, gen.project_id)
 
+    # Alle Werte der Generierung in einer Abfrage (frueher eine je Testfall)
+    values_by_tc: dict[int, list] = {}
+    for value_row in (
+        db.query(models.TestCaseValue)
+        .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
+        .filter(models.TestCase.generation_id == gid)
+        .order_by(models.TestCaseValue.id)
+    ):
+        values_by_tc.setdefault(value_row.testcase_id, []).append(value_row)
+
     out: List[dict] = []
     for tc in testcases:
-        vals = (
-            db.query(models.TestCaseValue)
-            .filter(models.TestCaseValue.testcase_id == tc.id)
-            .order_by(models.TestCaseValue.id)
-            .all()
-        )
+        vals = values_by_tc.get(tc.id, [])
         assignments = {category.name: "" for category in categories}
-        # B-18: Sammle auch category_name-Werte aus TestCaseValue fuer geloeschte Kategorien
-        all_cat_names = set()
+        # B-18: Der gespeicherte Name zaehlt nur fuer GELOESCHTE Kategorien. Eine umbenannte
+        # Kategorie ist ueber category_id weiter zugeordnet und erhaelt keine zweite Spalte
+        # (frueher: {"Eingabe-neu": "x", "Eingabe": ""}).
         for value_row in vals:
-            if value_row.category_name and value_row.category_name not in name_by_id.values():
-                all_cat_names.add(value_row.category_name)
-        for cat_name in all_cat_names:
-            if cat_name not in assignments:
-                assignments[cat_name] = ""
+            if value_row.category_id not in name_by_id and value_row.category_name:
+                assignments.setdefault(value_row.category_name, "")
 
         for value_row in vals:
             cat_name = name_by_id.get(value_row.category_id)
@@ -624,6 +627,8 @@ def export_generation_csv(
         db.query(models.TestCaseValue.category_name)
         .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
         .filter(models.TestCase.generation_id == gen_id)
+        # B-18: nur geloeschte Kategorien; umbenannte sind ueber category_id zugeordnet
+        .filter(models.TestCaseValue.category_id.is_(None))
         .distinct()
         .all()
     )
@@ -823,6 +828,8 @@ def export_generation_xlsx(
         db.query(models.TestCaseValue.category_name)
         .join(models.TestCase, models.TestCase.id == models.TestCaseValue.testcase_id)
         .filter(models.TestCase.generation_id == gen_id)
+        # B-18: nur geloeschte Kategorien; umbenannte sind ueber category_id zugeordnet
+        .filter(models.TestCaseValue.category_id.is_(None))
         .distinct()
         .all()
     )

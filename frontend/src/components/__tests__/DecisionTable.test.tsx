@@ -1,4 +1,5 @@
 ﻿// REQ-5003 + REQ-5004 + REQ-5005: Tests fuer DecisionTable-Komponente
+import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import DecisionTable from "../DecisionTable";
@@ -183,26 +184,26 @@ describe("DecisionTable - REQ-5003/5004/5005", () => {
   });
 
   // REQ-5012: Constraint-Dialog Integration
-  it("zeigt 'Constraint hinzufuegen' Button wenn projectId uebergeben", () => {
+  it("zeigt 'Constraint hinzufügen' Button wenn projectId uebergeben", () => {
     render(<DecisionTable projectId={1} />);
-    expect(screen.getByText("Constraint hinzufuegen")).toBeInTheDocument();
+    expect(screen.getByText("Constraint hinzufügen")).toBeInTheDocument();
   });
 
   it("zeigt keinen Constraint-Button ohne projectId", () => {
     render(<DecisionTable />);
-    expect(screen.queryByText("Constraint hinzufuegen")).not.toBeInTheDocument();
+    expect(screen.queryByText("Constraint hinzufügen")).not.toBeInTheDocument();
   });
 
   it("oeffnet ConstraintDialog beim Button-Klick", () => {
     render(<DecisionTable projectId={1} />);
-    const btn = screen.getByText("Constraint hinzufuegen");
+    const btn = screen.getByText("Constraint hinzufügen");
     fireEvent.click(btn);
     expect(screen.getByTestId("constraint-dialog")).toBeInTheDocument();
   });
 
   it("schliesst ConstraintDialog mit onClose", () => {
     render(<DecisionTable projectId={1} />);
-    const btn = screen.getByText("Constraint hinzufuegen");
+    const btn = screen.getByText("Constraint hinzufügen");
     fireEvent.click(btn);
     expect(screen.getByTestId("constraint-dialog")).toBeInTheDocument();
 

@@ -5,23 +5,11 @@ import { initReactI18next } from "react-i18next";
 import translationDE from "./de.json";
 import translationEN from "./en.json";
 
-// detectDefaultLanguage: localStorage > navigator.language > "de"
-function detectDefaultLanguage(): string {
-  // 1. Gespeicherte Nutzerwahl aus localStorage (fuer Login-Seite vor Anmeldung)
-  const stored = localStorage.getItem("great_language");
-  if (stored === "de" || stored === "en") {
-    return stored;
-  }
+import { detectDefaultLanguage } from "../lib/language";
 
-  // 2. Browsersprache
-  const browserLang = navigator.language || (navigator as any).userLanguage;
-  if (browserLang && browserLang.startsWith("de")) {
-    return "de";
-  }
-
-  // 3. Default Deutsch
-  return "de";
-}
+// BUG A-15: Spracherkennung und -wechsel liegen in lib/language (ohne React-Bindung)
+export { applyLanguage, detectDefaultLanguage, languageFromBrowser } from "../lib/language";
+export type { AppLanguage } from "../lib/language";
 
 i18n
   .use(initReactI18next)
@@ -36,5 +24,10 @@ i18n
       escapeValue: false, // React protects from XSS
     },
   });
+
+// HTML-Attribut lang fuer Screenreader und Silbentrennung mitfuehren
+i18n.on("languageChanged", (lng) => {
+  if (typeof document !== "undefined") document.documentElement.lang = lng;
+});
 
 export default i18n;

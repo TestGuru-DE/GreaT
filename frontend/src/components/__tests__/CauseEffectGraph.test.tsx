@@ -1,4 +1,5 @@
 ﻿// REQ-5018: Tests fuer CauseEffectGraph-Komponente
+import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import CauseEffectGraph from "../CauseEffectGraph";
@@ -26,7 +27,7 @@ describe("CauseEffectGraph - REQ-5018", () => {
       );
 
       render(<CauseEffectGraph projectId={1} />);
-      expect(screen.getByText(/Graph laedt/)).toBeInTheDocument();
+      expect(screen.getByText(/Graph lädt/)).toBeInTheDocument();
 
       // Resolve the pending fetch to avoid hanging promise
       await Promise.resolve().then(() => {

@@ -1,6 +1,7 @@
 // REQ-6005: Sprachumschalter DE | EN
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
+import { applyLanguage } from "../lib/language";
 
 export default function LanguageSwitcher() {
   const { i18n, t } = useTranslation();
@@ -9,8 +10,7 @@ export default function LanguageSwitcher() {
   const currentLang = i18n.language;
 
   const switchLanguage = async (lang: "de" | "en") => {
-    i18n.changeLanguage(lang);
-    localStorage.setItem("great_language", lang);
+    applyLanguage(lang);
 
     // Sync with backend if logged in
     if (user) {
@@ -32,7 +32,7 @@ export default function LanguageSwitcher() {
         onClick={() => switchLanguage("de")}
         className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
           currentLang === "de"
-            ? "border-theme-accent text-theme-accent font-semibold bg-theme-surface-hover"
+            ? "border-2 border-theme-accent text-theme-text font-bold underline bg-theme-surface-hover"
             : "border-theme-border text-theme-text-secondary hover:text-theme-text hover:border-theme-border"
         }`}
         aria-pressed={currentLang === "de"}
@@ -45,7 +45,7 @@ export default function LanguageSwitcher() {
         onClick={() => switchLanguage("en")}
         className={`px-2 py-1 text-xs rounded-lg border transition-colors ${
           currentLang === "en"
-            ? "border-theme-accent text-theme-accent font-semibold bg-theme-surface-hover"
+            ? "border-2 border-theme-accent text-theme-text font-bold underline bg-theme-surface-hover"
             : "border-theme-border text-theme-text-secondary hover:text-theme-text hover:border-theme-border"
         }`}
         aria-pressed={currentLang === "en"}

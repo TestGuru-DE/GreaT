@@ -10,6 +10,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 const mockT = (key: string, params?: Record<string, unknown>): string => {
   const tr: Record<string, string> = {
     "common.loading": "Lade...",
+    "constraintBuilder.errorPrefix": "Fehler: {{message}}",
     "common.edit": "Bearbeiten",
     "common.cancel": "Abbrechen",
     "common.delete": "Loeschen",

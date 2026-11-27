@@ -1,4 +1,5 @@
 ﻿// REQ-3041, REQ-3043, REQ-3064: BVAInputPanel – Min/Max-Felder + Multi-Range-Eingabe
+import { useTranslation } from "react-i18next";
 import type { BVAConfig } from "../../lib/bva-calc";
 import { validateBVAConfig, validateMultiRangeBVAConfig } from "../../lib/bva-calc";
 import type { BVADataType } from "../../api/bva";
@@ -12,6 +13,7 @@ interface BVAInputPanelProps {
 }
 
 export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInputPanelProps) {
+  const { t } = useTranslation();
   const hasRanges = Array.isArray(config.ranges) && config.ranges.length > 0;
   const isNumber = dataType === "number";
   const errors = !isNumber
@@ -86,14 +88,14 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-slate-700">
-              Bereiche
+              {t('bvaInput.ranges')}
             </label>
             <button
               type="button"
               onClick={addRange}
               className="px-3 py-1.5 text-xs font-medium rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100"
             >
-              Bereich hinzufügen
+              {t('bvaInput.addRange')}
             </button>
           </div>
           <div className="space-y-3">
@@ -177,7 +179,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 inputMode="decimal"
                 value={config.min}
                 onChange={(e) => handleMinChange(e.target.value)}
-                placeholder="z.B. 0 oder 0.1"
+                placeholder={t('bvaInput.minPlaceholder')}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                 autoFocus
               />
@@ -192,7 +194,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 inputMode="decimal"
                 value={config.max}
                 onChange={(e) => handleMaxChange(e.target.value)}
-                placeholder="z.B. 100 oder 99.9"
+                placeholder={t('bvaInput.maxPlaceholder')}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
               />
             </div>
@@ -201,7 +203,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
           {/* Erlaubt/Fehlerfall */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
-              Werte markieren als
+              {t('bvaInput.markAs')}
             </label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -212,7 +214,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                   onChange={() => handleErrorCaseChange(false)}
                   className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
                 />
-                <span className="text-sm text-slate-700">Erlaubte Werte</span>
+                <span className="text-sm text-slate-700">{t('bvaInput.allowed')}</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -222,7 +224,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                   onChange={() => handleErrorCaseChange(true)}
                   className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
                 />
-                <span className="text-sm text-slate-700">Fehlerfall (ungültig)</span>
+                <span className="text-sm text-slate-700">{t('bvaInput.errorCase')}</span>
               </label>
             </div>
           </div>
@@ -244,7 +246,7 @@ export function BVAInputPanel({ config, onChange, dataType = "number" }: BVAInpu
                 onChange={() => handlePointsChange(pts)}
                 className="w-4 h-4 text-sky-600 focus:ring-2 focus:ring-sky-500"
               />
-              <span className="text-sm text-slate-700">{pts} Punkte</span>
+              <span className="text-sm text-slate-700">{t('bvaInput.points', { count: pts })}</span>
             </label>
           ))}
         </div>

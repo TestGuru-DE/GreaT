@@ -45,19 +45,7 @@ const COMMENT_PATTERN = /^\s*(\/\/|\/\*|\*)/;
 const JSX_EXPR_PATTERN = /^\s*\{.*\}\s*$/;
 
 // Files known to have hardcoded strings (out of scope for Slice 3, planned for Slice 4+)
-const KNOWN_EXCEPTIONS: (string | RegExp)[] = [
-  /BVAInputPanel\.tsx$/,
-  /NumberlineVisualization\.tsx$/,
-  /PreviewTable\.tsx$/,
-  /CauseEffectGraph\.tsx$/,
-  /ConstraintDialog\.tsx$/,
-  /DecisionTable\.tsx$/,
-  /DecisionTableHelp\.tsx$/,
-  /ModelExportDropdown\.tsx$/,
-  /RuleVisualization\.tsx$/,
-  /TestCasePanel\.tsx$/,
-  /App\.tsx$/,
-];
+const KNOWN_EXCEPTIONS: (string | RegExp)[] = [];
 
 function shouldSkipFile(relativePath: string): boolean {
   for (const exception of KNOWN_EXCEPTIONS) {

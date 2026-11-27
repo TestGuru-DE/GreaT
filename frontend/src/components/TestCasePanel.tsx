@@ -181,15 +181,15 @@ export default function TestCasePanel({ projectId }: Props) {
       <div className="flex gap-3 items-end flex-wrap border-b border-slate-100 pb-3">
         {dtMode && (
           <p className="w-full text-xs text-amber-700">
-            Entscheidungstabelle-Modus aktiv: Die Generierung wird in der Entscheidungstabelle gesteuert.
+            {t('testCasePanel.dtModeActive')}
           </p>
         )}
         <div>
-          <label className="block text-xs text-slate-500 mb-1 font-medium">Strategie</label>
+          <label className="block text-xs text-slate-500 mb-1 font-medium">{t('testCasePanel.strategy')}</label>
           <select value={strategy} onChange={(e) => setStrategy(e.target.value as Strategy)} disabled={dtMode}
             className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400">
             {STRATEGIES.map((s) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
+              <option key={s.value} value={s.value}>{t(`testCasePanel.strategies.${s.value}`)}</option>
             ))}
           </select>
         </div>
@@ -204,12 +204,12 @@ export default function TestCasePanel({ projectId }: Props) {
             }}
             className="rounded border-slate-300 text-sky-600 focus:ring-sky-400"
           />
-          Mit Regeln generieren
+          {t('testCasePanel.applyRules')}
         </label>
         {/* BUG-3: T-Wise Stärke Eingabe */}
         {strategy === "t_wise" && (
           <div>
-            <label className="block text-xs text-slate-500 mb-1 font-medium">T-Stärke</label>
+            <label className="block text-xs text-slate-500 mb-1 font-medium">{t('testCasePanel.tStrength')}</label>
             <input
               type="number"
               min="1"
@@ -239,14 +239,14 @@ export default function TestCasePanel({ projectId }: Props) {
           else generate(projectId, applyRules, ts);
         }} disabled={loading || dtMode}
           className="px-4 py-1.5 bg-sky-600 text-white text-sm rounded-lg hover:bg-sky-700 disabled:opacity-50 font-medium">
-          {loading ? "Generiere..." : "Neu generieren"}
+          {loading ? t('testCasePanel.generating') : t('testCasePanel.regenerate')}
         </button>
 
         {/* History-Dropdown – vorherige Generierungen laden */}
         {generations.length > 0 && (
           <div className="ml-2">
             <label className="block text-xs text-slate-500 mb-1 font-medium">
-              Vorherige Generierung laden
+              {t('testCasePanel.loadPrevious')}
             </label>
             <select
               value={generationId ?? ""}
@@ -254,7 +254,7 @@ export default function TestCasePanel({ projectId }: Props) {
               className="px-3 py-1.5 text-sm rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-400 max-w-xs"
               disabled={generationsLoading}
             >
-              <option value="">-- Generierung wählen --</option>
+              <option value="">{t('testCasePanel.chooseGeneration')}</option>
               {generations.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
@@ -302,7 +302,7 @@ export default function TestCasePanel({ projectId }: Props) {
                     <button
                       onClick={() => setEditingName(currentGen.name)}
                       className="text-xs text-slate-400 hover:text-sky-500 underline"
-                      title="Name bearbeiten"
+                      title={t('testCasePanel.editName')}
                     >✏️ umbenennen</button>
                   )}
                 </div>
@@ -313,11 +313,11 @@ export default function TestCasePanel({ projectId }: Props) {
 
         {testcases.length > 0 && (
           <div className="flex gap-2 ml-auto items-center">
-            <span className="text-xs text-slate-400">{count} Testfälle</span>
+            <span className="text-xs text-slate-400">{t('testCasePanel.count', { count })}</span>
             {/* REQ-3052: Client-seitiger CSV-Export */}
             <button onClick={exportTableAsCSV}
               className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              title="Aktuelle Tabellen-Ansicht als CSV exportieren (inkl. Sortierung)">
+              title={t('testCasePanel.exportCsvTitle')}>
               📥 CSV (Tabelle)
             </button>
             <button onClick={() => handleExport("json")}
@@ -358,10 +358,10 @@ export default function TestCasePanel({ projectId }: Props) {
                 ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
                 : "bg-red-100 text-red-800 border border-red-300"
             }`}
-            title={`Absolute Risikoabdeckung: ${riskSummary.risk_coverage_percent}% — 100% = All-Combinations-Maximum nach gültigen Regeln. Vergleich der erzeugten Testfälle mit der validierten Kombinationsbasis.`}
+            title={t('testCasePanel.riskTitle', { percent: riskSummary.risk_coverage_percent })}
           >
             <span className="text-base">🛡️</span>
-            <span>Risikoabdeckung: {riskSummary.risk_coverage_percent}%</span>
+            <span>{t('testCasePanel.riskBadge', { percent: riskSummary.risk_coverage_percent })}</span>
           </div>
           <span className="text-xs text-slate-400">
             ({formatNumber(riskSummary.total_risk)} / {formatNumber(riskSummary.max_possible_risk)})
@@ -372,16 +372,16 @@ export default function TestCasePanel({ projectId }: Props) {
       {testcases.length === 0 && !loading ? (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
           <span className="text-3xl mb-2">?</span>
-          <p className="text-sm font-medium">Noch keine Testfälle</p>
+          <p className="text-sm font-medium">{t('testCasePanel.emptyTitle')}</p>
           <p className="text-xs mt-1">
             {generations.length > 0
-              ? "Strategie wählen und neu generieren oder vorherige Generierung laden"
-              : "Strategie wählen und auf Generieren klicken"}
+              ? t('testCasePanel.emptyHintWithHistory')
+              : t('testCasePanel.emptyHint')}
           </p>
         </div>
       ) : loading ? (
         <div className="flex-1 flex items-center justify-center text-slate-400 text-sm animate-pulse">
-          Lade Testfälle...
+          {t('testCasePanel.loading')}
         </div>
       ) : (
         <div className="flex-1 overflow-auto rounded-xl border border-slate-200 shadow-sm">
@@ -396,7 +396,7 @@ export default function TestCasePanel({ projectId }: Props) {
                 <th
                   onClick={() => toggleSort("Risiko")}
                   className="px-3 py-2 text-left text-xs font-medium text-slate-500 bg-slate-50 border-b-2 border-slate-200 cursor-pointer hover:bg-slate-100 select-none whitespace-nowrap w-16"
-                  title="Risikoabdeckung (Summe der risk_weight-Werte)"
+                  title={t('testCasePanel.riskColumnTitle')}
                 >
                   Risiko{sortIcon("Risiko")}
                 </th>
@@ -463,7 +463,7 @@ export default function TestCasePanel({ projectId }: Props) {
                                 resetDraftValue(testcaseId, col);
                               }
                             }}
-                            placeholder="Ergebnis waehlen oder eingeben"
+                            placeholder={t('testCasePanel.resultPlaceholder')}
                             className={
                               "w-full min-w-36 rounded border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 " +
                               (draftValue.trim()

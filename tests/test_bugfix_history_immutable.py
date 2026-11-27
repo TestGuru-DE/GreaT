@@ -98,7 +98,11 @@ class TestCategoryDeleteKeepsHistory:
         assert tc0_after["assignments"]["KategorieA"] == tc0["assignments"]["KategorieA"]
 
     def test_renaming_category_keeps_old_name_in_old_generation(self, client, project_with_gen):
-        """Umbenennen einer Kategorie aendert NICHT den Namen in alten Generierungen."""
+        """Umbenennen: alte Generierung zeigt die Werte unter dem AKTUELLEN Namen, ohne zweite Spalte.
+
+        B-18 (PO-Entscheidung 27.11.2026): Bisher erschien der alte Name zusaetzlich als leere
+        Spalte neben dem neuen. Die Werte selbst bleiben unveraendert (Historie).
+        """
         pid = project_with_gen["project_id"]
         gen_id = project_with_gen["gen_id"]
         cid_a = project_with_gen["cat_a_id"]
@@ -113,12 +117,13 @@ class TestCategoryDeleteKeepsHistory:
         r = client.patch(f"/api/categories/{cid_a}/rename", json={"name": "NeuerNameA"})
         assert r.status_code == 200
 
-        # Alte Generierung sollte den alten Namen behalten
+        # Alte Generierung: aktueller Name, gleiche Werte, keine zusaetzliche Spalte
         r = client.get(f"/api/generations/{gen_id}/testcases")
         assert r.status_code == 200
         tc0_after = r.json()["testcases"][0]
-        assert "KategorieA" in tc0_after["assignments"], \
-            f"Alter Name 'KategorieA' sollte erhalten bleiben, ist aber: {list(tc0_after['assignments'].keys())}"
+        assert "KategorieA" not in tc0_after["assignments"], list(tc0_after["assignments"])
+        assert tc0_after["assignments"]["NeuerNameA"] == tc0_before["assignments"]["KategorieA"]
+        assert len(tc0_after["assignments"]) == len(tc0_before["assignments"])
 
     def test_new_generation_uses_new_name(self, client, project_with_gen):
         """Neue Generierung nach Umbenennung verwendet den neuen Kategorienamen."""

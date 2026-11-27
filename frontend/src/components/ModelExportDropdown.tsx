@@ -91,7 +91,7 @@ export default function ModelExportDropdown({ projectId, projectName }: Props) {
             className="w-full text-left px-4 py-2 text-sm text-theme-text hover:bg-theme-surface-hover disabled:opacity-50 transition-colors flex items-center gap-2"
             role="menuitem"
           >
-            <span className="text-theme-text-muted text-xs font-mono">.yaml</span>
+            <span className="text-theme-text-muted text-xs font-mono">{".yaml"}</span>
             {t("modelExport.yaml")}
           </button>
           <button
@@ -101,7 +101,7 @@ export default function ModelExportDropdown({ projectId, projectName }: Props) {
             className="w-full text-left px-4 py-2 text-sm text-theme-text hover:bg-theme-surface-hover disabled:opacity-50 transition-colors flex items-center gap-2"
             role="menuitem"
           >
-            <span className="text-theme-text-muted text-xs font-mono">.json</span>
+            <span className="text-theme-text-muted text-xs font-mono">{".json"}</span>
             {t("modelExport.json")}
           </button>
         </div>

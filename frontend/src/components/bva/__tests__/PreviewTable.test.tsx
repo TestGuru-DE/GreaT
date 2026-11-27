@@ -1,4 +1,5 @@
 ﻿// REQ-3041: Tests fuer PreviewTable-Komponente
+import "../../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { PreviewTable } from "../PreviewTable";

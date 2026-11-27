@@ -71,28 +71,28 @@ const CHAPTER_KEYS = [
   { id: '15-api-einbindung-fuer-entwickler', key: 'help.chapters.apiIntegration' },
 ];
 
-// INFO-Section als Markdown
-const INFO_CONTENT = `
+// INFO-Section als Markdown (A-14: deutsch und englisch)
+const INFO_CONTENT_DE = `
 ## Info & Lizenz
 
 ### Lizenz
 
-G.R.E.A.T. wird unter der **MIT-Lizenz** vertrieben. Sie duerfen das Programm frei verwenden, aendern und verteilen, solange der Lizenztext enthalten bleibt.
+G.R.E.A.T. wird unter der **MIT-Lizenz** vertrieben. Du darfst das Programm frei verwenden, ändern und verteilen, solange der Lizenztext enthalten bleibt.
 
 ### Haftungsausschluss
 
-Dieses Programm wird **ohne Garantie** bereitgestellt, weder ausdruecklich noch stillschweigend. Die Entwickler uebernehmen keine Haftung fuer Schaeden, die durch die Nutzung dieses Programms entstehen koennen. Verwenden Sie das Programm auf eigene Verantwortung.
+Dieses Programm wird **ohne Garantie** bereitgestellt, weder ausdrücklich noch stillschweigend. Die Entwickler übernehmen keine Haftung für Schäden, die durch die Nutzung dieses Programms entstehen können. Die Nutzung erfolgt auf eigene Verantwortung.
 
-### KI-unterstuetzte Entwicklung
+### KI-unterstützte Entwicklung
 
-Teile dieses Programms wurden mit Hilfe von **Kuenstlicher Intelligenz (KI)** entwickelt. Dies umfasst:
+Teile dieses Programms wurden mit Hilfe von **Künstlicher Intelligenz (KI)** entwickelt. Dies umfasst:
 
-- Code-Generierung und -Vervollstaendigung
+- Code-Generierung und -Vervollständigung
 - Testfall-Design und -Generierung
 - Dokumentation und Kommentare
 - Architektur-Entscheidungen und Reviews
 
-Alle KI-generierten Inhalte wurden von Menschen ueberprueft und freigegeben.
+Alle KI-generierten Inhalte wurden von Menschen überprüft und freigegeben.
 
 ### Projekt auf GitHub
 
@@ -101,6 +101,37 @@ Das vollständige Quellcode-Projekt findest du unter:
 **https://github.com/TestGuru-DE/GreaT**
 
 Dort findest du Issue-Tracking, Dokumentation und die Möglichkeit, zum Projekt beizutragen.
+`;
+
+const INFO_CONTENT_EN = `
+## Info & License
+
+### License
+
+G.R.E.A.T. is distributed under the **MIT License**. You may use, modify and distribute the program freely as long as the license text is retained.
+
+### Disclaimer
+
+This program is provided **without warranty**, either express or implied. The developers accept no liability for damage that may result from using this program. Use it at your own risk.
+
+### AI-assisted development
+
+Parts of this program were developed with the help of **artificial intelligence (AI)**. This includes:
+
+- code generation and completion
+- test case design and generation
+- documentation and comments
+- architecture decisions and reviews
+
+All AI-generated content was reviewed and approved by humans.
+
+### Project on GitHub
+
+You can find the complete source code at:
+
+**https://github.com/TestGuru-DE/GreaT**
+
+There you will find issue tracking, documentation and the opportunity to contribute to the project.
 `;
 
 // Helper: Extrahiert Text aus React-Children (kann string | ReactNode[] sein)
@@ -145,7 +176,7 @@ function extractId(children: React.ReactNode): string {
 }
 
 export default function HelpPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeChapter, setActiveChapter] = useState('info');
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -195,7 +226,9 @@ export default function HelpPage() {
   }, []);
 
   // Setze initial auf Info oder Handbuch je nach aktuellem Kapitel
-  const content = activeChapter === 'info' ? INFO_CONTENT : handbookContent;
+  const content = activeChapter === 'info'
+    ? (i18n.language === 'en' ? INFO_CONTENT_EN : INFO_CONTENT_DE)
+    : handbookContent;
 
   return (
     <div className="flex min-h-[calc(100vh-80px)]">

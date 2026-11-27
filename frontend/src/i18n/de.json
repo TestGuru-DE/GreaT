@@ -12,7 +12,7 @@
     "logoutTitle": "Abmelden ({{username}})"
   },
   "login": {
-    "title": "G.R.E.A.T. &ndash; Anmelden",
+    "title": "G.R.E.A.T. – Anmelden",
     "username": "Benutzername",
     "password": "Passwort",
     "defaultUser": "Standardbenutzer: {{username}}",
@@ -61,7 +61,7 @@
   "home": {
     "title": "G.R.E.A.T.",
     "subtitle": "Georgs Radikal Einfacher Automatisierter TestcaseDesigner",
-    "footer": "v1.8.0 &middot; F1 fuer Hilfe",
+    "footer": "v{{version}} · F1 für Hilfe",
     "tiles": {
       "projects": {
         "label": "Projekte",
@@ -115,12 +115,12 @@
   },
   "projectDetail": {
     "invalidId": "Ungültige Projekt-ID",
-    "backToProjects": "&larr; Projekte",
-    "title": "G.R.E.A.T. &ndash; Projekt {{name}}",
+    "backToProjects": "← Projekte",
+    "title": "G.R.E.A.T. – Projekt {{name}}",
     "rename": "Umbenennen",
     "saveName": "Speichern",
     "cancelRename": "Abbrechen",
-    "categoriesTitle": "Kategorien &amp; Werte",
+    "categoriesTitle": "Kategorien & Werte",
     "ruleConnections": "Regel-Verbindungen",
     "tabGenerate": "Testfall-Generierung",
     "tabRules": "Regeln",
@@ -128,7 +128,8 @@
     "tabDecision": "Entscheidungstabelle",
     "tabConstraints": "Constraints",
     "projectNameLabel": "Projektname",
-    "tabSeeds": "Seeds"
+    "tabSeeds": "Seeds",
+    "tabClassification": "Klassifikationsbaum"
   },
   "generations": {
     "title": "Alle Generierungen",
@@ -338,7 +339,8 @@
     "title": "Ein Fehler ist aufgetreten",
     "message": "Die Anwendung konnte nicht korrekt geladen werden.",
     "unknownError": "Unbekannter Fehler",
-    "reload": "Seite neu laden"
+    "reload": "Seite neu laden",
+    "unknown": "Unbekannter Fehler"
   },
   "deleteProjectDialog": {
     "titleSingle": "Projekt löschen",
@@ -519,7 +521,8 @@
       "exclude": "Verboten (Paar nicht gemeinsam)",
       "dependency": "Abhängig (Wenn/Dann)",
       "combine": "Kombinieren (Fan-out)"
-    }
+    },
+    "categoryFallback": "Kategorie #{{id}}"
   },
   "decisionTableHelp": {
     "title": "📋 Entscheidungstabelle – Hilfe",
@@ -759,7 +762,12 @@
     "emptyCondition": "(leere Bedingung)",
     "valuesCheckbox": "Werte (Mehrfachauswahl)",
     "addGroupAnd": "UND-Gruppe",
-    "addGroupOr": "ODER-Gruppe"
+    "addGroupOr": "ODER-Gruppe",
+    "saveInvalid": "Speicherfehler: Ungültiges Constraint. Bitte Bedingung und Folge prüfen.",
+    "projectNotFound": "Projekt nicht gefunden.",
+    "unauthorized": "Nicht autorisiert. Bitte erneut anmelden.",
+    "saveHttp": "Speicherfehler (HTTP {{status}}). Bitte erneut versuchen.",
+    "errorPrefix": "Fehler: {{message}}"
   },
   "export": {
     "columns": {
@@ -902,5 +910,137 @@
     "importBtn": "Importieren",
     "importing": "Importiere …",
     "cancel": "Abbrechen"
+  },
+  "app": {
+    "helpLoading": "Hilfe wird geladen …"
+  },
+  "bvaInput": {
+    "ranges": "Bereiche",
+    "addRange": "Bereich hinzufügen",
+    "minPlaceholder": "z. B. 0 oder 0.1",
+    "maxPlaceholder": "z. B. 100 oder 99.9",
+    "markAs": "Werte markieren als",
+    "allowed": "Erlaubte Werte",
+    "errorCase": "Fehlerfall (ungültig)",
+    "points": "{{count}} Punkte"
+  },
+  "numberline": {
+    "empty": "Keine Punkte zum Anzeigen",
+    "error": "Fehler",
+    "boundary": "Grenzwert",
+    "inside": "Innen"
+  },
+  "previewTable": {
+    "empty": "Keine Vorschau verfügbar",
+    "value": "Wert",
+    "range": "Bereich",
+    "type": "Typ",
+    "status": "Status"
+  },
+  "causeEffect": {
+    "empty": "Keine Ursache/Wirkung für den Graphen",
+    "cause": "Ursache",
+    "effect": "Wirkung",
+    "loading": "Graph lädt …"
+  },
+  "constraintDialog": {
+    "title": "Constraint hinzufügen",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "type": "Typ"
+  },
+  "coverageView": {
+    "loadError": "Fehler beim Laden der Heatmap",
+    "categoryA": "Kategorie A:",
+    "categoryB": "Kategorie B:",
+    "back": "← Zurück zur Übersicht",
+    "hide": "Verbergen",
+    "uncoveredCount": "{{count}} nicht abgedeckt"
+  },
+  "decisionTableView": {
+    "loading": "Lade Entscheidungstabelle …",
+    "generateError": "Fehler bei der Generierung",
+    "tip": "Tipp: Stelle sicher, dass mindestens eine Ursache- und eine Wirkungskategorie existiert.",
+    "emptyTitle": "Keine Ursachen oder Wirkungen gefunden",
+    "emptyHint": "Lege mindestens eine Ursache- und eine Wirkungskategorie im Kategorienbaum an.",
+    "generate": "Regeln generieren",
+    "collapse": "Regeln zusammenfassen",
+    "help": "Hilfe anzeigen",
+    "addConstraint": "Constraint hinzufügen",
+    "rule": "Regel",
+    "ruleCell": "Regel R{{id}} – {{name}}",
+    "separator": "Ursachen / Wirkungen",
+    "priorityFor": "Priorität für {{name}}",
+    "priorityHint": "Priorität (1 = höchste, 999 = keine)",
+    "none": "Keine",
+    "checksum": "Prüfsumme:",
+    "gaps": "{{count}} Lücke(n) in der Abdeckung"
+  },
+  "ruleVisualization": {
+    "exclude": "Verboten",
+    "dependency": "Abhängig",
+    "combine": "Kombinieren",
+    "loading": "Lade Regeln …",
+    "empty": "Noch keine Regeln",
+    "emptyHint": "Lege Regeln im Reiter „Regeln“ an",
+    "notWith": "✕ nicht mit",
+    "then": "→ dann",
+    "onlyWith": "⊂ nur mit",
+    "resize": "Höhe anpassen (ziehen)"
+  },
+  "testCasePanel": {
+    "strategy": "Strategie",
+    "strategies": {
+      "each": "Each Choice (empfohlen)",
+      "linear": "Lineare Expansion",
+      "all": "Alle Kombinationen",
+      "pairwise": "Pairwise",
+      "t_wise": "T-Wise (parametrisiert)",
+      "mcdc": "MC/DC (Modified Condition/Decision Coverage)",
+      "risk_based": "Risikobasiert"
+    },
+    "dtModeActive": "Entscheidungstabellen-Modus aktiv: Die Generierung wird in der Entscheidungstabelle gesteuert.",
+    "applyRules": "Mit Regeln generieren",
+    "tStrength": "T-Stärke",
+    "generating": "Generiere …",
+    "regenerate": "Neu generieren",
+    "loadPrevious": "Vorherige Generierung laden",
+    "chooseGeneration": "-- Generierung wählen --",
+    "editName": "Name bearbeiten",
+    "exportCsvTitle": "Aktuelle Tabellenansicht als CSV exportieren (inkl. Sortierung)",
+    "riskTitle": "Absolute Risikoabdeckung: {{percent}} % – 100 % = Maximum aller Kombinationen nach gültigen Regeln.",
+    "emptyTitle": "Noch keine Testfälle",
+    "emptyHintWithHistory": "Strategie wählen und neu generieren oder vorherige Generierung laden",
+    "emptyHint": "Strategie wählen und auf „Neu generieren“ klicken",
+    "loading": "Lade Testfälle …",
+    "riskColumnTitle": "Risikoabdeckung (Summe der Risikogewichte)",
+    "resultPlaceholder": "Ergebnis wählen oder eingeben",
+    "count": "{{count}} Testfälle",
+    "riskBadge": "Risikoabdeckung: {{percent}}%"
+  },
+  "bvaValidation": {
+    "outside": "außerhalb",
+    "needRange": "Mindestens ein Bereich erforderlich",
+    "invalidNumberInRange": "Bereich {{n}}: Ungültiger numerischer Wert",
+    "minOrMaxRequired": "Bereich {{n}}: Minimum oder Maximum erforderlich",
+    "noOverlapOrTouch": "Bereiche dürfen sich nicht überschneiden oder berühren.",
+    "minRequired": "Minimum erforderlich",
+    "invalidNumber": "Ungültiger numerischer Wert",
+    "formatDate": "Datum im Format JJJJ-MM-TT erwartet",
+    "formatTime": "Uhrzeit im Format HH:MM oder HH:MM:SS erwartet",
+    "formatDatetime": "Datum+Uhrzeit im Format JJJJ-MM-TTTHH:MM erwartet",
+    "formatStrlen": "Ganze Zahl >= 0 erwartet",
+    "formatTimezone": "Zeitzone im Format +HH:MM, -HH:MM oder Z erwartet",
+    "rangePrefix": "Bereich {{n}}",
+    "minAndMaxRequired": "{{prefix}}: Minimum und Maximum erforderlich",
+    "minGreaterMax": "{{prefix}}: Minimum ist größer als Maximum",
+    "rangesOverlap": "Bereich {{a}} und Bereich {{b}} überschneiden sich"
+  },
+  "settingsValidation": {
+    "maxTestcases": "Bitte eine ganze Zahl zwischen {{min}} und {{max}} eingeben."
+  },
+  "decisionTableHelpExamples": {
+    "size": "Größe: S, M, L, XL",
+    "color": "Farbe: Rot, Grün, Blau"
   }
 }

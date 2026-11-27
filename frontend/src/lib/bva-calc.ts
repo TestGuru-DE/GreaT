@@ -1,5 +1,6 @@
 ﻿// REQ-3041, REQ-3042: Grenzwertanalyse-Berechnungen mit Decimal.js
 // ISTQB-konform: 2-Wert = 4 Werte, 3-Wert = 6 Werte, 4-Wert = 8 Werte
+import { tr } from "./i18nText";
 import Decimal from "decimal.js";
 
 function normalizeDecimalInput(value: string): string {
@@ -83,32 +84,32 @@ export function calculateBVAPoints(config: BVAConfig): BVAPoint[] {
   if (pointsPerBoundary === 2) {
     // [min-1, min, max, max+1]
     points.push(
-      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: `min−1 (${tr("bvaValidation.outside", "außerhalb")})` },
       { value: minDec.toString(),                    type: "boundary", label: "min (Grenze)" },
       { value: maxDec.toString(),                    type: "boundary", label: "max (Grenze)" },
-      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: "max+1 (außerhalb)" }
+      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: `max+1 (${tr("bvaValidation.outside", "außerhalb")})` }
     );
   } else if (pointsPerBoundary === 3) {
     // [min-1, min, min+1, max-1, max, max+1]
     points.push(
-      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.minus(epsilonDec).toString(), type: "outside",  label: `min−1 (${tr("bvaValidation.outside", "außerhalb")})` },
       { value: minDec.toString(),                    type: "boundary", label: "min (Grenze)" },
       { value: minDec.plus(epsilonDec).toString(),  type: "inside",   label: "min+1 (innerhalb)" },
       { value: maxDec.minus(epsilonDec).toString(), type: "inside",   label: "max−1 (innerhalb)" },
       { value: maxDec.toString(),                    type: "boundary", label: "max (Grenze)" },
-      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: "max+1 (außerhalb)" }
+      { value: maxDec.plus(epsilonDec).toString(),  type: "outside",  label: `max+1 (${tr("bvaValidation.outside", "außerhalb")})` }
     );
   } else if (pointsPerBoundary === 4) {
     // [min-2, min-1, min, min+1, max-1, max, max+1, max+2]
     points.push(
-      { value: minDec.minus(epsilonDec.times(2)).toString(), type: "outside",  label: "min−2 (außerhalb)" },
-      { value: minDec.minus(epsilonDec).toString(),          type: "outside",  label: "min−1 (außerhalb)" },
+      { value: minDec.minus(epsilonDec.times(2)).toString(), type: "outside",  label: `min−2 (${tr("bvaValidation.outside", "außerhalb")})` },
+      { value: minDec.minus(epsilonDec).toString(),          type: "outside",  label: `min−1 (${tr("bvaValidation.outside", "außerhalb")})` },
       { value: minDec.toString(),                            type: "boundary", label: "min (Grenze)" },
       { value: minDec.plus(epsilonDec).toString(),           type: "inside",   label: "min+1 (innerhalb)" },
       { value: maxDec.minus(epsilonDec).toString(),          type: "inside",   label: "max−1 (innerhalb)" },
       { value: maxDec.toString(),                            type: "boundary", label: "max (Grenze)" },
-      { value: maxDec.plus(epsilonDec).toString(),           type: "outside",  label: "max+1 (außerhalb)" },
-      { value: maxDec.plus(epsilonDec.times(2)).toString(),  type: "outside",  label: "max+2 (außerhalb)" }
+      { value: maxDec.plus(epsilonDec).toString(),           type: "outside",  label: `max+1 (${tr("bvaValidation.outside", "außerhalb")})` },
+      { value: maxDec.plus(epsilonDec.times(2)).toString(),  type: "outside",  label: `max+2 (${tr("bvaValidation.outside", "außerhalb")})` }
     );
   }
 
@@ -238,7 +239,7 @@ export function validateMultiRangeBVAConfig(ranges: BVARangeEntry[]): string[] {
   const errors: string[] = [];
 
   if (!ranges.length) {
-    errors.push("Mindestens ein Bereich erforderlich");
+    errors.push(tr("bvaValidation.needRange", "Mindestens ein Bereich erforderlich"));
     return errors;
   }
 
@@ -255,11 +256,11 @@ export function validateMultiRangeBVAConfig(ranges: BVARangeEntry[]): string[] {
     }
 
     if (parseError) {
-      errors.push(`Bereich ${idx + 1}: Ungültiger numerischer Wert`);
+      errors.push(tr("bvaValidation.invalidNumberInRange", "Bereich {{n}}: Ungültiger numerischer Wert", { n: idx + 1 }));
     }
 
     if (!min && !max) {
-      errors.push(`Bereich ${idx + 1}: Minimum oder Maximum erforderlich`);
+      errors.push(tr("bvaValidation.minOrMaxRequired", "Bereich {{n}}: Minimum oder Maximum erforderlich", { n: idx + 1 }));
     }
 
     if (min && max && min.greaterThan(max)) {
@@ -285,7 +286,7 @@ export function validateMultiRangeBVAConfig(ranges: BVARangeEntry[]): string[] {
     const prev = ordered[i - 1].range;
     const current = ordered[i].range;
     if (rangeOverlaps(prev, current)) {
-      errors.push("Bereiche dürfen sich nicht überschneiden oder berühren.");
+      errors.push(tr("bvaValidation.noOverlapOrTouch", "Bereiche dürfen sich nicht überschneiden oder berühren."));
       break;
     }
   }
@@ -300,7 +301,7 @@ export function validateMultiRangeBVAConfig(ranges: BVARangeEntry[]): string[] {
 export function validateBVAConfig(config: BVAConfig): string[] {
   const errors: string[] = [];
 
-  if (!config.min) errors.push("Minimum erforderlich");
+  if (!config.min) errors.push(tr("bvaValidation.minRequired", "Minimum erforderlich"));
   if (!config.max) errors.push("Maximum erforderlich");
 
   try {
@@ -308,7 +309,7 @@ export function validateBVAConfig(config: BVAConfig): string[] {
     new Decimal(normalizeDecimalInput(config.max));
     // Auto-swap erlaubt, keine weitere Validierung
   } catch {
-    errors.push("Ungültiger numerischer Wert");
+    errors.push(tr("bvaValidation.invalidNumber", "Ungültiger numerischer Wert"));
   }
 
   return errors;

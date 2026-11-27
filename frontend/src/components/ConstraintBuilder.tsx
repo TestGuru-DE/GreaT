@@ -767,16 +767,16 @@ export default function ConstraintBuilder({ projectId }: Props) {
         } else if (data?.message) {
           userMessage = data.message;
         } else if (status === 400) {
-          userMessage = "Speicherfehler: Ungueltiger Constraint. Bitte pruefe Bedingung und Folge.";
+          userMessage = t('constraintBuilder.saveInvalid');
         } else if (status === 404) {
-          userMessage = "Projekt nicht gefunden.";
+          userMessage = t('constraintBuilder.projectNotFound');
         } else if (status === 401 || status === 403) {
-          userMessage = "Nicht autorisiert. Bitte erneut anmelden.";
+          userMessage = t('constraintBuilder.unauthorized');
         } else {
-          userMessage = `Speicherfehler (HTTP ${status}). Bitte versuche es erneut.`;
+          userMessage = t('constraintBuilder.saveHttp', { status });
         }
       } else if (err instanceof Error) {
-        userMessage = `Fehler: ${err.message}`;
+        userMessage = t('constraintBuilder.errorPrefix', { message: err.message });
       }
 
       setMsg({ text: userMessage, type: "error" });

@@ -111,6 +111,22 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+@app.exception_handler(StarletteHTTPException)
+async def localized_http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """BUG A-16 (REQ-6005): Fehlermeldungen mit sprachneutralem `code` und in der Sprache
+    aus Accept-Language (de/en). Ohne Header bleibt die Meldung deutsch."""
+    from .i18n.server_messages import detect_language, localize_detail
+    lang = detect_language(request.headers.get("accept-language"))
+    detail, code = localize_detail(exc.detail, lang)
+    content = {"detail": detail}
+    if code and not (isinstance(detail, dict) and "code" in detail):
+        content["code"] = code
+    return JSONResponse(status_code=exc.status_code, content=content, headers=getattr(exc, "headers", None))
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc: Exception):
     """Globaler Exception-Handler: loggt mit Stacktrace, liefert JSON 500."""

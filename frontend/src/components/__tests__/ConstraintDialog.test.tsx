@@ -1,4 +1,5 @@
 ﻿// REQ-5012: Tests fuer ConstraintDialog-Komponente
+import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ConstraintDialog from "../ConstraintDialog";
@@ -70,9 +71,9 @@ describe("ConstraintDialog - REQ-5012", () => {
     vi.restoreAllMocks();
   });
 
-  it("zeigt Dialog-Überschrift 'Constraint hinzufuegen'", () => {
+  it("zeigt Dialog-Überschrift 'Constraint hinzufügen'", () => {
     render(<ConstraintDialog projectId={1} onClose={onCloseMock} />);
-    expect(screen.getByText("Constraint hinzufuegen")).toBeInTheDocument();
+    expect(screen.getByText("Constraint hinzufügen")).toBeInTheDocument();
   });
 
   it("zeigt Schliessen-Button", () => {
@@ -407,7 +408,7 @@ describe("ConstraintDialog - REQ-5012", () => {
     });
 
     // Loeschen-Button klicken
-    const deleteBtn = screen.getByText("Loeschen");
+    const deleteBtn = screen.getByText("Löschen");
     fireEvent.click(deleteBtn);
 
     await waitFor(() => {

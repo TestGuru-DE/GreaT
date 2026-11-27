@@ -1,4 +1,5 @@
 ﻿// REQ-3041: Tests fuer BVAInputPanel-Komponente
+import "../../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

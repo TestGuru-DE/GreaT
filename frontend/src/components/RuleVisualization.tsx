@@ -1,6 +1,7 @@
 ﻿// REQ-NEU: Grafische Regeldarstellung als SVG-Visualisierung
 // Zeigt Verbindungen zwischen Werten verschiedener Kategorien als farbige Linien
 // Regeltypen: exclude (rot/verboten), dependency (violett/abhängig), combine (grün/kombinieren)
+import { useTranslation } from "react-i18next";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { rulesApi, categoriesApi, valuesApi } from "../api/client";
 import type { Rule } from "../api/client";
@@ -57,6 +58,7 @@ const PADDING = 14;
 const LINE_GAP = 4; // Abstand zwischen parallelen Linien
 
 export default function RuleVisualization({ projectId }: Props) {
+  const { t } = useTranslation();
   const [rules, setRules] = useState<RuleWithInfo[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [catValues, setCatValues] = useState<Record<number, Value[]>>({});
@@ -143,7 +145,7 @@ export default function RuleVisualization({ projectId }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8 text-sm text-theme-text-secondary animate-pulse">
-        Lade Regeln...
+        {t('ruleVisualization.loading')}
       </div>
     );
   }
@@ -152,8 +154,8 @@ export default function RuleVisualization({ projectId }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-theme-text-secondary text-xs text-center">
         <span className="text-2xl mb-2 opacity-50">📋</span>
-        <p>Noch keine Regeln</p>
-        <p className="mt-1 opacity-70">Erstelle Regeln im "Regeln"-Tab</p>
+        <p>{t('ruleVisualization.empty')}</p>
+        <p className="mt-1 opacity-70">{t('ruleVisualization.emptyHint')}</p>
       </div>
     );
   }
@@ -274,7 +276,7 @@ export default function RuleVisualization({ projectId }: Props) {
                 key={type}
                 className="text-[10px] px-1.5 py-0.5 rounded"
                 style={{ backgroundColor: color.bg, color: color.text }}
-                title={`${color.label}: ${count}`}
+                title={`${t(`ruleVisualization.${type}`)}: ${count}`}
               >
                 {color.symbol} {count}
               </span>
@@ -458,9 +460,9 @@ export default function RuleVisualization({ projectId }: Props) {
                       fontSize={8}
                       fill="#94a3b8"
                     >
-                      {line.rule.type === 'exclude' ? '✕ nicht mit' : 
-                       line.rule.type === 'dependency' ? '→ dann' : 
-                       '⊂ nur mit'} {line.rule.then_category_name}
+                      {line.rule.type === 'exclude' ? t('ruleVisualization.notWith') :
+                       line.rule.type === 'dependency' ? t('ruleVisualization.then') :
+                       t('ruleVisualization.onlyWith')} {line.rule.then_category_name}
                     </text>
                     {/* Pfeil nach unten */}
                     <polygon
@@ -480,7 +482,7 @@ export default function RuleVisualization({ projectId }: Props) {
       <div
         ref={resizeHandleRef}
         className="h-1.5 w-full cursor-row-resize hover:bg-theme-accent/20 transition-colors"
-        title="Höhe anpassen (ziehen)"
+        title={t('ruleVisualization.resize')}
       />
     </div>
   );

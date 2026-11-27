@@ -1,4 +1,5 @@
 ﻿// REQ-NEU: Tests fuer RuleVisualization (grafische Regeldarstellung)
+import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import RuleVisualization from "../RuleVisualization";
@@ -74,7 +75,7 @@ describe("RuleVisualization - grafische Regeldarstellung", () => {
   it("zeigt Lade-Status waehrend des Ladens", () => {
     vi.mocked(rulesApi.list).mockReturnValue(new Promise(() => {})); // niemals resolve
     const { getByText } = render(<RuleVisualization projectId={1} />);
-    expect(getByText("Lade Regeln...")).toBeInTheDocument();
+    expect(getByText("Lade Regeln …")).toBeInTheDocument();
   });
 
   it("zeigt Platzhalter wenn keine Regeln existieren", async () => {
@@ -85,7 +86,7 @@ describe("RuleVisualization - grafische Regeldarstellung", () => {
     await waitFor(() => {
       expect(screen.getByText(/Noch keine Regeln/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/Erstelle Regeln im "Regeln"-Tab/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lege Regeln im Reiter „Regeln“ an/i)).toBeInTheDocument();
   });
 
   it("zeigt Regeln-Header mit Anzahl", async () => {

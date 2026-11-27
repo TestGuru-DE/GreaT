@@ -2,6 +2,7 @@
 // REQ-4001, REQ-1208, REQ-2001
 // B-45: Theme-Tokens statt hartkodierter Farben
 // REQ-6005: i18n
+import { tr } from "../lib/i18nText";
 import { Component, ReactNode } from "react";
 
 interface Props {
@@ -37,13 +38,13 @@ export default class ErrorBoundary extends Component<Props, State> {
               {this.props.fallback ? "" : "Die Anwendung konnte nicht korrekt geladen werden."}
             </p>
             <pre className="text-xs text-left bg-theme-bg rounded-lg p-3 text-theme-text-muted overflow-auto max-h-48">
-              {this.state.error?.message || "Unbekannter Fehler"}
+              {this.state.error?.message || tr("errorBoundary.unknown", "Unbekannter Fehler")}
             </pre>
             <button
               onClick={() => window.location.reload()}
               className="mt-4 px-4 py-2 bg-theme-danger text-theme-accent-text rounded-lg hover:opacity-90 text-sm font-medium"
             >
-              Seite neu laden
+              {tr("errorBoundary.reload", "Seite neu laden")}
             </button>
           </div>
         </div>

@@ -3,6 +3,7 @@
 // - Rechts: Dropdown fuer Constraint-Typ (E, I, O, R, M)
 // - Validierung: R/M brauchen genau 2, E/I/O brauchen mind. 2
 
+import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { useDecisionTableStore } from "../store/decisionTableStore";
 import { constraintsApi } from "../api/client";
@@ -30,6 +31,7 @@ const CONSTRAINT_TYPES: ConstraintType[] = [
 ];
 
 export default function ConstraintDialog({ projectId, onClose }: ConstraintDialogProps) {
+  const { t } = useTranslation();
   const causes = useDecisionTableStore((s) => s.causes);
   const effects = useDecisionTableStore((s) => s.effects);
 
@@ -110,7 +112,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
       <div className="bg-theme-surface rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-theme-text">Constraint hinzufuegen</h2>
+            <h2 className="text-xl font-bold text-theme-text">{t('constraintDialog.title')}</h2>
             <button
               onClick={onClose}
               className="text-theme-text-secondary hover:text-theme-text"
@@ -122,7 +124,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
 
           {/* Constraint-Typ Auswahl */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-theme-text mb-1">Typ</label>
+            <label className="block text-sm font-medium text-theme-text mb-1">{t('constraintDialog.type')}</label>
             <select
               value={constraintType}
               onChange={(e) => {
@@ -208,7 +210,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
               onClick={onClose}
               className="px-4 py-2 text-sm text-theme-text-secondary hover:text-theme-text"
             >
-              Abbrechen
+              {t('constraintDialog.cancel')}
             </button>
             <button
               onClick={handleSubmit}
@@ -242,7 +244,7 @@ export default function ConstraintDialog({ projectId, onClose }: ConstraintDialo
                       onClick={() => handleDelete(c.id)}
                       className="text-theme-danger hover:underline text-xs"
                     >
-                      Loeschen
+                      {t('constraintDialog.delete')}
                     </button>
                   </li>
                 ))}

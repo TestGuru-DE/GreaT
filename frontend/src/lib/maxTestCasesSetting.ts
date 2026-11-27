@@ -1,3 +1,4 @@
+import { tr } from "./i18nText";
 ﻿// REQ-4018: Maximale Anzahl Testfaelle als konfigurierbares Setting (Default 1000).
 // Analog zum Port-Setting (PortSettingsCard) wird der Wert lokal im Browser
 // gespeichert. Anders als beim Port wirkt diese Einstellung sofort (kein
@@ -46,7 +47,7 @@ export function storeMaxTestCases(value: string): number {
   const normalized = parseMaxTestCases(value);
   if (normalized === null) {
     throw new Error(
-      `Bitte eine ganze Zahl zwischen ${MIN_MAX_TESTCASES} und ${MAX_MAX_TESTCASES} eingeben.`
+      tr("settingsValidation.maxTestcases", "Bitte eine ganze Zahl zwischen {{min}} und {{max}} eingeben.", { min: MIN_MAX_TESTCASES, max: MAX_MAX_TESTCASES })
     );
   }
   localStorage.setItem(MAX_TESTCASES_STORAGE_KEY, String(normalized));

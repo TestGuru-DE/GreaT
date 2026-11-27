@@ -1,5 +1,6 @@
 ﻿// REQ-3052: Tests für Office-ähnliche Tabellenansicht
 // BUGFIX React #300 (REQ-1208, REQ-2001, REQ-3052, REQ-4018, REQ-5006): Rules-of-Hooks-Verletzung im Panel
+import "../../i18n"; // Texte in deutscher Sprache (A-14: Komponente nutzt t())
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import TestCasePanel from "../TestCasePanel";
@@ -101,8 +102,8 @@ describe("TestCasePanel - REQ-3052 Office-ähnliche Tabelle", () => {
     
     // Prüfe Sortierung: 3.0 vor 5.0
     const cells = container.querySelectorAll('tbody td:nth-child(2)');
-    expect(cells[0]).toHaveTextContent("3.0");
-    expect(cells[1]).toHaveTextContent("5.0");
+    expect(cells[0]).toHaveTextContent("3,0");
+    expect(cells[1]).toHaveTextContent("5,0");
   });
 
   it("zeigt Sortier-Indikator im Header", () => {
@@ -314,7 +315,7 @@ describe("TestCasePanel - REQ-3051 Risikoabdeckungs-Badge (Gesamtprozentsatz)", 
     });
     render(<TestCasePanel projectId={1} />);
 
-    expect(screen.getByText("(8.0 / 10.0)")).toBeInTheDocument();
+    expect(screen.getByText("(8,0 / 10,0)")).toBeInTheDocument();
   });
 });
 
@@ -518,13 +519,13 @@ describe("TestCasePanel - BUGFIX React #300 (Rules of Hooks)", () => {
     act(() => useDecisionTableStore.setState({ mode: true }));
     const { container } = render(<TestCasePanel projectId={1} />);
 
-    expect(screen.getByText(/Entscheidungstabelle-Modus aktiv/)).toBeInTheDocument();
+    expect(screen.getByText(/Entscheidungstabellen-Modus aktiv/)).toBeInTheDocument();
     expect(container.querySelector("select")).toBeDisabled();
     expect(screen.getByRole("button", { name: /neu generieren/i })).toBeDisabled();
 
     act(() => useDecisionTableStore.setState({ mode: false }));
 
-    expect(screen.queryByText(/Entscheidungstabelle-Modus aktiv/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Entscheidungstabellen-Modus aktiv/)).not.toBeInTheDocument();
     expect(container.querySelector("select")).toBeEnabled();
     expect(screen.getByRole("button", { name: /neu generieren/i })).toBeEnabled();
   });

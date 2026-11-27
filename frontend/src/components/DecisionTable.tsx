@@ -1,4 +1,5 @@
-﻿import { useEffect } from "react";
+﻿import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
 // REQ-5003 + REQ-5004 + REQ-5005: Entscheidungstabelle-Komponente
 // Layout: Ursachen oben, Wirkungen unten, Regeln als Spalten
 // Boolean-Werte (Y/N) als Default, automatische Regelgenerierung
@@ -14,6 +15,7 @@ interface DecisionTableProps {
 }
 
 export default function DecisionTable({ projectId }: DecisionTableProps) {
+  const { t } = useTranslation();
   const causes = useDecisionTableStore((s) => s.causes);
   const effects = useDecisionTableStore((s) => s.effects);
   const generate = useDecisionTableStore((s) => s.generate);
@@ -57,7 +59,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-theme-text-secondary animate-pulse">
-        Lade Entscheidungstabelle...
+        {t('decisionTableView.loading')}
       </div>
     );
   }
@@ -68,10 +70,10 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
         <div className="flex items-start gap-2">
           <span className="text-lg flex-shrink-0">⚠️</span>
           <div>
-            <p className="font-medium">Fehler bei der Generierung</p>
+            <p className="font-medium">{t('decisionTableView.generateError')}</p>
             <p className="mt-1 text-xs">{error}</p>
             <p className="mt-2 text-xs text-theme-text-secondary">
-              Tipp: Stelle sicher, dass mindestens eine Ursache- und eine Wirkungskategorie existiert.
+              {t('decisionTableView.tip')}
             </p>
           </div>
         </div>
@@ -83,9 +85,9 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-theme-text-secondary">
         <span className="text-3xl mb-2">📋</span>
-        <p className="text-sm font-medium">Keine Ursachen oder Wirkungen gefunden</p>
+        <p className="text-sm font-medium">{t('decisionTableView.emptyTitle')}</p>
         <p className="text-xs mt-1">
-          Erstellen Sie mindestens eine Ursache- und eine Wirkungskategorie im Kategorienbaum.
+          {t('decisionTableView.emptyHint')}
         </p>
       </div>
     );
@@ -101,14 +103,14 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
             <button
               onClick={() => void generate?.(effectiveProjectId)}
               className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
-              aria-label="Regeln generieren"
+              aria-label={t('decisionTableView.generate')}
             >
-              Regeln generieren
+              {t('decisionTableView.generate')}
             </button>
             <button
               onClick={() => runCollapse(effectiveProjectId)}
               className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
-              aria-label="Regeln zusammenfassen"
+              aria-label={t('decisionTableView.collapse')}
             >
               📦 Zusammenfassen{collapsedCount > 0 && ` (${collapsedCount} reduziert)`}
             </button>
@@ -122,7 +124,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
             <button
               onClick={() => setShowHelpDialog(true)}
               className="px-3 py-1.5 text-sm border border-theme-border text-theme-text rounded-md hover:bg-theme-bg-hover transition-colors"
-              aria-label="Hilfe anzeigen"
+              aria-label={t('decisionTableView.help')}
             >
               ❓ Hilfe
             </button>
@@ -139,7 +141,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                     : "bg-red-50 border border-red-200 text-red-800"
               }`}
             >
-              <strong>Checksum:</strong> {checksum.checksum} / {checksum.expected} –{" "}
+              <strong>{t('decisionTableView.checksum')}</strong> {checksum.checksum} / {checksum.expected} –{" "}
               {checksum.message}
             </div>
           )}
@@ -161,7 +163,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
           {/* Luecken */}
           {gaps.length > 0 && (
             <div className="p-2 bg-amber-50 border border-amber-200 text-amber-800 rounded">
-              <p className="text-sm font-medium">{gaps.length} Luecke(n) in der Abdeckung</p>
+              <p className="text-sm font-medium">{t('decisionTableView.gaps', { count: gaps.length })}</p>
               <div className="max-h-32 overflow-y-auto mt-1">
                 {gaps.map((g, i) => (
                   <p key={i} className="text-xs">
@@ -180,9 +182,9 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
           <button
             onClick={() => setShowConstraintDialog(true)}
             className="px-3 py-1.5 text-sm bg-theme-primary text-white rounded-md hover:opacity-90 transition-opacity"
-            aria-label="Constraint hinzufuegen"
+            aria-label={t('decisionTableView.addConstraint')}
           >
-            Constraint hinzufuegen
+            {t('decisionTableView.addConstraint')}
           </button>
         </div>
       )}
@@ -218,7 +220,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                 rowSpan={causes.length > 0 || effects.length > 0 ? 2 : 1}
                 className="sticky left-0 z-10 bg-theme-surface border border-theme-border p-2 font-semibold text-theme-text min-w-[140px] text-left"
               >
-                Regel
+                {t('decisionTableView.rule')}
               </th>
               {rules.map((rule) => (
                 <th
@@ -243,10 +245,10 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                       value={rule.causes[cause.id] ?? "Y"}
                       onChange={(e) => updateCause(rule.id, cause.id, e.target.value)}
                       className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-primary rounded"
-                      aria-label={`Regel R${rule.id} – ${cause.name}`}
+                      aria-label={t('decisionTableView.ruleCell', { id: rule.id, name: cause.name })}
                     >
-                      <option value="Y">Y</option>
-                      <option value="N">N</option>
+                      <option value="Y">{"Y"}</option>
+                      <option value="N">{"N"}</option>
                       <option value="-">—</option>
                     </select>
                   </td>
@@ -261,7 +263,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                   colSpan={rules.length + 1}
                   className="border-t-2 border-b-2 border-theme-border bg-theme-bg-muted p-1 text-xs text-theme-text-secondary text-center"
                 >
-                  ───────────── Ursachen / Wirkungen ─────────────
+                  ───────────── {t('decisionTableView.separator')} ─────────────
                 </td>
               </tr>
             )}
@@ -277,10 +279,10 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                       value={effectPriorities[effect.id] ?? 999}
                       onChange={(e) => setEffectPriority(effect.id, parseInt(e.target.value))}
                       className="text-xs border border-theme-border rounded px-1 py-0.5 bg-theme-bg-input text-theme-text"
-                      aria-label={`Prioritaet fuer ${effect.name}`}
-                      title="Prioritaet (1=hoechst, 999=keine)"
+                      aria-label={t('decisionTableView.priorityFor', { name: effect.name })}
+                      title={t('decisionTableView.priorityHint')}
                     >
-                      <option value={999}>Keine</option>
+                      <option value={999}>{t('decisionTableView.none')}</option>
                       {Array.from({ length: effects.length }, (_, i) => (
                         <option key={i + 1} value={i + 1}>
                           Prio {i + 1}
@@ -300,7 +302,7 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                           className="w-full text-center text-sm bg-transparent text-theme-text"
                           placeholder="Wirkung"
                           list={`effect-datalist-${effect.id}`}
-                          aria-label={`Regel R${rule.id} – ${effect.name}`}
+                          aria-label={t('decisionTableView.ruleCell', { id: rule.id, name: effect.name })}
                         />
                         <datalist id={`effect-datalist-${effect.id}`}>
                           {effect.values?.map((v: string) => (
@@ -319,10 +321,10 @@ export default function DecisionTable({ projectId }: DecisionTableProps) {
                           )
                         }
                         className="w-full text-center bg-transparent text-theme-text cursor-pointer focus:outline-none focus:ring-1 focus:ring-theme-primary rounded"
-                        aria-label={`Regel R${rule.id} – ${effect.name}`}
+                        aria-label={t('decisionTableView.ruleCell', { id: rule.id, name: effect.name })}
                       >
                         <option value="">·</option>
-                        <option value="X">X</option>
+                        <option value="X">{"X"}</option>
                         <option value="-">—</option>
                       </select>
                     )}

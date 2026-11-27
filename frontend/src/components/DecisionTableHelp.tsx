@@ -45,8 +45,8 @@ export default function HelpDialog({ onClose }: HelpDialogProps) {
             {t('decisionTableHelp.step2.customValues')}
           </p>
           <ul className="list-disc pl-5 space-y-1 text-sm">
-            <li>Größe: S, M, L, XL</li>
-            <li>Farbe: Rot, Gruen, Blau</li>
+            <li>{t('decisionTableHelpExamples.size')}</li>
+            <li>{t('decisionTableHelpExamples.color')}</li>
           </ul>
           <p className="text-sm" dangerouslySetInnerHTML={{ __html: t('decisionTableHelp.step2.textMode') }} />
         </div>

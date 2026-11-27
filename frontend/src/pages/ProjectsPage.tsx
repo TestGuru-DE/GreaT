@@ -238,10 +238,11 @@ export default function ProjectsPage() {
                     <td className="px-4 py-2 text-theme-text-muted">{p.id}</td>
                     <td className="px-4 py-2 font-medium text-theme-text">{p.name}</td>
                     <td className="px-4 py-2">
+                      {/* B-34: Beschriftung in Textfarbe (Kontrast), Gefahr ueber den Rahmen */}
                       <button onClick={() => navigate("/projects/" + p.id)}
-                        className="text-theme-accent hover:underline text-sm mr-3">{t('projects.open')}</button>
+                        className="px-2 py-0.5 mr-2 text-sm rounded border border-theme-border text-theme-text hover:bg-theme-surface-hover">{t('projects.open')}</button>
                       <button onClick={() => handleDeleteSingle(p)} disabled={working}
-                        className="text-theme-danger hover:opacity-80 text-sm disabled:opacity-50">{t('projects.delete')}</button>
+                        className="px-2 py-0.5 text-sm rounded border-2 border-theme-danger text-theme-text hover:bg-theme-surface-hover disabled:opacity-50">{t('projects.delete')}</button>
                     </td>
                   </tr>
                 ))}

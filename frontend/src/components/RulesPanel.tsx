@@ -75,7 +75,7 @@ export default function RulesPanel({ projectId }: Props) {
     setForm((f) => ({ ...f, then_val: vals[0] ?? "", then_vals: vals.length > 0 ? [vals[0]] : [] }));
   }, [form.then_cat, catValues]);
 
-  const catName = (id: number) => categories.find((c) => c.id === id)?.name ?? "Kategorie #" + id;
+  const catName = (id: number) => categories.find((c) => c.id === id)?.name ?? t('rulesPanel.categoryFallback', { id });
 
   const handleCreate = async () => {
     if (!form.if_val || (!form.then_val && form.type !== "combine")) return;

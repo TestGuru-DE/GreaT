@@ -12,7 +12,7 @@
     "logoutTitle": "Log out ({{username}})"
   },
   "login": {
-    "title": "G.R.E.A.T. &ndash; Login",
+    "title": "G.R.E.A.T. – Login",
     "username": "Username",
     "password": "Password",
     "defaultUser": "Default user: {{username}}",
@@ -61,7 +61,7 @@
   "home": {
     "title": "G.R.E.A.T.",
     "subtitle": "Georg's Radically Simple Automated Testcase Designer",
-    "footer": "v1.8.0 &middot; F1 for help",
+    "footer": "v{{version}} · F1 for help",
     "tiles": {
       "projects": {
         "label": "Projects",
@@ -115,12 +115,12 @@
   },
   "projectDetail": {
     "invalidId": "Invalid project ID",
-    "backToProjects": "&larr; Projects",
-    "title": "G.R.E.A.T. &ndash; Project {{name}}",
+    "backToProjects": "← Projects",
+    "title": "G.R.E.A.T. – Project {{name}}",
     "rename": "Rename",
     "saveName": "Save",
     "cancelRename": "Cancel",
-    "categoriesTitle": "Categories &amp; Values",
+    "categoriesTitle": "Categories & Values",
     "ruleConnections": "Rule Connections",
     "tabGenerate": "Test Case Generation",
     "tabRules": "Rules",
@@ -128,7 +128,8 @@
     "tabDecision": "Decision Table",
     "tabConstraints": "Constraints",
     "projectNameLabel": "Project name",
-    "tabSeeds": "Seeds"
+    "tabSeeds": "Seeds",
+    "tabClassification": "Classification tree"
   },
   "generations": {
     "title": "All Generations",
@@ -338,7 +339,8 @@
     "title": "An error has occurred",
     "message": "The application could not be loaded correctly.",
     "unknownError": "Unknown error",
-    "reload": "Reload page"
+    "reload": "Reload page",
+    "unknown": "Unknown error"
   },
   "deleteProjectDialog": {
     "titleSingle": "Delete project",
@@ -519,7 +521,8 @@
       "exclude": "Forbidden (pair not together)",
       "dependency": "Dependent (If/Then)",
       "combine": "Combine (fan-out)"
-    }
+    },
+    "categoryFallback": "Category #{{id}}"
   },
   "decisionTableHelp": {
     "title": "📋 Decision Table – Help",
@@ -759,7 +762,12 @@
     "emptyCondition": "(empty condition)",
     "valuesCheckbox": "Values (multiple selection)",
     "addGroupAnd": "AND group",
-    "addGroupOr": "OR group"
+    "addGroupOr": "OR group",
+    "saveInvalid": "Save error: invalid constraint. Please check condition and consequence.",
+    "projectNotFound": "Project not found.",
+    "unauthorized": "Not authorized. Please log in again.",
+    "saveHttp": "Save error (HTTP {{status}}). Please try again.",
+    "errorPrefix": "Error: {{message}}"
   },
   "export": {
     "columns": {
@@ -902,5 +910,137 @@
     "importBtn": "Import",
     "importing": "Importing …",
     "cancel": "Cancel"
+  },
+  "app": {
+    "helpLoading": "Loading help …"
+  },
+  "bvaInput": {
+    "ranges": "Ranges",
+    "addRange": "Add range",
+    "minPlaceholder": "e.g. 0 or 0.1",
+    "maxPlaceholder": "e.g. 100 or 99.9",
+    "markAs": "Mark values as",
+    "allowed": "Allowed values",
+    "errorCase": "Error case (invalid)",
+    "points": "{{count}} points"
+  },
+  "numberline": {
+    "empty": "No points to show",
+    "error": "Error",
+    "boundary": "Boundary",
+    "inside": "Inside"
+  },
+  "previewTable": {
+    "empty": "No preview available",
+    "value": "Value",
+    "range": "Range",
+    "type": "Type",
+    "status": "Status"
+  },
+  "causeEffect": {
+    "empty": "No cause/effect for the graph",
+    "cause": "Cause",
+    "effect": "Effect",
+    "loading": "Loading graph …"
+  },
+  "constraintDialog": {
+    "title": "Add constraint",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "type": "Type"
+  },
+  "coverageView": {
+    "loadError": "Error loading the heatmap",
+    "categoryA": "Category A:",
+    "categoryB": "Category B:",
+    "back": "← Back to overview",
+    "hide": "Hide",
+    "uncoveredCount": "{{count}} not covered"
+  },
+  "decisionTableView": {
+    "loading": "Loading decision table …",
+    "generateError": "Error during generation",
+    "tip": "Tip: make sure there is at least one cause and one effect category.",
+    "emptyTitle": "No causes or effects found",
+    "emptyHint": "Create at least one cause and one effect category in the category tree.",
+    "generate": "Generate rules",
+    "collapse": "Collapse rules",
+    "help": "Show help",
+    "addConstraint": "Add constraint",
+    "rule": "Rule",
+    "ruleCell": "Rule R{{id}} – {{name}}",
+    "separator": "Causes / effects",
+    "priorityFor": "Priority for {{name}}",
+    "priorityHint": "Priority (1 = highest, 999 = none)",
+    "none": "None",
+    "checksum": "Checksum:",
+    "gaps": "{{count}} gap(s) in coverage"
+  },
+  "ruleVisualization": {
+    "exclude": "Forbidden",
+    "dependency": "Dependent",
+    "combine": "Combine",
+    "loading": "Loading rules …",
+    "empty": "No rules yet",
+    "emptyHint": "Create rules in the “Rules” tab",
+    "notWith": "✕ not with",
+    "then": "→ then",
+    "onlyWith": "⊂ only with",
+    "resize": "Adjust height (drag)"
+  },
+  "testCasePanel": {
+    "strategy": "Strategy",
+    "strategies": {
+      "each": "Each choice (recommended)",
+      "linear": "Linear expansion",
+      "all": "All combinations",
+      "pairwise": "Pairwise",
+      "t_wise": "T-wise (parameterized)",
+      "mcdc": "MC/DC (Modified Condition/Decision Coverage)",
+      "risk_based": "Risk-based"
+    },
+    "dtModeActive": "Decision table mode active: generation is controlled in the decision table.",
+    "applyRules": "Generate with rules",
+    "tStrength": "T strength",
+    "generating": "Generating …",
+    "regenerate": "Generate",
+    "loadPrevious": "Load previous generation",
+    "chooseGeneration": "-- Choose generation --",
+    "editName": "Edit name",
+    "exportCsvTitle": "Export the current table view as CSV (incl. sorting)",
+    "riskTitle": "Absolute risk coverage: {{percent}} % – 100 % = maximum of all combinations under valid rules.",
+    "emptyTitle": "No test cases yet",
+    "emptyHintWithHistory": "Choose a strategy and generate, or load a previous generation",
+    "emptyHint": "Choose a strategy and click “Generate”",
+    "loading": "Loading test cases …",
+    "riskColumnTitle": "Risk coverage (sum of risk weights)",
+    "resultPlaceholder": "Choose or enter a result",
+    "count": "{{count}} test cases",
+    "riskBadge": "Risk coverage: {{percent}}%"
+  },
+  "bvaValidation": {
+    "outside": "outside",
+    "needRange": "At least one range required",
+    "invalidNumberInRange": "Range {{n}}: invalid numeric value",
+    "minOrMaxRequired": "Range {{n}}: minimum or maximum required",
+    "noOverlapOrTouch": "Ranges must not overlap or touch.",
+    "minRequired": "Minimum required",
+    "invalidNumber": "Invalid numeric value",
+    "formatDate": "Date expected in the format YYYY-MM-DD",
+    "formatTime": "Time expected in the format HH:MM or HH:MM:SS",
+    "formatDatetime": "Date+time expected in the format YYYY-MM-DDTHH:MM",
+    "formatStrlen": "Whole number >= 0 expected",
+    "formatTimezone": "Time zone expected in the format +HH:MM, -HH:MM or Z",
+    "rangePrefix": "Range {{n}}",
+    "minAndMaxRequired": "{{prefix}}: minimum and maximum required",
+    "minGreaterMax": "{{prefix}}: minimum is greater than maximum",
+    "rangesOverlap": "Range {{a}} and range {{b}} overlap"
+  },
+  "settingsValidation": {
+    "maxTestcases": "Please enter a whole number between {{min}} and {{max}}."
+  },
+  "decisionTableHelpExamples": {
+    "size": "Size: S, M, L, XL",
+    "color": "Colour: red, green, blue"
   }
 }

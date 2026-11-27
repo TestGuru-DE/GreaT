@@ -61,7 +61,7 @@ export default function App() {
                   element={
                     <Suspense fallback={
                       <div className="flex items-center justify-center h-[calc(100vh-80px)]">
-                        <span className="text-theme-text-secondary text-sm">Hilfe wird geladen...</span>
+                        <span className="text-theme-text-secondary text-sm">{i18n.t('app.helpLoading')}</span>
                       </div>
                     }>
                       <HelpPage />

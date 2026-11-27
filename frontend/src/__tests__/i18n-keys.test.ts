@@ -1,5 +1,7 @@
 // REQ-6005: Test fuer Vollstaendigkeit der Uebersetzungsschluessel
 import { describe, it, expect } from "vitest";
+import * as fs from "fs";
+import * as path from "path";
 import translationDE from "../i18n/de.json";
 import translationEN from "../i18n/en.json";
 
@@ -133,5 +135,40 @@ describe("REQ-6005: Translation Key Completeness", () => {
     for (const key of requiredImportKeys) {
       expect(deKeys).toContain(key);
     }
+  });
+});
+
+// A-14: Jeder im Code verwendete feste Schluessel existiert in DE und EN.
+// (Fehlende Schluessel zeigten im EN-Modus deutsche Ersatztexte, z. B. "Klassifikationsbaum".)
+function sourceFiles(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) return e.name === "__tests__" ? [] : sourceFiles(full);
+    return /\.(tsx|ts)$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) ? [full] : [];
+  });
+}
+
+function hasKey(bundle: unknown, key: string): boolean {
+  let cur: unknown = bundle;
+  for (const part of key.split(".")) {
+    if (!cur || typeof cur !== "object" || !(part in (cur as Record<string, unknown>))) return false;
+    cur = (cur as Record<string, unknown>)[part];
+  }
+  return true;
+}
+
+describe("A-14: im Code verwendete Uebersetzungsschluessel", () => {
+  it("existieren in de.json und en.json", () => {
+    const srcDir = path.resolve(__dirname, "..");
+    const missing: string[] = [];
+    for (const file of sourceFiles(srcDir)) {
+      const text = fs.readFileSync(file, "utf-8");
+      for (const m of text.matchAll(/t\(\s*["'`]([\w-]+(?:\.[\w-]+)+)["'`]/g)) {
+        if (!hasKey(translationDE, m[1]) || !hasKey(translationEN, m[1])) {
+          missing.push(`${path.relative(srcDir, file)}: ${m[1]}`);
+        }
+      }
+    }
+    expect([...new Set(missing)]).toEqual([]);
   });
 });

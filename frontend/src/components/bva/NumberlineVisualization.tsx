@@ -1,4 +1,5 @@
 ﻿// REQ-3041, REQ-4015: NumberlineVisualization – SVG-Zahlenstrahl mit Markierungen und Fehlerwert-Kennzeichnung
+import { useTranslation } from "react-i18next";
 import type { BVAPoint } from "../../lib/bva-calc";
 import Decimal from "decimal.js";
 
@@ -8,6 +9,7 @@ interface NumberlineVisualizationProps {
 }
 
 export function NumberlineVisualization({ points, useSymbolicSpacing = true }: NumberlineVisualizationProps) {
+  const { t } = useTranslation();
   const width = 700;
   const height = 140;
   const margin = { left: 50, right: 50, top: 20, bottom: 50 };
@@ -19,7 +21,7 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
     return (
       <svg width={width} height={height} className="mx-auto">
         <text x={width / 2} y={height / 2} textAnchor="middle" fill="#94a3b8" fontSize="13">
-          Keine Punkte zum Anzeigen
+          {t('numberline.empty')}
         </text>
       </svg>
     );
@@ -130,13 +132,13 @@ export function NumberlineVisualization({ points, useSymbolicSpacing = true }: N
       {/* Legende */}
       <g transform={`translate(${lineX1}, ${height - 30})`}>
         <circle cx={0} cy={0} r={4} fill="#0ea5e9" stroke="white" strokeWidth="1" />
-        <text x={12} y={4} fontSize="10" fill="#64748b">Grenzwert</text>
+        <text x={12} y={4} fontSize="10" fill="#64748b">{t('numberline.boundary')}</text>
         
         <circle cx={80} cy={0} r={4} fill="#f59e0b" stroke="white" strokeWidth="1" />
-        <text x={92} y={4} fontSize="10" fill="#64748b">Innen</text>
+        <text x={92} y={4} fontSize="10" fill="#64748b">{t('numberline.inside')}</text>
         
         <circle cx={130} cy={0} r={5} fill="#ef4444" stroke="white" strokeWidth="1" />
-        <text x={142} y={4} fontSize="10" fill="#64748b">Fehler</text>
+        <text x={142} y={4} fontSize="10" fill="#64748b">{t('numberline.error')}</text>
       </g>
     </svg>
   );

@@ -4,6 +4,7 @@
  * SVG-basierte Graph-Ansicht mit Hover-Feedback und Legend
  
  */
+import { useTranslation } from "react-i18next";
 import { useEffect, useState, useRef } from "react";
 import { decisionTableApi } from "../api/client";
 
@@ -42,6 +43,7 @@ const NODE_SPACING = 60;
 const SVG_WIDTH = 650;
 
 export default function CauseEffectGraph({ projectId }: CauseEffectGraphProps) {
+  const { t } = useTranslation();
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,14 +104,14 @@ export default function CauseEffectGraph({ projectId }: CauseEffectGraphProps) {
       });
   }, [projectId]);
 
-  if (loading) return <div className="p-4 text-theme-text-secondary animate-pulse">Graph laedt...</div>;
+  if (loading) return <div className="p-4 text-theme-text-secondary animate-pulse">{t('causeEffect.loading')}</div>;
   if (error) return <div className="p-4 text-theme-danger">{error}</div>;
 
   const causeNodes = nodes.filter((n) => n.type === "cause");
   const effectNodes = nodes.filter((n) => n.type === "effect");
 
   if (causeNodes.length === 0 && effectNodes.length === 0)
-    return <div className="p-4 text-theme-text-secondary">Keine Ursache/Wirkung fuer Graph</div>;
+    return <div className="p-4 text-theme-text-secondary">{t('causeEffect.empty')}</div>;
 
   const getHeight = () =>
     Math.max(200, Math.max(causeNodes.length, effectNodes.length) * NODE_SPACING + 80);
@@ -212,7 +214,7 @@ export default function CauseEffectGraph({ projectId }: CauseEffectGraphProps) {
             onMouseLeave={() => setHoveredNode(null)}
             className="cursor-pointer"
             role="button"
-            aria-label={`${node.type === "cause" ? "Ursache" : "Wirkung"}: ${node.name}`}
+            aria-label={`${node.type === "cause" ? t('causeEffect.cause') : t('causeEffect.effect')}: ${node.name}`}
           >
             <rect
               x={node.x - NODE_WIDTH / 2}

@@ -115,7 +115,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
       {selectedPair && (
         <div className="coverage-overview-heatmap-detail">
           <button className="coverage-overview-back" onClick={() => setSelectedPair(null)}>
-            ← Zurueck zur Uebersicht
+            {t('coverageView.back')}
           </button>
           <CoverageHeatmap
             generationId={generationId}
@@ -165,7 +165,7 @@ export default function CoverageOverviewMatrix({ generationId }: CoverageOvervie
                 className="coverage-overview-btn uncovered"
                 onClick={handleShowUncovered}
               >
-                {showUncovered ? "Verbergen" : `${uncovered_tuples_2wise.length} nicht abgedeckt`}
+                {showUncovered ? t('coverageView.hide') : t('coverageView.uncoveredCount', { count: uncovered_tuples_2wise.length })}
               </button>
             )}
             {hasGaps && (

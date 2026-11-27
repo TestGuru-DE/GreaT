@@ -10,6 +10,8 @@ vi.mock("react-i18next", () => ({
     t: (key: string, params?: Record<string, unknown>) => {
       const tr: Record<string, string> = {
         "bvaDialog.title": "Grenzwertanalyse: {{categoryName}}",
+        "numberline.error": "Fehler",
+        "bvaInput.points": "{{count}} Punkte",
         "bvaDialog.cancel": "Abbrechen",
         "bvaDialog.apply": "Anwenden",
         "bvaDialog.applying": "Wird angewendet...",
